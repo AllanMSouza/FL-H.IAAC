@@ -1,6 +1,7 @@
 import flwr as fl
 import numpy as np
 import math
+import os
 
 from logging import WARNING
 from flwr.common import FitIns
@@ -9,10 +10,11 @@ from flwr.common.logger import log
 
 class FedServer(fl.server.strategy.FedAvg):
 
-	def __init__(self, aggregation_method, fraction_fit, num_clients, ):
+	def __init__(self, aggregation_method, fraction_fit, num_clients, 
+					decay=0, perc_of_clients=0, dataset='', solution_name='', model_name=''):
 		
 		self.aggregation_method = aggregation_method
-
+		self.num_clients        = num_clients
 		self.list_of_clients    = []
 		self.list_of_accuracies = []
 		self.selected_clients   = []
@@ -22,19 +24,35 @@ class FedServer(fl.server.strategy.FedAvg):
 		self.last_accuracy      = 0
 		self.current_accuracy   = 0
 
+		#logs
+		self.dataset    = dataset
+		self.model_name = model_name
+
 		#POC
-		self.clients_to_select  = 3
+		self.perc_of_clients  = perc_of_clients
 
 		#FedLTA
-		self.decay_factor = 0.009
+		self.decay_factor = decay
+
+		#params
+		if self.aggregation_method == 'POC':
+			self.solution_name = f"{solution_name}-{aggregation_method}-{self.perc_of_clients}"
+
+		elif self.aggregation_method == 'FedLTA': 
+			self.solution_name = f"{solution_name}-{aggregation_method}-{self.decay_factor}"
+
+		elif self.aggregation_method == 'None':
+			self.solution_name = f"{solution_name}-{aggregation_method}"
+
 
 		super().__init__(fraction_fit=fraction_fit, min_available_clients=num_clients, min_fit_clients=num_clients, min_evaluate_clients=num_clients)
 
 	def configure_fit(self, server_round, parameters, client_manager):
 		"""Configure the next round of training."""
-		
+		print(self.aggregation_method == 'POC')
 		if self.aggregation_method == 'POC':
-			self.selected_clients = self.list_of_clients[:self.clients_to_select]
+			clients2select        = int(float(self.num_clients) * float(self.perc_of_clients))
+			self.selected_clients = self.list_of_clients[:clients2select]
 
 		elif self.aggregation_method == 'FedLTA':
 			self.selected_clients = self.select_clients_bellow_average()
@@ -45,7 +63,7 @@ class FedServer(fl.server.strategy.FedAvg):
 
 
 		self.clients_last_round = self.selected_clients
-		print(f'SELECTED:{self.selected_clients}')
+		
 		config = {
 			"selected_clients" : ' '.join(self.selected_clients),
 			"round"            : server_round
@@ -85,6 +103,32 @@ class FedServer(fl.server.strategy.FedAvg):
 		metrics_aggregated = {}
 
 		return parameters_aggregated, metrics_aggregated
+
+	def configure_evaluate(self, server_round, parameters, client_manager):
+		"""Configure the next round of evaluation."""
+		# Do not configure federated evaluation if fraction eval is 0.
+		if self.fraction_evaluate == 0.0:
+			return []
+
+		# Parameters and config
+		config = {
+			'round' : server_round
+		}
+		if self.on_evaluate_config_fn is not None:
+			# Custom evaluation config function provided
+			config = self.on_evaluate_config_fn(server_round)
+		evaluate_ins = fl.common.EvaluateIns(parameters, config)
+
+		# Sample clients
+		sample_size, min_num_clients = self.num_evaluation_clients(
+			client_manager.num_available()
+		)
+		clients = client_manager.sample(
+			num_clients=sample_size, min_num_clients=min_num_clients
+		)
+
+		# Return client/config pairs
+		return [(client, evaluate_ins) for client in clients]
 
 
 
@@ -133,12 +177,21 @@ class FedServer(fl.server.strategy.FedAvg):
 		        for _, evaluate_res in results
 		    ]
 		)
-		print(accs[-3:])
+
 		# Aggregate custom metrics if aggregation fn was provided
+		top5 = np.mean(accs[-5:])
+		top1 = accs[-1]
+
+		filename = f"logs/{self.solution_name}/{self.num_clients}/{self.model_name}/{self.dataset}/server.csv"
+		os.makedirs(os.path.dirname(filename), exist_ok=True)
+
+		with open(filename, 'a') as server_log_file:
+			server_log_file.write(f"{server_round}, {accuracy_aggregated}, {top5}, {top1}\n")
+
 		metrics_aggregated = { 
 			"accuracy"  : accuracy_aggregated,
-			"top-3_acc" : np.mean(accs[-3:]),
-			"best_acc"  : accs[-1]
+			"top-3"     : top5,
+			"top-1"     : top1
 		}
 
 	

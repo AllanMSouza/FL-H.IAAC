@@ -2,32 +2,26 @@ import tensorflow as tf
 import numpy as np
 import random
 
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import Normalizer
 
 
 class ManageDatasets():
 
 	def __init__(self, cid):
 		self.cid = cid
-		random.seed(cid)
+		random.seed(self.cid)
 
 	def load_MNIST(self, n_clients):
 
 		(x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
-		# y_train                              = np.array(tf.one_hot(y_train, 10))
-		# y_test                               = np.array(tf.one_hot(y_test, 10))
-		
-		x_train = np.pad(x_train, ((0,0),(2,2),(2,2)), 'constant')
-		x_test  = np.pad(x_test, ((0,0),(2,2),(2,2)), 'constant')
-		
+		x_train, x_test                      = x_train/255.0, x_test/255.0
 		x_train, y_train, x_test, y_test     = self.slipt_dataset(x_train, y_train, x_test, y_test, n_clients)
 
 		return x_train, y_train, x_test, y_test
 
 	def load_CIFAR10(self, n_clients):
 		(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
-		# y_train                              = np.array(tf.one_hot(y_train[:,0], 10))
-		# y_test                               = np.array(tf.one_hot(y_test[:,0], 10))
+		x_train, x_test                      = x_train/255.0, x_test/255.0
 		x_train, y_train, x_test, y_test     = self.slipt_dataset(x_train, y_train, x_test, y_test, n_clients)
 
 		return x_train, y_train, x_test, y_test
@@ -35,26 +29,21 @@ class ManageDatasets():
 
 	def load_CIFAR100(self, n_clients):
 		(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
-		# y_train                              = np.array(tf.one_hot(y_train[:,0], 100))
-		# y_test                               = np.array(tf.one_hot(y_test[:,0], 100))
+		x_train, x_test                      = x_train/255.0, x_test/255.0
 		x_train, y_train, x_test, y_test     = self.slipt_dataset(x_train, y_train, x_test, y_test, n_clients)
 
 		return x_train, y_train, x_test, y_test
 
-
-	def load_EMNIST(self, n_clients):
-		(x_train, y_train), (x_test, y_test) = emnist.load_data(type='byclass')
-		y_train                              = np.array(tf.one_hot(y_train, 62))
-		y_test                               = np.array(tf.one_hot(y_test, 62))
-		x_train, y_train, x_test, y_test     = self.slipt_dataset(x_train, y_train, x_test, y_test, n_clients)
-
-		return x_train, y_train, x_test, y_test
 
 	def slipt_dataset(self, x_train, y_train, x_test, y_test, n_clients):
 		p_train = int(len(x_train)/n_clients)
 		p_test  = int(len(x_test)/n_clients)
 
+
+		random.seed(self.cid)
 		selected_train = random.sample(range(len(x_train)), p_train)
+
+		random.seed(self.cid)
 		selected_test  = random.sample(range(len(x_test)), p_test)
 		
 		x_train  = x_train[selected_train]
@@ -80,8 +69,8 @@ class ManageDatasets():
 
 
 	def normalize_data(self, x_train, x_test):
-		x_train = StandardScaler().fit_transform(x_train)
-		x_test  = StandardScaler().fit_transform(x_test)
+		x_train = Normalizer().fit_transform(np.array(x_train))
+		x_test  = Normalizer().fit_transform(np.array(x_test))
 		return x_train, x_test
 
 
