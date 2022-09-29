@@ -5,20 +5,20 @@ from tensorflow.keras.layers import Conv2D, Flatten, MaxPool2D, Dense, InputLaye
 from sklearn.linear_model import LogisticRegression
 import numpy as np
 
+import logging
+logging.getLogger("tensorflow").setLevel(logging.ERROR)
+
 class ModelCreation():
 
 	def create_DNN(self, input_shape, num_classes):
 		model = tf.keras.models.Sequential()
 		model.add(tf.keras.layers.Flatten(input_shape=(input_shape[1:])))
-		if len(input_shape) == 3:
-			model.add(Dense(input_shape[1] * input_shape[2], activation='relu'))
-		else:
-			model.add(Dense(input_shape[1] * input_shape[2] * input_shape[3], activation='relu'))
-
-		model.add(Dense(64, activation='relu'))
+		model.add(Dense(512, activation='relu'))
+		model.add(Dense(256, activation='relu'))
+		model.add(Dense(32,  activation='relu'))
 		model.add(Dense(num_classes, activation='softmax'))
 
-		model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+		model.compile(optimizer='sgd', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
 		return model
 
@@ -51,7 +51,7 @@ class ModelCreation():
 
 		deep_cnn.add(Dense(num_classes, activation='softmax'))
 
-		deep_cnn.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+		deep_cnn.compile(optimizer='sgd', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
 		return deep_cnn
 
@@ -66,7 +66,7 @@ class ModelCreation():
 			logistic_regression.add(Flatten(input_shape=(input_shape[1:])))
 
 		logistic_regression.add(Dense(num_classes, activation='sigmoid'))
-		logistic_regression.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+		logistic_regression.compile(optimizer='sgd', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
 		return logistic_regression
 

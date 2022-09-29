@@ -15,6 +15,9 @@ from model_definition import ModelCreation
 import warnings
 warnings.simplefilter("ignore")
 
+import logging
+logging.getLogger("tensorflow").setLevel(logging.ERROR)
+
 class FedClient(fl.client.NumPyClient):
 
 	def __init__(self, cid, n_clients, epochs=1, 
@@ -89,12 +92,12 @@ class FedClient(fl.client.NumPyClient):
 			selected_clients = [int (cid_selected) for cid_selected in config['selected_clients'].split(' ')]
 		
 		start_time = time.time()
-		print(config)
+		#print(config)
 		if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
 			self.model.set_weights(parameters)
 
 			selected           = 1
-			history            = self.model.fit(self.x_train, self.y_train, verbose=1, epochs=self.local_epochs)
+			history            = self.model.fit(self.x_train, self.y_train, verbose=0, epochs=self.local_epochs)
 			trained_parameters = self.model.get_weights()
 		
 		total_time         = time.time() - start_time
@@ -118,7 +121,7 @@ class FedClient(fl.client.NumPyClient):
 	def evaluate(self, parameters, config):
 		
 		self.model.set_weights(parameters)
-		loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=1)
+		loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
 		size_of_parameters = sum(map(sys.getsizeof, parameters))
 
 		filename = f"logs/{self.solution_name}/{self.n_clients}/{self.model_name}/{self.dataset}/evaluate_client.csv"

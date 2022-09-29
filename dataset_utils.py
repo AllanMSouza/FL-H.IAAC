@@ -4,6 +4,8 @@ import random
 
 from sklearn.preprocessing import Normalizer
 
+import logging
+logging.getLogger("tensorflow").setLevel(logging.ERROR)
 
 class ManageDatasets():
 

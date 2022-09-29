@@ -49,7 +49,7 @@ class FedServer(fl.server.strategy.FedAvg):
 
 	def configure_fit(self, server_round, parameters, client_manager):
 		"""Configure the next round of training."""
-		print(self.aggregation_method == 'POC')
+		#print(self.aggregation_method == 'POC')
 		if self.aggregation_method == 'POC':
 			clients2select        = int(float(self.num_clients) * float(self.perc_of_clients))
 			self.selected_clients = self.list_of_clients[:clients2select]
@@ -96,7 +96,7 @@ class FedServer(fl.server.strategy.FedAvg):
 				if client_id in self.selected_clients:
 					weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples))
 
-		print(f'LEN AGGREGATED PARAMETERS: {len(weights_results)}')
+		#print(f'LEN AGGREGATED PARAMETERS: {len(weights_results)}')
 		parameters_aggregated = fl.common.ndarrays_to_parameters(aggregate(weights_results))
 
 		# Aggregate custom metrics if aggregation fn was provided
