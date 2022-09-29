@@ -25,6 +25,7 @@ def exec_fedsgd():
 		for model in MODELS:
 			print(f'Strating FedSGD simulation for {n_clients} clients with {model} model ...')
 			subprocess.Popen(['python3', 'simulation.py', '-c', str(n_clients), '-a', 'None', '-m', model, '-d', 'MNIST', '-e', str(1), '-r', str(ROUNDS)]).wait()
+			subprocess.Popen(['rm', '-fr', '/tmp/ray/']).wait()
 
 def exec_poc(poc):
 
@@ -33,6 +34,8 @@ def exec_poc(poc):
 			for poc in CLIENTS2SELCT:
 				print(f'Strating POC-{poc} simulation for {n_clients} clients with {model} model ...')
 				subprocess.Popen(['python3', 'simulation.py', '-c', str(n_clients), '-a', 'POC', '-m', model, '-d', 'MNIST', '-e', str(1), '-r', str(ROUNDS), '--poc', str(poc)]).wait()
+				subprocess.Popen(['rm', '-fr', '/tmp/ray/']).wait()
+
 
 def exec_fedlta(decay):
 
@@ -41,6 +44,7 @@ def exec_fedlta(decay):
 			for decay in DECAY:
 				print(f'Strating FedLTA with decay {decay} simulation for {n_clients} clients with {model} model ...')
 				subprocess.Popen(['python3', 'simulation.py', '-c', str(n_clients), '-a', 'FedLTA', '-m', model, '-d', 'MNIST', '-e', str(1), '-r', str(ROUNDS), '--decay', str(decay)]).wait()
+				subprocess.Popen(['rm', '-fr', '/tmp/ray/']).wait()
 
 
 def main():

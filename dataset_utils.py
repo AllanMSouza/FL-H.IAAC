@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import random
 
-from sklearn.preprocessing import Normalizer
+#from sklearn.preprocessing import Normalizer
 
 import logging
 logging.getLogger("tensorflow").setLevel(logging.ERROR)
