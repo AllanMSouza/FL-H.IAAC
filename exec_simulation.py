@@ -15,7 +15,7 @@ MODELS        = ('Logist Regression', 'DNN', 'CNN')
 ALGORITHMS    = ('None', 'POC', 'FedLTA',)
 DATASETS      = ('MNIST', 'CIFAR10', )
 CLIENTS2SELCT = (0.25, 0.5, 0.75)
-DECAY         = (0.001, 0.005, 0.009)
+DECAY         = (0, 0.001, 0.005, 0.009)
 ROUNDS        = 300
 
 
@@ -24,26 +24,26 @@ def exec_fedsgd():
 	for n_clients in NUM_CLIENTS:
 		for model in MODELS:
 			print(f'Strating FedSGD simulation for {n_clients} clients with {model} model ...')
-			subprocess.Popen(['python3', 'simulation.py', '-c', str(n_clients), '-a', 'None', '-m', model, '-d', 'MNIST', '-e', str(1), '-r', str(ROUNDS)]).wait()
+			subprocess.Popen(['python3', 'simulation.py', '-c', str(n_clients), '-a', 'None', '-m', model, '-d', 'MNIST', '-e', str(10), '-r', str(ROUNDS)]).wait()
 			subprocess.Popen(['rm', '-fr', '/tmp/ray/']).wait()
 
-def exec_poc(poc):
+def exec_poc():
 
 	for n_clients in NUM_CLIENTS:
 		for model in MODELS:
 			for poc in CLIENTS2SELCT:
 				print(f'Strating POC-{poc} simulation for {n_clients} clients with {model} model ...')
-				subprocess.Popen(['python3', 'simulation.py', '-c', str(n_clients), '-a', 'POC', '-m', model, '-d', 'MNIST', '-e', str(1), '-r', str(ROUNDS), '--poc', str(poc)]).wait()
+				subprocess.Popen(['python3', 'simulation.py', '-c', str(n_clients), '-a', 'POC', '-m', model, '-d', 'MNIST', '-e', str(10), '-r', str(ROUNDS), '--poc', str(poc)]).wait()
 				subprocess.Popen(['rm', '-fr', '/tmp/ray/']).wait()
 
 
-def exec_fedlta(decay):
+def exec_fedlta():
 
 	for n_clients in NUM_CLIENTS:
 		for model in MODELS:
 			for decay in DECAY:
 				print(f'Strating FedLTA with decay {decay} simulation for {n_clients} clients with {model} model ...')
-				subprocess.Popen(['python3', 'simulation.py', '-c', str(n_clients), '-a', 'FedLTA', '-m', model, '-d', 'MNIST', '-e', str(1), '-r', str(ROUNDS), '--decay', str(decay)]).wait()
+				subprocess.Popen(['python3', 'simulation.py', '-c', str(n_clients), '-a', 'FedLTA', '-m', model, '-d', 'MNIST', '-e', str(10), '-r', str(ROUNDS), '--decay', str(decay)]).wait()
 				subprocess.Popen(['rm', '-fr', '/tmp/ray/']).wait()
 
 
