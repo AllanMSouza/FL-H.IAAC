@@ -2,6 +2,7 @@ import flwr as fl
 import numpy as np
 import math
 import os
+import time
 
 from logging import WARNING
 from flwr.common import FitIns
@@ -186,7 +187,7 @@ class FedServer(fl.server.strategy.FedAvg):
 		os.makedirs(os.path.dirname(filename), exist_ok=True)
 
 		with open(filename, 'a') as server_log_file:
-			server_log_file.write(f"{server_round}, {accuracy_aggregated}, {top5}, {top1}\n")
+			server_log_file.write(f"{time.time()}, {server_round}, {accuracy_aggregated}, {top5}, {top1}\n")
 
 		metrics_aggregated = { 
 			"accuracy"  : accuracy_aggregated,

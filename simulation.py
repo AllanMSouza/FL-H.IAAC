@@ -12,7 +12,7 @@ import os; os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
 class SimulationFL():
 	"""docstring for Simulation"""
-	def __init__(self, n_clients, algorithm, model_name, dataset, local_epochs, rounds, poc, decay):
+	def __init__(self, n_clients, algorithm, model_name, dataset, local_epochs, rounds, poc, decay, non_iid):
 		
 		self.n_clients        = n_clients
 		self.algorithm        = algorithm
@@ -24,6 +24,7 @@ class SimulationFL():
 		self.decay            = decay
 		self.client_selection = False
 		self.solution_name    = 'FedSGD'
+		self.non_iid          = non_iid
 
 	
 	def create_client(self, cid):
@@ -43,8 +44,8 @@ class SimulationFL():
 					aggregation_method = self.algorithm,
 					dataset            = self.dataset,
 					perc_of_clients    = self.poc,
-					decay              = self.decay
-					)
+					decay              = self.decay,
+					non_iid            = self.non_iid)
 
 	def create_strategy(self):
 
@@ -80,13 +81,15 @@ def main():
 	parser.add_option("-d", "--dataset",   dest="dataset",       default='MNIST', help="Dataset used for trainning", metavar="STR")
 	parser.add_option("-e", "--epochs",    dest="local_epochs",  default=1,       help="Number of epochs in each round", metavar="STR")
 	parser.add_option("-r", "--round",     dest="rounds",        default=100,     help="Number of communication rounds", metavar="INT")
-	parser.add_option("", "--poc",       dest="poc",           default=0,     help="Percentage clients to be selected", metavar="FLOAT")
-	parser.add_option("", "--decay",     dest="decay",         default=0,       help="Decay factor for FedLTA", metavar="FLOAT")
+	parser.add_option("", "--poc",         dest="poc",           default=0,       help="Percentage clients to be selected", metavar="FLOAT")
+	parser.add_option("", "--decay",       dest="decay",         default=0,       help="Decay factor for FedLTA", metavar="FLOAT")
+	parser.add_option("", "--non-iid",     dest="non_iid",       default=False,   help="Non IID distribution", metavar="BOOLEAN")
 
 	(opt, args) = parser.parse_args()
 
 	simulation = SimulationFL(int(opt.n_clients), opt.algorithm, opt.model_name, opt.dataset, 
-							  int(opt.local_epochs), int(opt.rounds), float(opt.poc), float(opt.decay))
+							  int(opt.local_epochs), int(opt.rounds), float(opt.poc), float(opt.decay),
+							  bool(opt.non_iid))
 
 	simulation.start_simulation()
 

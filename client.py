@@ -21,18 +21,20 @@ logging.getLogger("tensorflow").setLevel(logging.ERROR)
 class FedClient(fl.client.NumPyClient):
 
 	def __init__(self, cid, n_clients, epochs=1, 
-				 model_name='None', 
-				 client_selection=False, 
-				 solution_name='None', 
-				 aggregation_method='None',
-				 dataset='',
-				 perc_of_clients=0,
-				 decay=0):
+				 model_name         = 'None', 
+				 client_selection   = False, 
+				 solution_name      = 'None', 
+				 aggregation_method = 'None',
+				 dataset            = '',
+				 perc_of_clients    = 0,
+				 decay              = 0,
+				 non_iid            = False):
 
 		self.cid          = int(cid)
 		self.n_clients    = n_clients
 		self.model_name   = model_name
 		self.local_epochs = epochs
+		self.non_iid      = non_iid
 
 		self.model        = None
 		self.x_train      = None
@@ -63,7 +65,7 @@ class FedClient(fl.client.NumPyClient):
 		self.model                                           = self.create_model()
 
 	def load_data(self, dataset_name, n_clients):
-		return ManageDatasets(self.cid).select_dataset(dataset_name, n_clients)
+		return ManageDatasets(self.cid).select_dataset(dataset_name, n_clients, self.non_iid)
 
 	def create_model(self):
 		input_shape = self.x_train.shape
@@ -91,7 +93,7 @@ class FedClient(fl.client.NumPyClient):
 		if config['selected_clients'] != '':
 			selected_clients = [int (cid_selected) for cid_selected in config['selected_clients'].split(' ')]
 		
-		start_time = time.time()
+		start_time = time.process_time()
 		#print(config)
 		if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
 			self.model.set_weights(parameters)
@@ -100,7 +102,7 @@ class FedClient(fl.client.NumPyClient):
 			history            = self.model.fit(self.x_train, self.y_train, verbose=0, epochs=self.local_epochs)
 			trained_parameters = self.model.get_weights()
 		
-		total_time         = time.time() - start_time
+		total_time         = time.process_time() - start_time
 		size_of_parameters = sum(map(sys.getsizeof, trained_parameters))
 		avg_loss_train     = np.mean(history.history['loss'])
 		avg_acc_train      = np.mean(history.history['accuracy'])
