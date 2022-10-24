@@ -45,10 +45,33 @@ class ManageDatasets():
 		return x_train, y_train, x_test, y_test
 
 	def load_CIFAR10(self, n_clients, non_iid=False):
-		(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
-		x_train, x_test                      = x_train/255.0, x_test/255.0
-		x_train, y_train, x_test, y_test     = self.slipt_dataset(x_train, y_train, x_test, y_test, n_clients)
+		
+		if non_iid:
+			
+			with open(f'data/CIFAR10/{n_clients}/idx_train_{self.cid}.pickle', 'rb') as handle:
+				idx_train = pickle.load(handle)
 
+			with open(f'data/CIFAR10/{n_clients}/idx_test_{self.cid}.pickle', 'rb') as handle:
+				idx_test = pickle.load(handle)
+
+
+			(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
+			x_train, x_test                      = x_train/255.0, x_test/255.0
+
+			x_train = x_train[idx_train]
+			x_test  = x_test[idx_test]
+
+			y_train = y_train[idx_train]
+			y_test  = y_test[idx_test]
+			
+
+		else:
+
+			(x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
+			x_train, x_test                      = x_train/255.0, x_test/255.0
+			x_train, y_train, x_test, y_test     = self.slipt_dataset(x_train, y_train, x_test, y_test, n_clients)
+
+		
 		return x_train, y_train, x_test, y_test
 
 
