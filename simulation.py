@@ -1,7 +1,6 @@
 import flwr as fl
-import tensorflow as tf
-from client import FedClient
-from servidor import FedServer
+from client import Client, FedPerClient
+from server import Server, FedPerServer
 
 from optparse import OptionParser
 
@@ -23,7 +22,7 @@ class SimulationFL():
 		self.poc              = poc
 		self.decay            = decay
 		self.client_selection = False
-		self.solution_name    = 'FedSGD'
+		self.strategy_name    = 'FedSGD'
 		self.non_iid          = non_iid
 
 	
@@ -33,33 +32,61 @@ class SimulationFL():
 			self.client_selection = True
 
 		if self.epochs > 1:
-			self.solution_name = 'FedAVG'
+			self.strategy_name = 'FedAVG'
 
-		return FedClient(cid, 
-					self.n_clients, 
-					model_name         = self.model_name, 
-					client_selection   = self.client_selection, 
-					epochs             = self.epochs, 
-					solution_name      = self.solution_name,
-					aggregation_method = self.algorithm,
-					dataset            = self.dataset,
-					perc_of_clients    = self.poc,
-					decay              = self.decay,
-					non_iid            = self.non_iid)
+		if self.strategy_name == 'FedPer':
+
+			return FedPerClient(cid,
+								self.n_clients,
+								model_name=self.model_name,
+								client_selection=self.client_selection,
+								epochs=self.epochs,
+								solution_name=self.strategy_name,
+								aggregation_method=self.algorithm,
+								dataset=self.dataset,
+								perc_of_clients=self.poc,
+								decay=self.decay,
+								non_iid=self.non_iid)
+
+		else:
+			return Client(cid,
+						  self.n_clients,
+						  model_name=self.model_name,
+						  client_selection=self.client_selection,
+						  epochs=self.epochs,
+						  solution_name=self.strategy_name,
+						  aggregation_method=self.algorithm,
+						  dataset=self.dataset,
+						  perc_of_clients=self.poc,
+						  decay=self.decay,
+						  non_iid=self.non_iid)
 
 	def create_strategy(self):
 
 		if self.epochs > 1:
-			self.solution_name = 'FedAVG'
+			self.strategy_name = 'FedAVG'
 
-		return FedServer(aggregation_method = self.algorithm, 
-					     fraction_fit       = 1, 
-					     num_clients        = self.n_clients, 
-					     decay              = self.decay, 
-					     perc_of_clients    = self.poc, 
-					     solution_name      = self.solution_name,
-					     dataset            = self.dataset,
-					     model_name         = self.model_name)
+		if self.strategy_name == 'FedPer':
+
+			return FedPerServer(aggregation_method=self.algorithm,
+								fraction_fit=1,
+								num_clients=self.n_clients,
+								decay=self.decay,
+								perc_of_clients=self.poc,
+								solution_name=self.strategy_name,
+								dataset=self.dataset,
+								model_name=self.model_name)
+
+		else:
+			return Server(aggregation_method=self.algorithm,
+						  fraction_fit=1,
+						  num_clients=self.n_clients,
+						  decay=self.decay,
+						  perc_of_clients=self.poc,
+						  solution_name=self.strategy_name,
+						  dataset=self.dataset,
+						  model_name=self.model_name)
+
 
 
 	def start_simulation(self):
