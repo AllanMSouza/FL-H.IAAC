@@ -12,10 +12,10 @@ from flwr.common.logger import log
 
 class Server(fl.server.strategy.FedAvg):
 
-	def __init__(self, aggregation_method, fraction_fit, num_clients, 
-					decay=0, perc_of_clients=0, dataset='', solution_name='', model_name=''):
+	def __init__(self, algorithm, fraction_fit, num_clients,
+				 decay=0, perc_of_clients=0, dataset='', strategy_name='', model_name=''):
 		
-		self.aggregation_method = aggregation_method
+		self.algorithm = algorithm
 		self.num_clients        = num_clients
 		self.list_of_clients    = []
 		self.list_of_accuracies = []
@@ -37,26 +37,27 @@ class Server(fl.server.strategy.FedAvg):
 		self.decay_factor = decay
 
 		#params
-		if self.aggregation_method == 'POC':
-			self.solution_name = f"{solution_name}-{aggregation_method}-{self.perc_of_clients}"
+		if self.algorithm == 'POC':
+			self.strategy_name = f"{strategy_name}-{algorithm}-{self.perc_of_clients}"
 
-		elif self.aggregation_method == 'FedLTA': 
-			self.solution_name = f"{solution_name}-{aggregation_method}-{self.decay_factor}"
+		elif self.algorithm == 'FedLTA':
+			self.strategy_name = f"{strategy_name}-{algorithm}-{self.decay_factor}"
 
-		elif self.aggregation_method == 'None':
-			self.solution_name = f"{solution_name}-{aggregation_method}"
+		elif self.algorithm == 'None':
+			self.strategy_name = f"{strategy_name}-{algorithm}"
 
+		self._write_output_files_headers()
 
 		super().__init__(fraction_fit=fraction_fit, min_available_clients=num_clients, min_fit_clients=num_clients, min_evaluate_clients=num_clients)
 
 	def configure_fit(self, server_round, parameters, client_manager):
 		"""Configure the next round of training."""
 		#print(self.aggregation_method == 'POC')
-		if self.aggregation_method == 'POC':
+		if self.algorithm == 'POC':
 			clients2select        = int(float(self.num_clients) * float(self.perc_of_clients))
 			self.selected_clients = self.list_of_clients[:clients2select]
 
-		elif self.aggregation_method == 'FedLTA':
+		elif self.algorithm == 'FedLTA':
 			self.selected_clients = self.select_clients_bellow_average()
 
 			if self.decay_factor > 0:
@@ -91,7 +92,7 @@ class Server(fl.server.strategy.FedAvg):
 		for _, fit_res in results:
 			client_id = str(fit_res.metrics['cid'])
 
-			if self.aggregation_method not in ['POC', 'FedLTA'] or int(server_round) <= 1:
+			if self.algorithm not in ['POC', 'FedLTA'] or int(server_round) <= 1:
 				weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples))
 
 			else:
@@ -184,12 +185,11 @@ class Server(fl.server.strategy.FedAvg):
 		top5 = np.mean(accs[-5:])
 		top1 = accs[-1]
 
-		filename = f"logs/{self.solution_name}/{self.num_clients}/{self.model_name}/{self.dataset}/server.csv"
+		base = f"logs/{self.strategy_name}/{self.num_clients}/{self.model_name}/{self.dataset}/"
+		filename_server = f"{base}server.csv"
 		data = [time.time(), server_round, accuracy_aggregated, top5, top1]
-		header = ["Time", "Server round", "Accuracy aggregated", "Top5", "Top1"]
 
-		self._write_output(filename=filename,
-						   header=header,
+		self._write_output(filename=filename_server,
 						   data=data
 						   )
 
@@ -214,14 +214,36 @@ class Server(fl.server.strategy.FedAvg):
 
 		return selected_clients
 
-	def _write_output(self, filename, header, data):
-
-		if not os.path.exists(filename):
-			with open(filename, 'a') as server_log_file:
-				writer = csv.writer(server_log_file)
-				writer.writerow(header)
+	def _write_header(self, filename, header):
 
 		os.makedirs(os.path.dirname(filename), exist_ok=True)
+		with open(filename, 'a') as server_log_file:
+			writer = csv.writer(server_log_file)
+			writer.writerow(header)
+
+	def _write_output_files_headers(self):
+
+		base = f"logs/{self.strategy_name}/{self.num_clients}/{self.model_name}/{self.dataset}/"
+		server_filename = f"{base}server.csv"
+		train_filename = f"{base}train_client.csv"
+		evaluate_filename= f"{base}evaluate_client.csv"
+
+		server_header = ["Time", "Server round", "Accuracy aggregated", "Top5", "Top1"]
+		train_header = ["Round", "Cid", "Selected", "Total time", "Size of parameters", "Avg loss train", "Avg accuracy train"]
+		evaluate_header = ["Round", "Cid", "Size of parameters", "Loss", "Accuracy"]
+
+		# Remove previous files
+		if os.path.exists(server_filename): os.remove(server_filename)
+		if os.path.exists(train_filename): os.remove(train_filename)
+		if os.path.exists(evaluate_filename): os.remove(evaluate_filename)
+		# Create new files
+		self._write_header(server_filename, server_header)
+		self._write_header(train_filename, train_header)
+		self._write_header(evaluate_filename, evaluate_header)
+
+
+
+	def _write_output(self, filename, data):
 
 		with open(filename, 'a') as server_log_file:
 			writer = csv.writer(server_log_file)

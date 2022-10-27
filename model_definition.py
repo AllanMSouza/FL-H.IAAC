@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import Sequential, Model
 from tensorflow.keras.layers import Conv2D, Flatten, MaxPool2D, Dense, InputLayer, BatchNormalization, Dropout
 
 #from sklearn.linear_model import LogisticRegression
@@ -7,6 +7,18 @@ import numpy as np
 
 import logging
 logging.getLogger("tensorflow").setLevel(logging.ERROR)
+
+class FedPerModel(tf.keras.Model):
+
+    def __init__(self, model_name, base_model, prediction_layer):
+        super(FedPerModel, self).__init__(model_name)
+        self.base_model = base_model
+        self.prediction_layer = prediction_layer
+
+    def call(self, inputs, **kwargs):
+        x = self.base_model(inputs)
+        output = self.prediction_layer(x)
+        return output
 
 class ModelCreation():
 
@@ -20,29 +32,25 @@ class ModelCreation():
 
 		model.compile(optimizer='sgd', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
-		return model, None
+		return model
 
-	def create_DNN_base_model(self, input_shape):
+	def _create_DNN_base_model(self, input_shape):
 		base_model = tf.keras.models.Sequential()
 		base_model.add(tf.keras.layers.Flatten(input_shape=(input_shape[1:])))
 		base_model.add(Dense(512, activation='relu'))
 		base_model.add(Dense(256, activation='relu'))
 		base_model.add(Dense(32, activation='relu'))
 
-		return base_model, None
+		return base_model
 
 	def create_DNN_transfer_learning(self, input_shape, num_classes):
 
-		base_model = self.create_DNN_base_model(input_shape)
-
-		model = tf.keras.models.Sequential()
-		model.add(tf.keras.layers.Input(shape=(input_shape[1:])))
-		model.add(base_model)
-		model.add(Dense(num_classes, activation='softmax'))
-
+		base_model = self._create_DNN_base_model(input_shape)
+		prediction_layer = Dense(num_classes, activation='softmax')
+		model = FedPerModel('DNN_transfer_learning', base_model, prediction_layer)
 		model.compile(optimizer='sgd', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
-		return model, base_model
+		return model
 
 	def create_CNN(self, input_shape, num_classes):
 
@@ -74,7 +82,7 @@ class ModelCreation():
 
 		deep_cnn.compile(optimizer='sgd', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
-		return deep_cnn, None
+		return deep_cnn
 
 
 	def create_LogisticRegression(self, input_shape, num_classes):
@@ -89,7 +97,7 @@ class ModelCreation():
 		logistic_regression.add(Dense(num_classes, activation='sigmoid'))
 		logistic_regression.compile(optimizer='sgd', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
-		return logistic_regression, None
+		return logistic_regression
 
 
 

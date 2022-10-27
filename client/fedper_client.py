@@ -12,7 +12,7 @@ class FedPerClient(Client):
 	def __init__(self, cid,
 				 n_clients,
 				 epochs=1,
-				 model_name         = 'None',
+				 model_name         = 'DNN_transfer_learning',
 				 client_selection   = False,
 				 solution_name      = 'None',
 				 aggregation_method = 'None',
@@ -20,8 +20,6 @@ class FedPerClient(Client):
 				 perc_of_clients    = 0,
 				 decay              = 0,
 				 non_iid            = False):
-
-		self.base_model = None
 
 		super().__init__(cid=cid,
 				 n_clients=n_clients,
@@ -35,13 +33,11 @@ class FedPerClient(Client):
 				 decay=decay,
 				 non_iid=non_iid)
 
-		def create_model(self):
-			model, base_model = self._base_create_model()
-			self.model = model
-			self.base_model = base_model
+	def get_parameters(self, config):
+		return self.model.base_model.get_weights()
 
-		def get_parameters(self):
-			return self.base_model
+	def get_parameters_of_model(self):
+		return self.model.base_model.get_weights()
 
-		def set_parameters(self, parameters):
-			self.base_model.set_weights(parameters)
+	def set_parameters_to_model(self, parameters):
+		self.model.base_model.set_weights(parameters)

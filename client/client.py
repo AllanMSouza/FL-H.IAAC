@@ -69,11 +69,6 @@ class Client(fl.client.NumPyClient):
 		return ManageDatasets(self.cid).select_dataset(dataset_name, n_clients, self.non_iid)
 
 	def create_model(self):
-
-		model, base_model = self._create_model()
-		return model
-
-	def _create_model(self):
 		input_shape = self.x_train.shape
 
 		if self.model_name == 'Logist Regression':
@@ -82,6 +77,9 @@ class Client(fl.client.NumPyClient):
 		elif self.model_name == 'DNN':
 			return ModelCreation().create_DNN(input_shape, 10)
 
+		elif self.model_name == 'DNN_transfer_learning':
+			return ModelCreation().create_DNN_transfer_learning(input_shape, 10)
+
 		elif self.model_name == 'CNN':
 			return ModelCreation().create_CNN(input_shape, 10)
 		
@@ -89,7 +87,12 @@ class Client(fl.client.NumPyClient):
 	def get_parameters(self, config):
 		return self.model.get_weights()
 
+	# It does the same of "get_parameters", but using "get_parameters" in outside of the core of Flower is causing errors
+	def get_parameters_of_model(self):
+		return self.model.get_weights()
 
+	def set_parameters_to_model(self, parameters):
+		return self.model.set_weights(parameters)
 
 	def fit(self, parameters, config):
 		selected_clients   = []
@@ -102,11 +105,11 @@ class Client(fl.client.NumPyClient):
 		start_time = time.process_time()
 		#print(config)
 		if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
-			self.model.set_weights(parameters)
+			self.set_parameters_to_model(parameters)
 
 			selected           = 1
 			history            = self.model.fit(self.x_train, self.y_train, verbose=0, epochs=self.local_epochs)
-			trained_parameters = self.model.get_weights()
+			trained_parameters = self.get_parameters_of_model()
 		
 		total_time         = time.process_time() - start_time
 		size_of_parameters = sum(map(sys.getsizeof, trained_parameters))
@@ -115,12 +118,9 @@ class Client(fl.client.NumPyClient):
 
 		filename = f"logs/{self.solution_name}/{self.n_clients}/{self.model_name}/{self.dataset}/train_client.csv"
 		data = [config['round'], self.cid, selected, total_time, size_of_parameters, avg_loss_train, avg_acc_train]
-		header = ["Round", "Cid", "Selected", "Total time", "Size of parameters", "Avg loss train",
-				  "Avg accuracy train"]
 
 		self._write_output(
 			filename=filename,
-			header=header,
 			data=data)
 
 		fit_response = {
@@ -132,16 +132,14 @@ class Client(fl.client.NumPyClient):
 
 	def evaluate(self, parameters, config):
 		
-		self.model.set_weights(parameters)
+		self.set_parameters_to_model(parameters)
 		loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
 		size_of_parameters = sum(map(sys.getsizeof, parameters))
 
 		filename = f"logs/{self.solution_name}/{self.n_clients}/{self.model_name}/{self.dataset}/evaluate_client.csv"
 		data = [config['round'], self.cid, size_of_parameters, loss, accuracy]
-		header = ["Round", "Cid", "Size of parameters", "Loss", "Accuracy"]
 
 		self._write_output(filename=filename,
-						   header=header,
 						   data=data)
 
 		evaluation_response = {
@@ -151,9 +149,7 @@ class Client(fl.client.NumPyClient):
 
 		return loss, len(self.x_test), evaluation_response
 
-	def _write_output(self, filename, header, data):
-
-		os.makedirs(os.path.dirname(filename), exist_ok=True)
+	def _write_output(self, filename, data):
 
 		with open(filename, 'a') as server_log_file:
 			writer = csv.writer(server_log_file)
