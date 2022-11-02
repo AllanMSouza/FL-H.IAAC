@@ -9,13 +9,13 @@ import os
 logging.getLogger("tensorflow").setLevel(logging.ERROR) 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
-EPOCHS        = (1, 10)
+EPOCHS        = (10,)
 NUM_CLIENTS   = (50, )
 MODELS        = ('Logist Regression', 'DNN', 'CNN')
 ALGORITHMS    = ('None', 'POC', 'FedLTA',)
 DATASETS      = ('MNIST', 'CIFAR10', )
 CLIENTS2SELCT = (0.25, 0.5, 0.75)
-DECAY         = (0, 0.001, 0.005, 0.009)
+DECAY         = (0.001, 0.005, 0.009)
 ROUNDS        = 100
 
 
