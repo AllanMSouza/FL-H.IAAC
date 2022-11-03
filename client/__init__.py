@@ -1,6 +1,9 @@
-from .client import Client as Client
+from .clientbase import ClientBase
 from .fedper_client import FedPerClient
+from .fedavg_client import FedAvgClient
 
 __all__ = [
-    "Client"
+    "ClientBase",
+    "FedPerClient",
+    "FedAvgClient"
 ]

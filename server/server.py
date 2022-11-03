@@ -29,6 +29,7 @@ class Server(fl.server.strategy.FedAvg):
 		#logs
 		self.dataset    = dataset
 		self.model_name = model_name
+		self.strategy_name = strategy_name
 
 		#POC
 		self.perc_of_clients  = perc_of_clients

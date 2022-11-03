@@ -19,23 +19,32 @@ warnings.simplefilter("ignore")
 import logging
 logging.getLogger("tensorflow").setLevel(logging.ERROR)
 
-class Client(fl.client.NumPyClient):
+class ClientBase(fl.client.NumPyClient):
 
-	def __init__(self, cid, n_clients, epochs=1, 
-				 model_name         = 'None', 
-				 client_selection   = False, 
-				 solution_name      = 'None', 
+	def __init__(self,
+				 cid,
+				 n_clients,
+				 n_classes,
+				 epochs=1,
+				 model_name         = 'None',
+				 client_selection   = False,
+				 solution_name      = 'None',
 				 aggregation_method = 'None',
 				 dataset            = '',
 				 perc_of_clients    = 0,
 				 decay              = 0,
-				 non_iid            = False):
+				 non_iid            = False,
+				 ):
 
 		self.cid          = int(cid)
 		self.n_clients    = n_clients
 		self.model_name   = model_name
 		self.local_epochs = epochs
 		self.non_iid      = non_iid
+
+		self.epochs = epochs
+		self.num_classes = n_classes
+
 
 		self.model        = None
 		self.x_train      = None
@@ -72,16 +81,13 @@ class Client(fl.client.NumPyClient):
 		input_shape = self.x_train.shape
 
 		if self.model_name == 'Logist Regression':
-			return ModelCreation().create_LogisticRegression(input_shape, 10)
+			return ModelCreation().create_LogisticRegression(input_shape, self.num_classes)
 
 		elif self.model_name == 'DNN':
-			return ModelCreation().create_DNN(input_shape, 10)
-
-		elif self.model_name == 'DNN_transfer_learning':
-			return ModelCreation().create_DNN_transfer_learning(input_shape, 10)
+			return ModelCreation().create_DNN(input_shape, self.num_classes)
 
 		elif self.model_name == 'CNN':
-			return ModelCreation().create_CNN(input_shape, 10)
+			return ModelCreation().create_CNN(input_shape, self.num_classes)
 		
 
 	def get_parameters(self, config):
