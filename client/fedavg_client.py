@@ -1,4 +1,4 @@
-from client.clientbase import ClientBase
+from client.client_base import ClientBase
 
 
 import warnings

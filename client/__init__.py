@@ -1,4 +1,4 @@
-from .clientbase import ClientBase
+from .client_base import ClientBase
 from .fedper_client import FedPerClient
 from .fedavg_client import FedAvgClient
 
