@@ -1,7 +1,4 @@
 import flwr as fl
-import tensorflow
-import random
-import time
 import numpy as np
 import tensorflow as tf
 import os
@@ -88,7 +85,9 @@ class ClientBase(fl.client.NumPyClient):
 
 		elif self.model_name == 'CNN':
 			return ModelCreation().create_CNN(input_shape, self.num_classes)
-		
+
+		else:
+			raise Exception("Wrong model name")
 
 	def get_parameters(self, config):
 		return self.model.get_weights()
@@ -115,7 +114,7 @@ class ClientBase(fl.client.NumPyClient):
 
 			selected           = 1
 			history            = self.model.fit(self.x_train, self.y_train, verbose=0, epochs=self.local_epochs)
-			trained_parameters = self.get_parameters_of_model()
+			trained_parameters = self.model.get_weights()
 		
 		total_time         = time.process_time() - start_time
 		size_of_parameters = sum(map(sys.getsizeof, trained_parameters))

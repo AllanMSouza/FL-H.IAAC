@@ -11,7 +11,8 @@ logging.getLogger("tensorflow").setLevel(logging.ERROR)
 
 class FedPerClient(ClientBase):
 
-	def __init__(self, cid,
+	def __init__(self,
+				 cid,
 				 n_clients,
 				 n_classes,
 				 epochs=1,
@@ -25,7 +26,6 @@ class FedPerClient(ClientBase):
 				 non_iid=False,
 				 n_personalized_layers=1):
 
-		self.n_personalized_layers = n_personalized_layers
 		super().__init__(cid=cid,
 						 n_clients=n_clients,
 						 n_classes=n_classes,
@@ -38,6 +38,8 @@ class FedPerClient(ClientBase):
 						 perc_of_clients=perc_of_clients,
 						 decay=decay,
 						 non_iid=non_iid)
+
+		self.n_personalized_layers = n_personalized_layers
 
 	def get_parameters_of_model(self):
 

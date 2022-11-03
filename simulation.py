@@ -42,15 +42,16 @@ class SimulationFL():
 			return FedPerClient(cid=cid,
 								n_clients=self.n_clients,
 								n_classes=self.n_classes,
+								epochs=self.epochs,
 								model_name=self.model_name,
 								client_selection=self.client_selection,
-								epochs=self.epochs,
 								solution_name=self.strategy_name,
 								aggregation_method=self.algorithm,
 								dataset=self.dataset,
 								perc_of_clients=self.poc,
 								decay=self.decay,
-								non_iid=self.non_iid)
+								non_iid=self.non_iid,
+								n_personalized_layers=1)
 
 		else:
 			return FedAvgClient(cid=cid,

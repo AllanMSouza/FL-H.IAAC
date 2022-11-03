@@ -1,9 +1,8 @@
 import tensorflow as tf
-from tensorflow.python.keras.models import Sequential, Model
+from tensorflow.keras.models import Sequential, Model
 from tensorflow.keras.layers import Input, Conv2D, Flatten, MaxPool2D, Dense, InputLayer, BatchNormalization, Dropout
 
 #from sklearn.linear_model import LogisticRegression
-import numpy as np
 
 import logging
 logging.getLogger("tensorflow").setLevel(logging.ERROR)
