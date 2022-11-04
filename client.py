@@ -101,23 +101,24 @@ class FedClient(fl.client.NumPyClient):
 			selected           = 1
 			history            = self.model.fit(self.x_train, self.y_train, verbose=0, epochs=self.local_epochs)
 			trained_parameters = self.model.get_weights()
+			parameters         = trained_parameters
 		
-		total_time         = time.process_time() - start_time
-		size_of_parameters = sum(map(sys.getsizeof, trained_parameters))
-		avg_loss_train     = np.mean(history.history['loss'])
-		avg_acc_train      = np.mean(history.history['accuracy'])
+			total_time         = time.process_time() - start_time
+			size_of_parameters = sum(map(sys.getsizeof, trained_parameters))
+			avg_loss_train     = np.mean(history.history['loss'])
+			avg_acc_train      = np.mean(history.history['accuracy'])
 
-		filename = f"logs/{self.dataset}/{self.solution_name}/{self.model_name}/train_client.csv"
-		os.makedirs(os.path.dirname(filename), exist_ok=True)
+			filename = f"logs/{self.dataset}/{self.solution_name}/{self.model_name}/train_client.csv"
+			os.makedirs(os.path.dirname(filename), exist_ok=True)
 
-		with open(filename, 'a') as log_train_file:
-			log_train_file.write(f"{config['round']}, {self.cid}, {selected}, {total_time}, {size_of_parameters}, {avg_loss_train}, {avg_acc_train}\n")
+			with open(filename, 'a') as log_train_file:
+				log_train_file.write(f"{config['round']}, {self.cid}, {selected}, {total_time}, {size_of_parameters}, {avg_loss_train}, {avg_acc_train}\n")
 
 		fit_response = {
 			'cid' : self.cid
 		}
 
-		return trained_parameters, len(self.x_train), fit_response
+		return parameters, len(self.x_train), fit_response
 
 
 	def evaluate(self, parameters, config):
