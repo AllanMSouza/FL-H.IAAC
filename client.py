@@ -71,13 +71,13 @@ class FedClient(fl.client.NumPyClient):
 		input_shape = self.x_train.shape
 
 		if self.model_name == 'Logist Regression':
-			return ModelCreation().create_LogisticRegression(input_shape, 10)
+			return ModelCreation().create_LogisticRegression(input_shape, 6)
 
 		elif self.model_name == 'DNN':
-			return ModelCreation().create_DNN(input_shape, 10)
+			return ModelCreation().create_DNN(input_shape, 6)
 
 		elif self.model_name == 'CNN':
-			return ModelCreation().create_CNN(input_shape, 10)
+			return ModelCreation().create_CNN(input_shape, 6)
 		
 
 	def get_parameters(self, config):
@@ -107,7 +107,7 @@ class FedClient(fl.client.NumPyClient):
 		avg_loss_train     = np.mean(history.history['loss'])
 		avg_acc_train      = np.mean(history.history['accuracy'])
 
-		filename = f"logs/{self.solution_name}/{self.n_clients}/{self.model_name}/{self.dataset}/train_client.csv"
+		filename = f"logs/{self.dataset}/{self.solution_name}/{self.model_name}/train_client.csv"
 		os.makedirs(os.path.dirname(filename), exist_ok=True)
 
 		with open(filename, 'a') as log_train_file:
@@ -126,7 +126,7 @@ class FedClient(fl.client.NumPyClient):
 		loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
 		size_of_parameters = sum(map(sys.getsizeof, parameters))
 
-		filename = f"logs/{self.solution_name}/{self.n_clients}/{self.model_name}/{self.dataset}/evaluate_client.csv"
+		filename = f"logs/{self.dataset}/{self.solution_name}/{self.model_name}/evaluate_client.csv"
 		os.makedirs(os.path.dirname(filename), exist_ok=True)
 
 		with open(filename, 'a') as log_evaluate_file:

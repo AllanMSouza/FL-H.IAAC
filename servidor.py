@@ -183,7 +183,7 @@ class FedServer(fl.server.strategy.FedAvg):
 		top5 = np.mean(accs[-5:])
 		top1 = accs[-1]
 
-		filename = f"logs/{self.solution_name}/{self.num_clients}/{self.model_name}/{self.dataset}/server.csv"
+		filename = f"logs/{self.dataset}/{self.solution_name}/{self.model_name}/server.csv"
 		os.makedirs(os.path.dirname(filename), exist_ok=True)
 
 		with open(filename, 'a') as server_log_file:
@@ -191,7 +191,7 @@ class FedServer(fl.server.strategy.FedAvg):
 
 		metrics_aggregated = { 
 			"accuracy"  : accuracy_aggregated,
-			"top-3"     : top5,
+			"top-5"     : top5,
 			"top-1"     : top1
 		}
 
