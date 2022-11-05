@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras.models import Sequential, Model
-from tensorflow.keras.layers import Input, Conv2D, Flatten, MaxPool2D, Dense, InputLayer, BatchNormalization, Dropout
+from sequential_fedlta import SequentialFedLTA
+from tensorflow.keras.layers import Input, Conv2D, Flatten, MaxPool2D, Dense, InputLayer, BatchNormalization, Dropout, Layer
 
 #from sklearn.linear_model import LogisticRegression
 
@@ -9,12 +10,11 @@ logging.getLogger("tensorflow").setLevel(logging.ERROR)
 
 tf.random.set_seed(0)
 
-
 # ====================================================================================================================
 class ModelCreation():
 
 	def create_DNN(self, input_shape, num_classes):
-		model = tf.keras.models.Sequential()
+		model = SequentialFedLTA()
 		model.add(tf.keras.layers.Flatten(input_shape=(input_shape[1:])))
 		model.add(Dense(512, activation='relu'))
 		model.add(Dense(256, activation='relu'))
@@ -28,7 +28,7 @@ class ModelCreation():
 # ====================================================================================================================
 	def create_CNN(self, input_shape, num_classes):
 
-		deep_cnn = Sequential()
+		deep_cnn = SequentialFedLTA()
 
 		if len(input_shape) == 3:
 			deep_cnn.add(InputLayer(input_shape=(input_shape[1], input_shape[2], 1)))
@@ -61,7 +61,7 @@ class ModelCreation():
 # ====================================================================================================================
 	def create_LogisticRegression(self, input_shape, num_classes):
 
-		logistic_regression = Sequential()
+		logistic_regression = SequentialFedLTA()
 
 		if len(input_shape) == 3:
 			logistic_regression.add(Flatten(input_shape=(input_shape[1], input_shape[2], 1)))

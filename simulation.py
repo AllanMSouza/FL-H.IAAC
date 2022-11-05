@@ -1,6 +1,6 @@
 import flwr as fl
-from client import FedAvgClient, FedPerClient
-from server import Server, FedPerServer
+from client import FedAvgClient, FedPerClient, FedProtoClient
+from server import Server, FedPerServer, FedProtoServer
 
 from optparse import OptionParser
 import tensorflow as tf
@@ -53,6 +53,20 @@ class SimulationFL():
 								non_iid=self.non_iid,
 								n_personalized_layers=1)
 
+		elif self.strategy_name == 'FedProto':
+			return FedProtoClient(cid=cid,
+								n_clients=self.n_clients,
+								n_classes=self.n_classes,
+								epochs=self.epochs,
+								model_name=self.model_name,
+								client_selection=self.client_selection,
+								solution_name=self.strategy_name,
+								aggregation_method=self.algorithm,
+								dataset=self.dataset,
+								perc_of_clients=self.poc,
+								decay=self.decay,
+								non_iid=self.non_iid)
+
 		else:
 			return FedAvgClient(cid=cid,
 								n_clients=self.n_clients,
@@ -74,6 +88,16 @@ class SimulationFL():
 
 		if self.strategy_name == 'FedPer':
 			return FedPerServer(algorithm=self.algorithm,
+								fraction_fit=1,
+								num_clients=self.n_clients,
+								decay=self.decay,
+								perc_of_clients=self.poc,
+								strategy_name=self.strategy_name,
+								dataset=self.dataset,
+								model_name=self.model_name)
+
+		elif self.strategy_name == 'FedProto':
+			return FedProtoServer(algorithm=self.algorithm,
 								fraction_fit=1,
 								num_clients=self.n_clients,
 								decay=self.decay,
