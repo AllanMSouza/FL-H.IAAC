@@ -46,13 +46,12 @@ class FedProtoClient(ClientBase):
 						 non_iid=non_iid)
 
 		self.train_acc_metric = tf.keras.metrics.SparseCategoricalAccuracy()
-		self.train_acc_metric = tf.keras.metrics.SparseCategoricalAccuracy()
 		self.val_acc_metric = tf.keras.metrics.SparseCategoricalAccuracy()
 		# Instantiate an optimizer to train the model.
 		self.optimizer = tf.keras.optimizers.SGD(learning_rate=1e-3)
 		# Instantiate a loss function.
 		self.loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
-		self.global_protos = {i: [] for i in range(self.num_classes)}
+		self.global_protos = None
 		self.protos = {i: [] for i in range(self.num_classes)}
 		self.loss_mse = tf.keras.losses.MSE
 		self.lamda = 1
@@ -94,8 +93,8 @@ class FedProtoClient(ClientBase):
 	def get_parameters_of_model(self):
 		return self.model.get_weights()
 
-	def set_parameters_to_model(self, parameters):
-		self.model.set_weights(parameters)
+	def set_proto(self, protos):
+		self.protos = protos
 
 
 
@@ -114,7 +113,7 @@ class FedProtoClient(ClientBase):
 		# print(config)
 
 		if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
-			self.set_parameters_to_model(parameters)
+			self.set_proto(parameters)
 
 			selected = 1
 			#history = self.model.fit(self.x_train, self.y_train, verbose=0, epochs=self.local_epochs)
@@ -143,12 +142,21 @@ class FedProtoClient(ClientBase):
 					# 		% (step, float(loss_value))
 					# 	)
 					# 	print("Seen so far: %d samples" % ((step + 1) * batch_size))
+
 					if self.global_protos != None:
-						proto_new = {i: [] for i in range(len(self.num_classes))}
+						proto_new = {i: [] for i in range(self.num_classes)}
 						for i, yy in enumerate(y_batch_train):
 							y_c = int(yy)
 							proto_new[y_c] = self.global_protos[y_c]
-						loss_value += float(self.loss_mse(tf.constant([data for key, data in proto_new]), rep) )* self.lamda
+
+						data = tf.constant([proto_new[key] for key in proto_new])
+						print("entre")
+						print(data)
+						print("representacao")
+						print(rep)
+						loss_value += float(self.loss_mse(data, rep) )* self.lamda
+						print("perda")
+
 					for i, yy in enumerate(y_batch_train):
 						#print("Item antes: ", yy)
 						y_c = int(yy)
@@ -158,6 +166,7 @@ class FedProtoClient(ClientBase):
 					print("mani")
 				# Display metrics at the end of each epoch.
 				train_acc = self.train_acc_metric.result()
+				acc_history.append(train_acc)
 				print("Training acc over epoch: %.4f" % (float(train_acc),))
 
 				# Reset training metrics at the end of each epoch
@@ -165,15 +174,24 @@ class FedProtoClient(ClientBase):
 
 
 				# Run a validation loop at the end of each epoch.
-				for x_batch_train, y_batch_train in self.x_train:
+				for step, (x_batch_test, y_batch_test) in enumerate(self.val_dataset):
 					#self.test_step(x_batch_train, y_batch_train)
-					val_logits = self.model(x_batch_train, training=False)
-					self.val_acc_metric.update_state(y_batch_train, val_logits)
+					val_logits = self.model(x_batch_test, training=False)
+					self.val_acc_metric.update_state(y_batch_test, val_logits)
+				print("validou")
+				val_acc = self.val_acc_metric.result()
+				self.val_acc_metric.reset_states()
+				print("Validation acc: %.4f" % (float(val_acc),))
+				print("Time taken: %.2fs" % (time.time() - start_time))
 
-				acc_history = self.train_acc_metric.result()
+				#acc_history = self.train_acc_metric.result()
 				self.train_acc_metric.reset_states()
 
-			self.protos = self.agg_func(protos)
+
+			print("agregar")
+			self.protos = self.agg_func(self.protos)
+
+			print("passou")
 
 			avg_loss_train = np.mean(loss_history)
 			avg_acc_train = np.mean(acc_history)
@@ -183,10 +201,10 @@ class FedProtoClient(ClientBase):
 
 			# ========================================================================================
 
-			trained_parameters = self.model.get_weights()
+			#trained_parameters = self.model.get_weights()
 
 		total_time = time.process_time() - start_time
-		size_of_parameters = sum(map(sys.getsizeof, trained_parameters))
+		size_of_parameters = sum(map(sys.getsizeof, self.protos))
 		# avg_loss_train = np.mean(history.history['loss'])
 		# avg_acc_train = np.mean(history.history['accuracy'])
 
@@ -201,7 +219,7 @@ class FedProtoClient(ClientBase):
 			'cid': self.cid
 		}
 
-		return trained_parameters, len(self.x_train), fit_response
+		return self.protos, len(self.x_train), fit_response
 
 	def evaluate(self, parameters, config):
 
@@ -226,15 +244,9 @@ class FedProtoClient(ClientBase):
 		"""
 		Returns the average of the weights.
 		"""
-
-		for [label, proto_list] in protos.items():
-			if len(proto_list) > 1:
-				proto = 0 * proto_list[0].data
-				for i in proto_list:
-					proto += i.data
-				protos[label] = proto / len(proto_list)
-			else:
-				protos[label] = proto_list[0]
+		size = len(protos)
+		for key in protos:
+			protos[key] = np.sum(protos[key], axis=0)/size
 
 		return protos
 
