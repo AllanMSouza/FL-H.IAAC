@@ -44,10 +44,14 @@ class ManageDatasets():
 	        
 		y_train = train['activity'].values
 		train.drop('activity', axis=1, inplace=True)
+		train.drop('subject', axis=1, inplace=True)
+		train.drop('trial', axis=1, inplace=True)
 		x_train = train.values
 
 		y_test = test['activity'].values
 		test.drop('activity', axis=1, inplace=True)
+		test.drop('subject', axis=1, inplace=True)
+		test.drop('trial', axis=1, inplace=True)
 		x_test = test.values
 	    
 		return x_train, y_train, x_test, y_test

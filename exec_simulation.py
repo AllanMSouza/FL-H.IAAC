@@ -15,10 +15,10 @@ CLIENTS       = {'UCIHAR' : 30, 'MotionSense' : 24,}
 MODELS        = ('Logist Regression', 'DNN', 'CNN')
 ALGORITHMS    = ('None', 'POC', 'FedLTA',)
 #DATASETS      = ('MNIST', 'CIFAR10', )
-DATASETS      = ('MotionSense', )
+DATASETS      = ('MotionSense',)
 CLIENTS2SELCT = (0.25, 0.5, 0.75)
 DECAY         = (0.001, 0.005, 0.009)
-ROUNDS        = 250
+ROUNDS        = 50
 
 
 def exec_fedsgd(non_iid):
