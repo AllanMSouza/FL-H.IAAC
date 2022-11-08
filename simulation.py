@@ -88,6 +88,7 @@ class SimulationFL():
 
 		if self.strategy_name == 'FedPer':
 			return FedPerServer(algorithm=self.algorithm,
+								n_classes=self.n_classes,
 								fraction_fit=1,
 								num_clients=self.n_clients,
 								decay=self.decay,
@@ -98,6 +99,7 @@ class SimulationFL():
 
 		elif self.strategy_name == 'FedProto':
 			return FedProtoServer(algorithm=self.algorithm,
+								  n_classes=self.n_classes,
 								fraction_fit=1,
 								num_clients=self.n_clients,
 								decay=self.decay,
@@ -108,6 +110,7 @@ class SimulationFL():
 
 		else:
 			return Server(algorithm=self.algorithm,
+						  n_classes=self.n_classes,
 						  fraction_fit=1,
 						  num_clients=self.n_clients,
 						  decay=self.decay,

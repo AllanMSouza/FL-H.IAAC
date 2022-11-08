@@ -13,8 +13,8 @@ tf.random.set_seed(0)
 # ====================================================================================================================
 class ModelCreation():
 
-	def create_DNN(self, input_shape, num_classes):
-		model = SequentialFedLTA()
+	def create_DNN(self, input_shape, num_classes, use_proto=False):
+		model = SequentialFedLTA(use_proto=use_proto)
 		model.add(tf.keras.layers.Flatten(input_shape=(input_shape[1:])))
 		model.add(Dense(512, activation='relu'))
 		model.add(Dense(256, activation='relu'))
@@ -26,9 +26,9 @@ class ModelCreation():
 		return model
 
 # ====================================================================================================================
-	def create_CNN(self, input_shape, num_classes):
+	def create_CNN(self, input_shape, num_classes, use_proto=False):
 
-		deep_cnn = SequentialFedLTA()
+		deep_cnn = SequentialFedLTA(use_proto=use_proto)
 
 		if len(input_shape) == 3:
 			deep_cnn.add(InputLayer(input_shape=(input_shape[1], input_shape[2], 1)))
@@ -59,9 +59,9 @@ class ModelCreation():
 		return deep_cnn
 
 # ====================================================================================================================
-	def create_LogisticRegression(self, input_shape, num_classes):
+	def create_LogisticRegression(self, input_shape, num_classes, use_proto=False):
 
-		logistic_regression = SequentialFedLTA()
+		logistic_regression = SequentialFedLTA(use_proto=use_proto)
 
 		if len(input_shape) == 3:
 			logistic_regression.add(Flatten(input_shape=(input_shape[1], input_shape[2], 1)))

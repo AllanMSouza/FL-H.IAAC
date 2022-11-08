@@ -102,7 +102,7 @@ class SequentialFedLTA(functional.Functional):
 
     @tf.__internal__.tracking.no_automatic_dependency_tracking
     @traceback_utils.filter_traceback
-    def __init__(self, layers=None, name=None, proto_index=-2):
+    def __init__(self, layers=None, name=None, proto_index=-2, use_proto=False):
         """Creates a `Sequential` model instance.
 
         Args:
@@ -144,6 +144,7 @@ class SequentialFedLTA(functional.Functional):
                 self.add(layer)
 
         self.proto = None
+        self.use_proto = use_proto
         self._proto_index = proto_index
 
     @property
@@ -411,11 +412,11 @@ class SequentialFedLTA(functional.Functional):
                     inputs.shape, inputs.dtype
                 )
 
-        if self._graph_initialized:
-            if not self.built:
-                self._init_graph_network(self.inputs, self.outputs)
-            #return super().call(inputs, training=training, mask=mask)
-
+        # if self._graph_initialized:
+        #     if not self.built:
+        #         self._init_graph_network(self.inputs, self.outputs)
+        #     return super().call(inputs, training=training, mask=mask)
+        proto = None
         outputs = inputs  # handle the corner case where self.layers is empty
         for i in range(len(self.layers)):
             # During each iteration, `inputs` are the inputs to `layer`, and
@@ -431,15 +432,21 @@ class SequentialFedLTA(functional.Functional):
                 kwargs["training"] = training
 
             outputs = layer(inputs, **kwargs)
-            if i == len(self.layers) + self._proto_index:
-                self.proto = copy.deepcopy(outputs)
+            # if i == len(self.layers) + self._proto_index:
+            #     self.proto = copy.deepcopy(outputs)
+            if i == len(self.layers) - 2:
+                proto = outputs
+            #     #print("olaa", proto)
             if len(tf.nest.flatten(outputs)) != 1:
                 raise ValueError(SINGLE_LAYER_OUTPUT_ERROR_MSG)
             # `outputs` will be the inputs to the next layer.
             inputs = outputs
             mask = getattr(outputs, "_keras_mask", None)
 
-        return outputs
+        if self.use_proto:
+            return outputs, proto
+        else:
+            return outputs
 
     def compute_output_shape(self, input_shape):
         shape = input_shape

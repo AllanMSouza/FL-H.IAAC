@@ -12,10 +12,11 @@ from flwr.common.logger import log
 
 class Server(fl.server.strategy.FedAvg):
 
-	def __init__(self, algorithm, fraction_fit, num_clients,
+	def __init__(self, algorithm, n_classes, fraction_fit, num_clients,
 				 decay=0, perc_of_clients=0, dataset='', strategy_name='', model_name=''):
 		
 		self.algorithm = algorithm
+		self.n_classes = n_classes
 		self.num_clients        = num_clients
 		self.list_of_clients    = []
 		self.list_of_accuracies = []

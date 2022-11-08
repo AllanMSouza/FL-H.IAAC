@@ -7,6 +7,8 @@ import time
 import sys
 import copy
 
+from model_definition import ModelCreation
+
 import warnings
 warnings.simplefilter("ignore")
 
@@ -53,6 +55,7 @@ class FedProtoClient(ClientBase):
 		self.loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 		self.global_protos = None
 		self.protos = {i: [] for i in range(self.num_classes)}
+		self.protos_samples_per_class = {i: 0 for i in range(self.num_classes)}
 		self.loss_mse = tf.keras.losses.MSE
 		self.lamda = 1
 		self.batch_size = 64
@@ -78,13 +81,13 @@ class FedProtoClient(ClientBase):
 	def modify_dataset(self):
 
 		self.train_dataset = tf.data.Dataset.from_tensor_slices((self.x_train, self.y_train))
-		self.x_train = None
-		self.y_train = None
+		# self.x_train = None
+		# self.y_train = None
 		self.train_dataset = self.train_dataset.shuffle(buffer_size=1024).batch(self.batch_size)
 
 		self.val_dataset = tf.data.Dataset.from_tensor_slices((self.x_test, self.y_test))
-		self.x_test = None
-		self.y_test = None
+		# self.x_test = None
+		# self.y_test = None
 		self.val_dataset = self.val_dataset.batch(self.batch_size)
 
 	def get_parameters(self, config):
@@ -96,10 +99,24 @@ class FedProtoClient(ClientBase):
 	def set_proto(self, protos):
 		self.protos = protos
 
+	def create_model(self):
+		input_shape = self.x_train.shape
 
+		if self.model_name == 'Logist Regression':
+			return ModelCreation().create_LogisticRegression(input_shape, self.num_classes, use_proto=True)
+
+		elif self.model_name == 'DNN':
+			return ModelCreation().create_DNN(input_shape, self.num_classes, use_proto=False)
+
+		elif self.model_name == 'CNN':
+			return ModelCreation().create_CNN(input_shape, self.num_classes, use_proto=True)
+
+		else:
+			raise Exception("Wrong model name")
 
 	def fit(self, parameters, config):
 		selected_clients = []
+		#self.protos = {}
 		trained_parameters = []
 		selected = 0
 
@@ -113,85 +130,133 @@ class FedProtoClient(ClientBase):
 		# print(config)
 
 		if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
-			self.set_proto(parameters)
+			#self.set_proto(parameters)
+			self.set_parameters_to_model(parameters)
 
 			selected = 1
-			#history = self.model.fit(self.x_train, self.y_train, verbose=0, epochs=self.local_epochs)
+			# history = self.model.fit(self.x_train, self.y_train, verbose=0, epochs=self.local_epochs)
 			#========================================================================================
-			for epoch in range(self.local_epochs):
-				print("\nStart of epoch %d" % (epoch,))
+			# for epoch in range(self.local_epochs):
+			# 	print("\nStart of epoch %d" % (epoch,))
+			#
+			# 	# Iterate over the batches of the dataset.
+			# 	for step, (x_batch_train, y_batch_train) in enumerate(self.train_dataset):
+			# 		#loss_value = float(self.train_step(x_batch_train, y_batch_train))
+			#
+			# 		with tf.GradientTape() as tape:
+			# 			logits, rep = self.model(x_batch_train, training=True)
+			# 			loss_value = self.loss_fn(y_batch_train, logits)
+			# 		grads = tape.gradient(loss_value, self.model.trainable_weights)
+			# 		self.optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
+			# 		self.train_acc_metric.update_state(y_batch_train, logits)
+			# 		loss_value = float(loss_value)
+			#
+			# 		#rep = self.model.proto
+			# 		# print("classe: ", y_batch_train)
+			# 		# print("representacao")
+			# 		# print(logits)
+			# 		# print(rep)
+			#
+			# 		loss_history.append(loss_value)
+			# 		# # Log every 200 batches.
+			# 		# if step % 200 == 0:
+			# 		# 	print(
+			# 		# 		"Training loss (for one batch) at step %d: %.4f"
+			# 		# 		% (step, float(loss_value))
+			# 		# 	)
+			# 		# 	print("Seen so far: %d samples" % ((step + 1) * batch_size))
+			#
+			# 		# if self.global_protos != None:
+			# 		# 	proto_new = {i: [] for i in range(self.num_classes)}
+			# 		# 	for i, yy in enumerate(y_batch_train):
+			# 		# 		y_c = int(yy)
+			# 		# 		proto_new[y_c] = self.global_protos[y_c]
+			# 		# 		self.protos_samples_per_class[y_c] += 1
+			# 		#
+			# 		# 	data = tf.constant([proto_new[key] for key in proto_new])
+			# 		#
+			# 		# 	loss_value += float(self.loss_mse(data, rep) )* self.lamda
+			# 		#
+			# 		# for i, yy in enumerate(y_batch_train):
+			# 		# 	y_c = int(yy)
+			# 		# 	self.protos[y_c].append(tf.gather_nd(rep, tf.constant([[i]])))
+			# 		# 	self.protos_samples_per_class[y_c] += 1
+			#
+			# 	# Display metrics at the end of each epoch.
+			# 	train_acc = self.train_acc_metric.result()
+			# 	acc_history.append(train_acc)
+			# 	print("Training acc over epoch: %.4f" % (float(train_acc),))
+			#
+			# 	# Reset training metrics at the end of each epoch
+			# 	self.train_acc_metric.reset_states()
+			#
+			#
+			# 	# Run a validation loop at the end of each epoch.
+			# 	# for x_batch_test, y_batch_test in self.val_dataset:
+			# 	# 	#self.test_step(x_batch_train, y_batch_train)
+			# 	# 	val_logits, val_reg = self.model(x_batch_test, training=False)
+			# 	# 	self.val_acc_metric.update_state(y_batch_test, val_logits)
+			# 	# print("validou")
+			# 	# val_acc = self.val_acc_metric.result()
+			# 	# self.val_acc_metric.reset_states()
+			# 	# print("Validation acc: %.4f" % (float(val_acc),))
+			# 	# print("Time taken: %.2fs" % (time.time() - start_time))
+			#
+			# 	#acc_history = self.train_acc_metric.result()
+			# 	#self.train_acc_metric.reset_states()
+			try:
+				for epoch in range(self.epochs):
+					print("\nStart of epoch %d" % (epoch,))
+					start_time = time.time()
 
-				# Iterate over the batches of the dataset.
-				for step, (x_batch_train, y_batch_train) in enumerate(self.train_dataset):
-					#loss_value = float(self.train_step(x_batch_train, y_batch_train))
+					# Iterate over the batches of the dataset.
+					for step, (x_batch_train, y_batch_train) in enumerate(self.train_dataset):
+						# with tf.GradientTape() as tape:
+						# 	logits = self.model(x_batch_train, training=True)
+						# 	loss_value = self.loss_fn(y_batch_train, logits)
+						# 	loss_history.append(loss_value)
+						# grads = tape.gradient(loss_value, self.model.trainable_weights)
+						# self.optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
+						# Update training metric.
+						#self.train_acc_metric.update_state(y_batch_train, logits)
 
-					with tf.GradientTape() as tape:
-						logits = self.model(x_batch_train, training=True)
-						loss_value = self.loss_fn(y_batch_train, logits)
-					grads = tape.gradient(loss_value, self.model.trainable_weights)
-					self.optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
-					self.train_acc_metric.update_state(y_batch_train, logits)
-					loss_value = float(loss_value)
+						loss_value = self.train_step(x_batch_train, y_batch_train)
+						loss_history.append(loss_value)
 
-					rep = self.model.proto
-					loss_history.append(loss_value)
-					# # Log every 200 batches.
-					# if step % 200 == 0:
-					# 	print(
-					# 		"Training loss (for one batch) at step %d: %.4f"
-					# 		% (step, float(loss_value))
-					# 	)
-					# 	print("Seen so far: %d samples" % ((step + 1) * batch_size))
+					# Display metrics at the end of each epoch.
+					train_acc = self.train_acc_metric.result()
+					print("Training acc over epoch: %.4f" % (float(train_acc),))
 
-					if self.global_protos != None:
-						proto_new = {i: [] for i in range(self.num_classes)}
-						for i, yy in enumerate(y_batch_train):
-							y_c = int(yy)
-							proto_new[y_c] = self.global_protos[y_c]
+					# Reset training metrics at the end of each epoch
+					self.train_acc_metric.reset_states()
 
-						data = tf.constant([proto_new[key] for key in proto_new])
-						print("entre")
-						print(data)
-						print("representacao")
-						print(rep)
-						loss_value += float(self.loss_mse(data, rep) )* self.lamda
-						print("perda")
-
-					for i, yy in enumerate(y_batch_train):
-						#print("Item antes: ", yy)
-						y_c = int(yy)
-						# print("Item: ", y_c, " i: ", i)
-						# print("Linha: ", tf.gather_nd(rep, tf.constant([[i]])))
-						self.protos[y_c].append(tf.gather_nd(rep, tf.constant([[i]])))
-					print("mani")
-				# Display metrics at the end of each epoch.
-				train_acc = self.train_acc_metric.result()
-				acc_history.append(train_acc)
-				print("Training acc over epoch: %.4f" % (float(train_acc),))
-
-				# Reset training metrics at the end of each epoch
-				self.train_acc_metric.reset_states()
+					# Run a validation loop at the end of each epoch.
+					for x_batch_val, y_batch_val in self.val_dataset:
+						# val_logits = self.model(x_batch_val, training=False)
+						# # Update val metrics
+						# self.val_acc_metric.update_state(y_batch_val, val_logits)
+						self.test_step(x_batch_val, y_batch_val)
+					val_acc = self.val_acc_metric.result()
+					acc_history.append(train_acc)
+					self.val_acc_metric.reset_states()
+					print("Validation acc: %.4f" % (float(val_acc),))
+					print("Time taken: %.2fs" % (time.time() - start_time))
 
 
-				# Run a validation loop at the end of each epoch.
-				for step, (x_batch_test, y_batch_test) in enumerate(self.val_dataset):
-					#self.test_step(x_batch_train, y_batch_train)
-					val_logits = self.model(x_batch_test, training=False)
-					self.val_acc_metric.update_state(y_batch_test, val_logits)
-				print("validou")
-				val_acc = self.val_acc_metric.result()
-				self.val_acc_metric.reset_states()
-				print("Validation acc: %.4f" % (float(val_acc),))
-				print("Time taken: %.2fs" % (time.time() - start_time))
-
-				#acc_history = self.train_acc_metric.result()
-				self.train_acc_metric.reset_states()
+			except Exception as e:
+				print("ERROU")
+				print(e)
+				exit()
 
 
-			print("agregar")
-			self.protos = self.agg_func(self.protos)
+
+
+
+			#print("agregar")
+			#self.protos = self.agg_func(self.protos)
 
 			print("passou")
+			#print(self.protos)
 
 			avg_loss_train = np.mean(loss_history)
 			avg_acc_train = np.mean(acc_history)
@@ -201,7 +266,7 @@ class FedProtoClient(ClientBase):
 
 			# ========================================================================================
 
-			#trained_parameters = self.model.get_weights()
+			trained_parameters = self.model.get_weights()
 
 		total_time = time.process_time() - start_time
 		size_of_parameters = sum(map(sys.getsizeof, self.protos))
@@ -219,7 +284,21 @@ class FedProtoClient(ClientBase):
 			'cid': self.cid
 		}
 
-		return self.protos, len(self.x_train), fit_response
+		# protos_result = self.dict_to_numpy(self.protos)
+		#
+		# print("Resultados proto: ", protos_result)
+
+		# return protos_result, 10, fit_response
+		return trained_parameters, 10, fit_response
+	def dict_to_numpy(self, data):
+
+		list = []
+
+		for key in data:
+
+			list.append(data[key])
+		#print("converte: ", np.array(list))
+		return np.array(list)
 
 	def evaluate(self, parameters, config):
 
