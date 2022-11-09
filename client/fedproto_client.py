@@ -68,18 +68,18 @@ class FedProtoClient(ClientBase):
 	@tf.function
 	def train_step(self, x, y):
 		with tf.GradientTape() as tape:
-			logits = self.model(x, training=True)
+			logits, rep = self.model(x, training=True)
 			loss_value = self.loss_fn(y, logits)
 			loss_value += sum(self.model.losses)
 		grads = tape.gradient(loss_value, self.model.trainable_weights)
 		self.optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
 		self.train_acc_metric.update_state(y, logits)
 		#print("aqui: ", float(self.train_acc_metric.result()))
-		return loss_value
+		return loss_value, rep
 
 	@tf.function
 	def test_step(self, x, y):
-		val_logits = self.model(x, training=False)
+		val_logits, rep = self.model(x, training=False)
 		loss_value = self.loss_fn(y, val_logits)
 		self.val_acc_metric.update_state(y, val_logits)
 		return loss_value
@@ -112,7 +112,7 @@ class FedProtoClient(ClientBase):
 			return ModelCreation().create_LogisticRegression(input_shape, self.num_classes, use_proto=True)
 
 		elif self.model_name == 'DNN':
-			return ModelCreation().create_DNN(input_shape, self.num_classes, use_proto=False)
+			return ModelCreation().create_DNN(input_shape, self.num_classes, use_proto=True)
 
 		elif self.model_name == 'CNN':
 			return ModelCreation().create_CNN(input_shape, self.num_classes, use_proto=True)
@@ -226,7 +226,24 @@ class FedProtoClient(ClientBase):
 						# Update training metric.
 						#self.train_acc_metric.update_state(y_batch_train, logits)
 
-						loss_value = self.train_step(x_batch_train, y_batch_train)
+						loss_value, rep = self.train_step(x_batch_train, y_batch_train)
+
+						if self.global_protos != None:
+							proto_new = {i: [] for i in range(self.num_classes)}
+							for i, yy in enumerate(y_batch_train):
+								y_c = int(yy)
+								proto_new[y_c] = self.global_protos[y_c]
+								self.protos_samples_per_class[y_c] += 1
+
+							data = tf.constant([proto_new[key] for key in proto_new])
+
+							loss_value += float(self.loss_mse(data, rep) )* self.lamda
+
+						for i, yy in enumerate(y_batch_train):
+							y_c = int(yy)
+							self.protos[y_c].append(tf.gather_nd(rep, tf.constant([[i]])))
+							self.protos_samples_per_class[y_c] += 1
+
 						loss_train_history.append(loss_value)
 
 					# Display metrics at the end of each epoch.
