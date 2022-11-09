@@ -21,7 +21,7 @@ class ModelCreation():
 		model.add(Dense(32,  activation='relu'))
 		model.add(Dense(num_classes, activation='softmax'))
 
-		model.compile(optimizer='sgd', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+		#model.compile(optimizer='sgd', loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), metrics=['accuracy'])
 
 		return model
 
@@ -54,7 +54,7 @@ class ModelCreation():
 
 		deep_cnn.add(Dense(num_classes, activation='softmax'))
 
-		deep_cnn.compile(optimizer='sgd', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+		#deep_cnn.compile(optimizer='sgd', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
 		return deep_cnn
 
@@ -69,6 +69,6 @@ class ModelCreation():
 			logistic_regression.add(Flatten(input_shape=(input_shape[1:])))
 
 		logistic_regression.add(Dense(num_classes, activation='sigmoid'))
-		logistic_regression.compile(optimizer='sgd', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+		#logistic_regression.compile(optimizer='sgd', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
 		return logistic_regression

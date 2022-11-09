@@ -10,7 +10,7 @@ from flwr.common import FitIns
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
 from flwr.common.logger import log
 
-class Server(fl.server.strategy.FedAvg):
+class ServerBase(fl.server.strategy.FedAvg):
 
 	def __init__(self, algorithm, n_classes, fraction_fit, num_clients,
 				 decay=0, perc_of_clients=0, dataset='', strategy_name='', model_name=''):

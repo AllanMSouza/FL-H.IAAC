@@ -1,6 +1,6 @@
 import flwr as fl
 from client import FedAvgClient, FedPerClient, FedProtoClient
-from server import Server, FedPerServer, FedProtoServer
+from server import ServerBase, FedPerServer, FedProtoServer
 
 from optparse import OptionParser
 import tensorflow as tf
@@ -109,15 +109,15 @@ class SimulationFL():
 								model_name=self.model_name)
 
 		else:
-			return Server(algorithm=self.algorithm,
-						  n_classes=self.n_classes,
-						  fraction_fit=1,
-						  num_clients=self.n_clients,
-						  decay=self.decay,
-						  perc_of_clients=self.poc,
-						  strategy_name=self.strategy_name,
-						  dataset=self.dataset,
-						  model_name=self.model_name)
+			return ServerBase(algorithm=self.algorithm,
+							  n_classes=self.n_classes,
+							  fraction_fit=1,
+							  num_clients=self.n_clients,
+							  decay=self.decay,
+							  perc_of_clients=self.poc,
+							  strategy_name=self.strategy_name,
+							  dataset=self.dataset,
+							  model_name=self.model_name)
 
 
 

@@ -9,10 +9,10 @@ import time
 from flwr.common import FitIns
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
 
-from server.server import Server
+from server.server_base import ServerBase
 
 
-class FedProtoServer(Server):
+class FedProtoServer(ServerBase):
 
     def __init__(self, algorithm, n_classes, fraction_fit, num_clients,
                  decay=0, perc_of_clients=0, dataset='', strategy_name='FedProto', model_name=''):

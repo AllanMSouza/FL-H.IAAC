@@ -81,7 +81,6 @@ class ClientBase(fl.client.NumPyClient):
 			return ModelCreation().create_LogisticRegression(input_shape, self.num_classes)
 
 		elif self.model_name == 'DNN':
-			print("criou")
 			return ModelCreation().create_DNN(input_shape, self.num_classes)
 
 		elif self.model_name == 'CNN':

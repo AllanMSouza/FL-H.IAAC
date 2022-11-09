@@ -9,11 +9,11 @@ import copy
 
 from model_definition import ModelCreation
 
-import warnings
-warnings.simplefilter("ignore")
-
-import logging
-logging.getLogger("tensorflow").setLevel(logging.ERROR)\
+# import warnings
+# warnings.simplefilter("ignore")
+#
+# import logging
+# logging.getLogger("tensorflow").setLevel(logging.ERROR)\
 
 
 
@@ -48,9 +48,11 @@ class FedProtoClient(ClientBase):
 						 non_iid=non_iid)
 
 		self.train_acc_metric = tf.keras.metrics.SparseCategoricalAccuracy()
+		self.train_acc_list = []
 		self.val_acc_metric = tf.keras.metrics.SparseCategoricalAccuracy()
+		self.val_acc_list = []
 		# Instantiate an optimizer to train the model.
-		self.optimizer = tf.keras.optimizers.SGD(learning_rate=1e-3)
+		self.optimizer = tf.keras.optimizers.SGD()
 		# Instantiate a loss function.
 		self.loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 		self.global_protos = None
@@ -68,15 +70,19 @@ class FedProtoClient(ClientBase):
 		with tf.GradientTape() as tape:
 			logits = self.model(x, training=True)
 			loss_value = self.loss_fn(y, logits)
+			loss_value += sum(self.model.losses)
 		grads = tape.gradient(loss_value, self.model.trainable_weights)
 		self.optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
 		self.train_acc_metric.update_state(y, logits)
+		#print("aqui: ", float(self.train_acc_metric.result()))
 		return loss_value
 
 	@tf.function
 	def test_step(self, x, y):
 		val_logits = self.model(x, training=False)
+		loss_value = self.loss_fn(y, val_logits)
 		self.val_acc_metric.update_state(y, val_logits)
+		return loss_value
 
 	def modify_dataset(self):
 
@@ -120,8 +126,8 @@ class FedProtoClient(ClientBase):
 		trained_parameters = []
 		selected = 0
 
-		loss_history = []
-		acc_history = []
+		loss_train_history = []
+		acc_train_history = []
 
 		if config['selected_clients'] != '':
 			selected_clients = [int(cid_selected) for cid_selected in config['selected_clients'].split(' ')]
@@ -134,7 +140,7 @@ class FedProtoClient(ClientBase):
 			self.set_parameters_to_model(parameters)
 
 			selected = 1
-			# history = self.model.fit(self.x_train, self.y_train, verbose=0, epochs=self.local_epochs)
+			#history = self.model.fit(self.x_train, self.y_train, verbose=0, epochs=self.local_epochs)
 			#========================================================================================
 			# for epoch in range(self.local_epochs):
 			# 	print("\nStart of epoch %d" % (epoch,))
@@ -221,26 +227,26 @@ class FedProtoClient(ClientBase):
 						#self.train_acc_metric.update_state(y_batch_train, logits)
 
 						loss_value = self.train_step(x_batch_train, y_batch_train)
-						loss_history.append(loss_value)
+						loss_train_history.append(loss_value)
 
 					# Display metrics at the end of each epoch.
-					train_acc = self.train_acc_metric.result()
+					train_acc = float(self.train_acc_metric.result())
 					print("Training acc over epoch: %.4f" % (float(train_acc),))
 
 					# Reset training metrics at the end of each epoch
 					self.train_acc_metric.reset_states()
 
 					# Run a validation loop at the end of each epoch.
-					for x_batch_val, y_batch_val in self.val_dataset:
-						# val_logits = self.model(x_batch_val, training=False)
-						# # Update val metrics
-						# self.val_acc_metric.update_state(y_batch_val, val_logits)
-						self.test_step(x_batch_val, y_batch_val)
-					val_acc = self.val_acc_metric.result()
-					acc_history.append(train_acc)
-					self.val_acc_metric.reset_states()
-					print("Validation acc: %.4f" % (float(val_acc),))
-					print("Time taken: %.2fs" % (time.time() - start_time))
+					# for x_batch_val, y_batch_val in self.val_dataset:
+					# 	# val_logits = self.model(x_batch_val, training=False)
+					# 	# # Update val metrics
+					# 	# self.val_acc_metric.update_state(y_batch_val, val_logits)
+					# 	val_loss = self.test_step(x_batch_val, y_batch_val)
+					# val_acc = self.val_acc_metric.result()
+					acc_train_history.append(train_acc)
+					#self.val_acc_metric.reset_states()
+					# print("Validation acc: %.4f" % (float(val_acc),))
+					# print("Time taken: %.2fs" % (time.time() - start_time))
 
 
 			except Exception as e:
@@ -258,16 +264,14 @@ class FedProtoClient(ClientBase):
 			print("passou")
 			#print(self.protos)
 
-			avg_loss_train = np.mean(loss_history)
-			avg_acc_train = np.mean(acc_history)
+			avg_loss_train = float(np.mean(loss_train_history))
+			avg_acc_train = float(np.mean(acc_train_history))
 
 			print("loss media: ", avg_loss_train)
 			print("acc media: ", avg_acc_train)
 
 			# ========================================================================================
-
 			trained_parameters = self.model.get_weights()
-
 		total_time = time.process_time() - start_time
 		size_of_parameters = sum(map(sys.getsizeof, self.protos))
 		# avg_loss_train = np.mean(history.history['loss'])
@@ -289,7 +293,8 @@ class FedProtoClient(ClientBase):
 		# print("Resultados proto: ", protos_result)
 
 		# return protos_result, 10, fit_response
-		return trained_parameters, 10, fit_response
+		print("finalizou")
+		return trained_parameters, len(self.x_train), fit_response
 	def dict_to_numpy(self, data):
 
 		list = []
@@ -303,21 +308,38 @@ class FedProtoClient(ClientBase):
 	def evaluate(self, parameters, config):
 
 		self.set_parameters_to_model(parameters)
-		loss, accuracy = self.model.evaluate(self.x_test, self.y_test, verbose=0)
+		#loss, accuracy = self.model.evaluate(self.x_test, self.y_test, verbose=0)
+
+		acc_history = []
+		loss_history = []
+
+		for x_batch_val, y_batch_val in self.val_dataset:
+			val_loss = self.test_step(x_batch_val, y_batch_val)
+			loss_history.append(val_loss)
+		val_acc = self.val_acc_metric.result()
+		acc_history.append(val_acc)
+		self.val_acc_metric.reset_states()
+
+		avg_loss_test = float(np.mean(loss_history))
+		avg_acc_test = float(np.mean(acc_history))
+
+		#print("ola: ", loss, accuracy)
+		print("ola 2: ", avg_loss_test, avg_acc_test)
+
 		size_of_parameters = sum(map(sys.getsizeof, parameters))
 
 		filename = f"logs/{self.solution_name}/{self.n_clients}/{self.model_name}/{self.dataset}/evaluate_client.csv"
-		data = [config['round'], self.cid, size_of_parameters, loss, accuracy]
+		data = [config['round'], self.cid, size_of_parameters, avg_loss_test, avg_acc_test]
 
 		self._write_output(filename=filename,
 						   data=data)
 
 		evaluation_response = {
 			"cid": self.cid,
-			"accuracy": float(accuracy)
+			"accuracy": float(avg_acc_test)
 		}
 
-		return loss, len(self.x_test), evaluation_response
+		return avg_loss_test, len(self.x_test), evaluation_response
 
 	def agg_func(self, protos):
 		"""
