@@ -6,7 +6,7 @@ from tensorflow.keras.layers import Input, Conv2D, Flatten, MaxPool2D, Dense, In
 #from sklearn.linear_model import LogisticRegression
 
 import logging
-logging.getLogger("tensorflow").setLevel(logging.ERROR)
+# logging.getLogger("tensorflow").setLevel(logging.ERROR)
 
 tf.random.set_seed(0)
 
@@ -23,7 +23,7 @@ class ModelCreation():
 
 
 		if not use_proto:
-			model.compile(optimizer='sgd', loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), metrics=['accuracy'])
+			model.compile(optimizer='sgd', loss=tf.keras.losses.SparseCategoricalCrossentropy(), metrics=['accuracy'])
 
 		return model
 

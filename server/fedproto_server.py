@@ -69,12 +69,10 @@ class FedProtoServer(ServerBase):
         sum_protos = {i: None for i in range(self.n_classes)}
 
         for key in range(self.n_classes):
-            print("Rodada: ", key)
             for proto, num_examples in results:
 
                 if key > len(proto) - 1:
                     continue
-                print("ola: ", len(proto[key]), num_examples[key])
 
                 if sum_protos[key] is None:
 
@@ -86,8 +84,7 @@ class FedProtoServer(ServerBase):
 
             if sum_protos[key] is not None:
                 sum_protos[key] = sum_protos[key]/(num_examples_total[key] * num_examples_total_clients[key])
-            print("cccc")
-        print("aqui")
+
         weighted_weights = [
             sum_protos[key] for key in sum_protos
         ]
@@ -134,6 +131,8 @@ class FedProtoServer(ServerBase):
         # Weigh accuracy of each client by number of examples used
         accuracies = [r.metrics["accuracy"] * r.num_examples for _, r in results]
         examples = [r.num_examples for _, r in results]
+
+        print("recebidas: ", [r.metrics["accuracy"] for _, r in results])
 
         # Aggregate and print custom metric
         accuracy_aggregated = sum(accuracies) / sum(examples)

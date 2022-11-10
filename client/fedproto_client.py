@@ -54,7 +54,7 @@ class FedProtoClient(ClientBase):
 		# Instantiate an optimizer to train the model.
 		self.optimizer = tf.keras.optimizers.SGD()
 		# Instantiate a loss function.
-		self.loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+		self.loss_fn = tf.keras.losses.SparseCategoricalCrossentropy()
 		self.global_protos = None
 		self.protos = {i: tf.constant([]) for i in range(self.num_classes)}
 		self.protos_samples_per_class = {i: 0 for i in range(self.num_classes)}
@@ -63,6 +63,7 @@ class FedProtoClient(ClientBase):
 		self.batch_size = 64
 		self.train_dataset = None
 		self.val_dataset = None
+		self.saved_parameters = None
 		self.modify_dataset()
 
 	@tf.function
@@ -71,34 +72,51 @@ class FedProtoClient(ClientBase):
 			logits, rep = self.model(x, training=True)
 			loss_value = self.loss_fn(y, logits)
 			loss_value += sum(self.model.losses)
+			mse_loss = 0
 			if self.global_protos != None:
 				proto_new = np.zeros(rep.shape)
 				for i in range(len(y)):
-					print("indice", i)
 					yy = self.classes[i]
 					y_c = tf.get_static_value(yy)
-					print("classe", yy, y_c)
 					proto_new[i] = self.global_protos[y_c][0]
-					print("novo")
-					print(proto_new[i])
 					self.protos_samples_per_class[y_c] += 1
 
 				proto_new = tf.constant(proto_new)
-				mse_loss = self.loss_mse(proto_new, rep)
-				print("mse: ", mse_loss)
-				loss_value += float(mse_loss) * self.lamda
+				mse_loss = tf.reduce_mean(self.loss_mse(proto_new, rep))
+				loss_value += mse_loss * self.lamda
 		grads = tape.gradient(loss_value, self.model.trainable_weights)
 		self.optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
 		self.train_acc_metric.update_state(y, logits)
-		#print("aqui: ", float(self.train_acc_metric.result()))
-		return loss_value, rep
+		return loss_value, rep, mse_loss
 
 	@tf.function
 	def test_step(self, x, y):
-		val_logits, rep = self.model(x, training=False)
-		loss_value = self.loss_fn(y, val_logits)
+		# output = tf.ones((y.shape[0], self.num_classes))
+		# loss_list = tf.zeros(len(self.global_protos))
+		# val_logits, rep = self.model(x, training=False)
+		# loss_list = []
+		# test_acc = 0
+		# test_num = 0
+		#
+		# for i in range(len(rep)):
+		# 	r = rep[i]
+		# 	for j in range(len(self.global_protos)):
+		# 		pro = self.global_protos[j][0]
+		# 		loss_value = tf.reduce_mean(self.loss_mse(r, pro))
+		# 		#tf.tensor_scatter_nd_update(loss_list, loss_value, [i])
+		# 		#output[i, j] = loss_value
+		# 		# print("antes", tf.keras.backend.eval(tf.argmin(output)))
+		# 		# test_acc += (tf.reduce_sum(tf.argmin(output) == y))
+		# 		# test_num += y.shape[0]
+		# 		# print("soma")
+		#
+		# # self.val_acc_metric.update_state(self.global_protos, output)
+
+		val_logits = self.model(x, training=False)
 		self.val_acc_metric.update_state(y, val_logits)
-		return loss_value
+		loss = self.loss_fn(y, val_logits)
+
+		return loss
 
 	def modify_dataset(self):
 
@@ -154,6 +172,7 @@ class FedProtoClient(ClientBase):
 		if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
 			if int(config['round']) > 1:
 				self.set_proto(parameters)
+				print("setou")
 			#self.set_parameters_to_model(parameters)
 
 			selected = 1
@@ -227,6 +246,8 @@ class FedProtoClient(ClientBase):
 			#
 			# 	#acc_history = self.train_acc_metric.result()
 			# 	#self.train_acc_metric.reset_states()
+			if self.saved_parameters is not None:
+				self.set_parameters_to_model(self.saved_parameters)
 			try:
 				for epoch in range(self.epochs):
 					print("\nStart of epoch %d" % (epoch,))
@@ -246,7 +267,30 @@ class FedProtoClient(ClientBase):
 						for i, yy in enumerate(y_batch_train):
 							self.classes.append(yy)
 
-						loss_value, rep = self.train_step(x_batch_train, y_batch_train)
+						# training
+						# =========================================================
+						# loss_value, rep, loss_mse = self.train_step(x_batch_train, y_batch_train)
+						with tf.GradientTape() as tape:
+							logits, rep = self.model(x_batch_train, training=True)
+							loss_value = self.loss_fn(y_batch_train, logits)
+							loss_value += sum(self.model.losses)
+
+							if self.global_protos != None:
+								proto_new = np.zeros(rep.shape)
+								for i in range(len(y_batch_train)):
+									yy = self.classes[i]
+									y_c = tf.get_static_value(yy)
+									proto_new[i] = self.global_protos[y_c][0]
+									self.protos_samples_per_class[y_c] += 1
+
+								proto_new = tf.constant(proto_new)
+								mse_loss = tf.reduce_mean(self.loss_mse(proto_new, rep))
+								loss_value += mse_loss * self.lamda
+						grads = tape.gradient(loss_value, self.model.trainable_weights)
+						self.optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
+						self.train_acc_metric.update_state(y_batch_train, logits)
+
+						# =========================================================
 
 						for i, yy in enumerate(y_batch_train):
 							y_c = int(yy)
@@ -262,7 +306,8 @@ class FedProtoClient(ClientBase):
 
 					# Display metrics at the end of each epoch.
 					train_acc = float(self.train_acc_metric.result())
-					print("Training acc over epoch: %.4f" % (float(train_acc),))
+					print("Training acc over epoch: %.4f" % (float(train_acc),), " id: ", self.cid)
+
 
 					# Reset training metrics at the end of each epoch
 					self.train_acc_metric.reset_states()
@@ -285,24 +330,18 @@ class FedProtoClient(ClientBase):
 				print(e)
 				exit()
 
-
-
-
-
-			#print("agregar")
-			#self.protos = self.agg_func(self.protos)
-
-			print("passou")
-			#print(self.protos)
-
-			avg_loss_train = float(np.mean(loss_train_history))
-			avg_acc_train = float(np.mean(acc_train_history))
-
-			print("loss media: ", avg_loss_train)
-			print("acc media: ", avg_acc_train)
-
 			# ========================================================================================
 			trained_parameters = self.model.get_weights()
+			self.saved_parameters = copy.deepcopy(trained_parameters)
+			print("salvou ", self.saved_parameters)
+
+		avg_loss_train = float(np.mean(loss_train_history))
+		avg_acc_train = float(np.mean(acc_train_history))
+		print("validacao no fit")
+		self.validacao(v='no fit')
+		print("loss media: ", avg_loss_train)
+		print("acc media: ", avg_acc_train)
+
 		total_time = time.process_time() - start_time
 		size_of_parameters = sum(map(sys.getsizeof, self.protos))
 		# avg_loss_train = np.mean(history.history['loss'])
@@ -348,27 +387,17 @@ class FedProtoClient(ClientBase):
 
 			self.protos[key] = self.protos[key]/self.protos_samples_per_class[key]
 
-	def evaluate(self, parameters, config):
-
+	def evaluate(self, proto, config):
+		print("avaliar")
+		self.set_proto(proto)
 		#self.set_parameters_to_model(parameters)
 		#loss, accuracy = self.model.evaluate(self.x_test, self.y_test, verbose=0)
 
-		acc_history = []
-		loss_history = []
-
-		for x_batch_val, y_batch_val in self.val_dataset:
-			val_loss = self.test_step(x_batch_val, y_batch_val)
-			loss_history.append(val_loss)
-		val_acc = self.val_acc_metric.result()
-		acc_history.append(val_acc)
-		self.val_acc_metric.reset_states()
-
-		avg_loss_test = float(np.mean(loss_history))
-		avg_acc_test = float(np.mean(acc_history))
+		avg_loss_test, avg_acc_test = self.validacao(v='fora fit')
 
 		#print("ola: ", loss, accuracy)
 
-		size_of_parameters = sum(map(sys.getsizeof, parameters))
+		size_of_parameters = sum(map(sys.getsizeof, proto))
 
 		filename = f"logs/{self.solution_name}/{self.n_clients}/{self.model_name}/{self.dataset}/evaluate_client.csv"
 		data = [config['round'], self.cid, size_of_parameters, avg_loss_test, avg_acc_test]
@@ -382,6 +411,73 @@ class FedProtoClient(ClientBase):
 		}
 
 		return avg_loss_test, len(self.x_test), evaluation_response
+
+	def validacao(self, v=""):
+
+		if self.saved_parameters is not None:
+			print("coloca")
+			self.set_parameters_to_model(self.saved_parameters)
+
+		acc_history = []
+		loss_history = []
+		for x_batch_val, y_batch_val in self.val_dataset:
+			val_logits, rep = self.model(x_batch_val, training=False)
+			# if self.global_protos is not None:
+			# 	for i in range(len(rep)):
+			# 		r = rep[i]
+			#
+			# 		for j in range(len(self.global_protos)):
+			# 			pro = self.global_protos[j][0]
+			# 			loss_value = tf.reduce_mean(self.loss_mse(r, pro))
+			# 			print("fora", loss_value)
+			# 			#
+			# 			# print("ola: ", loss_value)
+
+
+
+
+			self.val_acc_metric.update_state(y_batch_val, val_logits)
+			val_loss = self.loss_fn(y_batch_val, val_logits)
+			# loss_history.append(val_loss)
+			# acc_history.append(val_acc)
+
+			# output = tf.ones((y.shape[0], self.num_classes))
+			# loss_list = tf.zeros(len(self.global_protos))
+			# val_logits, rep = self.model(x, training=False)
+			# loss_list = []
+			# test_acc = 0
+			# test_num = 0
+			#
+			# for i in range(len(rep)):
+			# 	r = rep[i]
+			# 	for j in range(len(self.global_protos)):
+			# 		pro = self.global_protos[j][0]
+			# 		loss_value = tf.reduce_mean(self.loss_mse(r, pro))
+			# 		#tf.tensor_scatter_nd_update(loss_list, loss_value, [i])
+			# 		#output[i, j] = loss_value
+			# 		# print("antes", tf.keras.backend.eval(tf.argmin(output)))
+			# 		# test_acc += (tf.reduce_sum(tf.argmin(output) == y))
+			# 		# test_num += y.shape[0]
+			# 		# print("soma")
+			#
+			# # self.val_acc_metric.update_state(self.global_protos, output)
+
+
+
+
+
+
+			loss_history.append(val_loss)
+		acc_history = self.val_acc_metric.result()
+		self.val_acc_metric.reset_states()
+
+		avg_loss_test = float(np.mean(loss_history))
+		avg_acc_test = float(np.mean(acc_history))
+
+		print("Val loss: ", avg_loss_test, v)
+		print("Val acc: ", avg_acc_test, v)
+
+		return avg_loss_test, avg_acc_test
 
 	def agg_func(self, protos):
 		"""

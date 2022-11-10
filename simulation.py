@@ -5,8 +5,8 @@ from server import ServerBase, FedPerServer, FedProtoServer
 from optparse import OptionParser
 import tensorflow as tf
 
-import logging
-logging.getLogger("tensorflow").setLevel(logging.ERROR)
+# import logging
+# logging.getLogger("tensorflow").setLevel(logging.ERROR)
 
 import os; os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
