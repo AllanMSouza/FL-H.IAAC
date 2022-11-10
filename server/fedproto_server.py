@@ -5,12 +5,13 @@ import numpy as np
 import math
 import os
 import time
+from pathlib import Path
 
 from flwr.common import FitIns
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
 
 from server.server_base import ServerBase
-
+import shutil
 
 class FedProtoServer(ServerBase):
 
@@ -27,8 +28,14 @@ class FedProtoServer(ServerBase):
                          strategy_name='FedProto',
                          model_name=model_name)
 
+        directory = """fedproto_saved_weights/{}""".format(self.model_name)
+        if Path(directory).exists():
+            for f in os.listdir(directory):
+                os.remove(os.path.join(directory, f))
+
     def aggregate_fit(self, server_round, results, failures):
         weights_results = []
+
         print("tamanho results: ", len(results))
         for _, fit_res in results:
             client_id = str(fit_res.metrics['cid'])

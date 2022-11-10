@@ -6,6 +6,7 @@ import os
 import time
 import sys
 import copy
+from pathlib import Path
 
 from model_definition import ModelCreation
 
@@ -65,6 +66,12 @@ class FedProtoClient(ClientBase):
 		self.val_dataset = None
 		self.saved_parameters = None
 		self.modify_dataset()
+		self.create_folder()
+
+
+	def create_folder(self):
+
+		Path("""fedproto_saved_weights/{}/""".format(self.model_name, self.cid)).mkdir(parents=True, exist_ok=True)
 
 	@tf.function
 	def train_step(self, x, y):
@@ -172,6 +179,7 @@ class FedProtoClient(ClientBase):
 		if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
 			if int(config['round']) > 1:
 				self.set_proto(parameters)
+				self.load_and_set_parameters()
 				print("setou")
 			#self.set_parameters_to_model(parameters)
 
@@ -332,6 +340,7 @@ class FedProtoClient(ClientBase):
 
 			# ========================================================================================
 			trained_parameters = self.model.get_weights()
+			self.save_parameters()
 			self.saved_parameters = copy.deepcopy(trained_parameters)
 			print("salvou ", self.saved_parameters)
 
@@ -390,6 +399,7 @@ class FedProtoClient(ClientBase):
 	def evaluate(self, proto, config):
 		print("avaliar")
 		self.set_proto(proto)
+		self.load_and_set_parameters()
 		#self.set_parameters_to_model(parameters)
 		#loss, accuracy = self.model.evaluate(self.x_test, self.y_test, verbose=0)
 
@@ -415,33 +425,23 @@ class FedProtoClient(ClientBase):
 	def validacao(self, v=""):
 
 		if self.saved_parameters is not None:
-			print("coloca")
+			print("coloca ", v)
 			self.set_parameters_to_model(self.saved_parameters)
 
 		acc_history = []
 		loss_history = []
 		for x_batch_val, y_batch_val in self.val_dataset:
 			val_logits, rep = self.model(x_batch_val, training=False)
-			# if self.global_protos is not None:
-			# 	for i in range(len(rep)):
-			# 		r = rep[i]
-			#
-			# 		for j in range(len(self.global_protos)):
-			# 			pro = self.global_protos[j][0]
-			# 			loss_value = tf.reduce_mean(self.loss_mse(r, pro))
-			# 			print("fora", loss_value)
-			# 			#
-			# 			# print("ola: ", loss_value)
-
-
 
 
 			self.val_acc_metric.update_state(y_batch_val, val_logits)
 			val_loss = self.loss_fn(y_batch_val, val_logits)
-			# loss_history.append(val_loss)
+
+
+			loss_history.append(val_loss)
 			# acc_history.append(val_acc)
 
-			# output = tf.ones((y.shape[0], self.num_classes))
+			# output = np.ones((y_batch_val.shape[0], self.num_classes))
 			# loss_list = tf.zeros(len(self.global_protos))
 			# val_logits, rep = self.model(x, training=False)
 			# loss_list = []
@@ -453,21 +453,23 @@ class FedProtoClient(ClientBase):
 			# 	for j in range(len(self.global_protos)):
 			# 		pro = self.global_protos[j][0]
 			# 		loss_value = tf.reduce_mean(self.loss_mse(r, pro))
-			# 		#tf.tensor_scatter_nd_update(loss_list, loss_value, [i])
-			# 		#output[i, j] = loss_value
-			# 		# print("antes", tf.keras.backend.eval(tf.argmin(output)))
-			# 		# test_acc += (tf.reduce_sum(tf.argmin(output) == y))
-			# 		# test_num += y.shape[0]
-			# 		# print("soma")
+			# 		tf.tensor_scatter_nd_update(loss_list, loss_value, [i])
+			# 		output[i, j] = loss_value
+			# 		print("antes", tf.keras.backend.eval(tf.argmin(output)))
+			# 		test_acc += (tf.reduce_sum(tf.argmin(output) == y_batch_val))
+			# 		test_num += y_batch_val.shape[0]
+			# 		print("soma")
 			#
 			# # self.val_acc_metric.update_state(self.global_protos, output)
+			#
+			#
+			#
+			#
+			#
+			#
+			# loss_history.append(loss_value)
 
 
-
-
-
-
-			loss_history.append(val_loss)
 		acc_history = self.val_acc_metric.result()
 		self.val_acc_metric.reset_states()
 
@@ -488,4 +490,12 @@ class FedProtoClient(ClientBase):
 			protos[key] = np.sum(protos[key], axis=0)/size
 
 		return protos
+
+	def load_and_set_parameters(self):
+
+		self.model.load_weights("""./fedproto_saved_weights/{}/{}""".format(self.model_name, self.cid))
+
+	def save_parameters(self):
+
+		self.model.save_weights("""./fedproto_saved_weights/{}/{}""".format(self.model_name, self.cid))
 
