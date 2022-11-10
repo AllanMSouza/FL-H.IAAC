@@ -27,54 +27,144 @@ class FedProtoServer(ServerBase):
                          strategy_name='FedProto',
                          model_name=model_name)
 
-    # def aggregate_fit(self, server_round, results, failures):
-    #     weights_results = []
-    #     print("tamanho results: ", len(results))
-    #     for _, fit_res in results:
-    #         client_id = str(fit_res.metrics['cid'])
-    #
-    #         if self.algorithm not in ['POC', 'FedLTA'] or int(server_round) <= 1:
-    #             weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples))
-    #
-    #         else:
-    #             if client_id in self.selected_clients:
-    #                 weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples))
-    #
-    #     # print(f'LEN AGGREGATED PARAMETERS: {len(weights_results)}')
-    #     parameters_aggregated = fl.common.ndarrays_to_parameters(self._aggregate_proto(weights_results))
-    #
-    #     # Aggregate custom metrics if aggregation fn was provided
-    #     metrics_aggregated = {}
-    #
-    #     return parameters_aggregated, metrics_aggregated
-    #
-    # def _aggregate_proto(self, results):
-    #     """Compute weighted average."""
-    #     # Calculate the total number of examples used during training
-    #     #num_examples_total = sum([num_examples for _, num_examples in results])
-    #
-    #     # Create a list of weights, each multiplied by the related number of examples
-    #     weighted_weights = [
-    #         [layer * num_examples for layer in weights] for weights, num_examples in results
-    #     ]
-    #     weighted_proto = {i: [] for i in range(self.n_classes)}
-    #     total_class = {i: 0 for i in range(self.n_classes)}
-    #     for i in range(len(results)):
-    #         proto, num_samples = results[i]
-    #         print("resultados: ", proto)
-    #         for key in proto:
-    #             proto[i][key] = proto[i][key] * num_samples[key]
-    #             total_class[key] += num_samples[key]
-    #
-    #         results[i] = [proto, num_samples]
-    #
-    #     global_proto = {i: [] for i in range(self.n_classes)}
-    #     for key in range(self.n_classes):
-    #
-    #         for proto, num_samples in results:
-    #             global_proto[key].append(proto[key])
-    #
-    #         print("proto global: ", global_proto[key])
-    #         global_proto[key] = reduce(np.add, global_proto[key]) / total_class[key]
-    #
-    #     return global_proto
+    def aggregate_fit(self, server_round, results, failures):
+        weights_results = []
+        print("tamanho results: ", len(results))
+        for _, fit_res in results:
+            client_id = str(fit_res.metrics['cid'])
+            protos_samples_per_class = fit_res.metrics['protos_samples_per_class']
+
+            if self.algorithm not in ['POC', 'FedLTA'] or int(server_round) <= 1:
+                weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), protos_samples_per_class))
+
+            else:
+                if client_id in self.selected_clients:
+                    weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), protos_samples_per_class))
+
+        # print(f'LEN AGGREGATED PARAMETERS: {len(weights_results)}')
+        parameters_aggregated = fl.common.ndarrays_to_parameters(self._aggregate_proto(weights_results))
+
+        # Aggregate custom metrics if aggregation fn was provided
+        metrics_aggregated = {}
+
+        return parameters_aggregated, metrics_aggregated
+
+    def _aggregate_proto(self, results):
+        """Compute weighted average."""
+        # Calculate the total number of examples used during training
+        num_examples_total = {i: 0 for i in range(self.n_classes)}
+        num_examples_total_clients = {i: 0 for i in range(self.n_classes)}
+        for _, num_examples in results:
+
+            for key in num_examples:
+
+                num_examples_total[key] += num_examples[key]
+                num_examples_total_clients[key] += 1
+
+        print("Quantidade por classe")
+        print(num_examples_total)
+
+        # Create a list of weights, each multiplied by the related number of examples
+
+        sum_protos = {i: None for i in range(self.n_classes)}
+
+        for key in range(self.n_classes):
+            print("Rodada: ", key)
+            for proto, num_examples in results:
+
+                if key > len(proto) - 1:
+                    continue
+                print("ola: ", len(proto[key]), num_examples[key])
+
+                if sum_protos[key] is None:
+
+                    sum_protos[key] = proto[key]*num_examples[key]
+
+                else:
+
+                    sum_protos[key] += proto[key]*num_examples[key]
+
+            if sum_protos[key] is not None:
+                sum_protos[key] = sum_protos[key]/(num_examples_total[key] * num_examples_total_clients[key])
+            print("cccc")
+        print("aqui")
+        weighted_weights = [
+            sum_protos[key] for key in sum_protos
+        ]
+
+        print("pesos ponderados: ", weighted_weights)
+
+        # # Compute average weights of each layer
+        # weights_prime = [
+        #     reduce(np.add, layer_updates) / num_examples_total
+        #     for layer_updates in zip(*weighted_weights)
+        # ]
+        #
+        # return global_proto
+
+        return weighted_weights
+
+    def aggregate_evaluate(
+            self,
+            server_round,
+            results,
+            failures,
+    ):
+
+        local_list_clients = []
+        self.list_of_clients = []
+        self.list_of_accuracies = []
+        accs = []
+
+        for response in results:
+            client_id = response[1].metrics['cid']
+            client_accuracy = float(response[1].metrics['accuracy'])
+            accs.append(client_accuracy)
+
+            local_list_clients.append((client_id, client_accuracy))
+
+        local_list_clients.sort(key=lambda x: x[1])
+
+        self.list_of_clients = [str(client[0]) for client in local_list_clients]
+        self.list_of_accuracies = [float(client[1]) for client in local_list_clients]
+
+        accs.sort()
+        self.average_accuracy = np.mean(accs)
+
+        # Weigh accuracy of each client by number of examples used
+        accuracies = [r.metrics["accuracy"] * r.num_examples for _, r in results]
+        examples = [r.num_examples for _, r in results]
+
+        # Aggregate and print custom metric
+        accuracy_aggregated = sum(accuracies) / sum(examples)
+        current_accuracy = accuracy_aggregated
+
+        print(f"Round {server_round} accuracy aggregated from client results: {accuracy_aggregated}")
+
+        # Aggregate loss
+        loss_aggregated = weighted_loss_avg(
+            [
+                (evaluate_res.num_examples, evaluate_res.loss)
+                for _, evaluate_res in results
+            ]
+        )
+
+        # Aggregate custom metrics if aggregation fn was provided
+        top5 = np.mean(accs[-5:])
+        top1 = accs[-1]
+
+        base = f"logs/{self.strategy_name}/{self.num_clients}/{self.model_name}/{self.dataset}/"
+        filename_server = f"{base}server.csv"
+        data = [time.time(), server_round, accuracy_aggregated, top5, top1]
+
+        self._write_output(filename=filename_server,
+                           data=data
+                           )
+
+        metrics_aggregated = {
+            "accuracy": accuracy_aggregated,
+            "top-3": top5,
+            "top-1": top1
+        }
+
+        return loss_aggregated, metrics_aggregated

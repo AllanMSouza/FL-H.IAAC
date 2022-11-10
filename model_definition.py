@@ -21,7 +21,9 @@ class ModelCreation():
 		model.add(Dense(32,  activation='relu'))
 		model.add(Dense(num_classes, activation='softmax'))
 
-		#model.compile(optimizer='sgd', loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), metrics=['accuracy'])
+
+		if not use_proto:
+			model.compile(optimizer='sgd', loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), metrics=['accuracy'])
 
 		return model
 

@@ -56,7 +56,7 @@ class FedProtoClient(ClientBase):
 		# Instantiate a loss function.
 		self.loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 		self.global_protos = None
-		self.protos = {i: [] for i in range(self.num_classes)}
+		self.protos = {i: tf.constant([]) for i in range(self.num_classes)}
 		self.protos_samples_per_class = {i: 0 for i in range(self.num_classes)}
 		self.loss_mse = tf.keras.losses.MSE
 		self.lamda = 1
@@ -71,6 +71,22 @@ class FedProtoClient(ClientBase):
 			logits, rep = self.model(x, training=True)
 			loss_value = self.loss_fn(y, logits)
 			loss_value += sum(self.model.losses)
+			if self.global_protos != None:
+				proto_new = np.zeros(rep.shape)
+				for i in range(len(y)):
+					print("indice", i)
+					yy = self.classes[i]
+					y_c = tf.get_static_value(yy)
+					print("classe", yy, y_c)
+					proto_new[i] = self.global_protos[y_c][0]
+					print("novo")
+					print(proto_new[i])
+					self.protos_samples_per_class[y_c] += 1
+
+				proto_new = tf.constant(proto_new)
+				mse_loss = self.loss_mse(proto_new, rep)
+				print("mse: ", mse_loss)
+				loss_value += float(mse_loss) * self.lamda
 		grads = tape.gradient(loss_value, self.model.trainable_weights)
 		self.optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
 		self.train_acc_metric.update_state(y, logits)
@@ -103,7 +119,7 @@ class FedProtoClient(ClientBase):
 		return self.model.get_weights()
 
 	def set_proto(self, protos):
-		self.protos = protos
+		self.global_protos = protos
 
 	def create_model(self):
 		input_shape = self.x_train.shape
@@ -134,10 +150,11 @@ class FedProtoClient(ClientBase):
 
 		start_time = time.process_time()
 		# print(config)
-
+		print("entrada: ", len(parameters), parameters[0].shape)
 		if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
-			#self.set_proto(parameters)
-			self.set_parameters_to_model(parameters)
+			if int(config['round']) > 1:
+				self.set_proto(parameters)
+			#self.set_parameters_to_model(parameters)
 
 			selected = 1
 			#history = self.model.fit(self.x_train, self.y_train, verbose=0, epochs=self.local_epochs)
@@ -225,23 +242,20 @@ class FedProtoClient(ClientBase):
 						# self.optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
 						# Update training metric.
 						#self.train_acc_metric.update_state(y_batch_train, logits)
+						self.classes = []
+						for i, yy in enumerate(y_batch_train):
+							self.classes.append(yy)
 
 						loss_value, rep = self.train_step(x_batch_train, y_batch_train)
 
-						if self.global_protos != None:
-							proto_new = {i: [] for i in range(self.num_classes)}
-							for i, yy in enumerate(y_batch_train):
-								y_c = int(yy)
-								proto_new[y_c] = self.global_protos[y_c]
-								self.protos_samples_per_class[y_c] += 1
-
-							data = tf.constant([proto_new[key] for key in proto_new])
-
-							loss_value += float(self.loss_mse(data, rep) )* self.lamda
-
 						for i, yy in enumerate(y_batch_train):
 							y_c = int(yy)
-							self.protos[y_c].append(tf.gather_nd(rep, tf.constant([[i]])))
+							# print("atribu")
+							# print(len(self.protos), y_c)
+							if self.protos[y_c].shape[0] == 0:
+								self.protos[y_c] = tf.gather_nd(rep, tf.constant([[i]]))
+							else:
+								self.protos[y_c] = tf.add(self.protos[y_c], (tf.gather_nd(rep, tf.constant([[i]]))))
 							self.protos_samples_per_class[y_c] += 1
 
 						loss_train_history.append(loss_value)
@@ -302,29 +316,41 @@ class FedProtoClient(ClientBase):
 			data=data)
 
 		fit_response = {
-			'cid': self.cid
+			'cid': self.cid,
+			'protos_samples_per_class': self.protos_samples_per_class
 		}
 
-		# protos_result = self.dict_to_numpy(self.protos)
-		#
-		# print("Resultados proto: ", protos_result)
+		self.normalize_proto()
+		protos_result = self.dict_to_numpy(self.protos)
 
-		# return protos_result, 10, fit_response
-		print("finalizou")
-		return trained_parameters, len(self.x_train), fit_response
+
+		# print("antes: ", trained_parameters, type(trained_parameters))
+		print("ttt: ", len(protos_result), protos_result[0].shape)
+
+
+		# print("novo")
+		# print(protos_result)
+
+		return protos_result, len(self.x_train), fit_response
 	def dict_to_numpy(self, data):
 
-		list = []
+		list_data = []
 
 		for key in data:
 
-			list.append(data[key])
+			list_data += [np.array(data[key])]
 		#print("converte: ", np.array(list))
-		return np.array(list)
+		return list_data
+
+	def normalize_proto(self):
+
+		for key in self.protos:
+
+			self.protos[key] = self.protos[key]/self.protos_samples_per_class[key]
 
 	def evaluate(self, parameters, config):
 
-		self.set_parameters_to_model(parameters)
+		#self.set_parameters_to_model(parameters)
 		#loss, accuracy = self.model.evaluate(self.x_test, self.y_test, verbose=0)
 
 		acc_history = []
@@ -341,7 +367,6 @@ class FedProtoClient(ClientBase):
 		avg_acc_test = float(np.mean(acc_history))
 
 		#print("ola: ", loss, accuracy)
-		print("ola 2: ", avg_loss_test, avg_acc_test)
 
 		size_of_parameters = sum(map(sys.getsizeof, parameters))
 
