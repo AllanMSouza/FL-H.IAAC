@@ -36,7 +36,7 @@ class FedProtoServer(ServerBase):
     def aggregate_fit(self, server_round, results, failures):
         weights_results = []
 
-        print("tamanho results: ", len(results))
+        # print("tamanho results: ", len(results))
         for _, fit_res in results:
             client_id = str(fit_res.metrics['cid'])
             protos_samples_per_class = fit_res.metrics['protos_samples_per_class']
@@ -68,8 +68,8 @@ class FedProtoServer(ServerBase):
                 num_examples_total[key] += num_examples[key]
                 num_examples_total_clients[key] += 1
 
-        print("Quantidade por classe")
-        print(num_examples_total)
+        # print("Quantidade por classe")
+        # print(num_examples_total)
 
         # Create a list of weights, each multiplied by the related number of examples
 
@@ -95,16 +95,6 @@ class FedProtoServer(ServerBase):
         weighted_weights = [
             sum_protos[key] for key in sum_protos
         ]
-
-        print("pesos ponderados: ", weighted_weights)
-
-        # # Compute average weights of each layer
-        # weights_prime = [
-        #     reduce(np.add, layer_updates) / num_examples_total
-        #     for layer_updates in zip(*weighted_weights)
-        # ]
-        #
-        # return global_proto
 
         return weighted_weights
 
@@ -139,7 +129,7 @@ class FedProtoServer(ServerBase):
         accuracies = [r.metrics["accuracy"] * r.num_examples for _, r in results]
         examples = [r.num_examples for _, r in results]
 
-        print("recebidas: ", [r.metrics["accuracy"] for _, r in results])
+        # print("recebidas: ", [r.metrics["accuracy"] for _, r in results])
 
         # Aggregate and print custom metric
         accuracy_aggregated = sum(accuracies) / sum(examples)
