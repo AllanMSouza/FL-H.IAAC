@@ -28,10 +28,9 @@ class FedProtoServer(ServerBase):
                          strategy_name='FedProto',
                          model_name=model_name)
 
-        directory = """fedproto_saved_weights/{}""".format(self.model_name)
+        directory = """fedproto_saved_weights/{}/""".format(self.model_name)
         if Path(directory).exists():
-            for f in os.listdir(directory):
-                os.remove(os.path.join(directory, f))
+            shutil.rmtree(directory)
 
     def aggregate_fit(self, server_round, results, failures):
         weights_results = []

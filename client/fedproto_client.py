@@ -68,7 +68,7 @@ class FedProtoClient(ClientBase):
 
 	def create_folder(self):
 
-		Path("""fedproto_saved_weights/{}/{}/{}""".format(self.model_name, self.cid, self.cid)).mkdir(parents=True, exist_ok=True)
+		Path("""fedproto_saved_weights/{}/{}/""".format(self.model_name, self.cid, self.cid)).mkdir(parents=True, exist_ok=True)
 
 	@tf.function
 	def train_step(self, x, y):
