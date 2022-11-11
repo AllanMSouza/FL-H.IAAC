@@ -68,8 +68,8 @@ class FedProtoServer(ServerBase):
                 num_examples_total[key] += num_examples[key]
                 num_examples_total_clients[key] += 1
 
-        # print("Quantidade por classe")
-        # print(num_examples_total)
+        print("Quantidade por classe")
+        print(num_examples_total)
 
         # Create a list of weights, each multiplied by the related number of examples
 
@@ -81,13 +81,15 @@ class FedProtoServer(ServerBase):
                 if key > len(proto) - 1:
                     continue
 
-                if sum_protos[key] is None:
+                if num_examples[key] > 0:
+                    if sum_protos[key] is None:
+                        # print("umm", proto[key])
+                        # print(sum_protos[key], proto[key], num_examples[key])
+                        sum_protos[key] = proto[key][0]*num_examples[key]
 
-                    sum_protos[key] = proto[key]*num_examples[key]
-
-                else:
-
-                    sum_protos[key] += proto[key]*num_examples[key]
+                    else:
+                        # print("dois", sum_protos[key], proto[key][0], num_examples[key])
+                        sum_protos[key] += proto[key][0]*num_examples[key]
 
             if sum_protos[key] is not None:
                 sum_protos[key] = sum_protos[key]/(num_examples_total[key] * num_examples_total_clients[key])
@@ -95,7 +97,8 @@ class FedProtoServer(ServerBase):
         weighted_weights = [
             sum_protos[key] for key in sum_protos
         ]
-
+        # print("ponderado")
+        # print(weighted_weights)
         return weighted_weights
 
     def aggregate_evaluate(

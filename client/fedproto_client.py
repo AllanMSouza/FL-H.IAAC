@@ -14,10 +14,7 @@ import warnings
 warnings.simplefilter("ignore")
 
 import logging
-logging.getLogger("tensorflow").setLevel(logging.ERROR)\
-
-
-
+logging.getLogger("tensorflow").setLevel(logging.ERROR)
 
 class FedProtoClient(ClientBase):
 
@@ -71,7 +68,7 @@ class FedProtoClient(ClientBase):
 
 	def create_folder(self):
 
-		Path("""fedproto_saved_weights/{}/""".format(self.model_name, self.cid)).mkdir(parents=True, exist_ok=True)
+		Path("""fedproto_saved_weights/{}/{}/{}""".format(self.model_name, self.cid, self.cid)).mkdir(parents=True, exist_ok=True)
 
 	@tf.function
 	def train_step(self, x, y):
@@ -85,7 +82,7 @@ class FedProtoClient(ClientBase):
 				for i in range(len(y)):
 					yy = self.classes[i]
 					y_c = tf.get_static_value(yy)
-					proto_new[i] = self.global_protos[y_c][0]
+					proto_new[i] = self.global_protos[y_c]
 					self.protos_samples_per_class[y_c] += 1
 
 				proto_new = tf.constant(proto_new)
@@ -177,7 +174,7 @@ class FedProtoClient(ClientBase):
 							for i in range(len(y_batch_train)):
 								yy = self.classes[i]
 								y_c = tf.get_static_value(yy)
-								proto_new[i] = self.global_protos[y_c][0]
+								proto_new[i] = self.global_protos[y_c]
 								self.protos_samples_per_class[y_c] += 1
 
 							proto_new = tf.constant(proto_new)
@@ -340,9 +337,9 @@ class FedProtoClient(ClientBase):
 
 	def load_and_set_parameters(self):
 
-		self.model.load_weights("""./fedproto_saved_weights/{}/{}""".format(self.model_name, self.cid))
+		self.model.load_weights("""./fedproto_saved_weights/{}/{}/{}""".format(self.model_name, self.cid, self.cid))
 
 	def save_parameters(self):
 
-		self.model.save_weights("""./fedproto_saved_weights/{}/{}""".format(self.model_name, self.cid))
+		self.model.save_weights("""./fedproto_saved_weights/{}/{}/{}""".format(self.model_name, self.cid, self.cid))
 
