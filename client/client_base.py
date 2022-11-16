@@ -114,7 +114,7 @@ class ClientBase(fl.client.NumPyClient):
 
 			selected           = 1
 			history            = self.model.fit(self.x_train, self.y_train, verbose=0, epochs=self.local_epochs)
-			trained_parameters = self.model.get_weights()
+			trained_parameters = self.get_parameters_of_model()
 		
 		total_time         = time.process_time() - start_time
 		size_of_parameters = sum(map(sys.getsizeof, trained_parameters))

@@ -35,12 +35,3 @@ class FedAvgClient(ClientBase):
 						 perc_of_clients=perc_of_clients,
 						 decay=decay,
 						 non_iid=non_iid)
-
-	def get_parameters(self, config):
-		return self.model.get_weights()
-
-	def get_parameters_of_model(self):
-		return self.model.get_weights()
-
-	def set_parameters_to_model(self, parameters):
-		self.model.set_weights(parameters)

@@ -21,7 +21,6 @@ class ModelCreation():
 
 		if not use_proto:
 			model.compile(optimizer='sgd', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-
 		return model
 
 # ====================================================================================================================
