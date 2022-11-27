@@ -144,6 +144,7 @@ class FedProtoClient(ClientBase):
 		if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
 			if int(config['round']) > 1:
 				self.set_proto(parameters)
+				# the parameters are saved in a file because in each round new instances of client are created
 				self.load_and_set_parameters()
 
 			selected = 1
@@ -205,6 +206,7 @@ class FedProtoClient(ClientBase):
 			# =========================================================
 
 			trained_parameters = self.model.get_weights()
+			# the parameters are saved in a file because in each round new instances of client are created
 			self.save_parameters()
 			self.saved_parameters = copy.deepcopy(trained_parameters)
 
