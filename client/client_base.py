@@ -10,11 +10,11 @@ from model_definition import ModelCreation
 import csv
 
 
-# import warnings
-# warnings.simplefilter("ignore")
-#
-# import logging
-# logging.getLogger("tensorflow").setLevel(logging.ERROR)
+import warnings
+warnings.simplefilter("ignore")
+
+import logging
+logging.getLogger("tensorflow").setLevel(logging.ERROR)
 
 class ClientBase(fl.client.NumPyClient):
 
