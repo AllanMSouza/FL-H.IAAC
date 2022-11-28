@@ -123,11 +123,18 @@ class SimulationFL():
 
 	def start_simulation(self):
 
+		# ray_args = {
+		# 	"include_dashboard"   : False,
+		# 	"max_calls"           : 1,
+		# 	"ignore_reinit_error" : True
+		# }
+
 		fl.simulation.start_simulation(
-						    client_fn   = self.create_client,
-						    num_clients = self.n_clients,
-						    config      = fl.server.ServerConfig(num_rounds=self.rounds),
-						    strategy    = self.create_strategy(),
+						    client_fn     = self.create_client,
+						    num_clients   = self.n_clients,
+						    config        = fl.server.ServerConfig(num_rounds=self.rounds),
+						    strategy      = self.create_strategy(),
+						    #ray_init_args = ray_args
 						)
 
 

@@ -1,4 +1,7 @@
 import flwr as fl
+import tensorflow
+import random
+import time
 import numpy as np
 import tensorflow as tf
 import os
@@ -40,7 +43,6 @@ class ClientBase(fl.client.NumPyClient):
 		self.non_iid      = non_iid
 
 		self.num_classes = n_classes
-
 
 		self.model        = None
 		self.x_train      = None
