@@ -26,7 +26,7 @@ class ModelCreation():
 # ====================================================================================================================
 	def create_CNN(self, input_shape, num_classes, use_proto=False):
 
-		deep_cnn = SequentialFedLTA(use_proto=use_proto)
+		deep_cnn = Sequential()
 
 		if len(input_shape) == 3:
 			deep_cnn.add(InputLayer(input_shape=(input_shape[1], input_shape[2], 1)))

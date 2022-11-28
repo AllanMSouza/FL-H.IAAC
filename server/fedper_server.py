@@ -26,6 +26,6 @@ class FedPerServer(ServerBase):
                          strategy_name='FedPer',
                          model_name=model_name)
 
-        directory = """fedproto_saved_weights/{}/""".format(self.model_name)
+        directory = """fedper_saved_weights/{}/""".format(self.model_name)
         if Path(directory).exists():
             shutil.rmtree(directory)

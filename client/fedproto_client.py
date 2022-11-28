@@ -65,9 +65,7 @@ class FedProtoClient(ClientBase):
 		self.modify_dataset()
 		self.create_folder()
 
-
 	def create_folder(self):
-
 		Path("""fedproto_saved_weights/{}/{}/""".format(self.model_name, self.cid, self.cid)).mkdir(parents=True, exist_ok=True)
 
 	@tf.function
