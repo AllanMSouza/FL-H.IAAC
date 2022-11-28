@@ -73,13 +73,13 @@ def main():
 
 	(opt, args) = parser.parse_args()
 
-	if opt.algorithm == 'None':
+	if opt.aggregation_method == 'None':
 		exec_fedsgd(opt.non_iid)
 
-	elif opt.algorithm == 'POC':
+	elif opt.aggregation_method == 'POC':
 		exec_poc(opt.non_iid)
 
-	elif opt.algorithm == 'FedLTA':
+	elif opt.aggregation_method == 'FedLTA':
 		exec_fedlta(opt.non_iid)
 		
 		

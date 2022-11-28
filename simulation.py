@@ -87,37 +87,37 @@ class SimulationFL():
 			self.strategy_name = 'FedAVG'
 
 		if self.strategy_name == 'FedPer':
-			return FedPerServer(algorithm=self.algorithm,
-								n_classes=self.n_classes,
-								fraction_fit=1,
-								num_clients=self.n_clients,
-								decay=self.decay,
-								perc_of_clients=self.poc,
-								strategy_name=self.strategy_name,
-								dataset=self.dataset,
-								model_name=self.model_name)
+			return FedPerServer(aggregation_method=self.algorithm,
+                                n_classes=self.n_classes,
+                                fraction_fit=1,
+                                num_clients=self.n_clients,
+                                decay=self.decay,
+                                perc_of_clients=self.poc,
+                                strategy_name=self.strategy_name,
+                                dataset=self.dataset,
+                                model_name=self.model_name)
 
 		elif self.strategy_name == 'FedProto':
-			return FedProtoServer(algorithm=self.algorithm,
-								  n_classes=self.n_classes,
-								fraction_fit=1,
-								num_clients=self.n_clients,
-								decay=self.decay,
-								perc_of_clients=self.poc,
-								strategy_name=self.strategy_name,
-								dataset=self.dataset,
-								model_name=self.model_name)
+			return FedProtoServer(aggregation_method=self.algorithm,
+                                  n_classes=self.n_classes,
+                                  fraction_fit=1,
+                                  num_clients=self.n_clients,
+                                  decay=self.decay,
+                                  perc_of_clients=self.poc,
+                                  strategy_name=self.strategy_name,
+                                  dataset=self.dataset,
+                                  model_name=self.model_name)
 
 		else:
-			return FedAvgServer(algorithm=self.algorithm,
-							  n_classes=self.n_classes,
-							  fraction_fit=1,
-							  num_clients=self.n_clients,
-							  decay=self.decay,
-							  perc_of_clients=self.poc,
-							  strategy_name=self.strategy_name,
-							  dataset=self.dataset,
-							  model_name=self.model_name)
+			return FedAvgServer(aggregation_method=self.algorithm,
+                                n_classes=self.n_classes,
+                                fraction_fit=1,
+                                num_clients=self.n_clients,
+                                decay=self.decay,
+                                perc_of_clients=self.poc,
+                                strategy_name=self.strategy_name,
+                                dataset=self.dataset,
+                                model_name=self.model_name)
 
 
 
@@ -148,7 +148,7 @@ def main():
 
 	(opt, args) = parser.parse_args()
 
-	simulation = SimulationFL(int(opt.n_clients), opt.algorithm, opt.model_name,  opt.strategy_name, opt.dataset, int(opt.n_classes),
+	simulation = SimulationFL(int(opt.n_clients), opt.aggregation_method, opt.model_name, opt.strategy_name, opt.dataset, int(opt.n_classes),
 							  int(opt.local_epochs), int(opt.rounds), float(opt.poc), float(opt.decay),
 							  bool(opt.non_iid))
 

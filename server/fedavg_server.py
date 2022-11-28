@@ -12,10 +12,10 @@ from server.server_base import ServerBase
 
 class FedAvgServer(ServerBase):
 
-    def __init__(self, algorithm, n_classes, fraction_fit, num_clients,
+    def __init__(self, aggregation_method, n_classes, fraction_fit, num_clients,
                  decay=0, perc_of_clients=0, dataset='', strategy_name='FedPer', model_name=''):
 
-        super().__init__(algorithm=algorithm,
+        super().__init__(aggregation_method=aggregation_method,
                          n_classes=n_classes,
                          fraction_fit=fraction_fit,
                          num_clients=num_clients,

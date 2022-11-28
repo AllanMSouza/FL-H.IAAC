@@ -15,10 +15,10 @@ import shutil
 
 class FedProtoServer(ServerBase):
 
-    def __init__(self, algorithm, n_classes, fraction_fit, num_clients,
+    def __init__(self, aggregation_method, n_classes, fraction_fit, num_clients,
                  decay=0, perc_of_clients=0, dataset='', strategy_name='FedProto', model_name=''):
 
-        super().__init__(algorithm=algorithm,
+        super().__init__(aggregation_method=aggregation_method,
                          n_classes=n_classes,
                          fraction_fit=fraction_fit,
                          num_clients=num_clients,
@@ -40,7 +40,7 @@ class FedProtoServer(ServerBase):
             client_id = str(fit_res.metrics['cid'])
             protos_samples_per_class = fit_res.metrics['protos_samples_per_class']
 
-            if self.algorithm not in ['POC', 'FedLTA'] or int(server_round) <= 1:
+            if self.aggregation_method not in ['POC', 'FedLTA'] or int(server_round) <= 1:
                 weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), protos_samples_per_class))
 
             else:

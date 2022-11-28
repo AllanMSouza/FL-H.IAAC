@@ -12,10 +12,10 @@ from flwr.common.logger import log
 
 class ServerBase(fl.server.strategy.FedAvg):
 
-	def __init__(self, algorithm, n_classes, fraction_fit, num_clients,
+	def __init__(self, aggregation_method, n_classes, fraction_fit, num_clients,
 				 decay=0, perc_of_clients=0, dataset='', strategy_name='', model_name=''):
 		
-		self.algorithm = algorithm
+		self.aggregation_method = aggregation_method
 		self.n_classes = n_classes
 		self.num_clients        = num_clients
 		self.list_of_clients    = []
@@ -39,14 +39,14 @@ class ServerBase(fl.server.strategy.FedAvg):
 		self.decay_factor = decay
 
 		#params
-		if self.algorithm == 'POC':
-			self.strategy_name = f"{strategy_name}-{algorithm}-{self.perc_of_clients}"
+		if self.aggregation_method == 'POC':
+			self.strategy_name = f"{strategy_name}-{aggregation_method}-{self.perc_of_clients}"
 
-		elif self.algorithm == 'FedLTA':
-			self.strategy_name = f"{strategy_name}-{algorithm}-{self.decay_factor}"
+		elif self.aggregation_method == 'FedLTA':
+			self.strategy_name = f"{strategy_name}-{aggregation_method}-{self.decay_factor}"
 
-		elif self.algorithm == 'None':
-			self.strategy_name = f"{strategy_name}-{algorithm}"
+		elif self.aggregation_method == 'None':
+			self.strategy_name = f"{strategy_name}-{aggregation_method}"
 
 		self._write_output_files_headers()
 
@@ -55,11 +55,11 @@ class ServerBase(fl.server.strategy.FedAvg):
 	def configure_fit(self, server_round, parameters, client_manager):
 		"""Configure the next round of training."""
 		#print(self.aggregation_method == 'POC')
-		if self.algorithm == 'POC':
+		if self.aggregation_method == 'POC':
 			clients2select        = int(float(self.num_clients) * float(self.perc_of_clients))
 			self.selected_clients = self.list_of_clients[:clients2select]
 
-		elif self.algorithm == 'FedLTA':
+		elif self.aggregation_method == 'FedLTA':
 			self.selected_clients = self.select_clients_bellow_average()
 
 			if self.decay_factor > 0:
@@ -94,7 +94,7 @@ class ServerBase(fl.server.strategy.FedAvg):
 		for _, fit_res in results:
 			client_id = str(fit_res.metrics['cid'])
 
-			if self.algorithm not in ['POC', 'FedLTA'] or int(server_round) <= 1:
+			if self.aggregation_method not in ['POC', 'FedLTA'] or int(server_round) <= 1:
 				weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples))
 
 			else:
