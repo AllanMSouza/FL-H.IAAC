@@ -151,7 +151,7 @@ class FedProtoClient(ClientBase):
 
 			# training
 			# =========================================================
-			for epoch in range(self.epochs):
+			for epoch in range(self.local_epochs):
 				# print("\nStart of epoch %d" % (epoch,))
 				start_time = time.time()
 

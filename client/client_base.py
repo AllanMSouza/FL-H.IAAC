@@ -39,7 +39,6 @@ class ClientBase(fl.client.NumPyClient):
 		self.local_epochs = epochs
 		self.non_iid      = non_iid
 
-		self.epochs = epochs
 		self.num_classes = n_classes
 
 
