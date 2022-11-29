@@ -27,8 +27,8 @@ def exec_fedsgd(non_iid):
 		for epochs in EPOCHS:
 			for model in MODELS:
 				print(f'Strating FedSGD simulation for {dataset} clients with {model} model ...')
-				subprocess.Popen(['python3', 'simulation.py', '-c', str(CLIENTS[dataset]), '-a', 'None', '-m', model, 
-												'-d', dataset, '-e', str(epochs), '-r', str(ROUNDS), 
+				subprocess.Popen(['python3', 'simulation.py', '-c', str(CLIENTS[dataset]), '-a', 'None', '-m', model,
+												'-d', dataset, '-e', str(epochs), '-r', str(ROUNDS),
 												'--non-iid', 'False']).wait()
 
 				subprocess.Popen(['rm', '-fr', '/tmp/ray/']).wait()
@@ -41,8 +41,8 @@ def exec_poc(non_iid):
 			for model in MODELS:
 				for poc in CLIENTS2SELCT:
 					print(f'Strating POC-{poc} simulation for {dataset} clients with {model} model ...')
-					subprocess.Popen(['python3', 'simulation.py', '-c', str(CLIENTS[dataset]), '-a', 'POC', '-m', model, 
-												 '-d', dataset, '-e', str(epochs), '-r', str(ROUNDS), 
+					subprocess.Popen(['python3', 'simulation.py', '-c', str(CLIENTS[dataset]), '-a', 'POC', '-m', model,
+												 '-d', dataset, '-e', str(epochs), '-r', str(ROUNDS),
 												 '--poc', str(poc), '--non-iid', 'False']).wait()
 
 					subprocess.Popen(['rm', '-fr', '/tmp/ray/']).wait()
@@ -56,8 +56,8 @@ def exec_fedlta(non_iid):
 			for model in MODELS:
 				for decay in DECAY:
 					print(f'Strating FedLTA with decay {decay} simulation for {dataset} clients with {model} model ...')
-					subprocess.Popen(['python3', 'simulation.py', '-c', str(CLIENTS[dataset]), '-a', 'FedLTA', '-m', model, 
-												 '-d', dataset, '-e', str(epochs), '-r', str(ROUNDS), 
+					subprocess.Popen(['python3', 'simulation.py', '-c', str(CLIENTS[dataset]), '-a', 'FedLTA', '-m', model,
+												 '-d', dataset, '-e', str(epochs), '-r', str(ROUNDS),
 												 '--decay', str(decay), '--non-iid', 'False']).wait()
 
 					subprocess.Popen(['rm', '-fr', '/tmp/ray/']).wait()
@@ -72,13 +72,13 @@ def main():
 
 	(opt, args) = parser.parse_args()
 
-	if opt.algorithm == 'None':
+	if opt.aggregation_method == 'None':
 		exec_fedsgd(opt.non_iid)
 
-	elif opt.algorithm == 'POC':
+	elif opt.aggregation_method == 'POC':
 		exec_poc(opt.non_iid)
 
-	elif opt.algorithm == 'FedLTA':
+	elif opt.aggregation_method == 'FedLTA':
 		exec_fedlta(opt.non_iid)
 		
 		
