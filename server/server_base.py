@@ -12,9 +12,19 @@ from flwr.common.logger import log
 
 class ServerBase(fl.server.strategy.FedAvg):
 
-	def __init__(self, aggregation_method, n_classes, fraction_fit, num_clients,
-				 decay=0, perc_of_clients=0, dataset='', strategy_name='', model_name=''):
-		
+	def __init__(self,
+				 aggregation_method,
+				 n_classes,
+				 fraction_fit,
+				 num_clients,
+				 num_rounds,
+				 decay=0,
+				 perc_of_clients=0,
+				 dataset='',
+				 strategy_name='',
+				 model_name='',
+				 new_clients=0):
+
 		self.aggregation_method = aggregation_method
 		self.n_classes = n_classes
 		self.num_clients        = num_clients
@@ -38,6 +48,9 @@ class ServerBase(fl.server.strategy.FedAvg):
 		#FedLTA
 		self.decay_factor = decay
 
+		self.new_clients = new_clients
+		self.num_rounds = num_rounds
+
 		#params
 		if self.aggregation_method == 'POC':
 			self.strategy_name = f"{strategy_name}-{aggregation_method}-{self.perc_of_clients}"
@@ -48,13 +61,22 @@ class ServerBase(fl.server.strategy.FedAvg):
 		elif self.aggregation_method == 'None':
 			self.strategy_name = f"{strategy_name}-{aggregation_method}"
 
+		# if self.new_clients > 0:
+		#
+		# 	half_rounds = int(self.num_rounds/2)
+		# 	half_clients = int(self.num_clients/2)
+		#
+		# 	if server_round < half_rounds:
+		#
+		# 		self.selected_clients = self.selected_clients[:half_clients]
+
 		self._write_output_files_headers()
 
 		super().__init__(fraction_fit=fraction_fit, min_available_clients=num_clients, min_fit_clients=num_clients, min_evaluate_clients=num_clients)
 
 	def configure_fit(self, server_round, parameters, client_manager):
 		"""Configure the next round of training."""
-		#print(self.aggregation_method == 'POC')
+		self.start_time = time.time()
 		if self.aggregation_method == 'POC':
 			clients2select        = int(float(self.num_clients) * float(self.perc_of_clients))
 			self.selected_clients = self.list_of_clients[:clients2select]
@@ -66,9 +88,18 @@ class ServerBase(fl.server.strategy.FedAvg):
 				the_chosen_ones  = len(self.selected_clients) * (1 - self.decay_factor)**int(server_round)
 				self.selected_clients = self.selected_clients[ : math.ceil(the_chosen_ones)]
 
+		# if self.          > 0:
+		#
+		# 	half_rounds = int(self.num_rounds/2)
+		# 	half_clients = int(self.num_clients/2)
+		#
+		# 	if server_round < half_rounds:
+		#
+		# 		self.selected_clients = self.selected_clients[:half_clients]
+
 
 		self.clients_last_round = self.selected_clients
-		
+
 		config = {
 			"selected_clients" : ' '.join(self.selected_clients),
 			"round"            : server_round
@@ -88,7 +119,7 @@ class ServerBase(fl.server.strategy.FedAvg):
 		return [(client, fit_ins) for client in clients]
 
 
-	def aggregate_fit(self, server_round, results, failures):		
+	def aggregate_fit(self, server_round, results, failures):
 		weights_results = []
 
 		for _, fit_res in results:
@@ -149,7 +180,7 @@ class ServerBase(fl.server.strategy.FedAvg):
 		self.list_of_accuracies = []
 		accs                    = []
 
-		
+
 		for response in results:
 			client_id       = response[1].metrics['cid']
 			client_accuracy = float(response[1].metrics['accuracy'])
@@ -189,19 +220,19 @@ class ServerBase(fl.server.strategy.FedAvg):
 
 		base = f"logs/{self.strategy_name}/{self.num_clients}/{self.model_name}/{self.dataset}/"
 		filename_server = f"{base}server.csv"
-		data = [time.time(), server_round, accuracy_aggregated, top5, top1]
+		data = [time.time()-self.start_time, server_round, accuracy_aggregated, top5, top1]
 
 		self._write_output(filename=filename_server,
 						   data=data
 						   )
 
-		metrics_aggregated = { 
+		metrics_aggregated = {
 			"accuracy"  : accuracy_aggregated,
 			"top-3"     : top5,
 			"top-1"     : top1
 		}
 
-	
+
 		return loss_aggregated, metrics_aggregated
 
 

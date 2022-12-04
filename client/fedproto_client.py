@@ -84,8 +84,8 @@ class FedProtoClient(ClientBase):
 					self.protos_samples_per_class[y_c] += 1
 
 				proto_new = tf.constant(proto_new)
-				mse_loss = tf.reduce_mean(self.loss_mse(proto_new, rep))
-				loss_value += mse_loss * self.lamda
+				# mse_loss = tf.reduce_mean(self.loss_mse(proto_new, rep))
+				# loss_value += mse_loss * self.lamda
 		grads = tape.gradient(loss_value, self.model.trainable_weights)
 		self.optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
 		self.train_acc_metric.update_state(y, logits)
@@ -336,10 +336,11 @@ class FedProtoClient(ClientBase):
 		return protos
 
 	def load_and_set_parameters(self):
-
-		self.model.load_weights("""./fedproto_saved_weights/{}/{}/{}""".format(self.model_name, self.cid, self.cid))
+		filename = """./fedproto_saved_weights/{}/{}/{}""".format(self.model_name, self.cid, self.cid)
+		if Path(filename+".index").exists():
+			self.model.load_weights(filename)
 
 	def save_parameters(self):
-
-		self.model.save_weights("""./fedproto_saved_weights/{}/{}/{}""".format(self.model_name, self.cid, self.cid))
+		filename = """./fedproto_saved_weights/{}/{}/{}""".format(self.model_name, self.cid, self.cid)
+		self.model.save_weights(filename)
 

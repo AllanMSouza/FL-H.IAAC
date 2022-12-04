@@ -1,6 +1,6 @@
 import flwr as fl
-from client import FedAvgClient, FedPerClient, FedProtoClient
-from server import ServerBase, FedPerServer, FedProtoServer, FedAvgServer
+from client import FedAvgClient, FedPerClient, FedProtoClient, FedLocalClient
+from server import ServerBase, FedPerServer, FedProtoServer, FedAvgServer, FedLocalServer
 
 from optparse import OptionParser
 import tensorflow as tf
@@ -50,14 +50,27 @@ class SimulationFL():
 								dataset=self.dataset,
 								perc_of_clients=self.poc,
 								decay=self.decay,
-								non_iid=self.non_iid,
-								n_personalized_layers=1)
+								non_iid=self.non_iid)
+
+		elif self.strategy_name == 'FedLocal':
+			return FedLocalClient(cid=cid,
+								n_clients=self.n_clients,
+								n_classes=self.n_classes,
+								epochs=self.epochs,
+								model_name=self.model_name,
+								client_selection=self.client_selection,
+								solution_name=self.strategy_name,
+								aggregation_method=self.aggregation_method,
+								dataset=self.dataset,
+								perc_of_clients=self.poc,
+								decay=self.decay,
+								non_iid=self.non_iid)
 
 		elif self.strategy_name == 'FedProto':
 			return FedProtoClient(cid=cid,
 								  n_clients=self.n_clients,
 								  n_classes=self.n_classes,
-								  epochs=self.epochs,
+								  epochs=10,
 								  model_name=self.model_name,
 								  client_selection=self.client_selection,
 								  solution_name=self.strategy_name,
@@ -73,7 +86,7 @@ class SimulationFL():
 								n_classes=self.n_classes,
 								model_name=self.model_name,
 								client_selection=self.client_selection,
-								epochs=self.epochs,
+								epochs=10,
 								solution_name=self.strategy_name,
 								aggregation_method=self.aggregation_method,
 								dataset=self.dataset,
@@ -91,6 +104,19 @@ class SimulationFL():
 								n_classes=self.n_classes,
 								fraction_fit=1,
 								num_clients=self.n_clients,
+								num_rounds=self.rounds,
+								decay=self.decay,
+								perc_of_clients=self.poc,
+								strategy_name=self.strategy_name,
+								dataset=self.dataset,
+								model_name=self.model_name)
+
+		elif self.strategy_name == 'FedLocal':
+			return FedLocalServer(aggregation_method=self.aggregation_method,
+								n_classes=self.n_classes,
+								fraction_fit=1,
+								num_clients=self.n_clients,
+								num_rounds=self.rounds,
 								decay=self.decay,
 								perc_of_clients=self.poc,
 								strategy_name=self.strategy_name,
@@ -102,6 +128,7 @@ class SimulationFL():
 								  n_classes=self.n_classes,
 								  fraction_fit=1,
 								  num_clients=self.n_clients,
+								  num_rounds=self.rounds,
 								  decay=self.decay,
 								  perc_of_clients=self.poc,
 								  strategy_name=self.strategy_name,
@@ -113,6 +140,7 @@ class SimulationFL():
 								n_classes=self.n_classes,
 								fraction_fit=1,
 								num_clients=self.n_clients,
+								num_rounds=self.rounds,
 								decay=self.decay,
 								perc_of_clients=self.poc,
 								strategy_name=self.strategy_name,

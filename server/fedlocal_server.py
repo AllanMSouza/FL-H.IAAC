@@ -8,9 +8,10 @@ from flwr.common import FitIns
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
 
 from server.server_base import ServerBase
+from pathlib import Path
+import shutil
 
-
-class FedAvgServer(ServerBase):
+class FedLocalServer(ServerBase):
 
     def __init__(self,
                  aggregation_method,
@@ -32,5 +33,17 @@ class FedAvgServer(ServerBase):
                          decay=decay,
                          perc_of_clients=perc_of_clients,
                          dataset=dataset,
-                         strategy_name='FedAVG',
+                         strategy_name='FedLocal',
                          model_name=model_name)
+
+
+
+        self.create_folder()
+
+    def create_folder(self):
+
+        directory = """fedlocal_saved_weights/{}/""".format(self.model_name)
+        if Path(directory).exists():
+            shutil.rmtree(directory)
+        for i in range(self.num_clients):
+            Path("""fedlocal_saved_weights/{}/{}/""".format(self.model_name, i)).mkdir(parents=True, exist_ok=True)

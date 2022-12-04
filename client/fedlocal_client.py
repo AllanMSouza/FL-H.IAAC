@@ -15,7 +15,7 @@ warnings.simplefilter("ignore")
 import logging
 logging.getLogger("tensorflow").setLevel(logging.ERROR)
 tf.random.set_seed(0)
-class FedPerClient(ClientBase):
+class FedLocalClient(ClientBase):
 
 	def __init__(self,
 				 cid,
@@ -49,12 +49,9 @@ class FedPerClient(ClientBase):
 		self.n_personalized_layers = n_personalized_layers*2
 
 	def save_parameters(self):
-		filename = """./fedper_saved_weights/{}/{}/{}.json""".format(self.model_name, self.cid, self.cid)
+		filename = """./fedlocal_saved_weights/{}/{}/{}.json""".format(self.model_name, self.cid, self.cid)
 		weights = self.model.get_weights()
-		personalized_layers_weights = []
-		for i in range(self.n_personalized_layers):
-			personalized_layers_weights.append(weights[len(weights)-self.n_personalized_layers+i])
-		data = json.dumps([i.tolist() for i in personalized_layers_weights])
+		data = json.dumps([i.tolist() for i in weights])
 		jsonFile = open(filename, "w")
 		jsonFile.write(data)
 		jsonFile.close()
@@ -70,13 +67,10 @@ class FedPerClient(ClientBase):
 		return weights
 
 	def set_parameters_to_model(self, parameters):
-		filename = """./fedper_saved_weights/{}/{}/{}.json""".format(self.model_name, self.cid, self.cid)
+		filename = """./fedlocal_saved_weights/{}/{}/{}.json""".format(self.model_name, self.cid, self.cid)
 		if Path(filename).exists():
 			fileObject = open(filename, "r")
 			jsonContent = fileObject.read()
 			aList = [np.array(i) for i in json.loads(jsonContent)]
-			size = len(parameters)
-			# updating only the personalized layers, which were previously saved in a file
-			for i in range(self.n_personalized_layers):
-				parameters[size-self.n_personalized_layers+i] = aList[i]
+			parameters = aList
 		self.model.set_weights(parameters)

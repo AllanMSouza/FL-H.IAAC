@@ -12,16 +12,27 @@ from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
 
 from server.server_base import ServerBase
 import shutil
-
+import tensorflow as tf
+tf.random.set_seed(0)
 class FedProtoServer(ServerBase):
 
-    def __init__(self, aggregation_method, n_classes, fraction_fit, num_clients,
-                 decay=0, perc_of_clients=0, dataset='', strategy_name='FedProto', model_name=''):
+    def __init__(self,
+                 aggregation_method,
+                 n_classes,
+                 fraction_fit,
+                 num_clients,
+                 num_rounds,
+                 decay=0,
+                 perc_of_clients=0,
+                 dataset='',
+                 strategy_name='FedProto',
+                 model_name=''):
 
         super().__init__(aggregation_method=aggregation_method,
                          n_classes=n_classes,
                          fraction_fit=fraction_fit,
                          num_clients=num_clients,
+                         num_rounds=num_rounds,
                          decay=decay,
                          perc_of_clients=perc_of_clients,
                          dataset=dataset,
@@ -72,7 +83,7 @@ class FedProtoServer(ServerBase):
 
         # Create a list of weights, each multiplied by the related number of examples
 
-        sum_protos = {i: None for i in range(self.n_classes)}
+        sum_protos = {i: np.array([]) for i in range(self.n_classes)}
 
         for key in range(self.n_classes):
             for proto, num_examples in results:
@@ -81,7 +92,7 @@ class FedProtoServer(ServerBase):
                     continue
 
                 if num_examples[key] > 0:
-                    if sum_protos[key] is None:
+                    if len(sum_protos[key]) == 0:
                         # print("umm", proto[key])
                         # print(sum_protos[key], proto[key], num_examples[key])
                         sum_protos[key] = proto[key][0]*num_examples[key]
@@ -90,7 +101,7 @@ class FedProtoServer(ServerBase):
                         # print("dois", sum_protos[key], proto[key][0], num_examples[key])
                         sum_protos[key] += proto[key][0]*num_examples[key]
 
-            if sum_protos[key] is not None:
+            if len(sum_protos[key]) > 0:
                 sum_protos[key] = sum_protos[key]/(num_examples_total[key] * num_examples_total_clients[key])
 
         weighted_weights = [
@@ -153,7 +164,7 @@ class FedProtoServer(ServerBase):
 
         base = f"logs/{self.strategy_name}/{self.num_clients}/{self.model_name}/{self.dataset}/"
         filename_server = f"{base}server.csv"
-        data = [time.time(), server_round, accuracy_aggregated, top5, top1]
+        data = [time.time()-self.start_time, server_round, accuracy_aggregated, top5, top1]
 
         self._write_output(filename=filename_server,
                            data=data

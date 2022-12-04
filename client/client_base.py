@@ -25,7 +25,7 @@ class ClientBase(fl.client.NumPyClient):
 				 cid,
 				 n_clients,
 				 n_classes,
-				 epochs=1,
+				 epochs				= 1,
 				 model_name         = 'None',
 				 client_selection   = False,
 				 solution_name      = 'None',
@@ -137,7 +137,6 @@ class ClientBase(fl.client.NumPyClient):
 
 
 	def evaluate(self, parameters, config):
-		
 		self.set_parameters_to_model(parameters)
 		loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
 		size_of_parameters = sum(map(sys.getsizeof, parameters))
