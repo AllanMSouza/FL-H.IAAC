@@ -1,6 +1,6 @@
 import flwr as fl
-from client import FedAvgClientTf, FedPerClientTf, FedProtoClientTf, FedLocalClientTf, FedAvgClientTorch
-from server import FedPerServerTf, FedProtoServerTf, FedAvgServerTf, FedLocalServerTf, FedAvgServerTorch
+from client import FedAvgClientTf, FedPerClientTf, FedProtoClientTf, FedLocalClientTf, FedAvgClientTorch, FedProtoClientTorch
+from server import FedPerServerTf, FedProtoServerTf, FedAvgServerTf, FedLocalServerTf, FedAvgServerTorch, FedProtoServerTorch
 
 from optparse import OptionParser
 import tensorflow as tf
@@ -110,18 +110,32 @@ class SimulationFL():
 									  non_iid=self.non_iid)
 
 		elif self.nn_type == 'torch':
-			return FedAvgClientTorch(cid=cid,
-								  n_clients=self.n_clients,
-								  n_classes=self.n_classes,
-								  model_name=self.model_name,
-								  client_selection=self.client_selection,
-								  epochs=1,
-								  solution_name=self.strategy_name,
-								  aggregation_method=self.aggregation_method,
-								  dataset=self.dataset,
-								  perc_of_clients=self.poc,
-								  decay=self.decay,
-								  non_iid=self.non_iid)
+			if self.strategy_name == 'FedProto':
+				return FedProtoClientTorch(cid=cid,
+										n_clients=self.n_clients,
+										n_classes=self.n_classes,
+										epochs=1,
+										model_name=self.model_name,
+										client_selection=self.client_selection,
+										solution_name=self.strategy_name,
+										aggregation_method=self.aggregation_method,
+										dataset=self.dataset,
+										perc_of_clients=self.poc,
+										decay=self.decay,
+										non_iid=self.non_iid)
+			else:
+				return FedAvgClientTorch(cid=cid,
+									  n_clients=self.n_clients,
+									  n_classes=self.n_classes,
+									  model_name=self.model_name,
+									  client_selection=self.client_selection,
+									  epochs=1,
+									  solution_name=self.strategy_name,
+									  aggregation_method=self.aggregation_method,
+									  dataset=self.dataset,
+									  perc_of_clients=self.poc,
+									  decay=self.decay,
+									  non_iid=self.non_iid)
 
 
 	def create_strategy(self):
@@ -179,8 +193,19 @@ class SimulationFL():
 									dataset=self.dataset,
 									model_name=self.model_name)
 		elif self.nn_type == 'torch':
-
-			return FedAvgServerTorch(aggregation_method=self.aggregation_method,
+			if self.strategy_name == 'FedProto':
+				return FedProtoServerTorch(aggregation_method=self.aggregation_method,
+										n_classes=self.n_classes,
+										fraction_fit=1,
+										num_clients=self.n_clients,
+										num_rounds=self.rounds,
+										decay=self.decay,
+										perc_of_clients=self.poc,
+										strategy_name=self.strategy_name,
+										dataset=self.dataset,
+										model_name=self.model_name)
+			else:
+				return FedAvgServerTorch(aggregation_method=self.aggregation_method,
 								  n_classes=self.n_classes,
 								  fraction_fit=1,
 								  num_clients=self.n_clients,

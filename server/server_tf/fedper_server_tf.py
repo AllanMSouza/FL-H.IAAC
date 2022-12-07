@@ -1,8 +1,8 @@
-from server.server_tf.server_base import ServerBaseTf
+from server.common_base_server import FedAvgBaseServer
 from pathlib import Path
 import shutil
 
-class FedLocalServerTf(ServerBaseTf):
+class FedPerServerTf(FedAvgBaseServer):
 
     def __init__(self,
                  aggregation_method,
@@ -24,7 +24,7 @@ class FedLocalServerTf(ServerBaseTf):
                          decay=decay,
                          perc_of_clients=perc_of_clients,
                          dataset=dataset,
-                         strategy_name='FedLocal',
+                         strategy_name='FedPer',
                          model_name=model_name)
 
 
@@ -33,8 +33,8 @@ class FedLocalServerTf(ServerBaseTf):
 
     def create_folder(self):
 
-        directory = """fedlocal_saved_weights/{}/""".format(self.model_name)
+        directory = """fedper_saved_weights/{}/""".format(self.model_name)
         if Path(directory).exists():
             shutil.rmtree(directory)
         for i in range(self.num_clients):
-            Path("""fedlocal_saved_weights/{}/{}/""".format(self.model_name, i)).mkdir(parents=True, exist_ok=True)
+            Path("""fedper_saved_weights/{}/{}/""".format(self.model_name, i)).mkdir(parents=True, exist_ok=True)

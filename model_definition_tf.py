@@ -32,7 +32,6 @@ class ModelCreation():
 		# model.compile(optimizer='sgd', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 		# # print("pesos: ", len(model.get_weights()))
 		# print(model.get_weights())
-		return model
 
 # ====================================================================================================================
 	def create_CNN(self, input_shape, num_classes, use_proto=False):

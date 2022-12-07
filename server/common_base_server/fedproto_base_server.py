@@ -6,11 +6,11 @@ from pathlib import Path
 from flwr.common import FitIns
 from flwr.server.strategy.aggregate import weighted_loss_avg
 
-from server.server_tf.server_base import ServerBaseTf
+from server.common_base_server.fedavg_base_server import FedAvgBaseServer
 import shutil
 import tensorflow as tf
 tf.random.set_seed(0)
-class FedProtoServerTf(ServerBaseTf):
+class FedProtoBaseServer(FedAvgBaseServer):
 
     def __init__(self,
                  aggregation_method,
@@ -91,11 +91,11 @@ class FedProtoServerTf(ServerBaseTf):
                     if len(sum_protos[key]) == 0:
                         # print("umm", proto[key])
                         # print(sum_protos[key], proto[key], num_examples[key])
-                        sum_protos[key] = proto[key][0]*num_examples[key]
+                        sum_protos[key] = proto[key]*num_examples[key]
 
                     else:
                         # print("dois", sum_protos[key], proto[key][0], num_examples[key])
-                        sum_protos[key] += proto[key][0]*num_examples[key]
+                        sum_protos[key] += proto[key]*num_examples[key]
 
             if len(sum_protos[key]) > 0:
                 sum_protos[key] = sum_protos[key]/(num_examples_total[key] * num_examples_total_clients[key])

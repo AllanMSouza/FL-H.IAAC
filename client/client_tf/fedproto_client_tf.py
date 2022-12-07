@@ -82,8 +82,8 @@ class FedProtoClientTf(ClientBaseTf):
 					self.protos_samples_per_class[y_c] += 1
 
 				proto_new = tf.constant(proto_new)
-				# mse_loss = tf.reduce_mean(self.loss_mse(proto_new, rep))
-				# loss_value += mse_loss * self.lamda
+				mse_loss = tf.reduce_mean(self.loss_mse(proto_new, rep))
+				loss_value += mse_loss * self.lamda
 		grads = tape.gradient(loss_value, self.model.trainable_weights)
 		self.optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
 		self.train_acc_metric.update_state(y, logits)
@@ -131,7 +131,7 @@ class FedProtoClientTf(ClientBaseTf):
 
 		loss_train_history = []
 		acc_train_history = []
-		print("entrou")
+
 		if config['selected_clients'] != '':
 			selected_clients = [int(cid_selected) for cid_selected in config['selected_clients'].split(' ')]
 
@@ -147,7 +147,6 @@ class FedProtoClientTf(ClientBaseTf):
 
 			# training
 			# =========================================================
-			print("teste: ", self.model.layers)
 			for epoch in range(self.local_epochs):
 				# print("\nStart of epoch %d" % (epoch,))
 
@@ -176,7 +175,6 @@ class FedProtoClientTf(ClientBaseTf):
 
 							proto_new = tf.constant(proto_new)
 							mse_loss = tf.reduce_mean(self.loss_mse(proto_new, rep))
-							# # print("perda p: ", mse_loss)
 							loss_value = tf.math.add(loss_value, mse_loss)
 
 					grads = tape.gradient(loss_value, self.model.trainable_weights)
@@ -232,7 +230,7 @@ class FedProtoClientTf(ClientBaseTf):
 
 		self.normalize_proto()
 		protos_result = self.dict_to_numpy(self.protos)
-		print("fim")
+		print("Final: ", config['round'])
 		return protos_result, len(self.x_train), fit_response
 	def dict_to_numpy(self, data):
 
@@ -250,10 +248,10 @@ class FedProtoClientTf(ClientBaseTf):
 			self.protos[key] = self.protos[key]/self.protos_samples_per_class[key]
 
 	def evaluate(self, proto, config):
-		print("chegou")
 		self.set_proto(proto)
-		print("aba")
 		self.load_and_set_parameters()
+		print("Evaluate: ", config['round'])
+		print(self.model.get_weights())
 		avg_loss_test, avg_acc_test = self.evaluate_step(v='fora fit')
 
 		size_of_parameters = sum(map(sys.getsizeof, proto))
@@ -268,18 +266,22 @@ class FedProtoClientTf(ClientBaseTf):
 			"cid": self.cid,
 			"accuracy": float(avg_acc_test)
 		}
-
+		print("fim evaluate")
 		return avg_loss_test, len(self.x_test), evaluation_response
 
 	def evaluate_step(self, v=""):
 
-		if self.saved_parameters is not None:
-			self.set_parameters_to_model(self.saved_parameters)
+		# if self.saved_parameters is not None:
+		# 	print("dentro")
+		# 	self.set_parameters_to_model(self.saved_parameters)
+		# 	print("setar")
 
 		acc_history = []
 		loss_history = []
 		for x_batch_val, y_batch_val in self.val_dataset:
+			print("antes modelo",v)
 			val_logits, rep = self.model(x_batch_val, training=False)
+			print("depois modelo", v)
 
 
 			self.val_acc_metric.update_state(y_batch_val, val_logits)
@@ -311,8 +313,6 @@ class FedProtoClientTf(ClientBaseTf):
 
 			# self.val_acc_metric.update_state(self.global_protos, output)
 
-
-
 		acc_history = self.val_acc_metric.result()
 		self.val_acc_metric.reset_states()
 
@@ -337,9 +337,7 @@ class FedProtoClientTf(ClientBaseTf):
 	def load_and_set_parameters(self):
 		filename = """./fedproto_saved_weights/{}/{}/{}/saved_model/my_model""".format(self.model_name, self.cid, self.cid)
 		if Path(filename+"/saved_model.pb").exists():
-			print("existe")
 			self.model = tf.keras.models.load_model(filename)
-			print("carregou")
 
 	def save_parameters(self):
 		filename = """./fedproto_saved_weights/{}/{}/{}/saved_model/my_model""".format(self.model_name, self.cid, self.cid)

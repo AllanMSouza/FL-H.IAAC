@@ -3,8 +3,16 @@ import torch
 import torch.nn.functional as F
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 from torch import nn, Tensor
+import copy
 
 batch_size = 16
+
+class LocalModel(nn.Module):
+    def __init__(self, base, head):
+        super(LocalModel, self).__init__()
+
+        self.base = base
+        self.head = head
 
 # ====================================================================================================================
 
@@ -23,25 +31,16 @@ class DNN(nn.Module):
         return x
 
 # ====================================================================================================================
-class LocalModel(nn.Module):
-	def __init__(self, base, head):
-		super(LocalModel, self).__init__()
-
-		self.base = base
-		self.head = head
-
-	def forward(self, x):
-		out = self.base(x)
-		out = self.head(out)
-
-		return out
-
-
 # ====================================================================================================================
 class ModelCreation():
 
 	def create_DNN(self, input_shape, num_classes, use_proto=False):
-		return DNN(input_dim=input_shape, num_classes=num_classes)
+		model = DNN(input_dim=input_shape, num_classes=num_classes)
+		if use_proto:
+			head = copy.deepcopy(model.fc)
+			model.fc = nn.Identity()
+			return LocalModel(model, head)
+		return model
 
 # ====================================================================================================================
 	def create_CNN(self, input_shape, num_classes, use_proto=False):

@@ -1,8 +1,13 @@
-from server.server_tf.server_base import ServerBaseTf
+import flwr as fl
+import numpy as np
+import time
 from pathlib import Path
-import shutil
 
-class FedPerServerTf(ServerBaseTf):
+from flwr.common import FitIns
+from flwr.server.strategy.aggregate import weighted_loss_avg
+
+from server.common_base_server import FedProtoBaseServer
+class FedProtoServerTorch(FedProtoBaseServer):
 
     def __init__(self,
                  aggregation_method,
@@ -13,7 +18,7 @@ class FedPerServerTf(ServerBaseTf):
                  decay=0,
                  perc_of_clients=0,
                  dataset='',
-                 strategy_name='FedPer',
+                 strategy_name='FedProto',
                  model_name=''):
 
         super().__init__(aggregation_method=aggregation_method,
@@ -24,17 +29,5 @@ class FedPerServerTf(ServerBaseTf):
                          decay=decay,
                          perc_of_clients=perc_of_clients,
                          dataset=dataset,
-                         strategy_name='FedPer',
+                         strategy_name='FedProto',
                          model_name=model_name)
-
-
-
-        self.create_folder()
-
-    def create_folder(self):
-
-        directory = """fedper_saved_weights/{}/""".format(self.model_name)
-        if Path(directory).exists():
-            shutil.rmtree(directory)
-        for i in range(self.num_clients):
-            Path("""fedper_saved_weights/{}/{}/""".format(self.model_name, i)).mkdir(parents=True, exist_ok=True)

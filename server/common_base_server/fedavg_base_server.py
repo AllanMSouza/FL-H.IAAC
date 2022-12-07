@@ -10,7 +10,7 @@ from flwr.common import FitIns
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
 from flwr.common.logger import log
 
-class ServerBasetorch(fl.server.strategy.FedAvg):
+class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 	def __init__(self,
 				 aggregation_method,

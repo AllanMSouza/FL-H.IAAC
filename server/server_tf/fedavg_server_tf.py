@@ -1,7 +1,7 @@
 from server.common_base_server import FedAvgBaseServer
 
 
-class FedAvgServerTorch(FedAvgBaseServer):
+class FedAvgServerTf(FedAvgBaseServer):
 
     def __init__(self,
                  aggregation_method,

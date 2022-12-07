@@ -3,11 +3,13 @@ import tensorflow
 import random
 import time
 import numpy as np
+import copy
 import torch
 import os
 import time
 import sys
-
+from collections import defaultdict
+from pathlib import Path
 from dataset_utils import ManageDatasets
 from model_definition_torch import ModelCreation
 import csv
@@ -15,12 +17,13 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.utils.data import TensorDataset, DataLoader
 import warnings
+import json
 warnings.simplefilter("ignore")
-
+from client.client_torch.client_base_torch import ClientBaseTorch
 import logging
 # logging.getLogger("torch").setLevel(logging.ERROR)
 from torch.nn.parameter import Parameter
-class ClientBaseTorch(fl.client.NumPyClient):
+class FedProtoClientTorch(ClientBaseTorch):
 
 	def __init__(self,
 				 cid,
@@ -37,63 +40,25 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				 non_iid            = False,
 				 ):
 
-		self.cid          = int(cid)
-		self.n_clients    = n_clients
-		self.model_name   = model_name
-		self.local_epochs = epochs
-		self.non_iid      = non_iid
+		super().__init__(cid=cid,
+						 n_clients=n_clients,
+						 n_classes=n_classes,
+						 epochs=epochs,
+						 model_name=model_name,
+						 client_selection=client_selection,
+						 solution_name=solution_name,
+						 aggregation_method=aggregation_method,
+						 dataset=dataset,
+						 perc_of_clients=perc_of_clients,
+						 decay=decay,
+						 non_iid=non_iid)
 
-		self.num_classes = n_classes
+		self.protos = None
+		self.global_protos = None
+		self.loss_mse = nn.MSELoss()
 
-		self.model        = None
-		self.x_train      = None
-		self.x_test       = None
-		self.y_train      = None
-		self.y_test       = None
-
-		#logs
-		self.solution_name      = solution_name
-		self.aggregation_method = aggregation_method
-		self.dataset            = dataset
-
-		self.client_selection = client_selection
-		self.perc_of_clients  = perc_of_clients
-		self.decay            = decay
-
-		self.loss = nn.CrossEntropyLoss()
-		self.learning_rate = 0.01
-
-		#params
-		if self.aggregation_method == 'POC':
-			self.solution_name = f"{solution_name}-{aggregation_method}-{self.perc_of_clients}"
-
-		elif self.aggregation_method == 'FedLTA': 
-			self.solution_name = f"{solution_name}-{aggregation_method}-{self.decay}"
-
-		elif self.aggregation_method == 'None':
-			self.solution_name = f"{solution_name}-{aggregation_method}"
-
-		self.trainloader, self.testloader = self.load_data(self.dataset, n_clients=self.n_clients)
-		self.model                                           = self.create_model()
-		self.device = 'cpu'
-		self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate)
-
-	def load_data(self, dataset_name, n_clients, batch_size=32):
-		x_train, y_train, x_test, y_test = ManageDatasets(self.cid).select_dataset(dataset_name, n_clients, self.non_iid)
-		self.input_shape = x_train.shape
-		tensor_x_train = torch.Tensor(x_train)  # transform to torch tensor
-		tensor_y_train = torch.Tensor(y_train)
-
-		train_dataset = TensorDataset(tensor_x_train, tensor_y_train)
-		trainLoader = DataLoader(train_dataset, batch_size, drop_last=True, shuffle=True)
-
-		tensor_x_test = torch.Tensor(x_test)  # transform to torch tensor
-		tensor_y_test = torch.Tensor(y_test)
-
-		test_dataset = TensorDataset(tensor_x_test, tensor_y_test)
-		testLoader = DataLoader(test_dataset, batch_size, drop_last=True, shuffle=True)
-
-		return trainLoader, testLoader
+		self.lamda = 1
+		self.protos_samples_per_class = {i: 0 for i in range(self.num_classes)}
 
 	def create_model(self):
 
@@ -103,7 +68,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			return ModelCreation().create_LogisticRegression(input_shape, self.num_classes)
 
 		elif self.model_name == 'DNN':
-			return ModelCreation().create_DNN(input_shape=input_shape, num_classes=self.num_classes)
+			return ModelCreation().create_DNN(input_shape=input_shape, num_classes=self.num_classes, use_proto=True)
 
 		elif self.model_name == 'CNN':
 			return ModelCreation().create_CNN(input_shape, self.num_classes)
@@ -130,9 +95,16 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			target_param.data = param.data.clone()
 		# target_param.grad = param.grad.clone()
 
-	def update_parameters(self, model, new_params):
-		for param, new_param in zip(model.parameters(), new_params):
-			param.data = new_param.data.clone()
+	# def save_parameters(self):
+	# 	filename = """./fedper_saved_weights/{}/{}/{}.json""".format(self.model_name, self.cid, self.cid)
+	# 	weights = self.model.get_weights()
+	# 	personalized_layers_weights = []
+	# 	for i in range(self.n_personalized_layers):
+	# 		personalized_layers_weights.append(weights[len(weights)-self.n_personalized_layers+i])
+	# 	data = json.dumps([i.tolist() for i in personalized_layers_weights])
+	# 	jsonFile = open(filename, "w")
+	# 	jsonFile.write(data)
+	# 	jsonFile.close()
 
 
 	def set_parameters_to_model(self, parameters):
@@ -150,7 +122,12 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		start_time = time.process_time()
 		#print(config)
 		if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
-			self.set_parameters_to_model(parameters)
+
+			# the parameters are saved in a file because in each round new instances of client are created
+
+			if int(config['round']) > 1:
+				self.load_and_set_parameters()
+				self.set_proto(parameters)
 
 			selected = 1
 			self.model.train()
@@ -161,6 +138,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			train_acc = 0
 			train_loss = 0
 			train_num = 0
+			protos = defaultdict(list)
 			for step in range(max_local_steps):
 				for i, (x, y) in enumerate(self.trainloader):
 					if type(x) == type([]):
@@ -171,10 +149,26 @@ class ClientBaseTorch(fl.client.NumPyClient):
 					train_num += y.shape[0]
 
 					self.optimizer.zero_grad()
-					output = self.model(x)
+					rep = self.model.base(x)
+					output = self.model.head(rep)
 					y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
 					loss = self.loss(output, y)
-					train_loss += loss.item() * y.shape[0]
+
+					if self.global_protos != None:
+						proto_new = torch.zeros_like(rep)
+						for i, yy in enumerate(y):
+							y_c = yy.item()
+							# print("aqui1", self.global_protos[y_c].shape, rep.shape)
+							proto_new[i,:] = self.global_protos[y_c]
+
+						loss += self.loss_mse(proto_new, rep) * self.lamda
+
+					for i, yy in enumerate(y):
+						y_c = yy.item()
+
+						protos[y_c].append(rep[i, :].detach().data)
+						self.protos_samples_per_class[y_c] += 1
+
 					loss.backward()
 					self.optimizer.step()
 
@@ -184,10 +178,14 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			# self.save_model(self.model, 'model')
 
 			trained_parameters = self.get_parameters_of_model()
-		
+			self.save_parameters()
+			self.saved_parameters = copy.deepcopy(trained_parameters)
+
+		self.protos = self.agg_func(protos)
+		# print("juntou", self.protos)
 		total_time         = time.process_time() - start_time
 		size_of_parameters = sum(map(sys.getsizeof, trained_parameters))
-		avg_loss_train     = train_loss/train_num
+		avg_loss_train     = loss/train_num
 		avg_acc_train      = train_acc/train_num
 
 		filename = f"logs/{self.solution_name}/{self.n_clients}/{self.model_name}/{self.dataset}/train_client.csv"
@@ -198,16 +196,18 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			data=data)
 
 		fit_response = {
-			'cid' : self.cid
+			'cid': self.cid,
+			'protos_samples_per_class': self.protos_samples_per_class
 		}
 
-		return trained_parameters, train_num, fit_response
+		return self.protos, train_num, fit_response
 
 
 	def evaluate(self, parameters, config):
 
-		self.set_parameters_to_model(parameters)
+		self.set_proto(parameters)
 		# loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
+		self.load_and_set_parameters()
 		self.model.eval()
 
 		test_acc = 0
@@ -223,10 +223,20 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				self.optimizer.zero_grad()
 				y = y.to(self.device)
 				y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
-				output = self.model(x)
-				loss = self.loss(output, y)
+				rep = self.model.base(x)
+
+				output = float('inf') * torch.ones(y.shape[0], self.num_classes).to(self.device)
+
+				for i, r in enumerate(rep):
+					for j in range(len(self.global_protos)):
+						pro = torch.Tensor(self.global_protos[j].tolist())
+
+						output[i, j] = self.loss_mse(r, pro)
+
+				test_acc += (torch.sum(torch.argmin(output, dim=1) == y)).item()
+				output2 = self.model.head(rep)
+				loss = self.loss(output2, y)
 				test_loss += loss.item() * y.shape[0]
-				test_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
 				test_num += y.shape[0]
 
 		size_of_parameters = sum(map(sys.getsizeof, parameters))
@@ -242,13 +252,45 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			"cid"      : self.cid,
 			"accuracy" : float(accuracy)
 		}
-
+		print("dola")
 		return loss, test_num, evaluation_response
 
-	def _write_output(self, filename, data):
+	def load_and_set_parameters(self):
+		# filename = """./fedproto_saved_weights/{}/{}/{}.json""".format(self.model_name, self.cid, self.cid)
+		# if Path(filename).exists():
+		# 	fileObject = open(filename, "r")
+		# 	jsonContent = fileObject.read()
+		# 	aList = [i for i in json.loads(jsonContent)]
+		# 	self.set_parameters_to_model(aList)
+		filename = """./fedproto_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
+		self.model = torch.load(filename)
 
-		with open(filename, 'a') as server_log_file:
-			writer = csv.writer(server_log_file)
-			writer.writerow(data)
+	def save_parameters(self):
+		os.makedirs("""{}/fedproto_saved_weights/{}/{}/""".format(os.getcwd(), self.model_name, self.cid),
+					exist_ok=True)
+		filename = """{}/fedproto_saved_weights/{}/{}/model.pth""".format(os.getcwd(), self.model_name, self.cid)
+		torch.save(self.model, filename)
 
 
+	def set_proto(self, protos):
+		self.global_protos = protos
+
+	def agg_func(self, protos):
+		"""
+        Returns the average of the weights.
+        """
+
+		for [label, proto_list] in protos.items():
+			if len(proto_list) > 1:
+				proto = 0 * proto_list[0].data
+				for i in proto_list:
+					proto += i.data
+				protos[label] = proto / len(proto_list)
+			else:
+				protos[label] = proto_list[0]
+
+		numpy_protos = []
+		for key in protos:
+			numpy_protos.append(protos[key].detach().numpy())
+
+		return numpy_protos
