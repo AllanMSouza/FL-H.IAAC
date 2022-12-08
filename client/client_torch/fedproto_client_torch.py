@@ -262,7 +262,7 @@ class FedProtoClientTorch(ClientBaseTorch):
 			"cid"      : self.cid,
 			"accuracy" : float(accuracy)
 		}
-		
+
 		return loss, test_num, evaluation_response
 
 	def load_and_set_parameters(self):
