@@ -1,6 +1,5 @@
 import tensorflow as tf
 from tensorflow.keras.models import Sequential, Model
-from sequential_fedlta import SequentialFedLTA
 from tensorflow.keras.layers import Input, Conv1D, Conv2D, MaxPooling1D, Flatten, MaxPool2D, Dense, InputLayer, BatchNormalization, Dropout
 
 import logging
@@ -12,24 +11,19 @@ tf.random.set_seed(0)
 class ModelCreation():
 
 	def create_DNN(self, input_shape, num_classes, use_proto=False):
-		model = SequentialFedLTA(use_proto=use_proto)
-		model.add(tf.keras.layers.Flatten(input_shape=(input_shape[1:])))
-		model.add(Dense(512, activation='relu'))
-		model.add(Dense(256, activation='relu'))
-		model.add(Dense(32,  activation='relu'))
-		model.add(Dense(num_classes, activation='softmax'))
-
-		if not use_proto:
+		input = Input(shape=(input_shape[1:]))
+		x = Flatten()(input)
+		x = Dense(512, activation='relu')(x)
+		x = Dense(256, activation='relu')(x)
+		x = Dense(32,  activation='relu')(x)
+		out = Dense(num_classes, activation='softmax')(x)
+		if use_proto:
+			model = Model(inputs=input, outputs=[out, x])
+		else:
+			model = Model(inputs=input, outputs=[out])
 			model.compile(optimizer='sgd', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 		return model
-		# input = Input(shape=(input_shape[1:]))
-		# x = Flatten()(input)
-		# x = Dense(512, activation='relu')(x)
-		# x = Dense(256, activation='relu')(x)
-		# x = Dense(32,  activation='relu')(x)
-		# out = Dense(num_classes, activation='softmax')(x)
-		# model = Model(inputs=input, outputs=[out, x])
-		# model.compile(optimizer='sgd', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+
 		# # print("pesos: ", len(model.get_weights()))
 		# print(model.get_weights())
 
@@ -78,16 +72,18 @@ class ModelCreation():
 # ====================================================================================================================
 	def create_LogisticRegression(self, input_shape, num_classes, use_proto=False):
 
-		logistic_regression = SequentialFedLTA(use_proto=use_proto)
-
 		if len(input_shape) == 3:
-			logistic_regression.add(Flatten(input_shape=(input_shape[1], input_shape[2], 1)))
+			input = Input(shape=(input_shape[1], input_shape[2], 1))
 		else:
-			logistic_regression.add(Flatten(input_shape=(input_shape[1:])))
+			input = Input(shape=(input_shape[1:]))
 
-		logistic_regression.add(Dense(num_classes, activation='sigmoid'))
+		x = Flatten()(input)
+		out = Dense(num_classes, activation='sigmoid')(x)
 
-		if not use_proto:
-			logistic_regression.compile(optimizer='sgd', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+		if use_proto:
+			model = Model(inputs=input, outputs=[out, x])
+		else:
+			model = Model(inputs=input, outputs=[out])
+			model.compile(optimizer='sgd', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
-		return logistic_regression
+		return model

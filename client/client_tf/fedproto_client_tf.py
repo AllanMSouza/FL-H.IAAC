@@ -171,7 +171,6 @@ class FedProtoClientTf(ClientBaseTf):
 								yy = self.classes[i]
 								y_c = tf.get_static_value(yy)
 								proto_new[i] = self.global_protos[y_c]
-								self.protos_samples_per_class[y_c] += 1
 
 							proto_new = tf.constant(proto_new)
 							mse_loss = tf.reduce_mean(self.loss_mse(proto_new, rep))
@@ -209,7 +208,6 @@ class FedProtoClientTf(ClientBaseTf):
 
 		avg_loss_train = float(np.mean(loss_train_history))
 		avg_acc_train = float(np.mean(acc_train_history))
-		self.evaluate_step(v='no fit')
 		# print("loss media: ", avg_loss_train)
 		# print("acc media: ", avg_acc_train)
 
@@ -230,7 +228,7 @@ class FedProtoClientTf(ClientBaseTf):
 
 		self.normalize_proto()
 		protos_result = self.dict_to_numpy(self.protos)
-		print("Final: ", config['round'])
+
 		return protos_result, len(self.x_train), fit_response
 	def dict_to_numpy(self, data):
 
@@ -250,9 +248,7 @@ class FedProtoClientTf(ClientBaseTf):
 	def evaluate(self, proto, config):
 		self.set_proto(proto)
 		self.load_and_set_parameters()
-		print("Evaluate: ", config['round'])
-		print(self.model.get_weights())
-		avg_loss_test, avg_acc_test = self.evaluate_step(v='fora fit')
+		avg_loss_test, avg_acc_test = self.evaluate_step()
 
 		size_of_parameters = sum(map(sys.getsizeof, proto))
 
@@ -266,61 +262,48 @@ class FedProtoClientTf(ClientBaseTf):
 			"cid": self.cid,
 			"accuracy": float(avg_acc_test)
 		}
-		print("fim evaluate")
+
 		return avg_loss_test, len(self.x_test), evaluation_response
 
-	def evaluate_step(self, v=""):
+	def evaluate_step(self):
+		try:
+			acc_history = []
+			loss_history = []
+			for x_batch_val, y_batch_val in self.val_dataset:
+				val_logits, rep = self.model(x_batch_val, training=False)
+				self.val_acc_metric.update_state(y_batch_val, val_logits)
+				val_loss = self.loss_fn(y_batch_val, val_logits)
 
-		# if self.saved_parameters is not None:
-		# 	print("dentro")
-		# 	self.set_parameters_to_model(self.saved_parameters)
-		# 	print("setar")
+				# acc_history.append(val_acc)
+				# output = np.ones((y_batch_val.shape[0], self.num_classes))
+				# # val_logits, rep = self.model(x, training=False)
+				# loss_list = []
+				# test_acc = 0
+				# test_num = 0
+				#
+				# for i in range(len(rep)):
+				# 	r = rep[i]
+				# 	for j in range(len(self.global_protos)):
+				# 		pro = self.global_protos[j][0]
+				# 		loss_value = tf.reduce_mean(self.loss_mse(r, pro))
+				# 		print("peu")
+				# 		tf.tensor_scatter_nd_update(loss_list, loss_value, [i])
+				# 		output[i, j] = loss_value
+				# 		print("antes", tf.keras.backend.eval(tf.argmin(output)))
+				# 		test_acc += (tf.reduce_sum(tf.argmin(output) == y_batch_val))
+				# 		test_num += y_batch_val.shape[0]
+				# 		print("soma")
+				loss_history.append(val_loss)
 
-		acc_history = []
-		loss_history = []
-		for x_batch_val, y_batch_val in self.val_dataset:
-			print("antes modelo",v)
-			val_logits, rep = self.model(x_batch_val, training=False)
-			print("depois modelo", v)
+				# self.val_acc_metric.update_state(self.global_protos, output)
 
+			acc_history = self.val_acc_metric.result()
+			self.val_acc_metric.reset_states()
 
-			self.val_acc_metric.update_state(y_batch_val, val_logits)
-			val_loss = self.loss_fn(y_batch_val, val_logits)
-			loss_history.append(val_loss)
-
-
-			# acc_history.append(val_acc)
-
-			# output = np.ones((y_batch_val.shape[0], self.num_classes))
-			# # val_logits, rep = self.model(x, training=False)
-			# loss_list = []
-			# test_acc = 0
-			# test_num = 0
-			#
-			# for i in range(len(rep)):
-			# 	r = rep[i]
-			# 	for j in range(len(self.global_protos)):
-			# 		pro = self.global_protos[j][0]
-			# 		loss_value = tf.reduce_mean(self.loss_mse(r, pro))
-			# 		print("peu")
-			# 		tf.tensor_scatter_nd_update(loss_list, loss_value, [i])
-			# 		output[i, j] = loss_value
-			# 		print("antes", tf.keras.backend.eval(tf.argmin(output)))
-			# 		test_acc += (tf.reduce_sum(tf.argmin(output) == y_batch_val))
-			# 		test_num += y_batch_val.shape[0]
-			# 		print("soma")
-			# loss_history.append(loss_value)
-
-			# self.val_acc_metric.update_state(self.global_protos, output)
-
-		acc_history = self.val_acc_metric.result()
-		self.val_acc_metric.reset_states()
-
-		avg_loss_test = float(np.mean(loss_history))
-		avg_acc_test = float(np.mean(acc_history))
-
-		# print("Val loss: ", avg_loss_test, v)
-		# print("Val acc: ", avg_acc_test, v)
+			avg_loss_test = float(np.mean(loss_history))
+			avg_acc_test = float(np.mean(acc_history))
+		except Exception as e:
+			print("erro: ", e)
 
 		return avg_loss_test, avg_acc_test
 
@@ -335,11 +318,11 @@ class FedProtoClientTf(ClientBaseTf):
 		return protos
 
 	def load_and_set_parameters(self):
-		filename = """./fedproto_saved_weights/{}/{}/{}/saved_model/my_model""".format(self.model_name, self.cid, self.cid)
+		filename = """./fedproto_saved_weights/{}/{}/saved_model/my_model""".format(self.model_name, self.cid)
 		if Path(filename+"/saved_model.pb").exists():
 			self.model = tf.keras.models.load_model(filename)
 
 	def save_parameters(self):
-		filename = """./fedproto_saved_weights/{}/{}/{}/saved_model/my_model""".format(self.model_name, self.cid, self.cid)
+		filename = """./fedproto_saved_weights/{}/{}/saved_model/my_model""".format(self.model_name, self.cid)
 		self.model.save(filename)
 

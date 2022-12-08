@@ -55,6 +55,7 @@ class FedProtoBaseServer(FedAvgBaseServer):
                     weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), protos_samples_per_class))
 
         # print(f'LEN AGGREGATED PARAMETERS: {len(weights_results)}')
+        # print("rodada: ", server_round)
         parameters_aggregated = fl.common.ndarrays_to_parameters(self._aggregate_proto(weights_results))
 
         # Aggregate custom metrics if aggregation fn was provided
@@ -84,20 +85,24 @@ class FedProtoBaseServer(FedAvgBaseServer):
         for key in range(self.n_classes):
             for proto, num_examples in results:
 
-                if key > len(proto) - 1:
-                    continue
+                # if key > len(proto) - 1:
+                #     print("zero")
+                #     continue
 
                 if num_examples[key] > 0:
+                    # print("umm", proto[key])
                     if len(sum_protos[key]) == 0:
                         # print("umm", proto[key])
                         # print(sum_protos[key], proto[key], num_examples[key])
                         sum_protos[key] = proto[key]*num_examples[key]
 
                     else:
+                        # print("dois")
                         # print("dois", sum_protos[key], proto[key][0], num_examples[key])
                         sum_protos[key] += proto[key]*num_examples[key]
 
             if len(sum_protos[key]) > 0:
+                # print("tres")
                 sum_protos[key] = sum_protos[key]/(num_examples_total[key] * num_examples_total_clients[key])
 
         weighted_weights = [

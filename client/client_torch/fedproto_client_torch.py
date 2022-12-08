@@ -155,21 +155,31 @@ class FedProtoClientTorch(ClientBaseTorch):
 					loss = self.loss(output, y)
 
 					if self.global_protos != None:
-						proto_new = torch.zeros_like(rep)
+						proto_new = np.zeros(rep.shape)
+						print("rodada: ", config['round'])
 						for i, yy in enumerate(y):
 							y_c = yy.item()
 							# print("aqui1", self.global_protos[y_c].shape, rep.shape)
-							proto_new[i,:] = self.global_protos[y_c]
-
+							# print("isso")
+							# print(self.global_protos[y_c].shape)
+							# print("passou")
+							proto_new[i] = self.global_protos[y_c]
+							# print(proto_new[i,:].shape)
+							# print("passou 2")
+						proto_new = torch.Tensor(proto_new.tolist())
 						loss += self.loss_mse(proto_new, rep) * self.lamda
 
+						print("isso2")
 					for i, yy in enumerate(y):
 						y_c = yy.item()
 
 						protos[y_c].append(rep[i, :].detach().data)
 						self.protos_samples_per_class[y_c] += 1
 
+					# print("train loss: ", float(loss.detach().numpy()))
+
 					loss.backward()
+					train_loss += float(loss.detach().numpy())
 					self.optimizer.step()
 
 					train_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
@@ -234,8 +244,8 @@ class FedProtoClientTorch(ClientBaseTorch):
 						output[i, j] = self.loss_mse(r, pro)
 
 				test_acc += (torch.sum(torch.argmin(output, dim=1) == y)).item()
-				output2 = self.model.head(rep)
-				loss = self.loss(output2, y)
+				# output2 = self.model.head(rep)
+				loss = self.loss(output, y)
 				test_loss += loss.item() * y.shape[0]
 				test_num += y.shape[0]
 
@@ -252,7 +262,7 @@ class FedProtoClientTorch(ClientBaseTorch):
 			"cid"      : self.cid,
 			"accuracy" : float(accuracy)
 		}
-		print("dola")
+		
 		return loss, test_num, evaluation_response
 
 	def load_and_set_parameters(self):
