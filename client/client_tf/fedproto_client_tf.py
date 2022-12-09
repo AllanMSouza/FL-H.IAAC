@@ -326,3 +326,47 @@ class FedProtoClientTf(ClientBaseTf):
 		filename = """./fedproto_saved_weights/{}/{}/saved_model/my_model""".format(self.model_name, self.cid)
 		self.model.save(filename)
 
+
+# acc_history = []
+# 			loss_history = []
+# 			for x_batch_val, y_batch_val in self.val_dataset:
+# 				val_logits, rep = self.model(x_batch_val, training=False)
+#
+#
+# 				self.val_acc_metric.update_state(y_batch_val, val_logits)
+# 				# val_loss = self.loss_fn(y_batch_val, val_logits)
+# 				proto_new = []
+# 				self.classes = []
+# 				output = np.ones(shape=(y_batch_val.shape[0], self.num_classes))
+# 				for i, yy in enumerate(y_batch_val):
+# 					self.classes.append(tf.get_static_value(yy))
+#
+# 				for i in range(len(rep)):
+# 					i_rep = rep[i]
+# 					for j in range(self.num_classes):
+# 						global_proto = self.global_protos[j]
+# 						val_loss = tf.get_static_value(tf.reduce_mean(self.loss_mse(global_proto, i_rep)))
+# 						output[i, j] = val_loss
+#
+# 				acc = np.mean(np.argmin(output, axis=1)==self.classes)
+# 				loss_history.append(val_loss)
+
+# 			for x_batch_val, y_batch_val in self.val_dataset:
+# 				val_logits, rep = self.model(x_batch_val, training=False)
+#
+#
+# 				self.val_acc_metric.update_state(y_batch_val, val_logits)
+# 				# val_loss = self.loss_fn(y_batch_val, val_logits)
+# 				proto_new = []
+# 				self.classes = []
+# 				for i, yy in enumerate(y_batch_val):
+# 					self.classes.append(tf.get_static_value(yy))
+# 				for i in range(len(y_batch_val)):
+# 					y_c = self.classes[i]
+# 					print("classe", y_c, self.global_protos[y_c])
+# 					proto_new.append(self.global_protos[y_c])
+# 				proto_new = np.array(proto_new)
+# 				print("proto new: ", proto_new)
+# 				val_loss = tf.make_ndarray(tf.reduce_mean(self.loss_mse(proto_new, rep)))[0]
+# 				loss_history.append(val_loss)
+

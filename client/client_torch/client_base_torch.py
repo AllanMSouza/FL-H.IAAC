@@ -139,6 +139,10 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		parameters = [Parameter(torch.Tensor(i.tolist())) for i in parameters]
 		for new_param, old_param in zip(parameters, self.model.parameters()):
 			old_param.data = new_param.data.clone()
+
+	def save_parameters(self):
+		pass
+
 	def fit(self, parameters, config):
 		selected_clients   = []
 		trained_parameters = []
@@ -180,11 +184,9 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 					train_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
 
-			# self.model.cpu()
-			# self.save_model(self.model, 'model')
-
 			trained_parameters = self.get_parameters_of_model()
-		
+			self.save_parameters()
+
 		total_time         = time.process_time() - start_time
 		size_of_parameters = sum(map(sys.getsizeof, trained_parameters))
 		avg_loss_train     = train_loss/train_num

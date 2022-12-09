@@ -35,9 +35,15 @@ class FedProtoBaseServer(FedAvgBaseServer):
                          strategy_name='FedProto',
                          model_name=model_name)
 
+        self.create_folder()
+
+    def create_folder(self):
+
         directory = """fedproto_saved_weights/{}/""".format(self.model_name)
         if Path(directory).exists():
             shutil.rmtree(directory)
+        for i in range(self.num_clients):
+            Path("""fedproto_saved_weights/{}/{}/""".format(self.model_name, i)).mkdir(parents=True, exist_ok=True)
 
     def aggregate_fit(self, server_round, results, failures):
         weights_results = []

@@ -2,7 +2,7 @@ from server.common_base_server import FedAvgBaseServer
 from pathlib import Path
 import shutil
 
-class FedPerServerTf(FedAvgBaseServer):
+class FedPerServerTorch(FedAvgBaseServer):
 
     def __init__(self,
                  aggregation_method,
@@ -28,7 +28,6 @@ class FedPerServerTf(FedAvgBaseServer):
                          model_name=model_name)
 
         self.create_folder()
-
 
     def create_folder(self):
 
