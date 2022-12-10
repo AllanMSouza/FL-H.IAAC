@@ -68,7 +68,7 @@ class FedProtoClientTorch(ClientBaseTorch):
 			return ModelCreation().create_LogisticRegression(input_shape, self.num_classes)
 
 		elif self.model_name == 'DNN':
-			return ModelCreation().create_DNN(input_shape=input_shape, num_classes=self.num_classes, use_proto=True)
+			return ModelCreation().create_DNN(input_shape=input_shape, num_classes=self.num_classes, use_local_model=True)
 
 		elif self.model_name == 'CNN':
 			return ModelCreation().create_CNN(input_shape, self.num_classes)
@@ -129,7 +129,7 @@ class FedProtoClientTorch(ClientBaseTorch):
 				if int(config['round']) == 1:
 					self.inicial(parameters)
 				if int(config['round']) > 1:
-					self.load_and_set_parameters()
+					self.set_parameters_to_model()
 					self.set_proto(parameters)
 
 				selected = 1
@@ -152,24 +152,24 @@ class FedProtoClientTorch(ClientBaseTorch):
 						train_num += y.shape[0]
 
 						self.optimizer.zero_grad()
-						rep = self.model.base(x)
-						output = self.model.head(rep)
+						# rep = self.model.base(x)
+						# output = self.model.head(rep)
+						output, rep = self.model(x)
+						# output = self.model(x)
 						y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
 						loss = self.loss(output, y)
 
-						# if self.global_protos != None:
-						# 	proto_new = np.zeros(rep.shape)
-						# 	for i, yy in enumerate(y):
-						# 		y_c = yy.item()
-						# 		# print("aqui1", self.global_protos[y_c].shape, rep.shape)
-						# 		# print("isso")
-						# 		# print(self.global_protos[y_c].shape)
-						# 		# print("passou")
-						# 		proto_new[i] = self.global_protos[y_c]
-						# 		# print(proto_new[i,:].shape)
-						# 		# print("passou 2")
-						# 	proto_new = torch.Tensor(proto_new.tolist())
-						# 	loss += self.loss_mse(proto_new, rep) * self.lamda
+						if self.global_protos != None:
+							proto_new = np.zeros(rep.shape)
+							for i, yy in enumerate(y):
+								y_c = yy.item()
+								proto_new[i] = self.global_protos[y_c]
+							proto_new = torch.Tensor(proto_new.tolist())
+							mse_loss = self.loss_mse(proto_new, rep) * self.lamda
+							# print("antes: ", loss)
+							# print("aqui: ", mse_loss)
+							loss += mse_loss
+							# print("depois: ", loss)
 						loss.backward()
 						self.optimizer.step()
 
@@ -187,6 +187,7 @@ class FedProtoClientTorch(ClientBaseTorch):
 
 			self.protos = self.agg_func(protos)
 			# print("juntou", self.protos)
+			# self.protos = np.array([]*self.num_classes)
 			total_time         = time.process_time() - start_time
 			size_of_parameters = sum(map(sys.getsizeof, trained_parameters))
 			avg_loss_train     = train_loss/train_num
@@ -206,13 +207,14 @@ class FedProtoClientTorch(ClientBaseTorch):
 
 			return self.protos, train_num, fit_response
 		except Exception as e:
+			print("fit")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def evaluate(self, parameters, config):
 		try:
 			self.set_proto(parameters)
 			# loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
-			self.load_and_set_parameters()
+			self.set_parameters_to_model()
 			self.model.eval()
 
 			test_acc = 0
@@ -228,21 +230,24 @@ class FedProtoClientTorch(ClientBaseTorch):
 					self.optimizer.zero_grad()
 					y = y.to(self.device)
 					y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
-					rep = self.model.base(x)
+					# rep = self.model.base(x)
+					#
+					# output = float('inf') * torch.ones(y.shape[0], self.num_classes).to(self.device)
+					#
+					# for i, r in enumerate(rep):
+					# 	for j in range(len(self.global_protos)):
+					# 		pro = torch.Tensor(self.global_protos[j].tolist())
+					#
+					# 		output[i, j] = self.loss_mse(r, pro)
 
-					output = float('inf') * torch.ones(y.shape[0], self.num_classes).to(self.device)
-
-					for i, r in enumerate(rep):
-						for j in range(len(self.global_protos)):
-							pro = torch.Tensor(self.global_protos[j].tolist())
-
-							output[i, j] = self.loss_mse(r, pro)
-
-					test_acc += (torch.sum(torch.argmin(output, dim=1) == y)).item()
-					# output2 = self.model.head(rep)
+					# test_acc += (torch.sum(torch.argmin(output, dim=1) == y)).item()
+					# rep = self.model.base(x)
+					# output = self.model.head(rep)
+					output, rep = self.model(x)
 					loss = self.loss(output, y)
 					test_loss += loss.item() * y.shape[0]
 					test_num += y.shape[0]
+					test_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
 
 			size_of_parameters = sum(map(sys.getsizeof, parameters))
 			loss = test_loss/test_num
@@ -260,32 +265,36 @@ class FedProtoClientTorch(ClientBaseTorch):
 
 			return loss, test_num, evaluation_response
 		except Exception as e:
+			print("evaluate")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def load_and_set_parameters(self):
+	def set_parameters_to_model(self):
 		# filename = """./fedproto_saved_weights/{}/{}/{}.json""".format(self.model_name, self.cid, self.cid)
 		# if Path(filename).exists():
 		# 	fileObject = open(filename, "r")
 		# 	jsonContent = fileObject.read()
 		# 	aList = [i for i in json.loads(jsonContent)]
 		# 	self.set_parameters_to_model(aList)
-		try:
-			filename = """./fedproto_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
-			self.model = torch.load(filename)
-		except Exception as e:
-			print("load and set parameters")
-			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+		filename = """./fedproto_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
+		if os.path.exists(filename):
+			self.model.load_state_dict(torch.load(filename))
+		else:
+			# parameters = [Parameter(torch.Tensor(i.tolist())) for i in parameters]
+			# for new_param, old_param in zip(parameters, self.model.parameters()):
+			# 	old_param.data = new_param.data.clone()
+			pass
 
 	def save_parameters(self):
 		# os.makedirs("""{}/fedproto_saved_weights/{}/{}/""".format(os.getcwd(), self.model_name, self.cid),
 		# 			exist_ok=True)
 		try:
 			filename = """./fedproto_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid)
-			torch.save(self.model, filename)
+			if Path(filename).exists():
+				os.remove(filename)
+			torch.save(self.model.state_dict(), filename)
 		except Exception as e:
 			print("save parameters")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
-
 
 	def set_proto(self, protos):
 		self.global_protos = copy.deepcopy(protos)

@@ -1,6 +1,6 @@
 import flwr as fl
-from client import FedAvgClientTf, FedPerClientTf, FedProtoClientTf, FedLocalClientTf, FedAvgClientTorch, FedProtoClientTorch, FedPerClientTorch
-from server import FedPerServerTf, FedProtoServerTf, FedAvgServerTf, FedLocalServerTf, FedAvgServerTorch, FedProtoServerTorch, FedPerServerTorch
+from client import FedAvgClientTf, FedPerClientTf, FedProtoClientTf, FedLocalClientTf, FedAvgClientTorch, FedProtoClientTorch, FedPerClientTorch, FedLocalClientTorch
+from server import FedPerServerTf, FedProtoServerTf, FedAvgServerTf, FedLocalServerTf, FedAvgServerTorch, FedProtoServerTorch, FedPerServerTorch, FedLocalServerTorch
 
 from optparse import OptionParser
 import tensorflow as tf
@@ -136,6 +136,19 @@ class SimulationFL():
 								perc_of_clients=self.poc,
 								decay=self.decay,
 								non_iid=self.non_iid)
+			elif self.strategy_name == 'FedLocal':
+				return  FedLocalClientTorch(cid=cid,
+								n_clients=self.n_clients,
+								n_classes=self.n_classes,
+								epochs=1,
+								model_name=self.model_name,
+								client_selection=self.client_selection,
+								solution_name=self.strategy_name,
+								aggregation_method=self.aggregation_method,
+								dataset=self.dataset,
+								perc_of_clients=self.poc,
+								decay=self.decay,
+								non_iid=self.non_iid)
 			else:
 				return FedAvgClientTorch(cid=cid,
 									  n_clients=self.n_clients,
@@ -193,6 +206,17 @@ class SimulationFL():
 									  strategy_name=self.strategy_name,
 									  dataset=self.dataset,
 									  model_name=self.model_name)
+			elif self.strategy_name == 'FedLocal':
+				return FedLocalServerTf(aggregation_method=self.aggregation_method,
+									  n_classes=self.n_classes,
+									  fraction_fit=1,
+									  num_clients=self.n_clients,
+									  num_rounds=self.rounds,
+									  decay=self.decay,
+									  perc_of_clients=self.poc,
+									  strategy_name=self.strategy_name,
+									  dataset=self.dataset,
+									  model_name=self.model_name)
 
 			else:
 				return FedAvgServerTf(aggregation_method=self.aggregation_method,
@@ -219,6 +243,17 @@ class SimulationFL():
 										model_name=self.model_name)
 			elif self.strategy_name == 'FedPer':
 				return  FedPerServerTorch(aggregation_method=self.aggregation_method,
+								  n_classes=self.n_classes,
+								  fraction_fit=1,
+								  num_clients=self.n_clients,
+								  num_rounds=self.rounds,
+								  decay=self.decay,
+								  perc_of_clients=self.poc,
+								  strategy_name=self.strategy_name,
+								  dataset=self.dataset,
+								  model_name=self.model_name)
+			elif self.strategy_name == 'FedLocal':
+				return  FedLocalServerTorch(aggregation_method=self.aggregation_method,
 								  n_classes=self.n_classes,
 								  fraction_fit=1,
 								  num_clients=self.n_clients,

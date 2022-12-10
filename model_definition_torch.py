@@ -8,12 +8,31 @@ import copy
 batch_size = 16
 
 class LocalModel(nn.Module):
-    def __init__(self, base, head):
+    def     __init__(self, base, head):
         super(LocalModel, self).__init__()
 
         self.base = base
         self.head = head
+    def forward(self, x):
+        out = self.base(x)
+        out = self.head(out)
 
+        return out
+# ====================================================================================================================
+
+class DNN_proto(nn.Module):
+    def __init__(self, input_dim=1*28*28, mid_dim=100, num_classes=10):
+        super(DNN_proto, self).__init__()
+
+        self.fc1 = nn.Linear(input_dim, mid_dim)
+        self.fc = nn.Linear(mid_dim, num_classes)
+
+    def forward(self, x):
+        x = torch.flatten(x, 1)
+        rep = F.relu(self.fc1(x))
+        x = self.fc(rep)
+        output = F.log_softmax(x, dim=1)
+        return output, rep
 # ====================================================================================================================
 
 class DNN(nn.Module):
@@ -34,12 +53,13 @@ class DNN(nn.Module):
 # ====================================================================================================================
 class ModelCreation():
 
-	def create_DNN(self, input_shape, num_classes, use_proto=False):
+	def create_DNN(self, input_shape, num_classes, use_local_model=False):
 		model = DNN(input_dim=input_shape, num_classes=num_classes)
-		if use_proto:
-			head = copy.deepcopy(model.fc)
-			model.fc = nn.Identity()
-			return LocalModel(model, head)
+		if use_local_model:
+			# head = copy.deepcopy(model.fc)
+			# model.fc = nn.Identity()
+			# return LocalModel(model, head)
+			model = DNN_proto(input_dim=input_shape, num_classes=num_classes)
 		return model
 
 # ====================================================================================================================

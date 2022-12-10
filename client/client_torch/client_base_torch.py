@@ -79,56 +79,81 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate)
 
 	def load_data(self, dataset_name, n_clients, batch_size=32):
-		x_train, y_train, x_test, y_test = ManageDatasets(self.cid).select_dataset(dataset_name, n_clients, self.non_iid)
-		self.input_shape = x_train.shape
-		tensor_x_train = torch.Tensor(x_train)  # transform to torch tensor
-		tensor_y_train = torch.Tensor(y_train)
+		try:
+			x_train, y_train, x_test, y_test = ManageDatasets(self.cid).select_dataset(dataset_name, n_clients, self.non_iid)
+			self.input_shape = x_train.shape
+			tensor_x_train = torch.Tensor(x_train)  # transform to torch tensor
+			tensor_y_train = torch.Tensor(y_train)
 
-		train_dataset = TensorDataset(tensor_x_train, tensor_y_train)
-		trainLoader = DataLoader(train_dataset, batch_size, drop_last=True, shuffle=True)
+			train_dataset = TensorDataset(tensor_x_train, tensor_y_train)
+			trainLoader = DataLoader(train_dataset, batch_size, drop_last=True, shuffle=True)
 
-		tensor_x_test = torch.Tensor(x_test)  # transform to torch tensor
-		tensor_y_test = torch.Tensor(y_test)
+			tensor_x_test = torch.Tensor(x_test)  # transform to torch tensor
+			tensor_y_test = torch.Tensor(y_test)
 
-		test_dataset = TensorDataset(tensor_x_test, tensor_y_test)
-		testLoader = DataLoader(test_dataset, batch_size, drop_last=True, shuffle=True)
+			test_dataset = TensorDataset(tensor_x_test, tensor_y_test)
+			testLoader = DataLoader(test_dataset, batch_size, drop_last=True, shuffle=True)
 
-		return trainLoader, testLoader
+			return trainLoader, testLoader
+		except Exception as e:
+			print("load data")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def create_model(self):
 
-		# print("tamanho: ", self.input_shape)
-		input_shape = self.input_shape[1]*self.input_shape[2]
-		if self.model_name == 'Logist Regression':
-			return ModelCreation().create_LogisticRegression(input_shape, self.num_classes)
+		try:
+			# print("tamanho: ", self.input_shape)
+			input_shape = self.input_shape[1]*self.input_shape[2]
+			if self.model_name == 'Logist Regression':
+				return ModelCreation().create_LogisticRegression(input_shape, self.num_classes)
 
-		elif self.model_name == 'DNN':
-			return ModelCreation().create_DNN(input_shape=input_shape, num_classes=self.num_classes)
+			elif self.model_name == 'DNN':
+				return ModelCreation().create_DNN(input_shape=input_shape, num_classes=self.num_classes)
 
-		elif self.model_name == 'CNN':
-			return ModelCreation().create_CNN(input_shape, self.num_classes)
+			elif self.model_name == 'CNN':
+				return ModelCreation().create_CNN(input_shape, self.num_classes)
 
-		else:
-			raise Exception("Wrong model name")
+			else:
+				raise Exception("Wrong model name")
+		except Exception as e:
+			print("create model")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
 
 	def get_parameters(self, config):
-		parameters = [i.detach().numpy() for i in self.model.parameters()]
-		return parameters
+		try:
+			parameters = [i.detach().numpy() for i in self.model.parameters()]
+			return parameters
+		except Exception as e:
+			print("get parameters")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 		# It does the same of "get_parameters", but using "get_parameters" in outside of the core of Flower is causing errors
 	def get_parameters_of_model(self):
-		parameters = [i.detach().numpy() for i in self.model.parameters()]
-		return parameters
+		try:
+			parameters = [i.detach().numpy() for i in self.model.parameters()]
+			return parameters
+		except Exception as e:
+			print("get parameters of model")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def set_parameters(self, parameters):
-		parameters = [Parameter(torch.Tensor(i.tolist())) for i in parameters]
-		for new_param, old_param in zip(parameters, self.model.parameters()):
-			old_param.data = new_param.data.clone()
+		try:
+			parameters = [Parameter(torch.Tensor(i.tolist())) for i in parameters]
+			for new_param, old_param in zip(parameters, self.model.parameters()):
+				old_param.data = new_param.data.clone()
+		except Exception as e:
+			print("set parameters")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def clone_model(self, model, target):
-		for param, target_param in zip(model.parameters(), target.parameters()):
-			target_param.data = param.data.clone()
-		# target_param.grad = param.grad.clone()
+		try:
+			for param, target_param in zip(model.parameters(), target.parameters()):
+				target_param.data = param.data.clone()
+			# target_param.grad = param.grad.clone()
+		except Exception as e:
+			print("clone model")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def update_parameters(self, model, new_params):
 		for param, new_param in zip(model.parameters(), new_params):
@@ -136,116 +161,127 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 
 	def set_parameters_to_model(self, parameters):
-		parameters = [Parameter(torch.Tensor(i.tolist())) for i in parameters]
-		for new_param, old_param in zip(parameters, self.model.parameters()):
-			old_param.data = new_param.data.clone()
+		try:
+			parameters = [Parameter(torch.Tensor(i.tolist())) for i in parameters]
+			for new_param, old_param in zip(parameters, self.model.parameters()):
+				old_param.data = new_param.data.clone()
+		except Exception as e:
+			print("set parameters to model")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def save_parameters(self):
 		pass
 
 	def fit(self, parameters, config):
-		selected_clients   = []
-		trained_parameters = []
-		selected           = 0
+		try:
+			selected_clients   = []
+			trained_parameters = []
+			selected           = 0
 
-		if config['selected_clients'] != '':
-			selected_clients = [int (cid_selected) for cid_selected in config['selected_clients'].split(' ')]
-		
-		start_time = time.process_time()
-		#print(config)
-		if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
+			if config['selected_clients'] != '':
+				selected_clients = [int (cid_selected) for cid_selected in config['selected_clients'].split(' ')]
+
+			start_time = time.process_time()
+			#print(config)
+			if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
+				self.set_parameters_to_model(parameters)
+
+				selected = 1
+				self.model.train()
+
+				start_time = time.time()
+
+				max_local_steps = self.local_epochs
+				train_acc = 0
+				train_loss = 0
+				train_num = 0
+				for step in range(max_local_steps):
+					for i, (x, y) in enumerate(self.trainloader):
+						if type(x) == type([]):
+							x[0] = x[0].to(self.device)
+						else:
+							x = x.to(self.device)
+						y = y.to(self.device)
+						train_num += y.shape[0]
+
+						self.optimizer.zero_grad()
+						output = self.model(x)
+						y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
+						loss = self.loss(output, y)
+						train_loss += loss.item() * y.shape[0]
+						loss.backward()
+						self.optimizer.step()
+
+						train_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
+
+				trained_parameters = self.get_parameters_of_model()
+				self.save_parameters()
+
+			total_time         = time.process_time() - start_time
+			size_of_parameters = sum(map(sys.getsizeof, trained_parameters))
+			avg_loss_train     = train_loss/train_num
+			avg_acc_train      = train_acc/train_num
+
+			filename = f"logs/{self.solution_name}/{self.n_clients}/{self.model_name}/{self.dataset}/train_client.csv"
+			data = [config['round'], self.cid, selected, total_time, size_of_parameters, avg_loss_train, avg_acc_train]
+
+			self._write_output(
+				filename=filename,
+				data=data)
+
+			fit_response = {
+				'cid' : self.cid
+			}
+
+			return trained_parameters, train_num, fit_response
+		except Exception as e:
+			print("fit")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+
+	def evaluate(self, parameters, config):
+		try:
 			self.set_parameters_to_model(parameters)
+			# loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
+			self.model.eval()
 
-			selected = 1
-			self.model.train()
+			test_acc = 0
+			test_loss = 0
+			test_num = 0
 
-			start_time = time.time()
-
-			max_local_steps = self.local_epochs
-			train_acc = 0
-			train_loss = 0
-			train_num = 0
-			for step in range(max_local_steps):
-				for i, (x, y) in enumerate(self.trainloader):
+			with torch.no_grad():
+				for x, y in self.testloader:
 					if type(x) == type([]):
 						x[0] = x[0].to(self.device)
 					else:
 						x = x.to(self.device)
-					y = y.to(self.device)
-					train_num += y.shape[0]
-
 					self.optimizer.zero_grad()
-					output = self.model(x)
+					y = y.to(self.device)
 					y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
+					output = self.model(x)
 					loss = self.loss(output, y)
-					train_loss += loss.item() * y.shape[0]
-					loss.backward()
-					self.optimizer.step()
+					test_loss += loss.item() * y.shape[0]
+					test_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
+					test_num += y.shape[0]
 
-					train_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
+			size_of_parameters = sum(map(sys.getsizeof, parameters))
+			loss = test_loss/test_num
+			accuracy = test_acc/test_num
+			filename = f"logs/{self.solution_name}/{self.n_clients}/{self.model_name}/{self.dataset}/evaluate_client.csv"
+			data = [config['round'], self.cid, size_of_parameters, loss, accuracy]
 
-			trained_parameters = self.get_parameters_of_model()
-			self.save_parameters()
+			self._write_output(filename=filename,
+							   data=data)
 
-		total_time         = time.process_time() - start_time
-		size_of_parameters = sum(map(sys.getsizeof, trained_parameters))
-		avg_loss_train     = train_loss/train_num
-		avg_acc_train      = train_acc/train_num
+			evaluation_response = {
+				"cid"      : self.cid,
+				"accuracy" : float(accuracy)
+			}
 
-		filename = f"logs/{self.solution_name}/{self.n_clients}/{self.model_name}/{self.dataset}/train_client.csv"
-		data = [config['round'], self.cid, selected, total_time, size_of_parameters, avg_loss_train, avg_acc_train]
-
-		self._write_output(
-			filename=filename,
-			data=data)
-
-		fit_response = {
-			'cid' : self.cid
-		}
-
-		return trained_parameters, train_num, fit_response
-
-
-	def evaluate(self, parameters, config):
-
-		self.set_parameters_to_model(parameters)
-		# loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
-		self.model.eval()
-
-		test_acc = 0
-		test_loss = 0
-		test_num = 0
-
-		with torch.no_grad():
-			for x, y in self.testloader:
-				if type(x) == type([]):
-					x[0] = x[0].to(self.device)
-				else:
-					x = x.to(self.device)
-				self.optimizer.zero_grad()
-				y = y.to(self.device)
-				y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
-				output = self.model(x)
-				loss = self.loss(output, y)
-				test_loss += loss.item() * y.shape[0]
-				test_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
-				test_num += y.shape[0]
-
-		size_of_parameters = sum(map(sys.getsizeof, parameters))
-		loss = test_loss/test_num
-		accuracy = test_acc/test_num
-		filename = f"logs/{self.solution_name}/{self.n_clients}/{self.model_name}/{self.dataset}/evaluate_client.csv"
-		data = [config['round'], self.cid, size_of_parameters, loss, accuracy]
-
-		self._write_output(filename=filename,
-						   data=data)
-
-		evaluation_response = {
-			"cid"      : self.cid,
-			"accuracy" : float(accuracy)
-		}
-
-		return loss, test_num, evaluation_response
+			return loss, test_num, evaluation_response
+		except Exception as e:
+			print("evaluate")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def _write_output(self, filename, data):
 
