@@ -304,18 +304,20 @@ class FedProtoClientTorch(ClientBaseTorch):
         Returns the average of the weights.
         """
 		try:
+			proto_shape = None
 			for [label, proto_list] in protos.items():
 				if len(proto_list) > 1:
 					proto = 0 * proto_list[0].data
 					for i in proto_list:
 						proto += i.data
 					protos[label] = proto / len(proto_list)
+					proto_shape = proto.shape
 				else:
 					protos[label] = proto_list[0]
 
-			numpy_protos = []
+			numpy_protos = [np.zeros(proto_shape) for i in range(self.num_classes)]
 			for key in protos:
-				numpy_protos.append(protos[key].detach().numpy())
+				numpy_protos[key-1] = protos[key].detach().numpy()
 
 			return numpy_protos
 		except Exception as e:

@@ -83,7 +83,7 @@ class FedProtoBaseServer(FedAvgBaseServer):
 
         print("Quantidade por classe")
         print(num_examples_total)
-
+        proto_shape = None
         # Create a list of weights, each multiplied by the related number of examples
 
         sum_protos = {i: np.array([]) for i in range(self.n_classes)}
