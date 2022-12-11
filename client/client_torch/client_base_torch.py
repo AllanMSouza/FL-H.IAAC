@@ -20,6 +20,10 @@ warnings.simplefilter("ignore")
 import logging
 # logging.getLogger("torch").setLevel(logging.ERROR)
 from torch.nn.parameter import Parameter
+import random
+random.seed(0)
+np.random.seed(0)
+torch.manual_seed(0)
 class ClientBaseTorch(fl.client.NumPyClient):
 
 	def __init__(self,
@@ -81,6 +85,9 @@ class ClientBaseTorch(fl.client.NumPyClient):
 	def load_data(self, dataset_name, n_clients, batch_size=32):
 		try:
 			x_train, y_train, x_test, y_test = ManageDatasets(self.cid).select_dataset(dataset_name, n_clients, self.non_iid)
+			# print("y test")
+			# print(np.unique(y_test))
+			# exit()
 			self.input_shape = x_train.shape
 			tensor_x_train = torch.Tensor(x_train)  # transform to torch tensor
 			tensor_y_train = torch.Tensor(y_train)

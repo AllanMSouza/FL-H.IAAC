@@ -23,6 +23,10 @@ from client.client_torch.client_base_torch import ClientBaseTorch
 import logging
 # logging.getLogger("torch").setLevel(logging.ERROR)
 from torch.nn.parameter import Parameter
+import random
+random.seed(0)
+np.random.seed(0)
+torch.manual_seed(0)
 class FedProtoClientTorch(ClientBaseTorch):
 
 	def __init__(self,
@@ -117,6 +121,7 @@ class FedProtoClientTorch(ClientBaseTorch):
 			selected_clients   = []
 			trained_parameters = []
 			selected           = 0
+			mse_list = []
 
 			if config['selected_clients'] != '':
 				selected_clients = [int (cid_selected) for cid_selected in config['selected_clients'].split(' ')]
@@ -138,11 +143,13 @@ class FedProtoClientTorch(ClientBaseTorch):
 				start_time = time.time()
 
 				max_local_steps = self.local_epochs
-				train_acc = 0
-				train_loss = 0
-				train_num = 0
+
+
 				protos = defaultdict(list)
 				for step in range(max_local_steps):
+					train_num = 0
+					train_acc = 0
+					train_loss = 0
 					for i, (x, y) in enumerate(self.trainloader):
 						if type(x) == type([]):
 							x[0] = x[0].to(self.device)
@@ -163,13 +170,15 @@ class FedProtoClientTorch(ClientBaseTorch):
 							proto_new = np.zeros(rep.shape)
 							for i, yy in enumerate(y):
 								y_c = yy.item()
+								# print("global: ", self.global_protos[y_c].shape, " proto new: ", proto_new[i].shape)
 								proto_new[i] = self.global_protos[y_c]
 							proto_new = torch.Tensor(proto_new.tolist())
 							mse_loss = self.loss_mse(proto_new, rep) * self.lamda
 							# print("antes: ", loss)
 							# print("aqui: ", mse_loss)
-							loss += mse_loss
-							# print("depois: ", loss)
+							# loss += mse_loss
+							mse_list.append(mse_loss.item())
+							# print("mse: ", mse_loss)
 						loss.backward()
 						self.optimizer.step()
 
@@ -180,18 +189,17 @@ class FedProtoClientTorch(ClientBaseTorch):
 
 
 						# train_loss += float(loss.detach().numpy())
-						train_loss += loss.item() * y.shape[0]
+						train_loss += loss.item()
 						train_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
 
 				self.save_parameters()
 
 			self.protos = self.agg_func(protos)
-			# print("juntou", self.protos)
-			# self.protos = np.array([]*self.num_classes)
 			total_time         = time.process_time() - start_time
 			size_of_parameters = sum(map(sys.getsizeof, trained_parameters))
 			avg_loss_train     = train_loss/train_num
 			avg_acc_train      = train_acc/train_num
+			print("mean mse: ", np.mean(mse_list))
 
 			filename = f"logs/{self.solution_name}/{self.n_clients}/{self.model_name}/{self.dataset}/train_client.csv"
 			data = [config['round'], self.cid, selected, total_time, size_of_parameters, avg_loss_train, avg_acc_train]
@@ -202,7 +210,8 @@ class FedProtoClientTorch(ClientBaseTorch):
 
 			fit_response = {
 				'cid': self.cid,
-				'protos_samples_per_class': self.protos_samples_per_class
+				'protos_samples_per_class': self.protos_samples_per_class,
+				'proto': {i: np.array(self.protos[i]) for i in range(len(self.protos))}
 			}
 
 			return self.protos, train_num, fit_response
@@ -218,7 +227,8 @@ class FedProtoClientTorch(ClientBaseTorch):
 			self.model.eval()
 
 			test_acc = 0
-			test_loss = 0
+			test_loss = []
+			test_mse_loss = []
 			test_num = 0
 
 			with torch.no_grad():
@@ -245,12 +255,24 @@ class FedProtoClientTorch(ClientBaseTorch):
 					# output = self.model.head(rep)
 					output, rep = self.model(x)
 					loss = self.loss(output, y)
-					test_loss += loss.item() * y.shape[0]
+					mse_value = 0
+					if self.global_protos != None:
+						proto_new = np.zeros(rep.shape)
+						for i, yy in enumerate(y):
+							y_c = yy.item()
+							proto_new[i] = self.global_protos[y_c]
+						proto_new = torch.Tensor(proto_new.tolist())
+						mse_loss = self.loss_mse(proto_new, rep) * self.lamda
+						mse_value = mse_loss.item()
+						test_mse_loss.append(mse_value)
+
+
+					test_loss.append(loss.item() + mse_value)
 					test_num += y.shape[0]
 					test_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
 
 			size_of_parameters = sum(map(sys.getsizeof, parameters))
-			loss = test_loss/test_num
+			loss = np.mean(test_loss)
 			accuracy = test_acc/test_num
 			filename = f"logs/{self.solution_name}/{self.n_clients}/{self.model_name}/{self.dataset}/evaluate_client.csv"
 			data = [config['round'], self.cid, size_of_parameters, loss, accuracy]
@@ -260,7 +282,8 @@ class FedProtoClientTorch(ClientBaseTorch):
 
 			evaluation_response = {
 				"cid"      : self.cid,
-				"accuracy" : float(accuracy)
+				"accuracy" : float(accuracy),
+				"mse_loss" : np.mean(test_mse_loss)
 			}
 
 			return loss, test_num, evaluation_response
@@ -297,6 +320,9 @@ class FedProtoClientTorch(ClientBaseTorch):
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def set_proto(self, protos):
+		# print("tamanho: ", len(protos))
+		# print(protos)
+		# exit()
 		self.global_protos = copy.deepcopy(protos)
 
 	def agg_func(self, protos):
@@ -317,7 +343,7 @@ class FedProtoClientTorch(ClientBaseTorch):
 
 			numpy_protos = [np.zeros(proto_shape) for i in range(self.num_classes)]
 			for key in protos:
-				numpy_protos[key-1] = protos[key].detach().numpy()
+				numpy_protos[key] = protos[key]
 
 			return numpy_protos
 		except Exception as e:

@@ -4,6 +4,11 @@ import torch.nn.functional as F
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 from torch import nn, Tensor
 import copy
+import random
+import numpy as np
+random.seed(0)
+np.random.seed(0)
+torch.manual_seed(0)
 
 batch_size = 16
 

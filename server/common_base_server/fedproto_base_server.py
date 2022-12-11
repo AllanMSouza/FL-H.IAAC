@@ -9,7 +9,12 @@ from flwr.server.strategy.aggregate import weighted_loss_avg
 from server.common_base_server.fedavg_base_server import FedAvgBaseServer
 import shutil
 import tensorflow as tf
+import torch
+import random
+random.seed(0)
+np.random.seed(0)
 tf.random.set_seed(0)
+torch.manual_seed(0)
 class FedProtoBaseServer(FedAvgBaseServer):
 
     def __init__(self,
@@ -52,13 +57,14 @@ class FedProtoBaseServer(FedAvgBaseServer):
         for _, fit_res in results:
             client_id = str(fit_res.metrics['cid'])
             protos_samples_per_class = fit_res.metrics['protos_samples_per_class']
+            proto = fit_res.metrics['proto']
 
             if self.aggregation_method not in ['POC', 'FedLTA'] or int(server_round) <= 1:
-                weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), protos_samples_per_class))
+                weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), protos_samples_per_class, proto))
 
             else:
                 if client_id in self.selected_clients:
-                    weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), protos_samples_per_class))
+                    weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), protos_samples_per_class, proto))
 
         # print(f'LEN AGGREGATED PARAMETERS: {len(weights_results)}')
         # print("rodada: ", server_round)
@@ -74,46 +80,66 @@ class FedProtoBaseServer(FedAvgBaseServer):
         # Calculate the total number of examples used during training
         num_examples_total = {i: 0 for i in range(self.n_classes)}
         num_examples_total_clients = {i: 0 for i in range(self.n_classes)}
-        for _, num_examples in results:
+        for _, num_examples, p in results:
 
             for key in num_examples:
 
                 num_examples_total[key] += num_examples[key]
-                num_examples_total_clients[key] += 1
+                if num_examples[key] > 0:
+                    num_examples_total_clients[key] += 1
 
         print("Quantidade por classe")
         print(num_examples_total)
         proto_shape = None
         # Create a list of weights, each multiplied by the related number of examples
 
-        sum_protos = {i: np.array([]) for i in range(self.n_classes)}
+        agg_protos_label = {i: None for i in range(self.n_classes)}
+        for local_protos, num_examples, p in results:
+            for label in range(self.n_classes):
+                if agg_protos_label[label] is None:
+                    agg_protos_label[label] = (local_protos[label]*num_examples[label])/num_examples_total[label]
+                else:
+                    agg_protos_label[label] += (local_protos[label]*num_examples[label])/num_examples_total[label]
+        print("ola0: ", [agg_protos_label[i].shape for i in agg_protos_label])
+        for key in agg_protos_label:
+            proto = agg_protos_label[key]
+            agg_protos_label[key] = [(np.array(proto) / num_examples_total_clients[key])]
 
-        for key in range(self.n_classes):
-            for proto, num_examples in results:
-
-                # if key > len(proto) - 1:
-                #     print("zero")
-                #     continue
-
-                if num_examples[key] > 0:
-                    # print("umm", proto[key])
-                    if len(sum_protos[key]) == 0:
-                        # print("umm", proto[key])
-                        # print(sum_protos[key], proto[key], num_examples[key])
-                        sum_protos[key] = proto[key]*num_examples[key]
-
-                    else:
-                        # print("dois")
-                        # print("dois", sum_protos[key], proto[key][0], num_examples[key])
-                        sum_protos[key] += proto[key]*num_examples[key]
-
-            if len(sum_protos[key]) > 0:
-                # print("tres")
-                sum_protos[key] = sum_protos[key]/(num_examples_total[key] * num_examples_total_clients[key])
+        # for key in range(self.n_classes):
+        #     for proto, num_examples in results:
+        #
+        #         # if key > len(proto) - 1:
+        #         #     print("zero")
+        #         #     continue
+        #
+        #         if num_examples[key] > 0:
+        #             # print("umm", proto[key])
+        #             if len(sum_protos[key]) == 0:
+        #                 # print("umm", proto[key])
+        #                 # print(sum_protos[key], proto[key], num_examples[key])
+        #                 sum_protos[key] = proto[key]*num_examples[key]
+        #
+        #             else:
+        #                 # print("dois")
+        #                 # print("dois", sum_protos[key], proto[key][0], num_examples[key])
+        #                 sum_protos[key] += proto[key]*num_examples[key]
+        #
+        #     if len(sum_protos[key]) > 0:
+        #         # print("tres")
+        #         sum_protos[key] = sum_protos[key]/(num_examples_total[key] * num_examples_total_clients[key])
 
         weighted_weights = [
-            sum_protos[key] for key in sum_protos
+            np.array(agg_protos_label[key]) for key in agg_protos_label
         ]
+        tamanho = weighted_weights[0].shape
+        print("ola: ", [i.shape for i in weighted_weights])
+        for w in weighted_weights:
+            if np.sum(w) == 0:
+                print("zerado")
+                exit()
+            if w.shape != tamanho:
+                print("diferente: ", w.shape, tamanho)
+                exit()
         # print("ponderado")
         # print(weighted_weights)
         return weighted_weights
@@ -165,6 +191,14 @@ class FedProtoBaseServer(FedAvgBaseServer):
             ]
         )
 
+        # Aggregate loss mse
+        loss_mse_aggregated = weighted_loss_avg(
+            [
+                (evaluate_res.num_examples, evaluate_res.metrics['mse_loss'])
+                for _, evaluate_res in results
+            ]
+        )
+
         # Aggregate custom metrics if aggregation fn was provided
         top5 = np.mean(accs[-5:])
         top1 = accs[-1]
@@ -178,6 +212,7 @@ class FedProtoBaseServer(FedAvgBaseServer):
                            )
 
         metrics_aggregated = {
+            "loss_mse": loss_mse_aggregated,
             "accuracy": accuracy_aggregated,
             "top-3": top5,
             "top-1": top1

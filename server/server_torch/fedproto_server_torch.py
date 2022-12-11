@@ -7,6 +7,11 @@ from flwr.common import FitIns
 from flwr.server.strategy.aggregate import weighted_loss_avg
 
 from server.common_base_server import FedProtoBaseServer
+import random
+import torch
+random.seed(0)
+np.random.seed(0)
+torch.manual_seed(0)
 class FedProtoServerTorch(FedProtoBaseServer):
 
     def __init__(self,

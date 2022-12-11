@@ -55,7 +55,7 @@ class FedPerClientTorch(ClientBaseTorch):
 			return ModelCreation().create_LogisticRegression(input_shape, self.num_classes)
 
 		elif self.model_name == 'DNN':
-			return ModelCreation().create_DNN(input_shape=input_shape, num_classes=self.num_classes, use_local_model=True)
+			return ModelCreation().create_DNN(input_shape=input_shape, num_classes=self.num_classes, use_local_model=False)
 
 		elif self.model_name == 'CNN':
 			return ModelCreation().create_CNN(input_shape, self.num_classes)

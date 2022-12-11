@@ -4,6 +4,12 @@ from server import FedPerServerTf, FedProtoServerTf, FedAvgServerTf, FedLocalSer
 
 from optparse import OptionParser
 import tensorflow as tf
+import torch
+import random
+import numpy as np
+random.seed(0)
+np.random.seed(0)
+torch.manual_seed(0)
 
 import logging
 logging.getLogger("tensorflow").setLevel(logging.ERROR)
