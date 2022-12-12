@@ -99,8 +99,9 @@ class FedProtoBaseServer(FedAvgBaseServer):
                 if agg_protos_label[label] is None:
                     agg_protos_label[label] = (local_protos[label]*num_examples[label])/num_examples_total[label]
                 else:
+                    # print("receber: ", agg_protos_label[label].shape, " ir: ", ((local_protos[label]*num_examples[label])/num_examples_total[label]).shape)
                     agg_protos_label[label] += (local_protos[label]*num_examples[label])/num_examples_total[label]
-        print("ola0: ", [agg_protos_label[i].shape for i in agg_protos_label])
+        # print("formato saida1: ", [agg_protos_label[i].shape for i in agg_protos_label])
         for key in agg_protos_label:
             proto = agg_protos_label[key]
             agg_protos_label[key] = [(np.array(proto) / num_examples_total_clients[key])]
@@ -132,14 +133,16 @@ class FedProtoBaseServer(FedAvgBaseServer):
             np.array(agg_protos_label[key]) for key in agg_protos_label
         ]
         tamanho = weighted_weights[0].shape
-        print("ola: ", [i.shape for i in weighted_weights])
+        # print("formato saida2: ", [i.shape for i in weighted_weights])
+        weighted_weights = [i[0] for i in weighted_weights]
+        # print("formato saida3: ", [i.shape for i in weighted_weights])
         for w in weighted_weights:
             if np.sum(w) == 0:
                 print("zerado")
                 exit()
-            if w.shape != tamanho:
-                print("diferente: ", w.shape, tamanho)
-                exit()
+            # if w.shape != tamanho:
+            #     print("diferente: ", w.shape, tamanho)
+            #     exit()
         # print("ponderado")
         # print(weighted_weights)
         return weighted_weights

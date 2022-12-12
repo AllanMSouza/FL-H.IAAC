@@ -63,11 +63,21 @@ class FedPerClientTorch(ClientBaseTorch):
 		else:
 			raise Exception("Wrong model name")
 
+	def get_parameters_of_model(self):
+		try:
+			parameters = [i.detach().numpy() for i in self.model.parameters()]
+			parameters = parameters[:-self.n_personalized_layers]
+			return parameters
+		except Exception as e:
+			print("get parameters of model")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+
 	def save_parameters(self):
 		# usando json
 		try:
 			filename = """./fedper_saved_weights/{}/{}/{}.json""".format(self.model_name, self.cid, self.cid)
-			weights = self.get_parameters_of_model()
+			weights = self.get_parameters(config={})
 			personalized_layers_weights = []
 			for i in range(self.n_personalized_layers):
 				personalized_layers_weights.append(weights[len(weights)-self.n_personalized_layers+i])
@@ -100,8 +110,9 @@ class FedPerClientTorch(ClientBaseTorch):
 				aList = [np.array(i) for i in json.loads(jsonContent)]
 				size = len(parameters)
 				# updating only the personalized layers, which were previously saved in a file
-				for i in range(self.n_personalized_layers):
-					parameters[size-self.n_personalized_layers+i] = aList[i]
+				# for i in range(self.n_personalized_layers):
+				# 	parameters[size-self.n_personalized_layers+i] = aList[i]
+				parameters = parameters + aList
 				parameters = [Parameter(torch.Tensor(i.tolist())) for i in parameters]
 				for new_param, old_param in zip(parameters, self.model.parameters()):
 					old_param.data = new_param.data.clone()

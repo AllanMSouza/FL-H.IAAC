@@ -225,7 +225,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				self.save_parameters()
 
 			total_time         = time.process_time() - start_time
-			size_of_parameters = sum(map(sys.getsizeof, trained_parameters))
+			size_of_parameters = sum([sum(map(sys.getsizeof, trained_parameters[i])) for i in range(len(trained_parameters))])
 			avg_loss_train     = train_loss/train_num
 			avg_acc_train      = train_acc/train_num
 
@@ -271,7 +271,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 					test_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
 					test_num += y.shape[0]
 
-			size_of_parameters = sum(map(sys.getsizeof, parameters))
+			size_of_parameters = sum([sum(map(sys.getsizeof, parameters[i])) for i in range(len(parameters))])
 			loss = test_loss/test_num
 			accuracy = test_acc/test_num
 			filename = f"logs/{self.solution_name}/{self.n_clients}/{self.model_name}/{self.dataset}/evaluate_client.csv"

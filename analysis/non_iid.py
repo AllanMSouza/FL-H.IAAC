@@ -113,7 +113,7 @@ class ComplexNumber:
 
             return pd.DataFrame({'Size of parameters': [parameters]})
         df_test = df[['Round', 'Size of parameters', 'Strategy name']].groupby('Strategy name').apply(lambda e: strategy(e)).reset_index()[['Size of parameters', 'Strategy name']]
-        df_test.to_csv(base_dir+"evaluate_client_size_of_parameters_round.csv", index=False)
+        df_test.to_csv(base_dir+"csv/evaluate_client_size_of_parameters_round.csv", index=False)
         print(df_test)
         x_column = 'Strategy name'
         y_column = 'Size of parameters'
@@ -126,6 +126,14 @@ class ComplexNumber:
                   y_column=y_column,
                   title=title,
                   hue=hue)
+        bar_plot(df=df_test,
+                 base_dir=base_dir,
+                 file_name="evaluate_client_size_of_parameters_round_barplot",
+                 x_column=x_column,
+                 y_column=y_column,
+                 title=title,
+                 hue=hue,
+                 log_scale=True)
 
 
 
@@ -193,7 +201,7 @@ if __name__ == '__main__':
 
     (opt, args) = parser.parse_args()
 
-    strategy_name_list = ['FedAVG', 'FedProto']
+    strategy_name_list = ['FedAVG', 'FedPer', 'FedProto']
 
     # noniid = NonIID(int(opt.n_clients), opt.aggregation_method, opt.model_name, strategy_name_list, opt.dataset)
     # noniid.start()

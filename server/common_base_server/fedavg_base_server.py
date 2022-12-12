@@ -4,11 +4,13 @@ import math
 import os
 import time
 import csv
+import random
 
 from logging import WARNING
 from flwr.common import FitIns
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
 from flwr.common.logger import log
+random.seed(0)
 
 class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
@@ -79,7 +81,18 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.start_time = time.time()
 		if self.aggregation_method == 'POC':
 			clients2select        = int(float(self.num_clients) * float(self.perc_of_clients))
-			self.selected_clients = self.list_of_clients[:clients2select]
+			available_clients = []
+			print("lista clientes: ", self.list_of_clients)
+			for client_id in self.list_of_clients:
+				if server_round <= int(self.num_rounds*0.6):
+
+					if int(client_id) < int(self.num_clients/2):
+						available_clients.append(client_id)
+				else:
+					available_clients = self.list_of_clients
+			print("disponiveis: ", available_clients)
+			clients2select = int(len(available_clients) * float(self.perc_of_clients))
+			self.selected_clients = random.sample(available_clients, clients2select)
 
 		elif self.aggregation_method == 'FedLTA':
 			self.selected_clients = self.select_clients_bellow_average()
