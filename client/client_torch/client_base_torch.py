@@ -39,6 +39,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				 perc_of_clients    = 0,
 				 decay              = 0,
 				 non_iid            = False,
+				 new_clients = False
 				 ):
 
 		self.cid          = int(cid)
@@ -66,6 +67,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 		self.loss = nn.CrossEntropyLoss()
 		self.learning_rate = 0.01
+		self.new_clients = new_clients
 
 		#params
 		if self.aggregation_method == 'POC':
@@ -229,7 +231,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			avg_loss_train     = train_loss/train_num
 			avg_acc_train      = train_acc/train_num
 
-			filename = f"logs/{self.solution_name}/{self.n_clients}/{self.model_name}/{self.dataset}/train_client.csv"
+			filename = f"logs/{self.solution_name}/new_clients_{self.new_clients}/{self.n_clients}/{self.model_name}/{self.dataset}/train_client.csv"
 			data = [config['round'], self.cid, selected, total_time, size_of_parameters, avg_loss_train, avg_acc_train]
 
 			self._write_output(
@@ -274,7 +276,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			size_of_parameters = sum([sum(map(sys.getsizeof, parameters[i])) for i in range(len(parameters))])
 			loss = test_loss/test_num
 			accuracy = test_acc/test_num
-			filename = f"logs/{self.solution_name}/{self.n_clients}/{self.model_name}/{self.dataset}/evaluate_client.csv"
+			filename = f"logs/{self.solution_name}/new_clients_{self.new_clients}/{self.n_clients}/{self.model_name}/{self.dataset}/evaluate_client.csv"
 			data = [config['round'], self.cid, size_of_parameters, loss, accuracy]
 
 			self._write_output(filename=filename,

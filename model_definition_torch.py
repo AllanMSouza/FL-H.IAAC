@@ -24,22 +24,59 @@ class LocalModel(nn.Module):
 
         return out
 # ====================================================================================================================
-
 class DNN_proto(nn.Module):
     def __init__(self, input_dim=1*28*28, mid_dim=100, num_classes=10):
         super(DNN_proto, self).__init__()
 
-        self.fc1 = nn.Linear(input_dim, mid_dim)
+        self.fc0 = nn.Linear(input_dim, 512)
+        self.fc1 = nn.Linear(512, 256)
+        self.fc2 = nn.Linear(256, mid_dim)
         self.fc = nn.Linear(mid_dim, num_classes)
 
     def forward(self, x):
         x = torch.flatten(x, 1)
-        rep = F.relu(self.fc1(x))
+        x = F.relu(self.fc0(x))
+        x = F.relu(self.fc1(x))
+        rep = F.relu(self.fc2(x))
         x = self.fc(rep)
         output = F.log_softmax(x, dim=1)
         return output, rep
 # ====================================================================================================================
+# class DNN_proto(nn.Module):
+#     def __init__(self, input_dim=1*28*28, mid_dim=100, num_classes=10):
+#         super(DNN_proto, self).__init__()
+#
+#         self.fc1 = nn.Linear(input_dim, mid_dim)
+#         self.fc = nn.Linear(mid_dim, num_classes)
+#
+#     def forward(self, x):
+#         x = torch.flatten(x, 1)
+#         rep = F.relu(self.fc1(x))
+#         x = self.fc(rep)
+#         output = F.log_softmax(x, dim=1)
+#         return output, rep
+# ====================================================================================================================
 
+# # ====================================================================================================================
+#
+# class DNN(nn.Module):
+#     def __init__(self, input_dim=1*28*28, mid_dim=100, num_classes=10):
+#         super(DNN, self).__init__()
+#
+#         self.fc0 = nn.Linear(input_dim, 512)
+#         self.fc1 = nn.Linear(512, 256)
+#         self.fc2 = nn.Linear(256, mid_dim)
+#         self.fc = nn.Linear(mid_dim, num_classes)
+#
+#     def forward(self, x):
+#         x = torch.flatten(x, 1)
+#         x = F.relu(self.fc0(x))
+#         x = F.relu(self.fc1(x))
+#         x = F.relu(self.fc2(x))
+#         x = self.fc(x)
+#         x = F.log_softmax(x, dim=1)
+#         return x
+# ====================================================================================================================
 class DNN(nn.Module):
     def __init__(self, input_dim=1*28*28, mid_dim=100, num_classes=10):
         super(DNN, self).__init__()

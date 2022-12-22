@@ -27,7 +27,8 @@ class FedProtoBaseServer(FedAvgBaseServer):
                  perc_of_clients=0,
                  dataset='',
                  strategy_name='FedProto',
-                 model_name=''):
+                 model_name='',
+                 new_clients=False):
 
         super().__init__(aggregation_method=aggregation_method,
                          n_classes=n_classes,
@@ -38,7 +39,10 @@ class FedProtoBaseServer(FedAvgBaseServer):
                          perc_of_clients=perc_of_clients,
                          dataset=dataset,
                          strategy_name='FedProto',
-                         model_name=model_name)
+                         model_name=model_name,
+                         new_clients=new_clients)
+
+        self.global_protos = [np.array([np.nan]) for i in range(self.n_classes)]
 
         self.create_folder()
 
@@ -143,8 +147,17 @@ class FedProtoBaseServer(FedAvgBaseServer):
             # if w.shape != tamanho:
             #     print("diferente: ", w.shape, tamanho)
             #     exit()
-        # print("ponderado")
+        # print("ponderado0")
         # print(weighted_weights)
+        # Ensure that the server holds prototypes of all classes even that prototypes were not generated in the current round for a specific class
+        for i in range(self.n_classes):
+            new_proto = weighted_weights[i]
+            if np.isnan(new_proto).any() and not np.isnan(self.global_protos[i]).any():
+                weighted_weights[i] = self.global_protos[i]
+        self.global_protos = weighted_weights
+        # print("ponderado1")
+        # print(weighted_weights)
+
         return weighted_weights
 
     def aggregate_evaluate(
@@ -206,7 +219,7 @@ class FedProtoBaseServer(FedAvgBaseServer):
         top5 = np.mean(accs[-5:])
         top1 = accs[-1]
 
-        base = f"logs/{self.strategy_name}/{self.num_clients}/{self.model_name}/{self.dataset}/"
+        base = f"logs/{self.strategy_name}/new_clients_{self.new_clients}/{self.num_clients}/{self.model_name}/{self.dataset}/"
         filename_server = f"{base}server.csv"
         data = [time.time()-self.start_time, server_round, accuracy_aggregated, top5, top1]
 

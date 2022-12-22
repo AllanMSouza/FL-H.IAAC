@@ -33,6 +33,7 @@ class SimulationFL():
 				 decay,
 				 non_iid,
 				 nn_type,
+				 new_clients
 				 ):
 		
 		self.n_clients        		= n_clients
@@ -48,6 +49,7 @@ class SimulationFL():
 		self.strategy_name    		= strategy_name # Old "self.solution_name"
 		self.non_iid          		= non_iid
 		self.nn_type = nn_type
+		self.new_clients = new_clients
 
 	
 	def create_client(self, cid):
@@ -117,6 +119,7 @@ class SimulationFL():
 
 		elif self.nn_type == 'torch':
 			if self.strategy_name == 'FedProto':
+				# print("foi cliente")
 				return FedProtoClientTorch(cid=cid,
 										n_clients=self.n_clients,
 										n_classes=self.n_classes,
@@ -128,7 +131,8 @@ class SimulationFL():
 										dataset=self.dataset,
 										perc_of_clients=self.poc,
 										decay=self.decay,
-										non_iid=self.non_iid)
+										non_iid=self.non_iid,
+										   new_clients=self.new_clients)
 			elif self.strategy_name == 'FedPer':
 				return  FedPerClientTorch(cid=cid,
 								n_clients=self.n_clients,
@@ -141,7 +145,8 @@ class SimulationFL():
 								dataset=self.dataset,
 								perc_of_clients=self.poc,
 								decay=self.decay,
-								non_iid=self.non_iid)
+								non_iid=self.non_iid,
+								new_clients=self.new_clients)
 			elif self.strategy_name == 'FedLocal':
 				return  FedLocalClientTorch(cid=cid,
 								n_clients=self.n_clients,
@@ -154,7 +159,8 @@ class SimulationFL():
 								dataset=self.dataset,
 								perc_of_clients=self.poc,
 								decay=self.decay,
-								non_iid=self.non_iid)
+								non_iid=self.non_iid,
+								new_clients=self.new_clients)
 			else:
 				return FedAvgClientTorch(cid=cid,
 									  n_clients=self.n_clients,
@@ -167,7 +173,8 @@ class SimulationFL():
 									  dataset=self.dataset,
 									  perc_of_clients=self.poc,
 									  decay=self.decay,
-									  non_iid=self.non_iid)
+									  non_iid=self.non_iid,
+										new_clients=self.new_clients)
 
 
 	def create_strategy(self):
@@ -237,6 +244,7 @@ class SimulationFL():
 									model_name=self.model_name)
 		elif self.nn_type == 'torch':
 			if self.strategy_name == 'FedProto':
+				# print("foi servidor")
 				return FedProtoServerTorch(aggregation_method=self.aggregation_method,
 										n_classes=self.n_classes,
 										fraction_fit=1,
@@ -246,7 +254,8 @@ class SimulationFL():
 										perc_of_clients=self.poc,
 										strategy_name=self.strategy_name,
 										dataset=self.dataset,
-										model_name=self.model_name)
+										model_name=self.model_name,
+										   new_clients=self.new_clients)
 			elif self.strategy_name == 'FedPer':
 				return  FedPerServerTorch(aggregation_method=self.aggregation_method,
 								  n_classes=self.n_classes,
@@ -257,7 +266,8 @@ class SimulationFL():
 								  perc_of_clients=self.poc,
 								  strategy_name=self.strategy_name,
 								  dataset=self.dataset,
-								  model_name=self.model_name)
+								  model_name=self.model_name,
+										  new_clients=self.new_clients)
 			elif self.strategy_name == 'FedLocal':
 				return  FedLocalServerTorch(aggregation_method=self.aggregation_method,
 								  n_classes=self.n_classes,
@@ -279,7 +289,8 @@ class SimulationFL():
 								  perc_of_clients=self.poc,
 								  strategy_name=self.strategy_name,
 								  dataset=self.dataset,
-								  model_name=self.model_name)
+								  model_name=self.model_name,
+								new_clients=self.new_clients)
 
 
 	def start_simulation(self):
@@ -314,12 +325,14 @@ def main():
 	parser.add_option("",   "--non-iid",     		dest="non_iid",            default=False,     help="Non IID distribution",                   metavar="BOOLEAN")
 	parser.add_option("-y", "--classes",     		dest="n_classes",          default=10,        help="Number of classes",                      metavar="INT")
 	parser.add_option("-t", "--type",               dest="type",               default='tf',      help="Neural network framework (tf or torch)", metavar="STR")
+	parser.add_option("", "--new_clients", dest="new_clients", default=False, help="Add new clients after a specific number of rounds",
+					  metavar="STR")
 
 	(opt, args) = parser.parse_args()
 
 	simulation = SimulationFL(int(opt.n_clients), opt.aggregation_method, opt.model_name, opt.strategy_name, opt.dataset, int(opt.n_classes),
 							  int(opt.local_epochs), int(opt.rounds), float(opt.poc), float(opt.decay),
-							  bool(opt.non_iid), opt.type)
+							  bool(opt.non_iid), opt.type, opt.new_clients)
 
 	simulation.start_simulation()
 

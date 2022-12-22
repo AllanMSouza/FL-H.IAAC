@@ -21,7 +21,8 @@ class FedAvgClientTorch(ClientBaseTorch):
 				 dataset            = '',
 				 perc_of_clients    = 0,
 				 decay              = 0,
-				 non_iid            = False):
+				 non_iid            = False,
+				 new_clients		= False):
 
 		super().__init__(cid=cid,
 						 n_clients=n_clients,
@@ -34,4 +35,5 @@ class FedAvgClientTorch(ClientBaseTorch):
 						 dataset=dataset,
 						 perc_of_clients=perc_of_clients,
 						 decay=decay,
-						 non_iid=non_iid)
+						 non_iid=non_iid,
+						 new_clients=new_clients)

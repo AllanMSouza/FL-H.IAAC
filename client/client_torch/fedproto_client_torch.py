@@ -44,6 +44,7 @@ class FedProtoClientTorch(ClientBaseTorch):
 				 perc_of_clients    = 0,
 				 decay              = 0,
 				 non_iid            = False,
+				 new_clients		= False
 				 ):
 
 		super().__init__(cid=cid,
@@ -57,7 +58,8 @@ class FedProtoClientTorch(ClientBaseTorch):
 						 dataset=dataset,
 						 perc_of_clients=perc_of_clients,
 						 decay=decay,
-						 non_iid=non_iid)
+						 non_iid=non_iid,
+						 new_clients=new_clients)
 
 		self.protos = None
 		self.global_protos = None
@@ -129,9 +131,6 @@ class FedProtoClientTorch(ClientBaseTorch):
 			protos = defaultdict(list)
 			if config['selected_clients'] != '':
 				selected_clients = [int (cid_selected) for cid_selected in config['selected_clients'].split(' ')]
-
-			start_time = time.process_time()
-			#print(config)
 			if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
 
 				# the parameters are saved in a file because in each round new instances of client are created
@@ -145,7 +144,6 @@ class FedProtoClientTorch(ClientBaseTorch):
 				self.model.train()
 				start_time = time.time()
 				max_local_steps = self.local_epochs
-
 
 				for step in range(max_local_steps):
 					train_num = 0
@@ -197,7 +195,7 @@ class FedProtoClientTorch(ClientBaseTorch):
 				avg_loss_train     = train_loss/train_num
 				avg_acc_train      = train_acc/train_num
 
-				filename = f"logs/{self.solution_name}/{self.n_clients}/{self.model_name}/{self.dataset}/train_client.csv"
+				filename = f"logs/{self.solution_name}/new_clients_{self.new_clients}/{self.n_clients}/{self.model_name}/{self.dataset}/train_client.csv"
 				data = [config['round'], self.cid, selected, total_time, size_of_parameters, avg_loss_train, avg_acc_train]
 
 				self._write_output(
@@ -209,10 +207,12 @@ class FedProtoClientTorch(ClientBaseTorch):
 					'protos_samples_per_class': self.protos_samples_per_class,
 					'proto': {i: np.array(self.protos[i]) for i in range(len(self.protos))}
 				}
+				print("treinou")
 				# print("saindo: ", config['round'], " forma: ", self.protos[0].shape, self.protos[1].shape, self.protos[2].shape, self.protos[3].shape)
 				return self.protos, train_num, fit_response
 			else:
 				# print("saiu", config['round'], self.cid)
+				print("errou")
 				return [np.zeros((100,))], 0, {
 					'cid': self.cid,
 					'protos_samples_per_class': {i: 0 for i in range(self.num_classes)},
@@ -244,20 +244,21 @@ class FedProtoClientTorch(ClientBaseTorch):
 					y = y.to(self.device)
 					y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
 					output, rep = self.model(x)
-					# rep = self.model.base(x)
-					#
+
+					# prediciton based on similarity
 					output = float('inf') * torch.ones(y.shape[0], self.num_classes).to(self.device)
 
 					for i, r in enumerate(rep):
 						for j in range(len(self.global_protos)):
 							pro = torch.Tensor(self.global_protos[j].tolist())
-
+							# print("global: ", pro.shape, " local: ", r.shape)
+							# print("saida mse: ", self.loss_mse(r, pro).shape)
+							# print("entrada: ", output[i, j].shape)
 							output[i, j] = self.loss_mse(r, pro)
 
 					test_acc += (torch.sum(torch.argmin(output, dim=1) == y)).item()
 					test_loss.append(torch.sum(torch.min(output, dim=1)[0]).item())
-					# rep = self.model.base(x)
-					# output = self.model.head(rep)
+
 
 					# loss = self.loss(output, y)
 					# mse_value = 0
@@ -270,16 +271,16 @@ class FedProtoClientTorch(ClientBaseTorch):
 					# 	mse_loss = self.loss_mse(proto_new, rep) * self.lamda
 					# 	mse_value = mse_loss.item()
 					# 	test_mse_loss.append(mse_value)
-					#
 					# test_loss.append(loss.item() + mse_value)
-					test_num += y.shape[0]
 					# test_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
+
+					test_num += y.shape[0]
 
 			size_of_parameters = sum([sum(map(sys.getsizeof, parameters[i])) for i in range(len(parameters))])
 			# print("test loss: ", test_loss)
 			loss = np.mean(test_loss)
 			accuracy = test_acc/test_num
-			filename = f"logs/{self.solution_name}/{self.n_clients}/{self.model_name}/{self.dataset}/evaluate_client.csv"
+			filename = f"logs/{self.solution_name}/new_clients_{self.new_clients}/{self.n_clients}/{self.model_name}/{self.dataset}/evaluate_client.csv"
 			data = [config['round'], self.cid, size_of_parameters, loss, accuracy]
 
 			self._write_output(filename=filename,
@@ -310,7 +311,7 @@ class FedProtoClientTorch(ClientBaseTorch):
 			# parameters = [Parameter(torch.Tensor(i.tolist())) for i in parameters]
 			# for new_param, old_param in zip(parameters, self.model.parameters()):
 			# 	old_param.data = new_param.data.clone()
-			print("Nao existe")
+			print("Model does not exist")
 			pass
 
 	def save_parameters(self):
