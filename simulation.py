@@ -1,12 +1,13 @@
 import flwr as fl
-from client import FedAvgClientTf, FedPerClientTf, FedProtoClientTf, FedLocalClientTf, FedAvgClientTorch, FedProtoClientTorch, FedPerClientTorch, FedLocalClientTorch
-from server import FedPerServerTf, FedProtoServerTf, FedAvgServerTf, FedLocalServerTf, FedAvgServerTorch, FedProtoServerTorch, FedPerServerTorch, FedLocalServerTorch
+from client import FedAvgClientTf, FedPerClientTf, FedProtoClientTf, FedLocalClientTf, FedAvgClientTorch, FedProtoClientTorch, FedPerClientTorch, FedLocalClientTorch, FedAvgMClientTorch, QFedAvgClientTorch
+from server import FedPerServerTf, FedProtoServerTf, FedAvgServerTf, FedLocalServerTf, FedAvgServerTorch, FedProtoServerTorch, FedPerServerTorch, FedLocalServerTorch, FedAvgMServerTorch, QFedAvgServerTorch
 
 from optparse import OptionParser
 import tensorflow as tf
 import torch
 import random
 import numpy as np
+import copy
 random.seed(0)
 np.random.seed(0)
 torch.manual_seed(0)
@@ -116,7 +117,6 @@ class SimulationFL():
 									  perc_of_clients=self.poc,
 									  decay=self.decay,
 									  non_iid=self.non_iid)
-
 		elif self.nn_type == 'torch':
 			if self.strategy_name == 'FedProto':
 				# print("foi cliente")
@@ -161,6 +161,34 @@ class SimulationFL():
 								decay=self.decay,
 								non_iid=self.non_iid,
 								new_clients=self.new_clients)
+			elif self.strategy_name == 'FedAvgM':
+				return FedAvgMClientTorch(cid=cid,
+										 n_clients=self.n_clients,
+										 n_classes=self.n_classes,
+										 model_name=self.model_name,
+										 client_selection=self.client_selection,
+										 epochs=1,
+										 solution_name=self.strategy_name,
+										 aggregation_method=self.aggregation_method,
+										 dataset=self.dataset,
+										 perc_of_clients=self.poc,
+										 decay=self.decay,
+										 non_iid=self.non_iid,
+										 new_clients=self.new_clients)
+			elif self.strategy_name == 'QFedAvg':
+				return QFedAvgClientTorch(cid=cid,
+										 n_clients=self.n_clients,
+										 n_classes=self.n_classes,
+										 model_name=self.model_name,
+										 client_selection=self.client_selection,
+										 epochs=1,
+										 solution_name=self.strategy_name,
+										 aggregation_method=self.aggregation_method,
+										 dataset=self.dataset,
+										 perc_of_clients=self.poc,
+										 decay=self.decay,
+										 non_iid=self.non_iid,
+										 new_clients=self.new_clients)
 			else:
 				return FedAvgClientTorch(cid=cid,
 									  n_clients=self.n_clients,
@@ -230,7 +258,6 @@ class SimulationFL():
 									  strategy_name=self.strategy_name,
 									  dataset=self.dataset,
 									  model_name=self.model_name)
-
 			else:
 				return FedAvgServerTf(aggregation_method=self.aggregation_method,
 									n_classes=self.n_classes,
@@ -279,6 +306,32 @@ class SimulationFL():
 								  strategy_name=self.strategy_name,
 								  dataset=self.dataset,
 								  model_name=self.model_name)
+			elif self.strategy_name == 'FedAvgM':
+				return FedAvgMServerTorch(aggregation_method=self.aggregation_method,
+										n_classes=self.n_classes,
+										fraction_fit=1,
+										num_clients=self.n_clients,
+										num_rounds=self.rounds,
+										model=copy.deepcopy(self.create_client(0).create_model()),
+										server_learning_rate=1, # melhor lr=1
+										server_momentum=0.1, # melhor server_momentum=0.2
+										decay=self.decay,
+										perc_of_clients=self.poc,
+										dataset=self.dataset,
+										model_name=self.model_name)
+			elif self.strategy_name == 'QFedAvg':
+				return QFedAvgServerTorch(aggregation_method=self.aggregation_method,
+										n_classes=self.n_classes,
+										fraction_fit=1,
+										num_clients=self.n_clients,
+										num_rounds=self.rounds,
+										model=copy.deepcopy(self.create_client(0).create_model()),
+										server_learning_rate=1, # melhor lr=1
+										q_param=0.1, # melhor server_momentum=0.2
+										decay=self.decay,
+										perc_of_clients=self.poc,
+										dataset=self.dataset,
+										model_name=self.model_name)
 			else:
 				return FedAvgServerTorch(aggregation_method=self.aggregation_method,
 								  n_classes=self.n_classes,

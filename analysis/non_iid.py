@@ -7,9 +7,11 @@ from optparse import OptionParser
 from base_plots import bar_plot, line_plot
 
 class NonIid:
-    def __init__(self, num_clients, aggregation_method, model_name, strategy_name_list, dataset_name, new_clients):
+    def __init__(self, num_clients, aggregation_method, perc_of_clients, non_iid,  model_name, strategy_name_list, dataset_name, new_clients):
         self.n_clients = num_clients
-        self.agg_method = aggregation_method
+        self.aggregation_method = aggregation_method
+        self.perc_of_clients = perc_of_clients
+        self.non_iid = non_iid
         self.model_name = model_name
         self.strategy_name_list = strategy_name_list
         self.dataset_name = dataset_name
@@ -22,17 +24,31 @@ class NonIid:
                                'server': None,
                                'train_client': None}
 
+    def _get_strategy_config(self, strategy_name):
+        if self.aggregation_method == 'POC':
+            strategy_config = f"{strategy_name}-{self.aggregation_method}-{self.perc_of_clients}"
+
+        # elif self.aggregation_method == 'FedLTA':
+        #     strategy_config = f"{self.strategy_name}-{self.aggregation_method}-{self.decay_factor}"
+
+        elif self.aggregation_method == 'None':
+            strategy_config = f"{strategy_name}-{self.aggregation_method}"
+
+        print("antes: ", self.aggregation_method, strategy_config)
+
+        return strategy_config
+
     def start(self):
 
+
         models_directories = {self.strategy_name_list[i]:
-                              """{}/new_clients_{}/{}-{}/{}/{}/{}/""".
+                              """{}/{}/new_clients_{}/{}/{}/{}/""".
                               format('/home/claudio/Documentos/pycharm_projects/FedLTA/logs',
-                                self.strategy_name_list[i],
-                                self.new_clients,
-                                self.agg_method,
-                                self.n_clients,
-                                self.model_name,
-                                self.dataset_name) for i in range(len(self.strategy_name_list))}
+                                     self._get_strategy_config(self.strategy_name_list[i]),
+                                     self.new_clients,
+                                     self.n_clients,
+                                     self.model_name,
+                                     self.dataset_name) for i in range(len(self.strategy_name_list))}
 
         # read datasets
         print(models_directories)
@@ -48,7 +64,7 @@ class NonIid:
                 else:
                     self.df_files_names[j] = pd.concat([self.df_files_names[j], df], ignore_index=True)
 
-        # self.server_analysis()
+        self.server_analysis()
         self.evaluate_client_analysis()
 
 
@@ -88,30 +104,30 @@ class NonIid:
         df = self.df_files_names['evaluate_client']
         df['Accuracy (%)'] = df['Accuracy'] * 100
         base_dir = '/home/claudio/Documentos/pycharm_projects/FedLTA/analysis/output/'
-        # x_column = 'Round'
-        # y_column = 'Accuracy (%)'
-        # hue = 'Strategy'
-        # title = ""
-        # line_plot(df=df,
-        #           base_dir=base_dir,
-        #           file_name="evaluate_client_acc_round_lineplot",
-        #           x_column=x_column,
-        #           y_column=y_column,
-        #           title=title,
-        #           hue=hue)
-        #
-        # # loss
-        # x_column = 'Round'
-        # y_column = 'Loss'
-        # hue = 'Strategy'
-        # title = ""
-        # line_plot(df=df,
-        #           base_dir=base_dir,
-        #           file_name="evaluate_client_loss_round_lineplot",
-        #           x_column=x_column,
-        #           y_column=y_column,
-        #           title=title,
-        #           hue=hue)
+        x_column = 'Round'
+        y_column = 'Accuracy (%)'
+        hue = 'Strategy'
+        title = ""
+        line_plot(df=df,
+                  base_dir=base_dir,
+                  file_name="evaluate_client_acc_round_lineplot",
+                  x_column=x_column,
+                  y_column=y_column,
+                  title=title,
+                  hue=hue)
+
+        # loss
+        x_column = 'Round'
+        y_column = 'Loss'
+        hue = 'Strategy'
+        title = ""
+        line_plot(df=df,
+                  base_dir=base_dir,
+                  file_name="evaluate_client_loss_round_lineplot",
+                  x_column=x_column,
+                  y_column=y_column,
+                  title=title,
+                  hue=hue)
 
         # size of parameters
         print(df)
@@ -206,15 +222,19 @@ if __name__ == '__main__':
     parser.add_option("-m", "--model", dest="model_name", default='DNN', help="Model used for trainning", metavar="STR")
     parser.add_option("-d", "--dataset", dest="dataset", default='MNIST', help="Dataset used for trainning",
                       metavar="STR")
+    parser.add_option("", "--non_iid", dest="non_iid", default='False',
+                      help="whether or not it was non iid experiment", metavar="STR")
+    parser.add_option("", "--poc", dest="poc", default=1.,
+                      help="percentage of clients to fit", metavar="FLOAT")
     parser.add_option("-r", "--round", dest="rounds", default=5, help="Number of communication rounds", metavar="INT")
     parser.add_option("", "--new_clients", dest="new_clients", default=False, help="Adds new clients after a specific round", metavar="STR")
 
     (opt, args) = parser.parse_args()
 
-    strategy_name_list = ['FedAVG', 'FedPer', 'FedProto']
+    strategy_name_list = ['FedAVG', 'FedAvgM', 'FedPer']
 
     # noniid = NonIID(int(opt.n_clients), opt.aggregation_method, opt.model_name, strategy_name_list, opt.dataset)
     # noniid.start()
-    c = NonIid(int(opt.n_clients), opt.aggregation_method, opt.model_name, strategy_name_list, opt.dataset, opt.new_clients)
+    c = NonIid(int(opt.n_clients), opt.aggregation_method, int(opt.poc), opt.non_iid, opt.model_name, strategy_name_list, opt.dataset, opt.new_clients)
     print(c.n_clients, " ", c.strategy_name_list)
     c.start()

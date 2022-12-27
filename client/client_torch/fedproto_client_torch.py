@@ -144,6 +144,7 @@ class FedProtoClientTorch(ClientBaseTorch):
 				self.model.train()
 				start_time = time.time()
 				max_local_steps = self.local_epochs
+				repeated_protos = 0
 
 				for step in range(max_local_steps):
 					train_num = 0
@@ -168,7 +169,12 @@ class FedProtoClientTorch(ClientBaseTorch):
 							proto_new = np.zeros(rep.shape)
 							for i, yy in enumerate(y):
 								y_c = yy.item()
-								proto_new[i] = self.global_protos[y_c]
+								if not np.isnan(self.global_protos[y_c]).any() or np.sum(self.global_protos[y_c] == 0):
+									proto_new[i] = self.global_protos[y_c]
+								else:
+									proto_new[i] = rep[i, :].detach().data
+									repeated_protos += 1
+
 							proto_new = torch.Tensor(proto_new.tolist())
 							mse_loss = self.loss_mse(proto_new, rep) * self.lamda
 							# print("antes: ", loss)
@@ -182,6 +188,10 @@ class FedProtoClientTorch(ClientBaseTorch):
 						for i, yy in enumerate(y):
 							y_c = yy.item()
 							protos[y_c].append(rep[i, :].detach().data)
+							# if y_c in [3,4]:
+							# 	print("opa", y_c)
+							# 	print(rep[i, :].detach().data)
+							# 	exit()
 							self.protos_samples_per_class[y_c] += 1
 
 						train_loss += loss.item()
@@ -190,8 +200,19 @@ class FedProtoClientTorch(ClientBaseTorch):
 				self.save_parameters()
 
 				self.protos = self.agg_func(protos)
+
+				# for label in range(len(self.protos)):
+				# 	if label in [3, 4]:
+				# 		print("teste", label)
+				# 		print(self.protos[label])
+				# 		exit()
+				for i in range(len(self.protos)):
+					if np.sum(self.protos[i]) == 0 and self.protos_samples_per_class[i] != 0:
+						print("errado")
+						exit()
+
 				total_time         = time.process_time() - start_time
-				size_of_parameters = sum([sum(map(sys.getsizeof, self.protos[i])) for i in range(len(self.protos))])
+				size_of_parameters = sum(map(sys.getsizeof, parameters))
 				avg_loss_train     = train_loss/train_num
 				avg_acc_train      = train_acc/train_num
 
@@ -201,6 +222,13 @@ class FedProtoClientTorch(ClientBaseTorch):
 				self._write_output(
 					filename=filename,
 					data=data)
+
+				if self.global_protos is not None:
+					if np.isnan(self.global_protos[3]).any() or np.isnan(self.global_protos[4]).any():
+						print("proto nao nulo, rodada ", config['round'])
+						print("recebidos:")
+						print(self.global_protos[3])
+						exit()
 
 				fit_response = {
 					'cid': self.cid,
@@ -246,37 +274,40 @@ class FedProtoClientTorch(ClientBaseTorch):
 					output, rep = self.model(x)
 
 					# prediciton based on similarity
-					output = float('inf') * torch.ones(y.shape[0], self.num_classes).to(self.device)
+					# output = float('inf') * torch.ones(y.shape[0], self.num_classes).to(self.device)
+					#
+					# for i, r in enumerate(rep):
+					# 	for j in range(len(self.global_protos)):
+					# 		pro = torch.Tensor(self.global_protos[j].tolist())
+					# 		# print("global: ", pro.shape, " local: ", r.shape)
+					# 		# print("saida mse: ", self.loss_mse(r, pro).shape)
+					# 		# print("entrada: ", output[i, j].shape)
+					# 		output[i, j] = self.loss_mse(r, pro)
+					#
+					# test_acc += (torch.sum(torch.argmin(output, dim=1) == y)).item()
+					# test_loss.append(torch.sum(torch.min(output, dim=1)[0]).item())
 
-					for i, r in enumerate(rep):
-						for j in range(len(self.global_protos)):
-							pro = torch.Tensor(self.global_protos[j].tolist())
-							# print("global: ", pro.shape, " local: ", r.shape)
-							# print("saida mse: ", self.loss_mse(r, pro).shape)
-							# print("entrada: ", output[i, j].shape)
-							output[i, j] = self.loss_mse(r, pro)
 
-					test_acc += (torch.sum(torch.argmin(output, dim=1) == y)).item()
-					test_loss.append(torch.sum(torch.min(output, dim=1)[0]).item())
-
-
-					# loss = self.loss(output, y)
-					# mse_value = 0
-					# if self.global_protos != None:
-					# 	proto_new = np.zeros(rep.shape)
-					# 	for i, yy in enumerate(y):
-					# 		y_c = yy.item()
-					# 		proto_new[i] = self.global_protos[y_c]
-					# 	proto_new = torch.Tensor(proto_new.tolist())
-					# 	mse_loss = self.loss_mse(proto_new, rep) * self.lamda
-					# 	mse_value = mse_loss.item()
-					# 	test_mse_loss.append(mse_value)
-					# test_loss.append(loss.item() + mse_value)
-					# test_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
+					loss = self.loss(output, y)
+					mse_value = 0
+					if self.global_protos != None:
+						proto_new = np.zeros(rep.shape)
+						for i, yy in enumerate(y):
+							y_c = yy.item()
+							if not np.isnan(self.global_protos[y_c]).any() or not np.sum(self.global_protos[y_c] == 0):
+								proto_new[i] = self.global_protos[y_c]
+							else:
+								proto_new[i] = rep[i, :].detach().data
+						proto_new = torch.Tensor(proto_new.tolist())
+						mse_loss = self.loss_mse(proto_new, rep) * self.lamda
+						mse_value = mse_loss.item()
+						test_mse_loss.append(mse_value)
+					test_loss.append(loss.item() + mse_value)
+					test_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
 
 					test_num += y.shape[0]
 
-			size_of_parameters = sum([sum(map(sys.getsizeof, parameters[i])) for i in range(len(parameters))])
+			size_of_parameters = sum(map(sys.getsizeof, parameters))
 			# print("test loss: ", test_loss)
 			loss = np.mean(test_loss)
 			accuracy = test_acc/test_num
@@ -335,7 +366,9 @@ class FedProtoClientTorch(ClientBaseTorch):
         """
 		try:
 			proto_shape = None
-			for [label, proto_list] in protos.items():
+			for label in protos:
+				proto_list = protos[label]
+
 				if len(proto_list) > 1:
 					proto = proto_list[0].detach().numpy()
 					for i in range(1, len(proto_list)):
@@ -349,8 +382,8 @@ class FedProtoClientTorch(ClientBaseTorch):
 				numpy_protos = copy.deepcopy(self.global_protos)
 			else:
 				numpy_protos = [np.zeros(proto_shape) for i in range(self.num_classes)]
-			for key in protos:
-				numpy_protos[key] = protos[key]
+			for label in protos:
+				numpy_protos[label] = protos[label]
 
 			return numpy_protos
 		except Exception as e:

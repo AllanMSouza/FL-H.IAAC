@@ -1,5 +1,5 @@
 from client.client_tf import FedAvgClientTf, FedLocalClientTf, FedPerClientTf, FedProtoClientTf
-from client.client_torch import FedAvgClientTorch, FedProtoClientTorch, FedPerClientTorch, FedLocalClientTorch
+from client.client_torch import FedAvgClientTorch, FedProtoClientTorch, FedPerClientTorch, FedLocalClientTorch, FedAvgMClientTorch, QFedAvgClientTorch
 
 
 
@@ -10,5 +10,7 @@ __all__ = [
     "FedProtoClientTf",
     "FedAvgClientTorch",
     "FedProtoClientTorch",
-    "FedPerClientTorch"
+    "FedPerClientTorch",
+    "FedAvgMClientTorch",
+    "QFedAvgClientTorch"
 ]

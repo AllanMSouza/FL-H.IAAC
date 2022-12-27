@@ -46,6 +46,43 @@ class FedProtoBaseServer(FedAvgBaseServer):
 
         self.create_folder()
 
+    def _max_fit_rounds_per_client(self):
+
+        max_rounds_per_client = {}
+        for i in range(self.num_clients):
+            if i >= int(self.num_clients * self.perc_of_clients) and self.new_clients:
+                max_rounds_per_client[str(i)] = {'count': 0, 'max_rounds': 1}
+            else:
+                max_rounds_per_client[str(i)] = {'count': 0, 'max_rounds': self.num_rounds}
+
+        return max_rounds_per_client
+
+    def _get_valid_clients_for_evaluate(self, server_round):
+
+        clients_ids = []
+        if self.new_clients:
+            # incluir apenas clientes velhos
+            if server_round < int(self.num_rounds * self.round_threshold):
+                for i in self.max_rounds_per_client:
+                    client_ = self.max_rounds_per_client[i]
+                    # clientes velhos podem participar de todas as rodadas
+                    if client_['max_rounds'] == self.num_rounds:
+                        clients_ids.append(i)
+            else:
+                # incluir apenas clientes novos após determinada rodada
+                for i in self.max_rounds_per_client:
+                    client_ = self.max_rounds_per_client[i]
+                    if client_['max_rounds'] != self.num_rounds:
+                        clients_ids.append(i)
+
+        else:
+            clients_ids = []
+            for i in self.max_rounds_per_client:
+                if self.max_rounds_per_client[i]['count'] >= 1:
+                    clients_ids.append(i)
+
+        return clients_ids
+
     def create_folder(self):
 
         directory = """fedproto_saved_weights/{}/""".format(self.model_name)
@@ -68,19 +105,35 @@ class FedProtoBaseServer(FedAvgBaseServer):
 
             else:
                 if client_id in self.selected_clients:
+                    # for label in protos_samples_per_class:
+                    #     p = proto[label]
+                    #     samples_per_class = protos_samples_per_class[label]
+                    #     if (np.sum(p) == 0 or np.isnan(p).any()) and samples_per_class != 0:
+                    #         print("usuario errado")
+                    #         exit()
+                    #     if label in [3, 4]:
+                    #         if samples_per_class > 0:
+                    #             print("proto da classe ", label)
+                    #             print(p)
                     weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), protos_samples_per_class, proto))
 
         # print(f'LEN AGGREGATED PARAMETERS: {len(weights_results)}')
         # print("rodada: ", server_round)
-        parameters_aggregated = fl.common.ndarrays_to_parameters(self._aggregate_proto(weights_results))
+        parameters_aggregated = fl.common.ndarrays_to_parameters(self._aggregate_proto(weights_results, server_round))
 
         # Aggregate custom metrics if aggregation fn was provided
         metrics_aggregated = {}
 
         return parameters_aggregated, metrics_aggregated
 
-    def _aggregate_proto(self, results):
+    def _aggregate_proto(self, results, server_round):
         """Compute weighted average."""
+
+        for i in range(len(self.global_protos)):
+            w = self.global_protos[i]
+            if np.sum(w) == 0 or np.isnan(w).any():
+                print("antes prototipo zerado: ", i, " na rodada ", server_round)
+
         # Calculate the total number of examples used during training
         num_examples_total = {i: 0 for i in range(self.n_classes)}
         num_examples_total_clients = {i: 0 for i in range(self.n_classes)}
@@ -91,6 +144,9 @@ class FedProtoBaseServer(FedAvgBaseServer):
                 num_examples_total[key] += num_examples[key]
                 if num_examples[key] > 0:
                     num_examples_total_clients[key] += 1
+                    if np.sum(p[key]) == 0:
+                        print("opaopa")
+                        exit()
 
         print("Quantidade por classe")
         print(num_examples_total)
@@ -98,17 +154,22 @@ class FedProtoBaseServer(FedAvgBaseServer):
         # Create a list of weights, each multiplied by the related number of examples
 
         agg_protos_label = {i: None for i in range(self.n_classes)}
-        for local_protos, num_examples, p in results:
+        for p, num_examples, local_protos in results:
             for label in range(self.n_classes):
-                if agg_protos_label[label] is None:
-                    agg_protos_label[label] = (local_protos[label]*num_examples[label])/num_examples_total[label]
-                else:
-                    # print("receber: ", agg_protos_label[label].shape, " ir: ", ((local_protos[label]*num_examples[label])/num_examples_total[label]).shape)
-                    agg_protos_label[label] += (local_protos[label]*num_examples[label])/num_examples_total[label]
+                if num_examples[label] > 0:
+                    proto_shape = local_protos[label].shape
+                    if agg_protos_label[label] is None:
+                        agg_protos_label[label] = (local_protos[label]*num_examples[label])/num_examples_total[label]
+                    else:
+                        # print("receber: ", agg_protos_label[label].shape, " ir: ", ((local_protos[label]*num_examples[label])/num_examples_total[label]).shape)
+                        agg_protos_label[label] += (local_protos[label]*num_examples[label])/num_examples_total[label]
         # print("formato saida1: ", [agg_protos_label[i].shape for i in agg_protos_label])
         for key in agg_protos_label:
             proto = agg_protos_label[key]
-            agg_protos_label[key] = [(np.array(proto) / num_examples_total_clients[key])]
+            if num_examples_total[key] > 0:
+                agg_protos_label[key] = [(np.array(proto) / num_examples_total_clients[key])]
+            else:
+                agg_protos_label[key] = np.zeros(proto_shape)
 
         # for key in range(self.n_classes):
         #     for proto, num_examples in results:
@@ -137,25 +198,28 @@ class FedProtoBaseServer(FedAvgBaseServer):
             np.array(agg_protos_label[key]) for key in agg_protos_label
         ]
         tamanho = weighted_weights[0].shape
-        # print("formato saida2: ", [i.shape for i in weighted_weights])
         weighted_weights = [i[0] for i in weighted_weights]
-        # print("formato saida3: ", [i.shape for i in weighted_weights])
-        for w in weighted_weights:
-            if np.sum(w) == 0:
-                print("zerado")
-                exit()
+            # if np.isnan(w).any():
+            #     print("prototipo nulo")
+            #     exit()
             # if w.shape != tamanho:
             #     print("diferente: ", w.shape, tamanho)
             #     exit()
-        # print("ponderado0")
-        # print(weighted_weights)
+
         # Ensure that the server holds prototypes of all classes even that prototypes were not generated in the current round for a specific class
         for i in range(self.n_classes):
             new_proto = weighted_weights[i]
-            if np.isnan(new_proto).any() and not np.isnan(self.global_protos[i]).any():
+            if np.isnan(new_proto).any() and (not np.isnan(self.global_protos[i]).any() and np.sum(self.global_protos[i]) > 0):
                 weighted_weights[i] = self.global_protos[i]
-        self.global_protos = weighted_weights
-        # print("ponderado1")
+
+        # verify empty protos and save only non-empty protos
+        for i in range(self.n_classes):
+            proto = weighted_weights[i]
+            if np.isnan(proto).any() or np.sum(proto) == 0:
+                print("Prototipos da classe ", i, " está vazio. Rodada: ", server_round)
+            else:
+                self.global_protos[i] = proto
+        # print("ponderado", server_round)
         # print(weighted_weights)
 
         return weighted_weights
@@ -219,11 +283,11 @@ class FedProtoBaseServer(FedAvgBaseServer):
         top5 = np.mean(accs[-5:])
         top1 = accs[-1]
 
-        base = f"logs/{self.strategy_name}/new_clients_{self.new_clients}/{self.num_clients}/{self.model_name}/{self.dataset}/"
-        filename_server = f"{base}server.csv"
+        self.base = f"logs/{self.strategy_name}/new_clients_{self.new_clients}/{self.num_clients}/{self.model_name}/{self.dataset}/"
+        self.server_filename = f"{self.base}server.csv"
         data = [time.time()-self.start_time, server_round, accuracy_aggregated, top5, top1]
 
-        self._write_output(filename=filename_server,
+        self._write_output(filename=self.server_filename,
                            data=data
                            )
 
