@@ -1,6 +1,6 @@
 import flwr as fl
-from client import FedAvgClientTf, FedPerClientTf, FedProtoClientTf, FedLocalClientTf, FedAvgClientTorch, FedProtoClientTorch, FedPerClientTorch, FedLocalClientTorch, FedAvgMClientTorch, QFedAvgClientTorch
-from server import FedPerServerTf, FedProtoServerTf, FedAvgServerTf, FedLocalServerTf, FedAvgServerTorch, FedProtoServerTorch, FedPerServerTorch, FedLocalServerTorch, FedAvgMServerTorch, QFedAvgServerTorch
+from client import FedAvgClientTf, FedPerClientTf, FedProtoClientTf, FedLocalClientTf, FedAvgClientTorch, FedProtoClientTorch, FedPerClientTorch, FedLocalClientTorch, FedAvgMClientTorch, QFedAvgClientTorch, FedYogiClientTorch, FedClassAvgClientTorch
+from server import FedPerServerTf, FedProtoServerTf, FedAvgServerTf, FedLocalServerTf, FedAvgServerTorch, FedProtoServerTorch, FedPerServerTorch, FedLocalServerTorch, FedAvgMServerTorch, QFedAvgServerTorch, FedYogiServerTorch, FedClassAvgServerTorch
 
 from optparse import OptionParser
 import tensorflow as tf
@@ -147,6 +147,20 @@ class SimulationFL():
 								decay=self.decay,
 								non_iid=self.non_iid,
 								new_clients=self.new_clients)
+			elif self.strategy_name == 'FedClassAvg':
+				return  FedClassAvgClientTorch(cid=cid,
+								n_clients=self.n_clients,
+								n_classes=self.n_classes,
+								epochs=1,
+								model_name=self.model_name,
+								client_selection=self.client_selection,
+								solution_name=self.strategy_name,
+								aggregation_method=self.aggregation_method,
+								dataset=self.dataset,
+								perc_of_clients=self.poc,
+								decay=self.decay,
+								non_iid=self.non_iid,
+								new_clients=self.new_clients)
 			elif self.strategy_name == 'FedLocal':
 				return  FedLocalClientTorch(cid=cid,
 								n_clients=self.n_clients,
@@ -189,6 +203,20 @@ class SimulationFL():
 										 decay=self.decay,
 										 non_iid=self.non_iid,
 										 new_clients=self.new_clients)
+			elif self.strategy_name == "FedYogi":
+				return FedYogiClientTorch(cid=cid,
+										  n_clients=self.n_clients,
+										  n_classes=self.n_classes,
+										  model_name=self.model_name,
+										  client_selection=self.client_selection,
+										  epochs=1,
+										  solution_name=self.strategy_name,
+										  aggregation_method=self.aggregation_method,
+										  dataset=self.dataset,
+										  perc_of_clients=self.poc,
+										  decay=self.decay,
+										  non_iid=self.non_iid,
+										  new_clients=self.new_clients)
 			else:
 				return FedAvgClientTorch(cid=cid,
 									  n_clients=self.n_clients,
@@ -295,6 +323,18 @@ class SimulationFL():
 								  dataset=self.dataset,
 								  model_name=self.model_name,
 										  new_clients=self.new_clients)
+			elif self.strategy_name == 'FedClassAvg':
+				return  FedClassAvgServerTorch(aggregation_method=self.aggregation_method,
+								  n_classes=self.n_classes,
+								  fraction_fit=1,
+								  num_clients=self.n_clients,
+								  num_rounds=self.rounds,
+								  decay=self.decay,
+								  perc_of_clients=self.poc,
+								  strategy_name=self.strategy_name,
+								  dataset=self.dataset,
+								  model_name=self.model_name,
+										  new_clients=self.new_clients)
 			elif self.strategy_name == 'FedLocal':
 				return  FedLocalServerTorch(aggregation_method=self.aggregation_method,
 								  n_classes=self.n_classes,
@@ -314,10 +354,11 @@ class SimulationFL():
 										num_rounds=self.rounds,
 										model=copy.deepcopy(self.create_client(0).create_model()),
 										server_learning_rate=1, # melhor lr=1
-										server_momentum=0.1, # melhor server_momentum=0.2
+										server_momentum=0.2, # melhor server_momentum=0.2
 										decay=self.decay,
 										perc_of_clients=self.poc,
 										dataset=self.dataset,
+										non_iid=self.non_iid,
 										model_name=self.model_name)
 			elif self.strategy_name == 'QFedAvg':
 				return QFedAvgServerTorch(aggregation_method=self.aggregation_method,
@@ -327,11 +368,24 @@ class SimulationFL():
 										num_rounds=self.rounds,
 										model=copy.deepcopy(self.create_client(0).create_model()),
 										server_learning_rate=1, # melhor lr=1
-										q_param=0.1, # melhor server_momentum=0.2
+										q_param=0, # melhor server_momentum=0.2
 										decay=self.decay,
 										perc_of_clients=self.poc,
 										dataset=self.dataset,
 										model_name=self.model_name)
+			elif self.strategy_name == "FedYogi":
+				return FedYogiServerTorch(aggregation_method=self.aggregation_method,
+										  n_classes=self.n_classes,
+										  fraction_fit=1,
+										  num_clients=self.n_clients,
+										  num_rounds=self.rounds,
+										  model=copy.deepcopy(self.create_client(0).create_model()),
+										  decay=self.decay,
+										  perc_of_clients=self.poc,
+										  strategy_name=self.strategy_name,
+										  dataset=self.dataset,
+										  model_name=self.model_name,
+										  new_clients=self.new_clients)
 			else:
 				return FedAvgServerTorch(aggregation_method=self.aggregation_method,
 								  n_classes=self.n_classes,

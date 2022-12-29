@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from optparse import OptionParser
 from base_plots import bar_plot, line_plot
+from pathlib import Path
+import os
 
 class NonIid:
     def __init__(self, num_clients, aggregation_method, perc_of_clients, non_iid,  model_name, strategy_name_list, dataset_name, new_clients):
@@ -40,6 +42,14 @@ class NonIid:
 
     def start(self):
 
+        self.base_dir = """/home/claudio/Documentos/pycharm_projects/FedLTA/analysis/output/{}/new_clients_{}/{}/{}/""".format(self.aggregation_method, self.new_clients,
+                                     self.n_clients,
+                                     self.dataset_name)
+
+        if not Path(self.base_dir).exists():
+            os.makedirs(self.base_dir+"csv")
+            os.makedirs(self.base_dir + "png/")
+            os.makedirs(self.base_dir + "svg/")
 
         models_directories = {self.strategy_name_list[i]:
                               """{}/{}/new_clients_{}/{}/{}/{}/""".
@@ -74,13 +84,12 @@ class NonIid:
         df = self.df_files_names['server']
         df['Accuracy aggregated (%)'] = df['Accuracy aggregated'] * 100
         df['Time (seconds)'] = df['Time'].to_numpy()
-        base_dir = '/home/claudio/Documentos/pycharm_projects/FedLTA/analysis/output/'
         x_column = 'Server round'
         y_column = 'Accuracy aggregated (%)'
         hue = 'Strategy'
         title = ""
         line_plot(df=df,
-                  base_dir=base_dir,
+                  base_dir=self.base_dir,
                   file_name="server_acc_round_lineplot",
                   x_column=x_column,
                   y_column=y_column,
@@ -92,7 +101,7 @@ class NonIid:
         hue = 'Strategy'
         title = ""
         line_plot(df=df,
-                  base_dir=base_dir,
+                  base_dir=self.base_dir,
                   file_name="server_time_round_lineplot",
                   x_column=x_column,
                   y_column=y_column,
@@ -103,13 +112,12 @@ class NonIid:
         # acc
         df = self.df_files_names['evaluate_client']
         df['Accuracy (%)'] = df['Accuracy'] * 100
-        base_dir = '/home/claudio/Documentos/pycharm_projects/FedLTA/analysis/output/'
         x_column = 'Round'
         y_column = 'Accuracy (%)'
         hue = 'Strategy'
         title = ""
         line_plot(df=df,
-                  base_dir=base_dir,
+                  base_dir=self.base_dir,
                   file_name="evaluate_client_acc_round_lineplot",
                   x_column=x_column,
                   y_column=y_column,
@@ -122,7 +130,7 @@ class NonIid:
         hue = 'Strategy'
         title = ""
         line_plot(df=df,
-                  base_dir=base_dir,
+                  base_dir=self.base_dir,
                   file_name="evaluate_client_loss_round_lineplot",
                   x_column=x_column,
                   y_column=y_column,
@@ -136,14 +144,14 @@ class NonIid:
 
             return pd.DataFrame({'Size of parameters (bytes)': [parameters]})
         df_test = df[['Round', 'Size of parameters', 'Strategy']].groupby('Strategy').apply(lambda e: strategy(e)).reset_index()[['Size of parameters (bytes)', 'Strategy']]
-        df_test.to_csv(base_dir+"csv/evaluate_client_size_of_parameters_round.csv", index=False)
+        df_test.to_csv(self.base_dir+"csv/evaluate_client_size_of_parameters_round.csv", index=False)
         print(df_test)
         x_column = 'Strategy'
         y_column = 'Size of parameters (bytes)'
         hue = None
         title = "Two layers"
         bar_plot(df=df_test,
-                  base_dir=base_dir,
+                  base_dir=self.base_dir,
                   file_name="evaluate_client_size_of_parameters_round_barplot",
                   x_column=x_column,
                   y_column=y_column,
@@ -151,7 +159,7 @@ class NonIid:
                   hue=hue,
                  sci=True)
         bar_plot(df=df_test,
-                 base_dir=base_dir,
+                 base_dir=self.base_dir,
                  file_name="evaluate_client_size_of_parameters_round_barplot",
                  x_column=x_column,
                  y_column=y_column,
@@ -231,10 +239,11 @@ if __name__ == '__main__':
 
     (opt, args) = parser.parse_args()
 
-    strategy_name_list = ['FedAVG', 'FedAvgM', 'FedPer']
+    # strategy_name_list = ['FedAVG', 'FedAvgM', , 'FedClassAvg''QFedAvg', 'FedPer', 'FedProto', 'FedYogi']
+    strategy_name_list = ['FedPer', 'FedClassAvg']
 
     # noniid = NonIID(int(opt.n_clients), opt.aggregation_method, opt.model_name, strategy_name_list, opt.dataset)
     # noniid.start()
-    c = NonIid(int(opt.n_clients), opt.aggregation_method, int(opt.poc), opt.non_iid, opt.model_name, strategy_name_list, opt.dataset, opt.new_clients)
+    c = NonIid(int(opt.n_clients), opt.aggregation_method, float(opt.poc), opt.non_iid, opt.model_name, strategy_name_list, opt.dataset, opt.new_clients)
     print(c.n_clients, " ", c.strategy_name_list)
     c.start()

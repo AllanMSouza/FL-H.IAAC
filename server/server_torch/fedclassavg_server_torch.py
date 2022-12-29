@@ -1,8 +1,8 @@
-from server.common_base_server import FedPerBaseServer
+from server.common_base_server import FedClassAvgBaseServer
 from pathlib import Path
 import shutil
 
-class FedPerServerTorch(FedPerBaseServer):
+class FedClassAvgServerTorch(FedClassAvgBaseServer):
 
     def __init__(self,
                  aggregation_method,
@@ -13,7 +13,7 @@ class FedPerServerTorch(FedPerBaseServer):
                  decay=0,
                  perc_of_clients=0,
                  dataset='',
-                 strategy_name='FedPer',
+                 strategy_name='FedClassAvg',
                  model_name='',
                  new_clients=False):
 
@@ -25,6 +25,6 @@ class FedPerServerTorch(FedPerBaseServer):
                          decay=decay,
                          perc_of_clients=perc_of_clients,
                          dataset=dataset,
-                         strategy_name='FedPer',
+                         strategy_name='FedClassAvg',
                          model_name=model_name,
                          new_clients=new_clients)

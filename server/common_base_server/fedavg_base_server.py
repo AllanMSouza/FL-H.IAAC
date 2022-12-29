@@ -36,6 +36,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 				 perc_of_clients=0,
 				 dataset='',
 				 strategy_name='',
+				 non_iid=False,
 				 model_name='',
 				 new_clients=False):
 
@@ -50,6 +51,8 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.average_accuracy   = 0
 		self.last_accuracy      = 0
 		self.current_accuracy   = 0
+
+		self.non_iid = non_iid
 
 		#logs
 		self.dataset    = dataset
@@ -136,7 +139,10 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 		self.start_time = time.time()
 		random.seed(server_round)
-		weights = parameters_to_ndarrays(parameters)
+		if type(parameters) != list:
+			weights = parameters_to_ndarrays(parameters)
+		else:
+			weights = parameters
 		self.pre_weights = weights
 		if self.aggregation_method == 'POC':
 			# clients2select        = int(float(self.num_clients) * float(self.perc_of_clients))
@@ -146,7 +152,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 			print("disponiveis: ", available_clients)
 			print("Rodada inicial de novos clientes: ", int(self.num_rounds * self.round_threshold))
-			# clients2select = int(len(available_clients) * float(self.perc_of_clients))
+			self.clients2select = int(len(available_clients) * float(self.perc_of_clients))
 			if len(available_clients) == 0 and server_round != 1:
 				print("Erro na rodada: ", server_round)
 				exit()
@@ -233,8 +239,9 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			return []
 
 		list_of_valid_clients_for_evaluate = self._get_valid_clients_for_evaluate(server_round)
-		print("clientes para selecionar (evaluate): ", self.clients2select, " de ", len(list_of_valid_clients_for_evaluate))
-		selected_clients_evaluate = random.sample(list_of_valid_clients_for_evaluate, self.clients2select)
+		clients2select = int(len(list_of_valid_clients_for_evaluate) * self.perc_of_clients)
+		print("clientes para selecionar (evaluate): ", clients2select, " de ", len(list_of_valid_clients_for_evaluate))
+		selected_clients_evaluate = random.sample(list_of_valid_clients_for_evaluate, clients2select)
 		# Parameters and config
 		config = {
 			'round' : server_round

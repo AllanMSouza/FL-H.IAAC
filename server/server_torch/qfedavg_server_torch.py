@@ -32,7 +32,7 @@ class QFedAvgServerTorch(FedAvgServerTorch):
                  num_clients,
                  num_rounds,
                  model,
-                 q_param,
+                 q_param=0.2,
                  server_momentum=1,
                  server_learning_rate=1,
                  decay=0,
@@ -143,7 +143,7 @@ class QFedAvgServerTorch(FedAvgServerTorch):
         """Return an evaluation function for server-side evaluation."""
 
         # Load data and model here to avoid the overhead of doing it in `evaluate` itself
-        trainset, _, _ = self.load_data(self.dataset, self.num_clients, 16)
+        trainset = self.load_data(self.dataset, self.num_clients, 32)
 
         n_train = len(trainset)
         # if toy:
@@ -151,9 +151,9 @@ class QFedAvgServerTorch(FedAvgServerTorch):
         #     valset = torch.utils.data.Subset(trainset, range(n_train - 10, n_train))
         # else:
         #     # Use the last 5k training examples as a validation set
-        valset = torch.utils.data.Subset(trainset, range(n_train - 5000, n_train))
+        # valset = torch.utils.data.Subset(trainset, range(n_train - 5000, n_train))
 
-        valLoader = DataLoader(valset, batch_size=16)
+        # valLoader = DataLoader(valset, batch_size=16)
 
         # The `evaluate` function will be called after every round
         def evaluate(
@@ -166,7 +166,7 @@ class QFedAvgServerTorch(FedAvgServerTorch):
             state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
             model.load_state_dict(state_dict, strict=True)
 
-            loss, accuracy = self.test(model, valLoader)
+            loss, accuracy = self.test(model, trainset)
             return loss, {"accuracy": accuracy}
 
         return evaluate

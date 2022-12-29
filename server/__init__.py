@@ -1,6 +1,6 @@
 from server.common_base_server import FedAvgBaseServer, FedProtoBaseServer
 from server.server_tf import FedAvgServerTf, FedLocalServerTf, FedPerServerTf, FedProtoServerTf, FedLocalServerTf
-from server.server_torch import FedAvgServerTorch, FedProtoServerTorch, FedPerServerTorch, FedLocalServerTorch, FedAvgMServerTorch, QFedAvgServerTorch
+from server.server_torch import FedAvgServerTorch, FedProtoServerTorch, FedPerServerTorch, FedLocalServerTorch, FedAvgMServerTorch, QFedAvgServerTorch, FedYogiServerTorch, FedClassAvgServerTorch
 
 
 __all__ = [
@@ -14,5 +14,7 @@ __all__ = [
     "FedPerServerTorch",
     "FedLocalServerTorch",
     "FedAvgMServerTorch",
-    "QFedAvgServerTorch"
+    "QFedAvgServerTorch",
+    "FedYogiServerTorch",
+    "FedClassAvgServerTorch"
 ]

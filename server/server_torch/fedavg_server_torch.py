@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 from server.common_base_server import FedAvgBaseServer
 
 import torch
@@ -28,7 +29,7 @@ class FedAvgServerTorch(FedAvgBaseServer):
                          decay=decay,
                          perc_of_clients=perc_of_clients,
                          dataset=dataset,
-                         strategy_name='FedAVG',
+                         strategy_name=strategy_name,
                          model_name=model_name,
                          new_clients=new_clients)
 
@@ -36,16 +37,24 @@ class FedAvgServerTorch(FedAvgBaseServer):
         try:
             x_test = []
             y_test = []
-            x_train = []
-            y_train = []
+            x_train = np.array([])
+            y_train = np.array([])
             for i in range(10):
                 x_train_, y_train_, x_test_, y_test_ = ManageDatasets(i).select_dataset(dataset_name, n_clients,
                                                                                        self.non_iid)
-                x_train += x_train_
-                y_train += y_train_
+                print("unitario: ", x_train_.shape, y_train_.shape)
+                if i > 0:
+                    x_train = np.concatenate((x_train, x_train_))
+                    y_train = np.concatenate((y_train, y_train_))
+                else:
+                    x_train = x_train_
+                    y_train = y_train_
+                break
 
-            tensor_x_train = torch.Tensor(np.array(x_train))  # transform to torch tenso)r
-            tensor_y_train = torch.Tensor(np.array(y_train))
+            tensor_x_train = torch.Tensor(x_train)  # transform to torch tenso)r
+            tensor_y_train = torch.Tensor(y_train.astype(int))
+
+            print("tamanho: ", tensor_x_train.shape, tensor_y_train.shape)
 
             train_dataset = TensorDataset(tensor_x_train, tensor_y_train)
             trainLoader = DataLoader(train_dataset, batch_size, drop_last=True, shuffle=True)
@@ -56,26 +65,27 @@ class FedAvgServerTorch(FedAvgBaseServer):
             # test_dataset = TensorDataset(tensor_x_test, tensor_y_test)
             # testLoader = DataLoader(test_dataset, batch_size, drop_last=True, shuffle=True)
 
-            return trainLoader, None
+            return trainLoader
         except Exception as e:
             print("load data")
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-    def test(net, model, testloader, steps: int = None, device: str = "cpu"):
+    def test(self, model, testloader, steps: int = None, device: str = "cpu"):
         """Validate the network on the entire test set."""
         print("Starting evalutation...")
-        net.to(device)  # move model to GPU if available
+        model.to(device)  # move model to GPU if available
         criterion = torch.nn.CrossEntropyLoss()
         correct, total, loss = 0, 0, 0.0
-        net.eval()
+        model.eval()
         with torch.no_grad():
-            for batch_idx, (images, labels) in enumerate(testloader):
-                images, labels = images.to(device), labels.to(device)
-                outputs = model(images)
-                loss += criterion(outputs, labels).item()
+            for batch_idx, (x, y) in enumerate(testloader):
+                x, y = x.to(device), y.to(device)
+                y = y.long()
+                outputs = model(x)
+                loss += criterion(outputs, y).item()
                 _, predicted = torch.max(outputs.data, 1)
-                total += labels.size(0)
-                correct += (predicted == labels).sum().item()
+                total += y.size(0)
+                correct += (predicted == y).sum().item()
                 if steps is not None and batch_idx == steps:
                     break
         if steps is None:
@@ -83,5 +93,5 @@ class FedAvgServerTorch(FedAvgBaseServer):
         else:
             loss /= total
         accuracy = correct / total
-        net.to("cpu")  # move model back to CPU
+        model.to("cpu")  # move model back to CPU
         return loss, accuracy

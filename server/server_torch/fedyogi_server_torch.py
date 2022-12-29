@@ -1,7 +1,14 @@
+from server.common_base_server import FedYogiBaseServer
+from pathlib import Path
+import shutil
 import copy
 
-import flwr as fl
+from typing import Callable, Dict, Optional, Tuple
+
 from flwr.common import (
+    EvaluateIns,
+    EvaluateRes,
+    FitIns,
     FitRes,
     MetricsAggregationFn,
     NDArrays,
@@ -10,17 +17,8 @@ from flwr.common import (
     ndarrays_to_parameters,
     parameters_to_ndarrays,
 )
-import torch
 
-from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
-
-from typing import Callable, Dict, List, Optional, Tuple, Union
-from flwr.server.client_manager import ClientManager
-
-from server.common_base_server import FedAvgMBaseServerTorch
-
-
-class FedAvgMServerTorch(FedAvgMBaseServerTorch):
+class FedYogiServerTorch(FedYogiBaseServer):
 
     def __init__(self,
                  aggregation_method,
@@ -29,15 +27,12 @@ class FedAvgMServerTorch(FedAvgMBaseServerTorch):
                  num_clients,
                  num_rounds,
                  model,
-                 server_momentum=1,
-                 server_learning_rate=1,
                  decay=0,
                  perc_of_clients=0,
                  dataset='',
-                 non_iid=False,
+                 strategy_name='FedYogi',
                  model_name='',
                  new_clients=False):
-
         super().__init__(aggregation_method=aggregation_method,
                          n_classes=n_classes,
                          fraction_fit=fraction_fit,
@@ -47,8 +42,7 @@ class FedAvgMServerTorch(FedAvgMBaseServerTorch):
                          decay=decay,
                          perc_of_clients=perc_of_clients,
                          dataset=dataset,
-                         strategy_name='FedAvgM',
-                         non_iid=non_iid,
+                         strategy_name=strategy_name,
                          model_name=model_name,
                          new_clients=new_clients)
 
@@ -57,5 +51,5 @@ class FedAvgMServerTorch(FedAvgMBaseServerTorch):
     ) -> Optional[Parameters]:
         """Initialize global model parameters."""
         model_parameters = [i.detach().numpy() for i in self.model.parameters()]
-        self.server_model_parameters = copy.deepcopy(model_parameters)
-        return model_parameters
+        self.current_weights = copy.deepcopy(model_parameters)
+        return self.current_weights
