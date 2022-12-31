@@ -26,7 +26,8 @@ class FedLocalClientTf(ClientBaseTf):
 				 perc_of_clients		= 0,
 				 decay					= 0,
 				 non_iid				= False,
-				 n_personalized_layers	= 1
+				 n_personalized_layers	= 1,
+				 new_clients			= False
 				 ):
 
 		super().__init__(cid=cid,
@@ -40,7 +41,8 @@ class FedLocalClientTf(ClientBaseTf):
 						 dataset=dataset,
 						 perc_of_clients=perc_of_clients,
 						 decay=decay,
-						 non_iid=non_iid)
+						 non_iid=non_iid,
+						 new_clients=new_clients)
 
 		self.n_personalized_layers = n_personalized_layers*2
 

@@ -2,6 +2,7 @@ import flwr as fl
 import numpy as np
 import math
 import os
+import sys
 import time
 import csv
 import random
@@ -61,6 +62,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 		#POC
 		self.perc_of_clients  = perc_of_clients
+		self.aux_perc_of_clients = perc_of_clients
 
 		#FedLTA
 		self.decay_factor = decay
@@ -94,8 +96,8 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 		max_rounds_per_client = {}
 		for i in range(self.num_clients):
-			if i >= int(self.num_clients * self.perc_of_clients) and self.new_clients:
-				max_rounds_per_client[str(i)] = {'count': 1, 'max_rounds': 1}
+			if i >= int(self.num_clients * self.clients_threshold) and self.new_clients:
+				max_rounds_per_client[str(i)] = {'count': 0, 'max_rounds': 1}
 			else:
 				max_rounds_per_client[str(i)] = {'count': 0, 'max_rounds': self.num_rounds}
 
@@ -111,28 +113,35 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 		return clients_ids
 
-	def _get_valid_clients_for_evaluate(self, server_round):
-
-		clients_ids = []
-		if self.new_clients:
-			# incluir apenas clientes velhos
-			if server_round < int(self.num_rounds * self.round_threshold):
-				for i in self.max_rounds_per_client:
-					client_ = self.max_rounds_per_client[i]
-					# clientes velhos podem participar de todas as rodadas
-					if client_['max_rounds'] == self.num_rounds:
-						clients_ids.append(i)
-			else:
-				# incluir apenas clientes novos após determinada rodada
-				for i in self.max_rounds_per_client:
-					client_ = self.max_rounds_per_client[i]
-					if client_['max_rounds'] != self.num_rounds:
-						clients_ids.append(i)
-
-		else:
-			clients_ids = list(self.max_rounds_per_client.keys())
-
-		return clients_ids
+	# def get_valid_clients_for_evaluate(self, server_round):
+	#
+	# 	try:
+	# 		clients_ids = []
+	# 		print("normal0: ", self.new_clients)
+	# 		exit()
+	# 		if self.new_clients:
+	# 			# incluir apenas clientes velhos
+	# 			if server_round < int(self.num_rounds * self.round_threshold):
+	# 				for i in self.max_rounds_per_client:
+	# 					client_ = self.max_rounds_per_client[i]
+	# 					# clientes velhos podem participar de todas as rodadas
+	# 					if client_['max_rounds'] == self.num_rounds:
+	# 						clients_ids.append(i)
+	# 			else:
+	# 				# incluir apenas clientes novos após determinada rodada
+	# 				for i in self.max_rounds_per_client:
+	# 					client_ = self.max_rounds_per_client[i]
+	# 					if client_['max_rounds'] != self.num_rounds:
+	# 						clients_ids.append(i)
+	#
+	# 		else:
+	# 			print("normal1")
+	# 			clients_ids = list(self.max_rounds_per_client.keys())
+	#
+	# 		return clients_ids
+	# 	except Exception as e:
+	# 		print("get valid clients for evaluate")
+	# 		print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def configure_fit(self, server_round, parameters, client_manager):
 		# """Configure the next round of training."""
@@ -148,10 +157,23 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			# clients2select        = int(float(self.num_clients) * float(self.perc_of_clients))
 
 			print("lista inicial de clientes: ", self.list_of_clients)
-			available_clients = self._get_valid_clients_for_fit()
-
+			# ====================================================================================
+			clients_ids = []
+			for i in self.max_rounds_per_client:
+				client_ = self.max_rounds_per_client[i]
+				if client_['count'] < client_['max_rounds']:
+					clients_ids.append(i)
+			# available_clients = self._get_valid_clients_for_fit()
+			# ====================================================================================
+			available_clients = clients_ids
 			print("disponiveis: ", available_clients)
 			print("Rodada inicial de novos clientes: ", int(self.num_rounds * self.round_threshold))
+			# if server_round == 1 and 'fedproto' in self.strategy_name.lower():
+			# # if server_round == 1:
+			# 	self.perc_of_clients = 1
+			# else:
+			# 	self.perc_of_clients = self.aux_perc_of_clients
+
 			self.clients2select = int(len(available_clients) * float(self.perc_of_clients))
 			if len(available_clients) == 0 and server_round != 1:
 				print("Erro na rodada: ", server_round)
@@ -229,6 +251,8 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 		# Aggregate custom metrics if aggregation fn was provided
 		metrics_aggregated = {}
+		if server_round == 1:
+			print("treinados rodada 1: ", self.max_rounds_per_client)
 
 		return parameters_aggregated, metrics_aggregated
 
@@ -237,9 +261,31 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		# Do not configure federated evaluation if fraction eval is 0.
 		if self.fraction_evaluate == 0.0:
 			return []
+		# ====================================================================================
+		clients_ids = []
+		if self.new_clients:
+			# incluir apenas clientes velhos
+			if server_round < int(self.num_rounds * self.round_threshold):
+				for i in self.max_rounds_per_client:
+					client_ = self.max_rounds_per_client[i]
+					# clientes velhos podem participar de todas as rodadas
+					if client_['max_rounds'] == self.num_rounds:
+						clients_ids.append(i)
+			else:
+				# incluir apenas clientes novos após determinada rodada
+				for i in self.max_rounds_per_client:
+					client_ = self.max_rounds_per_client[i]
+					if client_['max_rounds'] != self.num_rounds:
+						clients_ids.append(i)
 
-		list_of_valid_clients_for_evaluate = self._get_valid_clients_for_evaluate(server_round)
-		clients2select = int(len(list_of_valid_clients_for_evaluate) * self.perc_of_clients)
+		else:
+			clients_ids = list(self.max_rounds_per_client.keys())
+		# ====================================================================================
+		list_of_valid_clients_for_evaluate = clients_ids
+		if self.new_clients:
+			clients2select = self.clients2select
+		else:
+			clients2select = int(len(list_of_valid_clients_for_evaluate) * self.perc_of_clients)
 		print("clientes para selecionar (evaluate): ", clients2select, " de ", len(list_of_valid_clients_for_evaluate))
 		selected_clients_evaluate = random.sample(list_of_valid_clients_for_evaluate, clients2select)
 		# Parameters and config

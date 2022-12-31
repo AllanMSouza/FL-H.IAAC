@@ -345,7 +345,8 @@ class SimulationFL():
 								  perc_of_clients=self.poc,
 								  strategy_name=self.strategy_name,
 								  dataset=self.dataset,
-								  model_name=self.model_name)
+								  model_name=self.model_name,
+									new_clients=self.new_clients)
 			elif self.strategy_name == 'FedAvgM':
 				return FedAvgMServerTorch(aggregation_method=self.aggregation_method,
 										n_classes=self.n_classes,
@@ -359,7 +360,8 @@ class SimulationFL():
 										perc_of_clients=self.poc,
 										dataset=self.dataset,
 										non_iid=self.non_iid,
-										model_name=self.model_name)
+										model_name=self.model_name,
+										  new_clients=self.new_clients)
 			elif self.strategy_name == 'QFedAvg':
 				return QFedAvgServerTorch(aggregation_method=self.aggregation_method,
 										n_classes=self.n_classes,

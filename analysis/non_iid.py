@@ -9,7 +9,7 @@ from pathlib import Path
 import os
 
 class NonIid:
-    def __init__(self, num_clients, aggregation_method, perc_of_clients, non_iid,  model_name, strategy_name_list, dataset_name, new_clients):
+    def __init__(self, num_clients, aggregation_method, perc_of_clients, non_iid,  model_name, strategy_name_list, dataset_name, new_clients, comentario):
         self.n_clients = num_clients
         self.aggregation_method = aggregation_method
         self.perc_of_clients = perc_of_clients
@@ -18,6 +18,7 @@ class NonIid:
         self.strategy_name_list = strategy_name_list
         self.dataset_name = dataset_name
         self.new_clients = new_clients
+        self.comentario = comentario
         self.base_files_names = {'evaluate_client': 'evaluate_client.csv',
                                  'server': 'server.csv',
                                  'train_client': 'train_client.csv'}
@@ -42,9 +43,10 @@ class NonIid:
 
     def start(self):
 
-        self.base_dir = """/home/claudio/Documentos/pycharm_projects/FedLTA/analysis/output/{}/new_clients_{}/{}/{}/""".format(self.aggregation_method, self.new_clients,
+        self.base_dir = """/home/claudio/Documentos/pycharm_projects/FedLTA/analysis/output/{}/new_clients_{}/{}/{}/{}""".format(self.aggregation_method, self.new_clients,
                                      self.n_clients,
-                                     self.dataset_name)
+                                     self.dataset_name,
+                                       self.comentario)
 
         if not Path(self.base_dir).exists():
             os.makedirs(self.base_dir+"csv")
@@ -223,8 +225,6 @@ if __name__ == '__main__':
 
     parser.add_option("-c", "--clients", dest="n_clients", default=10, help="Number of clients in the simulation",
                       metavar="INT")
-    parser.add_option("-s", "--strategy", dest="strategy_name", default='FedSGD',
-                      help="Strategy of the federated learning", metavar="STR")
     parser.add_option("-a", "--aggregation_method", dest="aggregation_method", default='None',
                       help="Algorithm used for selecting clients", metavar="STR")
     parser.add_option("-m", "--model", dest="model_name", default='DNN', help="Model used for trainning", metavar="STR")
@@ -236,14 +236,16 @@ if __name__ == '__main__':
                       help="percentage of clients to fit", metavar="FLOAT")
     parser.add_option("-r", "--round", dest="rounds", default=5, help="Number of communication rounds", metavar="INT")
     parser.add_option("", "--new_clients", dest="new_clients", default=False, help="Adds new clients after a specific round", metavar="STR")
+    parser.add_option("--strategy", action='append', dest="strategies", default=[])
+    parser.add_option("--comentario",  dest="comentario", default='')
 
     (opt, args) = parser.parse_args()
 
-    # strategy_name_list = ['FedAVG', 'FedAvgM', , 'FedClassAvg''QFedAvg', 'FedPer', 'FedProto', 'FedYogi']
-    strategy_name_list = ['FedPer', 'FedClassAvg']
+    # strategy_name_list = ['FedAVG', 'FedAvgM', 'FedClassAvg''QFedAvg', 'FedPer', 'FedProto', 'FedYogi', 'FedLocal']
+    strategy_name_list = opt.strategies
 
     # noniid = NonIID(int(opt.n_clients), opt.aggregation_method, opt.model_name, strategy_name_list, opt.dataset)
     # noniid.start()
-    c = NonIid(int(opt.n_clients), opt.aggregation_method, float(opt.poc), opt.non_iid, opt.model_name, strategy_name_list, opt.dataset, opt.new_clients)
+    c = NonIid(int(opt.n_clients), opt.aggregation_method, float(opt.poc), opt.non_iid, opt.model_name, strategy_name_list, opt.dataset, opt.new_clients, opt.comentario)
     print(c.n_clients, " ", c.strategy_name_list)
     c.start()

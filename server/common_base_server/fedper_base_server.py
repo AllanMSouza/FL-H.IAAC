@@ -61,10 +61,10 @@ class FedPerBaseServer(FedAvgBaseServer):
 
 	def create_folder(self):
 
-		directory = """fedclassavg_saved_weights/{}/""".format(self.model_name)
+		directory = """fedper_saved_weights/{}/""".format(self.model_name)
 		if Path(directory).exists():
 			shutil.rmtree(directory)
 		for i in range(self.num_clients):
-			Path("""fedclassavg_saved_weights/{}/{}/""".format(self.model_name, i)).mkdir(parents=True, exist_ok=True)
+			Path("""fedper_saved_weights/{}/{}/""".format(self.model_name, i)).mkdir(parents=True, exist_ok=True)
 
 

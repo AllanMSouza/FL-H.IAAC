@@ -1,3 +1,5 @@
+import copy
+
 import flwr as fl
 import numpy as np
 import time
@@ -46,42 +48,42 @@ class FedProtoBaseServer(FedAvgBaseServer):
 
         self.create_folder()
 
-    def _max_fit_rounds_per_client(self):
+    # def _max_fit_rounds_per_client(self):
+    #
+    #     max_rounds_per_client = {}
+    #     for i in range(self.num_clients):
+    #         if i >= int(self.num_clients * self.round_threshold) and self.new_clients:
+    #             max_rounds_per_client[str(i)] = {'count': 0, 'max_rounds': 1}
+    #         else:
+    #             max_rounds_per_client[str(i)] = {'count': 0, 'max_rounds': self.num_rounds}
+    #
+    #     return max_rounds_per_client
 
-        max_rounds_per_client = {}
-        for i in range(self.num_clients):
-            if i >= int(self.num_clients * self.perc_of_clients) and self.new_clients:
-                max_rounds_per_client[str(i)] = {'count': 0, 'max_rounds': 1}
-            else:
-                max_rounds_per_client[str(i)] = {'count': 0, 'max_rounds': self.num_rounds}
-
-        return max_rounds_per_client
-
-    def _get_valid_clients_for_evaluate(self, server_round):
-
-        clients_ids = []
-        if self.new_clients:
-            # incluir apenas clientes velhos
-            if server_round < int(self.num_rounds * self.round_threshold):
-                for i in self.max_rounds_per_client:
-                    client_ = self.max_rounds_per_client[i]
-                    # clientes velhos podem participar de todas as rodadas
-                    if client_['max_rounds'] == self.num_rounds:
-                        clients_ids.append(i)
-            else:
-                # incluir apenas clientes novos após determinada rodada
-                for i in self.max_rounds_per_client:
-                    client_ = self.max_rounds_per_client[i]
-                    if client_['max_rounds'] != self.num_rounds:
-                        clients_ids.append(i)
-
-        else:
-            clients_ids = []
-            for i in self.max_rounds_per_client:
-                if self.max_rounds_per_client[i]['count'] >= 1:
-                    clients_ids.append(i)
-
-        return clients_ids
+    # def get_valid_clients_for_evaluate(self, server_round):
+    #
+    #     clients_ids = []
+    #     if self.new_clients:
+    #         # incluir apenas clientes velhos
+    #         if server_round < int(self.num_rounds * self.round_threshold):
+    #             for i in self.max_rounds_per_client:
+    #                 client_ = self.max_rounds_per_client[i]
+    #                 # clientes velhos podem participar de todas as rodadas
+    #                 if client_['max_rounds'] == self.num_rounds:
+    #                     clients_ids.append(i)
+    #         else:
+    #             # incluir apenas clientes novos após determinada rodada
+    #             for i in self.max_rounds_per_client:
+    #                 client_ = self.max_rounds_per_client[i]
+    #                 if client_['max_rounds'] != self.num_rounds:
+    #                     clients_ids.append(i)
+    #
+    #     else:
+    #         clients_ids = []
+    #         for i in self.max_rounds_per_client:
+    #             if self.max_rounds_per_client[i]['count'] >= 1:
+    #                 clients_ids.append(i)
+    #
+    #     return clients_ids
 
     def create_folder(self):
 
@@ -123,6 +125,9 @@ class FedProtoBaseServer(FedAvgBaseServer):
 
         # Aggregate custom metrics if aggregation fn was provided
         metrics_aggregated = {}
+
+        if server_round == 1:
+            print("treinados rodada 1: ", self.max_rounds_per_client)
 
         return parameters_aggregated, metrics_aggregated
 
@@ -209,8 +214,8 @@ class FedProtoBaseServer(FedAvgBaseServer):
         # Ensure that the server holds prototypes of all classes even that prototypes were not generated in the current round for a specific class
         for i in range(self.n_classes):
             new_proto = weighted_weights[i]
-            if np.isnan(new_proto).any() and (not np.isnan(self.global_protos[i]).any() and np.sum(self.global_protos[i]) > 0):
-                weighted_weights[i] = self.global_protos[i]
+            if (np.isnan(new_proto).any() or np.sum(new_proto) == 0) and (not np.isnan(self.global_protos[i]).any() and np.sum(self.global_protos[i]) > 0):
+                weighted_weights[i] = copy.deepcopy(self.global_protos[i])
 
         # verify empty protos and save only non-empty protos
         for i in range(self.n_classes):
@@ -218,11 +223,11 @@ class FedProtoBaseServer(FedAvgBaseServer):
             if np.isnan(proto).any() or np.sum(proto) == 0:
                 print("Prototipos da classe ", i, " está vazio. Rodada: ", server_round)
             else:
-                self.global_protos[i] = proto
+                self.global_protos[i] = copy.deepcopy(proto)
         # print("ponderado", server_round)
         # print(weighted_weights)
 
-        return weighted_weights
+        return self.global_protos
 
     def aggregate_evaluate(
             self,

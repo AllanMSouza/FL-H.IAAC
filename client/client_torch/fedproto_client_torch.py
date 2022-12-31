@@ -188,10 +188,6 @@ class FedProtoClientTorch(ClientBaseTorch):
 						for i, yy in enumerate(y):
 							y_c = yy.item()
 							protos[y_c].append(rep[i, :].detach().data)
-							# if y_c in [3,4]:
-							# 	print("opa", y_c)
-							# 	print(rep[i, :].detach().data)
-							# 	exit()
 							self.protos_samples_per_class[y_c] += 1
 
 						train_loss += loss.item()
@@ -201,11 +197,6 @@ class FedProtoClientTorch(ClientBaseTorch):
 
 				self.protos = self.agg_func(protos)
 
-				# for label in range(len(self.protos)):
-				# 	if label in [3, 4]:
-				# 		print("teste", label)
-				# 		print(self.protos[label])
-				# 		exit()
 				for i in range(len(self.protos)):
 					if np.sum(self.protos[i]) == 0 and self.protos_samples_per_class[i] != 0:
 						print("errado")
@@ -223,12 +214,12 @@ class FedProtoClientTorch(ClientBaseTorch):
 					filename=filename,
 					data=data)
 
-				if self.global_protos is not None:
-					if np.isnan(self.global_protos[3]).any() or np.isnan(self.global_protos[4]).any():
-						print("proto nao nulo, rodada ", config['round'])
-						print("recebidos:")
-						print(self.global_protos[3])
-						exit()
+				# if self.global_protos is not None:
+				# 	if np.isnan(self.global_protos[3]).any() or np.isnan(self.global_protos[4]).any():
+				# 		print("proto nao nulo, rodada ", config['round'])
+				# 		print("recebidos:")
+				# 		print(self.global_protos[3])
+				# 		exit()
 
 				fit_response = {
 					'cid': self.cid,
