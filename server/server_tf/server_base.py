@@ -23,7 +23,8 @@ class ServerBaseTf(fl.server.strategy.FedAvg):
 				 dataset='',
 				 strategy_name='',
 				 model_name='',
-				 new_clients=0):
+				 new_clients=False,
+				 new_clients_train=False):
 
 		self.aggregation_method = aggregation_method
 		self.n_classes = n_classes

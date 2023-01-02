@@ -17,7 +17,7 @@ random.seed(0)
 np.random.seed(0)
 tf.random.set_seed(0)
 torch.manual_seed(0)
-class FedProtoBaseServer(FedAvgBaseServer):
+class FedProposedBaseServer(FedAvgBaseServer):
 
     def __init__(self,
                  aggregation_method,
@@ -29,7 +29,7 @@ class FedProtoBaseServer(FedAvgBaseServer):
                  decay=0,
                  perc_of_clients=0,
                  dataset='',
-                 strategy_name='FedProto',
+                 strategy_name='FedProposed',
                  model_name='',
                  new_clients=False,
                  new_clients_train=False):
@@ -49,53 +49,24 @@ class FedProtoBaseServer(FedAvgBaseServer):
                          new_clients_train=new_clients_train)
 
         self.global_protos = [np.array([np.nan]) for i in range(self.n_classes)]
+        self.protos_list = {i: [] for i in range(self.n_classes)}
 
         self.create_folder()
 
-    # def _max_fit_rounds_per_client(self):
-    #
-    #     max_rounds_per_client = {}
-    #     for i in range(self.num_clients):
-    #         if i >= int(self.num_clients * self.round_threshold) and self.new_clients:
-    #             max_rounds_per_client[str(i)] = {'count': 0, 'max_rounds': 1}
-    #         else:
-    #             max_rounds_per_client[str(i)] = {'count': 0, 'max_rounds': self.num_rounds}
-    #
-    #     return max_rounds_per_client
+    def _append_proto(self, protos, num_examples_total):
 
-    # def get_valid_clients_for_evaluate(self, server_round):
-    #
-    #     clients_ids = []
-    #     if self.new_clients:
-    #         # incluir apenas clientes velhos
-    #         if server_round < int(self.num_rounds * self.round_threshold):
-    #             for i in self.max_rounds_per_client:
-    #                 client_ = self.max_rounds_per_client[i]
-    #                 # clientes velhos podem participar de todas as rodadas
-    #                 if client_['max_rounds'] == self.num_rounds:
-    #                     clients_ids.append(i)
-    #         else:
-    #             # incluir apenas clientes novos após determinada rodada
-    #             for i in self.max_rounds_per_client:
-    #                 client_ = self.max_rounds_per_client[i]
-    #                 if client_['max_rounds'] != self.num_rounds:
-    #                     clients_ids.append(i)
-    #
-    #     else:
-    #         clients_ids = []
-    #         for i in self.max_rounds_per_client:
-    #             if self.max_rounds_per_client[i]['count'] >= 1:
-    #                 clients_ids.append(i)
-    #
-    #     return clients_ids
+        for key in protos:
+            proto = protos[key]
+            if num_examples_total[key] > 0:
+                self.protos_list[key].append(proto)
 
     def create_folder(self):
 
-        directory = """fedproto_saved_weights/{}/""".format(self.model_name)
+        directory = """fedproposed_saved_weights/{}/""".format(self.model_name)
         if Path(directory).exists():
             shutil.rmtree(directory)
         for i in range(self.num_clients):
-            Path("""fedproto_saved_weights/{}/{}/""".format(self.model_name, i)).mkdir(parents=True, exist_ok=True)
+            Path("""fedproposed_saved_weights/{}/{}/""".format(self.model_name, i)).mkdir(parents=True, exist_ok=True)
 
     def aggregate_fit(self, server_round, results, failures):
         weights_results = []
@@ -107,20 +78,12 @@ class FedProtoBaseServer(FedAvgBaseServer):
             proto = fit_res.metrics['proto']
 
             if self.aggregation_method not in ['POC', 'FedLTA'] or int(server_round) <= 1:
+                self._append_proto(proto, protos_samples_per_class)
                 weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), protos_samples_per_class, proto))
 
             else:
                 if client_id in self.selected_clients:
-                    # for label in protos_samples_per_class:
-                    #     p = proto[label]
-                    #     samples_per_class = protos_samples_per_class[label]
-                    #     if (np.sum(p) == 0 or np.isnan(p).any()) and samples_per_class != 0:
-                    #         print("usuario errado")
-                    #         exit()
-                    #     if label in [3, 4]:
-                    #         if samples_per_class > 0:
-                    #             print("proto da classe ", label)
-                    #             print(p)
+                    self._append_proto(proto)
                     weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), protos_samples_per_class, proto))
 
         # print(f'LEN AGGREGATED PARAMETERS: {len(weights_results)}')

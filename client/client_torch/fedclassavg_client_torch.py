@@ -25,14 +25,15 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 				 epochs=1,
 				 model_name         = 'DNN',
 				 client_selection   = False,
-				 solution_name      = 'None',
+				 strategy_name      ='FedClassAvg',
 				 aggregation_method = 'None',
 				 dataset            = '',
 				 perc_of_clients    = 0,
 				 decay              = 0,
 				 non_iid            = False,
 				 n_personalized_layers	= 1,
-				 new_clients			= False
+				 new_clients			= False,
+				 new_clients_train	= False
 				 ):
 
 		super().__init__(cid=cid,
@@ -41,13 +42,14 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 						 epochs=epochs,
 						 model_name=model_name,
 						 client_selection=client_selection,
-						 solution_name=solution_name,
+						 strategy_name=strategy_name,
 						 aggregation_method=aggregation_method,
 						 dataset=dataset,
 						 perc_of_clients=perc_of_clients,
 						 decay=decay,
 						 non_iid=non_iid,
-						 new_clients=new_clients)
+						 new_clients=new_clients,
+						 new_clients_train=new_clients_train)
 
 		self.n_personalized_layers = n_personalized_layers * 2
 		self.lr_loss = torch.nn.MSELoss()
@@ -184,11 +186,10 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 			avg_loss_train     = train_loss/train_num
 			avg_acc_train      = train_acc/train_num
 
-			filename = f"logs/{self.solution_name}/new_clients_{self.new_clients}/{self.n_clients}/{self.model_name}/{self.dataset}/train_client.csv"
 			data = [config['round'], self.cid, selected, total_time, size_of_parameters, avg_loss_train, avg_acc_train]
 
 			self._write_output(
-				filename=filename,
+				filename=self.train_client_filename,
 				data=data)
 
 			fit_response = {
@@ -233,10 +234,9 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 			size_of_parameters = sum([sum(map(sys.getsizeof, parameters[i])) for i in range(len(parameters))])
 			loss = test_loss/test_num
 			accuracy = test_acc/test_num
-			filename = f"logs/{self.solution_name}/new_clients_{self.new_clients}/{self.n_clients}/{self.model_name}/{self.dataset}/evaluate_client.csv"
 			data = [config['round'], self.cid, size_of_parameters, loss, accuracy]
 
-			self._write_output(filename=filename,
+			self._write_output(filename=self.evaluate_client_filename,
 							   data=data)
 
 			evaluation_response = {

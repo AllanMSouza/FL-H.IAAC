@@ -31,6 +31,7 @@ class QFedAvgServerTorch(FedAvgServerTorch):
                  fraction_fit,
                  num_clients,
                  num_rounds,
+                 num_epochs,
                  model,
                  q_param=0.2,
                  server_momentum=1,
@@ -39,19 +40,22 @@ class QFedAvgServerTorch(FedAvgServerTorch):
                  perc_of_clients=0,
                  dataset='',
                  model_name='',
-                 new_clients=False):
+                 new_clients=False,
+                 new_clients_train=False):
 
         super().__init__(aggregation_method=aggregation_method,
                          n_classes=n_classes,
                          fraction_fit=fraction_fit,
                          num_clients=num_clients,
                          num_rounds=num_rounds,
+                         num_epochs=num_epochs,
                          decay=decay,
                          perc_of_clients=perc_of_clients,
                          dataset=dataset,
                          strategy_name='QFedAvg',
                          model_name=model_name,
-                         new_clients=new_clients)
+                         new_clients=new_clients,
+                         new_clients_train=new_clients_train)
 
         self.server_learning_rate = server_learning_rate
         self.server_momentum = server_momentum

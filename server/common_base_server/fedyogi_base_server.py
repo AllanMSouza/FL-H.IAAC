@@ -35,6 +35,7 @@ class FedYogiBaseServer(FedOptBaseServer):
 				 fraction_fit,
 				 num_clients,
 				 num_rounds,
+                 num_epochs,
 				 model,
 				 decay=0,
 				 perc_of_clients=0,
@@ -46,7 +47,8 @@ class FedYogiBaseServer(FedOptBaseServer):
 				 eta_l: float = 0.0316,
 				 beta_1: float = 0.9,
 				 beta_2: float = 0.99,
-				 tau: float = 1e-3
+				 tau: float = 1e-3,
+				 new_clients_train=False
 				 ):
 
 		super().__init__(aggregation_method=aggregation_method,
@@ -54,6 +56,7 @@ class FedYogiBaseServer(FedOptBaseServer):
 							fraction_fit=fraction_fit,
 							num_clients=num_clients,
 							num_rounds=num_rounds,
+						 	num_epochs=num_epochs,
 						 	model=model,
 							decay=decay,
 							perc_of_clients=perc_of_clients,
@@ -65,7 +68,8 @@ class FedYogiBaseServer(FedOptBaseServer):
 							eta_l=eta_l,
 							beta_1=beta_1,
 							beta_2=beta_2,
-							tau=tau
+							tau=tau,
+						 new_clients_train=new_clients_train
 							)
 
 		self.set_initial_parameters()

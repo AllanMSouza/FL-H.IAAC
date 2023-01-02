@@ -18,35 +18,37 @@ import logging
 class FedLocalClientTorch(ClientBaseTorch):
 
 	def __init__(self,
-				 cid,
-				 n_clients,
-				 n_classes,
-				 epochs=1,
-				 model_name         = 'DNN',
-				 client_selection   = False,
-				 solution_name      = 'None',
-				 aggregation_method = 'None',
-				 dataset            = '',
-				 perc_of_clients    = 0,
-				 decay              = 0,
-				 non_iid            = False,
-				 n_personalized_layers	= 1,
-				 new_clients			= False
-				 ):
+                 cid,
+                 n_clients,
+                 n_classes,
+                 epochs=1,
+                 model_name         = 'DNN',
+                 client_selection   = False,
+                 strategy_name      ='FedLocal',
+                 aggregation_method = 'None',
+                 dataset            = '',
+                 perc_of_clients    = 0,
+                 decay              = 0,
+                 non_iid            = False,
+                 n_personalized_layers	= 1,
+                 new_clients			= False,
+                 new_clients_train	= False
+                 ):
 
 		super().__init__(cid=cid,
-						 n_clients=n_clients,
-						 n_classes=n_classes,
-						 epochs=epochs,
-						 model_name=model_name,
-						 client_selection=client_selection,
-						 solution_name=solution_name,
-						 aggregation_method=aggregation_method,
-						 dataset=dataset,
-						 perc_of_clients=perc_of_clients,
-						 decay=decay,
-						 non_iid=non_iid,
-						 new_clients=new_clients)
+                         n_clients=n_clients,
+                         n_classes=n_classes,
+                         epochs=epochs,
+                         model_name=model_name,
+                         client_selection=client_selection,
+                         solution_name=strategy_name,
+                         aggregation_method=aggregation_method,
+                         dataset=dataset,
+                         perc_of_clients=perc_of_clients,
+                         decay=decay,
+                         non_iid=non_iid,
+                         new_clients=new_clients,
+                         new_clients_train=new_clients_train)
 
 		self.n_personalized_layers = n_personalized_layers * 2
 
@@ -68,7 +70,6 @@ class FedLocalClientTorch(ClientBaseTorch):
 
 	def set_parameters_to_model(self, parameters):
 		try:
-			self.local_epochs = 1
 			filename = """./fedlocal_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
 			if os.path.exists(filename):
 				self.model.load_state_dict(torch.load(filename))

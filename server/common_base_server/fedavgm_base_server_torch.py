@@ -28,8 +28,9 @@ class FedAvgMBaseServerTorch(FedAvgBaseServer):
                  fraction_fit,
                  num_clients,
                  num_rounds,
+                 num_epochs,
                  model,
-                 strategy_name,
+                 strategy_name='FedAvgM',
                  server_momentum=1,
                  server_learning_rate=1,
                  decay=0,
@@ -37,20 +38,23 @@ class FedAvgMBaseServerTorch(FedAvgBaseServer):
                  dataset='',
                  non_iid=False,
                  model_name='',
-                 new_clients=False):
+                 new_clients=False,
+                 new_clients_train=False):
 
         super().__init__(aggregation_method=aggregation_method,
                          n_classes=n_classes,
                          fraction_fit=fraction_fit,
                          num_clients=num_clients,
                          num_rounds=num_rounds,
+                         num_epochs=num_epochs,
                          decay=decay,
                          perc_of_clients=perc_of_clients,
                          dataset=dataset,
-                         strategy_name='FedAvgM',
+                         strategy_name=strategy_name,
                          non_iid=non_iid,
                          model_name=model_name,
-                         new_clients=new_clients)
+                         new_clients=new_clients,
+                         new_clients_train=new_clients_train)
 
         self.server_learning_rate = server_learning_rate
         self.server_momentum = server_momentum

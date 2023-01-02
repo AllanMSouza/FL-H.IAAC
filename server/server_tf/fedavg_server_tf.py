@@ -13,7 +13,8 @@ class FedAvgServerTf(FedAvgBaseServer):
                  perc_of_clients=0,
                  dataset='',
                  strategy_name='FedAvg',
-                 model_name=''):
+                 model_name='',
+                 new_clients_train=False):
 
         super().__init__(aggregation_method=aggregation_method,
                          n_classes=n_classes,
@@ -24,4 +25,5 @@ class FedAvgServerTf(FedAvgBaseServer):
                          perc_of_clients=perc_of_clients,
                          dataset=dataset,
                          strategy_name='FedAVG',
-                         model_name=model_name)
+                         model_name=model_name,
+                         new_clients_train=new_clients_train)

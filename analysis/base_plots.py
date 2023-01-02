@@ -17,7 +17,6 @@ def bar_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_s
         formatter = ticker.ScalarFormatter(useMathText=True)
         formatter.set_scientific(True)
         formatter.set_powerlimits((-1, 1))
-        print("ola: ", formatter.get_offset())
         ax.yaxis.set_major_formatter(formatter)
         ax.set_ylim([0, 130000])
 

@@ -33,17 +33,20 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 				 fraction_fit,
 				 num_clients,
 				 num_rounds,
+				 num_epochs,
 				 decay=0,
 				 perc_of_clients=0,
 				 dataset='',
 				 strategy_name='',
 				 non_iid=False,
 				 model_name='',
-				 new_clients=False):
+				 new_clients=False,
+				 new_clients_train=False):
 
 		self.aggregation_method = aggregation_method
 		self.n_classes = n_classes
 		self.num_clients        = num_clients
+		self.epochs				= num_epochs
 		self.list_of_clients    = []
 		self.list_of_accuracies = []
 		self.selected_clients   = []
@@ -68,6 +71,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.decay_factor = decay
 
 		self.new_clients = new_clients
+		self.new_clients_train = new_clients_train
 		self.num_rounds = num_rounds
 
 		#params
@@ -92,12 +96,18 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 		super().__init__(fraction_fit=fraction_fit, min_available_clients=num_clients, min_fit_clients=num_clients, min_evaluate_clients=num_clients)
 
+		print("""===================================================\nStarting training of {}\n""".format(self.strategy_name))
+
 	def _max_fit_rounds_per_client(self):
 
 		max_rounds_per_client = {}
 		for i in range(self.num_clients):
 			if i >= int(self.num_clients * self.clients_threshold) and self.new_clients:
-				max_rounds_per_client[str(i)] = {'count': 0, 'max_rounds': 1}
+				if self.new_clients_train:
+					count = 0
+				else:
+					count = 1
+				max_rounds_per_client[str(i)] = {'count': count, 'max_rounds': 1}
 			else:
 				max_rounds_per_client[str(i)] = {'count': 0, 'max_rounds': self.num_rounds}
 
@@ -227,7 +237,10 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			self.max_rounds_per_client[client.cid]['count'] += 1
 
 		if server_round == self.num_rounds:
+			print("=======")
+			print(self.strategy_name)
 			print("Max rounds per client: ", self.max_rounds_per_client)
+			print("=======")
 
 		print("selecionar (fit): ", [client.cid for client in selected_clients])
 		# Return client/config pairs
@@ -387,7 +400,6 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			"top-1"     : top1
 		}
 
-
 		return loss_aggregated, metrics_aggregated
 
 
@@ -411,7 +423,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 	def _write_output_files_headers(self):
 
-		self.base = f"logs/{self.strategy_name}/new_clients_{self.new_clients}/{self.num_clients}/{self.model_name}/{self.dataset}/"
+		self.base = f"logs/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/{self.epochs}_local_epochs/"
 		self.server_filename = f"{self.base}server.csv"
 		self.train_filename = f"{self.base}train_client.csv"
 		self.evaluate_filename= f"{self.base}evaluate_client.csv"

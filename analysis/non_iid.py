@@ -7,9 +7,10 @@ from optparse import OptionParser
 from base_plots import bar_plot, line_plot
 from pathlib import Path
 import os
+import ast
 
 class NonIid:
-    def __init__(self, num_clients, aggregation_method, perc_of_clients, non_iid,  model_name, strategy_name_list, dataset_name, new_clients, comentario):
+    def __init__(self, num_clients, aggregation_method, perc_of_clients, non_iid, model_name, strategy_name_list, dataset_name, new_clients,new_clients_train, experiment, comment, epochs):
         self.n_clients = num_clients
         self.aggregation_method = aggregation_method
         self.perc_of_clients = perc_of_clients
@@ -18,7 +19,10 @@ class NonIid:
         self.strategy_name_list = strategy_name_list
         self.dataset_name = dataset_name
         self.new_clients = new_clients
-        self.comentario = comentario
+        self.new_clients_train = new_clients_train
+        self.experiment = experiment
+        self.comment = comment
+        self.epochs = epochs
         self.base_files_names = {'evaluate_client': 'evaluate_client.csv',
                                  'server': 'server.csv',
                                  'train_client': 'train_client.csv'}
@@ -43,10 +47,14 @@ class NonIid:
 
     def start(self):
 
-        self.base_dir = """/home/claudio/Documentos/pycharm_projects/FedLTA/analysis/output/{}/new_clients_{}/{}/{}/{}""".format(self.aggregation_method, self.new_clients,
-                                     self.n_clients,
-                                     self.dataset_name,
-                                       self.comentario)
+        self.base_dir = """analysis/output/experiment_{}/{}/new_clients_{}_train_{}/{}_clients/{}/{}_local_epochs/{}/""".format(self.experiment,
+                                                                                            self.aggregation_method,
+                                                                                            self.new_clients,
+                                                                                              self.new_clients_train,
+                                                                                            self.n_clients,
+                                                                                            self.dataset_name,
+                                                                                            self.epochs,
+                                                                                            self.comment)
 
         if not Path(self.base_dir).exists():
             os.makedirs(self.base_dir+"csv")
@@ -54,13 +62,15 @@ class NonIid:
             os.makedirs(self.base_dir + "svg/")
 
         models_directories = {self.strategy_name_list[i]:
-                              """{}/{}/new_clients_{}/{}/{}/{}/""".
+                              """{}/{}/new_clients_{}_train_{}/{}/{}/{}/{}_local_epochs/""".
                               format('/home/claudio/Documentos/pycharm_projects/FedLTA/logs',
                                      self._get_strategy_config(self.strategy_name_list[i]),
                                      self.new_clients,
+                                     self.new_clients_train,
                                      self.n_clients,
                                      self.model_name,
-                                     self.dataset_name) for i in range(len(self.strategy_name_list))}
+                                     self.dataset_name,
+                                     self.epochs) for i in range(len(self.strategy_name_list))}
 
         # read datasets
         print(models_directories)
@@ -230,14 +240,18 @@ if __name__ == '__main__':
     parser.add_option("-m", "--model", dest="model_name", default='DNN', help="Model used for trainning", metavar="STR")
     parser.add_option("-d", "--dataset", dest="dataset", default='MNIST', help="Dataset used for trainning",
                       metavar="STR")
-    parser.add_option("", "--non_iid", dest="non_iid", default='False',
-                      help="whether or not it was non iid experiment", metavar="STR")
+    parser.add_option("", "--non-iid", dest="non_iid", default=False,
+                      help="whether or not it was non iid experiment")
     parser.add_option("", "--poc", dest="poc", default=1.,
                       help="percentage of clients to fit", metavar="FLOAT")
     parser.add_option("-r", "--round", dest="rounds", default=5, help="Number of communication rounds", metavar="INT")
-    parser.add_option("", "--new_clients", dest="new_clients", default=False, help="Adds new clients after a specific round", metavar="STR")
+    parser.add_option("", "--new_clients", dest="new_clients", default='False', help="Adds new clients after a specific round")
+    parser.add_option("", "--new_clients_train", dest="new_clients_train", default='False',
+                      help="")
     parser.add_option("--strategy", action='append', dest="strategies", default=[])
-    parser.add_option("--comentario",  dest="comentario", default='')
+    parser.add_option("--experiment",  dest="experiment", default='')
+    parser.add_option("--comment", dest="comment", default='')
+    parser.add_option("--epochs", dest="epochs", default=1)
 
     (opt, args) = parser.parse_args()
 
@@ -246,6 +260,6 @@ if __name__ == '__main__':
 
     # noniid = NonIID(int(opt.n_clients), opt.aggregation_method, opt.model_name, strategy_name_list, opt.dataset)
     # noniid.start()
-    c = NonIid(int(opt.n_clients), opt.aggregation_method, float(opt.poc), opt.non_iid, opt.model_name, strategy_name_list, opt.dataset, opt.new_clients, opt.comentario)
+    c = NonIid(int(opt.n_clients), opt.aggregation_method, float(opt.poc), ast.literal_eval(opt.non_iid), opt.model_name, strategy_name_list, opt.dataset, ast.literal_eval(opt.new_clients), ast.literal_eval(opt.new_clients_train), opt.experiment, opt.comment, opt.epochs)
     print(c.n_clients, " ", c.strategy_name_list)
     c.start()

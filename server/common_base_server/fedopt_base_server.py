@@ -35,6 +35,7 @@ class FedOptBaseServer(FedAvgBaseServer):
 				 fraction_fit,
 				 num_clients,
 				 num_rounds,
+                 num_epochs,
 				 model,
 				 decay=0,
 				 perc_of_clients=0,
@@ -46,7 +47,8 @@ class FedOptBaseServer(FedAvgBaseServer):
 				 eta_l: float = 1e-1,
 				 beta_1: float = 0.0,
 				 beta_2: float = 0.0,
-				 tau: float = 1e-9
+				 tau: float = 1e-9,
+				 new_clients_train=False
 				 ):
 
 		super().__init__(aggregation_method=aggregation_method,
@@ -54,12 +56,14 @@ class FedOptBaseServer(FedAvgBaseServer):
 						 fraction_fit=fraction_fit,
 						 num_clients=num_clients,
 						 num_rounds=num_rounds,
+						 num_epochs=num_epochs,
 						 decay=decay,
 						 perc_of_clients=perc_of_clients,
 						 dataset=dataset,
 						 strategy_name=strategy_name,
 						 model_name=model_name,
-						 new_clients=new_clients)
+						 new_clients=new_clients,
+						 new_clients_train=new_clients_train)
 
 		self.model = model
 		self.current_weights = None

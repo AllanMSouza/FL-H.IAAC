@@ -5,6 +5,7 @@ from server.common_base_server.fedopt_base_server import FedOptBaseServer
 from server.common_base_server.fedavgm_base_server_torch import FedAvgMBaseServerTorch
 from server.common_base_server.fedper_base_server import FedPerBaseServer
 from server.common_base_server.fedclassavg_base_server import FedClassAvgBaseServer
+from server.common_base_server.fedproposed_base_server import FedProposedBaseServer
 
 __all__ = [
     'FedAvgBaseServer',
@@ -13,5 +14,6 @@ __all__ = [
     "FedOptBaseServer",
     "FedAvgMBaseServerTorch",
     "FedPerBaseServer",
-    "FedClassAvgBaseServer"
+    "FedClassAvgBaseServer",
+    "FedProposedBaseServer"
     ]

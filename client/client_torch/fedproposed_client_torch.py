@@ -29,7 +29,7 @@ import random
 random.seed(0)
 np.random.seed(0)
 torch.manual_seed(0)
-class FedProtoClientTorch(ClientBaseTorch):
+class FedProposedClientTorch(ClientBaseTorch):
 
 	def __init__(self,
 				 cid,
@@ -38,7 +38,7 @@ class FedProtoClientTorch(ClientBaseTorch):
 				 epochs				= 1,
 				 model_name         = 'None',
 				 client_selection   = False,
-				 strategy_name      ='None',
+				 strategy_name      ='FedPropoed',
 				 aggregation_method = 'None',
 				 dataset            = '',
 				 perc_of_clients    = 0,
@@ -326,7 +326,7 @@ class FedProtoClientTorch(ClientBaseTorch):
 		# 	jsonContent = fileObject.read()
 		# 	aList = [i for i in json.loads(jsonContent)]
 		# 	self.set_parameters_to_model(aList)
-		filename = """./fedproto_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
+		filename = """./fedproposed_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
 		if os.path.exists(filename):
 			self.model.load_state_dict(torch.load(filename))
 		else:
@@ -337,10 +337,10 @@ class FedProtoClientTorch(ClientBaseTorch):
 			pass
 
 	def save_parameters(self):
-		# os.makedirs("""{}/fedproto_saved_weights/{}/{}/""".format(os.getcwd(), self.model_name, self.cid),
+		# os.makedirs("""{}/fedproposed_saved_weights/{}/{}/""".format(os.getcwd(), self.model_name, self.cid),
 		# 			exist_ok=True)
 		try:
-			filename = """./fedproto_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid)
+			filename = """./fedproposed_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid)
 			if Path(filename).exists():
 				os.remove(filename)
 			torch.save(self.model.state_dict(), filename)
