@@ -13,6 +13,7 @@ import shutil
 import tensorflow as tf
 import torch
 import random
+from abc import abstractmethod
 random.seed(0)
 np.random.seed(0)
 tf.random.set_seed(0)
@@ -50,6 +51,7 @@ class FedProposedBaseServer(FedAvgBaseServer):
 
         self.global_protos = [np.array([np.nan]) for i in range(self.n_classes)]
         self.protos_list = {i: [] for i in range(self.n_classes)}
+        self.proto_model = None
 
         self.create_folder()
 
@@ -59,6 +61,22 @@ class FedProposedBaseServer(FedAvgBaseServer):
             proto = protos[key]
             if num_examples_total[key] > 0:
                 self.protos_list[key].append(proto)
+
+    @abstractmethod
+    def train_proto_model(self):
+        pass
+
+    @abstractmethod
+    def _create_proto_model(self):
+        pass
+
+    @abstractmethod
+    def evaluate_proto_model(self):
+        pass
+
+    @abstractmethod
+    def train_and_evaluate_proto_model(self):
+        pass
 
     def create_folder(self):
 
@@ -83,7 +101,7 @@ class FedProposedBaseServer(FedAvgBaseServer):
 
             else:
                 if client_id in self.selected_clients:
-                    self._append_proto(proto)
+                    self._append_proto(proto, protos_samples_per_class)
                     weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), protos_samples_per_class, proto))
 
         # print(f'LEN AGGREGATED PARAMETERS: {len(weights_results)}')

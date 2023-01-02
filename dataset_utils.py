@@ -1,8 +1,11 @@
 import tensorflow as tf
+import torch
 import numpy as np
 import random
 import pickle
 import pandas as pd
+from torch.utils.data import TensorDataset, DataLoader
+from sklearn.model_selection import train_test_split
 
 #from sklearn.preprocessing import Normalizer
 
@@ -169,5 +172,24 @@ class ManageDatasets():
 		x_train = Normalizer().fit_transform(np.array(x_train))
 		x_test  = Normalizer().fit_transform(np.array(x_test))
 		return x_train, x_test
+
+	def create_torch_dataset_from_numpy(self, x: np.array, y: np.array, test_size: float, shuffle: bool = True, batch_size: int = 32):
+
+		x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = test_size, random_state = 42)
+		tensor_x_train = torch.Tensor(x_train)  # transform to torch tensor
+		tensor_y_train = torch.Tensor(y_train)
+
+
+		train_dataset = TensorDataset(tensor_x_train, tensor_y_train)
+		trainLoader = DataLoader(train_dataset, batch_size, drop_last=True, shuffle=True)
+
+		tensor_x_test = torch.Tensor(x_test)  # transform to torch tensor
+		tensor_y_test = torch.Tensor(y_test)
+
+		test_dataset = TensorDataset(tensor_x_test, tensor_y_test)
+		testLoader = DataLoader(test_dataset, batch_size, drop_last=True, shuffle=True)
+
+		return trainLoader, testLoader
+
 
 

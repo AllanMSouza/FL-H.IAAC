@@ -4,6 +4,7 @@ import math
 import os
 import sys
 import time
+from abc import abstractmethod
 import csv
 import random
 
@@ -88,6 +89,8 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.clients_threshold = 0.7
 		self.clients2select = 5
 
+		self.proto_parameters = None
+
 		self.server_filename = None
 		self.train_filename = None
 		self.evaluate_filename = None
@@ -153,6 +156,10 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 	# 		print("get valid clients for evaluate")
 	# 		print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
+	@abstractmethod
+	def train_and_evaluate_proto_model(self):
+		pass
+
 	def configure_fit(self, server_round, parameters, client_manager):
 		# """Configure the next round of training."""
 
@@ -209,9 +216,12 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		# self.selected_clients = selected_clients
 
 		self.clients_last_round = self.selected_clients
+		if server_round == int(self.num_rounds * self.round_threshold):
+			self.train_and_evaluate_proto_model()
 		config = {
 			"selected_clients" : ' '.join(self.selected_clients),
-			"round"            : server_round
+			"round"            : server_round,
+			"proto_parameters"	: self.proto_parameters,
 			}
 
 		fit_ins = FitIns(parameters, config)

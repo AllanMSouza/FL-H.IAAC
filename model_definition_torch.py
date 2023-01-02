@@ -112,3 +112,14 @@ class ModelCreation():
 	def create_LogisticRegression(self, input_shape, num_classes, use_proto=False):
 
 		pass
+
+# ====================================================================================================================
+class ProtoModel(nn.Module):
+    def __init__(self, mid_dim=100, num_classes=10):
+        super(ProtoModel, self).__init__()
+        self.fc = nn.Linear(mid_dim, num_classes)
+
+    def forward(self, x):
+        x = self.fc(x)
+        x = F.log_softmax(x, dim=1)
+        return x
