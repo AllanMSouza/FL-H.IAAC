@@ -156,7 +156,6 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 	# 		print("get valid clients for evaluate")
 	# 		print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	@abstractmethod
 	def train_and_evaluate_proto_model(self):
 		pass
 
@@ -458,3 +457,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		with open(filename, 'a') as server_log_file:
 			writer = csv.writer(server_log_file)
 			writer.writerow(data)
+
+	def _protos_similarity(self, protos):
+
+		similarity = np.zeros((self.n_classes, self.n_classes))

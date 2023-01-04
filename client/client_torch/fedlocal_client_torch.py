@@ -4,7 +4,7 @@ import torch
 import json
 from pathlib import Path
 import shutil
-from model_definition_torch import ModelCreation
+from model_definition_torch import DNN, DNN_proto_2, DNN_proto_4, Logistic, FedAvgCNN
 import numpy as np
 import os
 import sys
@@ -51,22 +51,6 @@ class FedLocalClientTorch(ClientBaseTorch):
                          new_clients_train=new_clients_train)
 
 		self.n_personalized_layers = n_personalized_layers * 2
-
-	def create_model(self):
-
-		# print("tamanho: ", self.input_shape)
-		input_shape = self.input_shape[1]*self.input_shape[2]
-		if self.model_name == 'Logist Regression':
-			return ModelCreation().create_LogisticRegression(input_shape, self.num_classes)
-
-		elif self.model_name == 'DNN':
-			return ModelCreation().create_DNN(input_shape=input_shape, num_classes=self.num_classes, use_local_model=False)
-
-		elif self.model_name == 'CNN':
-			return ModelCreation().create_CNN(input_shape, self.num_classes)
-
-		else:
-			raise Exception("Wrong model name")
 
 	def set_parameters_to_model(self, parameters):
 		try:

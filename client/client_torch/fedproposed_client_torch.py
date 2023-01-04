@@ -11,7 +11,7 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 from dataset_utils import ManageDatasets
-from model_definition_torch import ModelCreation
+from model_definition_torch import DNN, DNN_proto_2, DNN_proto_4, Logistic, FedAvgCNN, FedAvgCNNProto
 import csv
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -72,19 +72,21 @@ class FedProposedClientTorch(ClientBaseTorch):
 
 	def create_model(self):
 
-		# print("tamanho: ", self.input_shape)
-		input_shape = self.input_shape[1]*self.input_shape[2]
-		if self.model_name == 'Logist Regression':
-			return ModelCreation().create_LogisticRegression(input_shape, self.num_classes)
+		try:
+			# print("tamanho: ", self.input_shape)
+			input_shape = self.input_shape[1] * self.input_shape[2]
+			if self.model_name == 'Logist Regression':
+				return Logistic(input_shape, self.num_classes)
+			elif self.model_name == 'DNN':
+				return DNN_proto_2(input_shape=input_shape, num_classes=self.num_classes)
+			elif self.model_name == 'CNN':
+				return FedAvgCNNProto(input_shape, self.num_classes)
+			else:
+				raise Exception("Wrong model name")
+		except Exception as e:
+			print("create model")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-		elif self.model_name == 'DNN':
-			return ModelCreation().create_DNN(input_shape=input_shape, num_classes=self.num_classes, use_local_model=True)
-
-		elif self.model_name == 'CNN':
-			return ModelCreation().create_CNN(input_shape, self.num_classes)
-
-		else:
-			raise Exception("Wrong model name")
 
 	def get_parameters(self, config):
 		parameters = [i.detach().numpy() for i in self.model.parameters()]
@@ -225,7 +227,8 @@ class FedProposedClientTorch(ClientBaseTorch):
 				fit_response = {
 					'cid': self.cid,
 					'protos_samples_per_class': self.protos_samples_per_class,
-					'proto': {i: np.array(self.protos[i]) for i in range(len(self.protos))}
+					'proto': {i: np.array(self.protos[i]) for i in range(len(self.protos))},
+					'parameters': self.get_parameters_of_model()
 				}
 
 				# print("saindo: ", config['round'], " forma: ", self.protos[0].shape, self.protos[1].shape, self.protos[2].shape, self.protos[3].shape)
@@ -236,7 +239,8 @@ class FedProposedClientTorch(ClientBaseTorch):
 				return [np.zeros((100,))], 0, {
 					'cid': self.cid,
 					'protos_samples_per_class': {i: 0 for i in range(self.num_classes)},
-					'proto': {i: np.zeros((1, 100)) for i in range(self.num_classes)}
+					'proto': {i: np.zeros((1, 100)) for i in range(self.num_classes)},
+					'parameters': self.get_parameters_of_model()
 				}
 		except Exception as e:
 			print("fit")

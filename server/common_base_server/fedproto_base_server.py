@@ -7,7 +7,7 @@ from pathlib import Path
 
 from flwr.common import FitIns
 from flwr.server.strategy.aggregate import weighted_loss_avg
-
+from sklearn.metrics.pairwise import cosine_similarity
 from server.common_base_server.fedavg_base_server import FedAvgBaseServer
 import shutil
 import tensorflow as tf
@@ -306,3 +306,19 @@ class FedProtoBaseServer(FedAvgBaseServer):
         }
 
         return loss_aggregated, metrics_aggregated
+
+    def _protos_similarity(self, protos):
+
+        similarity = np.zeros((self.n_classes, self.n_classes))
+        labels = list(protos.keys())
+        for i in range(len(labels)):
+            label_i = labels[i]
+            proto_i = protos[label_i]
+
+            for j in range(len(labels)):
+                label_j = labels[j]
+                proto_j = labels[label_j]
+
+                similarity[i, j] = cosine_similarity(proto_i, proto_j)
+
+        return similarity

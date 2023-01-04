@@ -4,13 +4,24 @@ import time
 from pathlib import Path
 import sys
 from torch import nn
+from typing import Callable, Dict, Optional, Tuple
+from flwr.common import (
+    FitRes,
+    MetricsAggregationFn,
+    NDArrays,
+    Parameters,
+    Scalar,
+    ndarrays_to_parameters,
+    parameters_to_ndarrays,
+)
 
 from flwr.common import FitIns
 from flwr.server.strategy.aggregate import weighted_loss_avg
-from model_definition_torch import ModelCreation, ProtoModel
+from model_definition_torch import DNN, DNN_proto_2, DNN_proto_4, Logistic, FedAvgCNN, ProtoModel
 from dataset_utils import ManageDatasets
 
 from server.common_base_server import FedProposedBaseServer
+import copy
 import random
 import torch
 random.seed(0)
@@ -25,6 +36,7 @@ class FedProposedServerTorch(FedProposedBaseServer):
                  num_clients,
                  num_rounds,
                  num_epochs,
+                 model,
                  decay=0,
                  perc_of_clients=0,
                  dataset='',
@@ -45,12 +57,21 @@ class FedProposedServerTorch(FedProposedBaseServer):
                          strategy_name='FedProposed',
                          model_name=model_name,
                          new_clients=new_clients,
-                         new_clients_train=new_clients_train)
+                         new_clients_train=new_clients_train,
+                         model=model)
 
         self.device = 'cpu'
         self.loss = nn.CrossEntropyLoss()
         self.learning_rate = 0.01
         self.optimizer = None
+
+    def set_initial_parameters(
+            self
+    ) -> Optional[Parameters]:
+        """Initialize global model parameters."""
+        model_parameters = [i.detach().numpy() for i in self.model.parameters()]
+        self.server_model_parameters = copy.deepcopy(model_parameters)
+        return model_parameters
 
     def _create_proto_model(self):
         try:

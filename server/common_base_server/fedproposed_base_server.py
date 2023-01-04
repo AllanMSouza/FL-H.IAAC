@@ -14,6 +14,18 @@ import tensorflow as tf
 import torch
 import random
 from abc import abstractmethod
+from flwr.common import (
+    FitRes,
+    MetricsAggregationFn,
+    NDArrays,
+    Parameters,
+    Scalar,
+    ndarrays_to_parameters,
+    parameters_to_ndarrays,
+)
+import torch
+
+from flwr.server.strategy.aggregate import aggregate
 random.seed(0)
 np.random.seed(0)
 tf.random.set_seed(0)
@@ -27,6 +39,7 @@ class FedProposedBaseServer(FedAvgBaseServer):
                  num_clients,
                  num_rounds,
                  num_epochs,
+                 model,
                  decay=0,
                  perc_of_clients=0,
                  dataset='',
@@ -52,6 +65,12 @@ class FedProposedBaseServer(FedAvgBaseServer):
         self.global_protos = [np.array([np.nan]) for i in range(self.n_classes)]
         self.protos_list = {i: [] for i in range(self.n_classes)}
         self.proto_model = None
+        self.server_learning_rate = 1
+        self.server_momentum = 0.2
+        self.momentum_vector = None
+        self.model = model
+        self.server_opt = (self.server_momentum != 0.0) or (
+                self.server_learning_rate != 1.0)
 
         self.create_folder()
 
@@ -94,15 +113,16 @@ class FedProposedBaseServer(FedAvgBaseServer):
             client_id = str(fit_res.metrics['cid'])
             protos_samples_per_class = fit_res.metrics['protos_samples_per_class']
             proto = fit_res.metrics['proto']
+            parameters = ['parameters']
 
             if self.aggregation_method not in ['POC', 'FedLTA'] or int(server_round) <= 1:
                 self._append_proto(proto, protos_samples_per_class)
-                weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), protos_samples_per_class, proto))
+                weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), protos_samples_per_class, proto, parameters))
 
             else:
                 if client_id in self.selected_clients:
                     self._append_proto(proto, protos_samples_per_class)
-                    weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), protos_samples_per_class, proto))
+                    weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), protos_samples_per_class, proto, parameters))
 
         # print(f'LEN AGGREGATED PARAMETERS: {len(weights_results)}')
         # print("rodada: ", server_round)
@@ -116,6 +136,61 @@ class FedProposedBaseServer(FedAvgBaseServer):
 
         return parameters_aggregated, metrics_aggregated
 
+
+
+    def _aggregate_results(self, results, server_round):
+
+        protos = self._aggregate_proto(results, server_round)
+        parameters = self._aggregate_parameters(results, server_round)
+
+    def _aggregate_parameters(self, results, server_round):
+
+        results = [[i, y] for i, j, k, y in results]
+
+        fedavg_result = aggregate(results)
+        # following convention described in
+        # https://pytorch.org/docs/stable/generated/torch.optim.SGD.html
+        if self.server_opt:
+            # You need to initialize the model
+            # assert (
+            #         self.initial_parameters is not None
+            # ), "When using server-side optimization, model needs to be initialized."
+            # if self.initial_parameters is None:
+            #     self.initial_parameters = self.set_initial_parameters()
+            initial_parameters_numpy = copy.deepcopy(self.server_model_parameters)
+
+            # remember that updates are the opposite of gradients
+            pseudo_gradient: NDArrays = [
+                x - y
+                for x, y in zip(
+                    initial_parameters_numpy, fedavg_result
+                )
+            ]
+            if self.server_momentum > 0.0:
+                if server_round > 1:
+                    assert (
+                        self.momentum_vector
+                    ), "Momentum should have been created on round 1."
+                    self.momentum_vector = [
+                        self.server_momentum * x + y
+                        for x, y in zip(self.momentum_vector, pseudo_gradient)
+                    ]
+                else:
+                    self.momentum_vector = pseudo_gradient
+
+                # No nesterov for now
+                pseudo_gradient = self.momentum_vector
+
+            # SGD
+            fedavg_result = [
+                x - self.server_learning_rate * y
+                for x, y in zip(initial_parameters_numpy, pseudo_gradient)
+            ]
+            # Update current weights
+            self.initial_parameters = fedavg_result
+
+        parameters_aggregated = ndarrays_to_parameters(fedavg_result)
+
     def _aggregate_proto(self, results, server_round):
         """Compute weighted average."""
 
@@ -127,7 +202,7 @@ class FedProposedBaseServer(FedAvgBaseServer):
         # Calculate the total number of examples used during training
         num_examples_total = {i: 0 for i in range(self.n_classes)}
         num_examples_total_clients = {i: 0 for i in range(self.n_classes)}
-        for _, num_examples, p in results:
+        for _, num_examples, p, parameters in results:
 
             for key in num_examples:
 
@@ -144,7 +219,7 @@ class FedProposedBaseServer(FedAvgBaseServer):
         # Create a list of weights, each multiplied by the related number of examples
 
         agg_protos_label = {i: None for i in range(self.n_classes)}
-        for p, num_examples, local_protos in results:
+        for p, num_examples, local_protos, parameters in results:
             for label in range(self.n_classes):
                 if num_examples[label] > 0:
                     proto_shape = local_protos[label].shape
@@ -287,3 +362,20 @@ class FedProposedBaseServer(FedAvgBaseServer):
         }
 
         return loss_aggregated, metrics_aggregated
+
+    def aggregate(results: List[Tuple[NDArrays, int]]) -> NDArrays:
+        """Compute weighted average."""
+        # Calculate the total number of examples used during training
+        num_examples_total = sum([num_examples for _, num_examples in results])
+
+        # Create a list of weights, each multiplied by the related number of examples
+        weighted_weights = [
+            [layer * num_examples for layer in weights] for weights, num_examples in results
+        ]
+
+        # Compute average weights of each layer
+        weights_prime: NDArrays = [
+            reduce(np.add, layer_updates) / num_examples_total
+            for layer_updates in zip(*weighted_weights)
+        ]
+        return weights_prime

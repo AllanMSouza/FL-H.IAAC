@@ -9,7 +9,7 @@ import time
 import sys
 
 from dataset_utils import ManageDatasets
-from model_definition_torch import ModelCreation
+from model_definition_torch import DNN, DNN_proto_2, DNN_proto_4, Logistic, FedAvgCNN
 import csv
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -120,14 +120,11 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			# print("tamanho: ", self.input_shape)
 			input_shape = self.input_shape[1]*self.input_shape[2]
 			if self.model_name == 'Logist Regression':
-				return ModelCreation().create_LogisticRegression(input_shape, self.num_classes)
-
+				return Logistic(input_shape, self.num_classes)
 			elif self.model_name == 'DNN':
-				return ModelCreation().create_DNN(input_shape=input_shape, num_classes=self.num_classes)
-
+				return DNN(input_shape=input_shape, num_classes=self.num_classes)
 			elif self.model_name == 'CNN':
-				return ModelCreation().create_CNN(input_shape, self.num_classes)
-
+				return FedAvgCNN(input_shape, self.num_classes)
 			else:
 				raise Exception("Wrong model name")
 		except Exception as e:

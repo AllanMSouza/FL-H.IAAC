@@ -27,11 +27,10 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 # ****** Experiments descriptions ******
 # ======================================================================
 # EXPERIMENT 1
-# Alogrithm = 'None'
+# Algorithm = 'None'
 # ======================================================================
 # EXPERIMENT 2
 # Algorithm = 'POC', poc=0.2 and  new_client = FALSE
-# variations (most important)
 # ======================================================================
 # EXPERIMENT 3
 # Algorithm = 'POC' and new_client = TRUE new_clients_train = FALSE
@@ -39,42 +38,47 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 # EXPERIMENT 4
 # Algorithm = 'POC' and new_client = TRUE new_clients_train = TRUE
 # ======================================================================
+# EXPERIMENT 5
+# Algorithm = 'POC' and new_client = TRUE new_clients_train = TRUE
+#  Local epochs = 2
+# ======================================================================
 # Configurations
-# DATASETS      = ('MNIST', 'CIFAR10', )
-DATASETS      = ('MNIST',)
-MODELS        = ('DNN',)
-ALGORITHMS    = ('None', 'POC',)
-EPOCHS        = (1,)
-# CLIENTS       = {'MNIST': 50, 'CIFAR10': 50, 'CIFAR100': 50, 'MotionSense': 50, 'UCIHAR': 50}
-CLIENTS       = {'MNIST': [50]}
-CLIENTS2SELCT = {'None': (1,), 'POC': (0.2,)}
-NEW_CLIENTS = {'None': ('FALSE',), 'POC': ('FALSE', 'TRUE')}
-NEW_CLIENTS_TRAIN = {'FALSE': ('FALSE',), 'TRUE': ('FALSE', 'TRUE',)}
-# DECAY         = (0.001, 0.005, 0.009)
-ROUNDS        = 50
+# DATASETS      	= ('MNIST', 'CIFAR10', )
+DATASETS      		= ('MNIST',)
+MODELS        		= ('DNN',)
+ALGORITHMS    		= ('None', 'POC',)
+EPOCHS        		= {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2]}
+# CLIENTS       	= {'MNIST': 50, 'CIFAR10': 50, 'CIFAR100': 50, 'MotionSense': 50, 'UCIHAR': 50}
+CLIENTS       		= {'MNIST': [50]}
+CLIENTS2SELCT 		= {'None': (1,), 'POC': (0.2,)}
+NEW_CLIENTS 		= {'None': ('FALSE',), 'POC': ('FALSE', 'TRUE')}
+NEW_CLIENTS_TRAIN 	= {'FALSE': ('FALSE',), 'TRUE': ('FALSE', 'TRUE',)}
+# DECAY         	= (0.001, 0.005, 0.009)
+ROUNDS        		= 50
 # STRATEGIES 		= ('FedAVG', 'FedAvgM', 'FedClassAvg''QFedAvg', 'FedPer', 'FedProto', 'FedYogi', 'FedLocal',)
-STRATEGIES 		= ['FedProto', 'FedClassAvg', 'FedPer', 'FedLocal', 'FedAVG', 'FedAvgM']
+STRATEGIES 			= ['FedProto', 'FedClassAvg', 'FedPer', 'FedAVG', 'FedAvgM']
 
-EXPERIMENTS = {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''},
-			   2: {'algorithm': 'POC', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''},
-			   3: {'algorithm': 'POC', 'new_client': 'True', 'new_client_train': 'False', 'comment': """apos a rodada {}, apenas novos clientes sao testados""".format(int(ROUNDS*0.7))},
-			   4: {'algorithm': 'POC', 'new_client': 'True', 'new_client_train': 'True', 'comment': """apos a rodada {}, apenas novos clientes sao testados - novos clientes treinam apenas 1 vez (um round) - """.format(int(ROUNDS*0.7))}}
+EXPERIMENTS 		= {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''},
+					   2: {'algorithm': 'POC', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''},
+					   3: {'algorithm': 'POC', 'new_client': 'True', 'new_client_train': 'False', 'comment': """apos a rodada {}, apenas novos clientes sao testados""".format(int(ROUNDS*0.7))},
+					   4: {'algorithm': 'POC', 'new_client': 'True', 'new_client_train': 'True', 'comment': """apos a rodada {}, apenas novos clientes sao testados - novos clientes treinam apenas 1 vez (um round) - """.format(int(ROUNDS*0.7))},
+					   5: {'algorithm': 'POC', 'new_client': 'True', 'new_client_train': 'True', 'comment': """apos a rodada {}, apenas novos clientes sao testados - novos clientes treinam apenas 1 vez (um round) com duas épocas locais """.format(int(ROUNDS*0.7))}}
 
 def execute_experiment(experiment, algorithm, new_client, new_client_train, comment):
 
 	try:
 		for dataset in DATASETS:
 			for model in MODELS:
-				for epochs in EPOCHS:
+				for epochs in EPOCHS[experiment]:
 					for clients in CLIENTS[dataset]:
 						for poc in CLIENTS2SELCT[algorithm]:
 								for strategy in STRATEGIES:
 
-									print(f'Starting {strategy} POC-{poc} simulation for {dataset} clients with {model} model ...', os.getcwd())
-									test_config = """python {}/simulation.py --dataset='{}' --model='{}' --strategy='{}' --epochs={} --round={} --client={} --type='torch' --non-iid={} --aggregation_method='{}' --poc={} --new_clients={} --new_clients_train={}""".format(os.getcwd(), dataset, model, strategy, epochs, ROUNDS, clients, True, algorithm,  poc, new_client, new_client_train)
-									print("=====================================\nExecutando... \n", test_config, "\n=====================================")
-									subprocess.Popen(test_config, shell=True).wait()
-
+									# print(f'Starting {strategy} POC-{poc} simulation for {dataset} clients with {model} model ...', os.getcwd())
+									# test_config = """python {}/simulation.py --dataset='{}' --model='{}' --strategy='{}' --epochs={} --round={} --client={} --type='torch' --non-iid={} --aggregation_method='{}' --poc={} --new_clients={} --new_clients_train={}""".format(os.getcwd(), dataset, model, strategy, epochs, ROUNDS, clients, True, algorithm,  poc, new_client, new_client_train)
+									# print("=====================================\nExecutando... \n", test_config, "\n=====================================")
+									# subprocess.Popen(test_config, shell=True).wait()
+									pass
 									# subprocess.Popen(['rm', '-fr', '/tmp/ray/']).wait()
 									# subprocess.Popen(['rm', '/tmp/*.py']).wait()
 								strategies_arg = ""
