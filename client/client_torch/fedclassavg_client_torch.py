@@ -4,7 +4,7 @@ from torch.nn.parameter import Parameter
 import torch
 import json
 from pathlib import Path
-from model_definition_torch import DNN, DNN_proto_2, DNN_proto_4, Logistic, FedAvgCNN
+from model_definition_torch import DNN, DNN_proto_2, DNN_proto_4, Logistic, FedAvgCNNProto
 import numpy as np
 import os
 import sys
@@ -53,6 +53,25 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 
 		self.n_personalized_layers = n_personalized_layers * 2
 		self.lr_loss = torch.nn.MSELoss()
+		self.clone_model = self.create_model()
+
+	def create_model(self):
+
+		try:
+			# print("tamanho: ", self.input_shape)
+			input_shape = self.input_shape[1] * self.input_shape[2]
+			if self.model_name == 'Logist Regression':
+				return Logistic(input_shape, self.num_classes)
+			elif self.model_name == 'DNN':
+				return DNN_proto_2(input_shape=input_shape, num_classes=self.num_classes)
+			elif self.model_name == 'CNN':
+				return FedAvgCNNProto(input_shape, self.num_classes)
+			else:
+				raise Exception("Wrong model name")
+		except Exception as e:
+			print("create model")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
 
 	def get_parameters_of_model(self):
 		try:
@@ -62,6 +81,26 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 		except Exception as e:
 			print("get parameters of model")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+	def clone_model_classavg(self, model, target, c):
+		try:
+			i = 0
+			size = 4
+			parameters = [Parameter(torch.Tensor(i.tolist())) for i in c]
+			j = 0
+			for param, target_param in zip(model.parameters(), target.parameters()):
+				if i >= size - 2:
+					target_param.data = parameters[j].data.clone()
+					j+=1
+				else:
+					target_param.data = param.data.clone()
+				i+=1
+			print("iterador: ", i)
+			# target_param.grad = param.grad.clone()
+		except Exception as e:
+			print("clone model")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
 
 	def save_parameters(self):
 
@@ -164,14 +203,14 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 						train_num += y.shape[0]
 
 						self.optimizer.zero_grad()
-						output = self.model(x)
+						output, rep = self.model(x)
 						y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
 						loss = self.loss(output, y)
 						local_parameters = [torch.Tensor(i) for i in self.get_parameters_of_model()]
 						global_parameters = [torch.Tensor(i) for i in parameters]
 						if config['round'] > 1:
 							for i in range(len(local_parameters)):
-								loss += torch.mul(self.lr_loss(local_parameters[i], global_parameters[i]), 1/int(config['round']))
+								loss += torch.mul(self.lr_loss(local_parameters[i], global_parameters[i]), 1)
 						train_loss += loss.item() * y.shape[0]
 						loss.backward()
 						self.optimizer.step()
@@ -207,10 +246,13 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 			self.set_parameters_to_model(parameters)
 			# loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
 			self.model.eval()
+			clone_model = self.clone_model
+			self.clone_model_classavg(self.model, clone_model, parameters)
 
 			test_acc = 0
 			test_loss = 0
 			test_num = 0
+			server_round = int(config['round'])
 
 			with torch.no_grad():
 				for x, y in self.testloader:
@@ -221,12 +263,14 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 					self.optimizer.zero_grad()
 					y = y.to(self.device)
 					y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
-					output = self.model(x)
+					output, rep = self.model(x)
+					output2, rep2 = self.clone_model(x)
+					output = output + torch.mul(output2, 4/int(server_round))
 					loss = self.loss(output, y)
 					local_parameters = [torch.Tensor(i) for i in self.get_parameters_of_model()]
 					global_parameters = [torch.Tensor(i) for i in parameters]
-					for i in range(len(local_parameters)):
-						loss += torch.mul(self.lr_loss(local_parameters[i], global_parameters[i]), 1/int(config['round']))
+					# for i in range(len(local_parameters)):
+					# 	loss += torch.mul(self.lr_loss(local_parameters[i], global_parameters[i]), 1/int(config['round']))
 					test_loss += loss.item() * y.shape[0]
 					test_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
 					test_num += y.shape[0]

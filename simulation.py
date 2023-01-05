@@ -405,7 +405,7 @@ class SimulationFL():
 										num_epochs=self.epochs,
 										model=copy.deepcopy(self.create_client(0).create_model()),
 										server_learning_rate=1, # melhor lr=1
-										server_momentum=0.2, # melhor server_momentum=0.2
+										server_momentum=1, # melhor server_momentum=0.2
 										decay=self.decay,
 										perc_of_clients=self.poc,
 										dataset=self.dataset,

@@ -56,7 +56,8 @@ NEW_CLIENTS_TRAIN 	= {'FALSE': ('FALSE',), 'TRUE': ('FALSE', 'TRUE',)}
 # DECAY         	= (0.001, 0.005, 0.009)
 ROUNDS        		= 50
 # STRATEGIES 		= ('FedAVG', 'FedAvgM', 'FedClassAvg''QFedAvg', 'FedPer', 'FedProto', 'FedYogi', 'FedLocal',)
-STRATEGIES 			= ['FedProto', 'FedClassAvg', 'FedPer', 'FedAVG', 'FedAvgM']
+STRATEGIES_FOR_ANALYSIS 			= ['FedProposed', 'FedClassAvg', 'FedAvgM']
+STRATEGIES_TO_EXECUTE 			= ['FedProposed']
 
 EXPERIMENTS 		= {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''},
 					   2: {'algorithm': 'POC', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''},
@@ -72,17 +73,17 @@ def execute_experiment(experiment, algorithm, new_client, new_client_train, comm
 				for epochs in EPOCHS[experiment]:
 					for clients in CLIENTS[dataset]:
 						for poc in CLIENTS2SELCT[algorithm]:
-								for strategy in STRATEGIES:
+								for strategy in STRATEGIES_TO_EXECUTE:
 
-									# print(f'Starting {strategy} POC-{poc} simulation for {dataset} clients with {model} model ...', os.getcwd())
-									# test_config = """python {}/simulation.py --dataset='{}' --model='{}' --strategy='{}' --epochs={} --round={} --client={} --type='torch' --non-iid={} --aggregation_method='{}' --poc={} --new_clients={} --new_clients_train={}""".format(os.getcwd(), dataset, model, strategy, epochs, ROUNDS, clients, True, algorithm,  poc, new_client, new_client_train)
-									# print("=====================================\nExecutando... \n", test_config, "\n=====================================")
-									# subprocess.Popen(test_config, shell=True).wait()
+									print(f'Starting {strategy} POC-{poc} simulation for {dataset} clients with {model} model ...', os.getcwd())
+									test_config = """python {}/simulation.py --dataset='{}' --model='{}' --strategy='{}' --epochs={} --round={} --client={} --type='torch' --non-iid={} --aggregation_method='{}' --poc={} --new_clients={} --new_clients_train={}""".format(os.getcwd(), dataset, model, strategy, epochs, ROUNDS, clients, True, algorithm,  poc, new_client, new_client_train)
+									print("=====================================\nExecutando... \n", test_config, "\n=====================================")
+									subprocess.Popen(test_config, shell=True).wait()
 									pass
 									# subprocess.Popen(['rm', '-fr', '/tmp/ray/']).wait()
 									# subprocess.Popen(['rm', '/tmp/*.py']).wait()
 								strategies_arg = ""
-								for i in STRATEGIES:
+								for i in STRATEGIES_FOR_ANALYSIS:
 									strategies_arg = strategies_arg + """ --strategy='{}'""".format(i)
 								analytics_result_dir = """python analysis/non_iid.py --dataset='{}' --model='{}' --round={} --client={} --aggregation_method='{}' --poc={} --new_clients={} --new_clients_train={} --non-iid={} --comment='{}' --epochs={} --experiment={} {}""".format(dataset, model, ROUNDS, clients, algorithm, poc, new_client, new_client_train, True, comment, epochs, experiment, strategies_arg)
 								print("=====================================\nExecutando analytics... \n", analytics_result_dir,

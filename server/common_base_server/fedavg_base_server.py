@@ -215,12 +215,12 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		# self.selected_clients = selected_clients
 
 		self.clients_last_round = self.selected_clients
-		if server_round == int(self.num_rounds * self.round_threshold):
-			self.train_and_evaluate_proto_model()
+		# if server_round == int(self.num_rounds * self.round_threshold):
+		# 	self.train_and_evaluate_proto_model()
 		config = {
 			"selected_clients" : ' '.join(self.selected_clients),
 			"round"            : server_round,
-			"proto_parameters"	: self.proto_parameters,
+			"parameters"	: self.proto_parameters,
 			}
 
 		fit_ins = FitIns(parameters, config)
@@ -312,7 +312,8 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		selected_clients_evaluate = random.sample(list_of_valid_clients_for_evaluate, clients2select)
 		# Parameters and config
 		config = {
-			'round' : server_round
+			'round' : server_round,
+			'parameters': self.proto_parameters
 		}
 		if self.on_evaluate_config_fn is not None:
 			# Custom evaluation config function provided

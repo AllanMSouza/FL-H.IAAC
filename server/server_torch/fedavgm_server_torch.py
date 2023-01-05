@@ -49,6 +49,8 @@ class FedAvgMServerTorch(FedAvgMBaseServerTorch):
                          model=model,
                          decay=decay,
                          perc_of_clients=perc_of_clients,
+                         server_momentum=server_momentum,
+                         server_learning_rate=server_learning_rate,
                          dataset=dataset,
                          strategy_name='FedAvgM',
                          non_iid=non_iid,
