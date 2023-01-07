@@ -54,6 +54,8 @@ class FedProposedClientTorch(FedPerClientTorch):
 		self.n_personalized_layers = n_personalized_layers * 2
 		self.lr_loss = torch.nn.MSELoss()
 		self.clone_model = self.create_model()
+		self.round_of_last_fit = -1
+		self.rounds_of_fit = 0
 
 	def create_model(self):
 
@@ -130,7 +132,34 @@ class FedProposedClientTorch(FedPerClientTorch):
 			print("save parameters")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def set_parameters_to_model(self, parameters, server_round, type):
+	def _merge_models(self, global_parameters, metrics, filename, server_round, rounds_without_fit):
+
+		max_rounds_without_fit = 3
+		# normalizar dentro de 0 e 1
+		rounds_without_fit  = pow(min(rounds_without_fit, max_rounds_without_fit)/max_rounds_without_fit, 1.2)
+		global_model_weight = 1
+		if rounds_without_fit > 0:
+			# o denominador faz com que a curva se prolongue com menor decaimento
+			# Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
+			eq1 = (-rounds_without_fit-server_round/9)
+			# eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
+			# do modelo global
+			eq2 = pow(2.7, eq1)
+			eq3 = min(eq2, 1)
+			global_model_weight = eq3
+		local_model_weights = 1 - global_model_weight
+
+		print("rodada: ", server_round, " rounds sem fit: ", rounds_without_fit, "\npeso global: ", global_model_weight, " peso local: ", local_model_weights)
+
+		global_parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
+		for new_param, old_param in zip(global_parameters, self.clone_model.parameters()):
+			old_param.data = new_param.data.clone()
+		# self.clone_model.load_state_dict(torch.load(filename))
+		i = 0
+		for new_param, old_param in zip(self.clone_model.parameters(), self.model.parameters()):
+			old_param.data = (global_model_weight*new_param.data.clone() + local_model_weights*old_param.data.clone())
+
+	def set_parameters_to_model(self, global_parameters, server_round, type, config):
 		# ======================================================================================
 		# usando json
 		# try:
@@ -155,18 +184,32 @@ class FedProposedClientTorch(FedPerClientTorch):
 		# usando 'torch.load'
 		try:
 			filename = """./fedproposed_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
-			if type == 'fit' or server_round >= 35:
-				parameters = [Parameter(torch.Tensor(i.tolist())) for i in parameters]
+			if type == 'fit':
+
+				# todos os fit são com parâmetros novos (do servidor)
+				parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
 				for new_param, old_param in zip(parameters, self.model.parameters()):
 					old_param.data = new_param.data.clone()
-			elif os.path.exists(filename):
-				self.model.load_state_dict(torch.load(filename))
-			# if server_round >= 35 and self.new_clients:
-			# 	parameters = [Parameter(torch.Tensor(i.tolist())) for i in parameters]
-			# 	for new_param, old_param in zip(parameters, self.model.parameters()):
-			# 		old_param.data = new_param.data.clone()
-			# elif os.path.exists(filename) and (server_round < 35 or not self.new_clients):
-			# 	self.model.load_state_dict(torch.load(filename))
+				# if os.path.exists(filename) and self.rounds_of_fit :
+				# 	# todos os evaluate em rodadas menores que 35 são com os parâmetros personalizados*
+				# 	self.clone_model.load_state_dict(torch.load(filename))
+				# 	i = 0
+				# 	for new_param, old_param in zip(self.clone_model.parameters(), self.model.parameters()):
+				# 		if i >= 2:
+				# 			old_param.data = torch.div(torch.sum(new_param.data.clone(), old_param.data.clone()), 2)
+			elif type == 'evaluate':
+				# if self.rounds_of_fit > 0:
+				rounds_without_fit = server_round - self.round_of_last_fit
+				metric = config['metrics']
+				# 	print("recebeu: ", metric)global_
+				if self.rounds_of_fit <= 1:
+					parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
+					for new_param, old_param in zip(parameters, self.model.parameters()):
+						old_param.data = new_param.data.clone()
+				if os.path.exists(filename):
+					# todos os evaluate em rodadas menores que 35 são com os parâmetros personalizados*
+					self.model.load_state_dict(torch.load(filename))
+					self._merge_models(global_parameters, metric, filename, server_round, rounds_without_fit)
 		except Exception as e:
 			print("Set parameters to model")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
@@ -184,7 +227,9 @@ class FedProposedClientTorch(FedPerClientTorch):
 			#print(config)
 			server_round = int(config['round'])
 			if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
-				self.set_parameters_to_model(parameters, server_round, 'fit')
+				self.set_parameters_to_model(parameters, server_round, 'fit', config)
+				self.round_of_last_fit = server_round
+				self.rounds_of_fit += 1
 
 				selected = 1
 				self.model.train()
@@ -246,7 +291,7 @@ class FedProposedClientTorch(FedPerClientTorch):
 	def evaluate(self, parameters, config):
 		try:
 			server_round = int(config['round'])
-			self.set_parameters_to_model(parameters, server_round, 'evaluate')
+			self.set_parameters_to_model(parameters, server_round, 'evaluate', config)
 			# loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
 			self.model.eval()
 			# clone_model = self.clone_model

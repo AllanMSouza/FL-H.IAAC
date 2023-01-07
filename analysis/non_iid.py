@@ -48,7 +48,7 @@ class NonIid:
     def start(self):
 
         self.base_dir = """analysis/output/experiment_{}/{}/new_clients_{}_train_{}/{}_clients/{}/{}_local_epochs/{}/""".format(self.experiment,
-                                                                                            self.aggregation_method,
+                                                                                            self.aggregation_method+str(self.perc_of_clients),
                                                                                             self.new_clients,
                                                                                               self.new_clients_train,
                                                                                             self.n_clients,
