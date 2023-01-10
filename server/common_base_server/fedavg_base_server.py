@@ -78,7 +78,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.num_rounds = num_rounds
 		self.accuracy_history = {}
 		self.clients_fit_rounds_history = {i: -1 for i in range(self.num_clients)}
-		self.regression_window = 4
+		self.regression_window = 5
 		self.fedproposed_metrics = {}
 
 		#params
@@ -167,17 +167,18 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		coef = -10
 		std = 0
 		if server_round >= self.regression_window:
-			accuracy_history = np.array([self.accuracy_history[key] for key in list(self.accuracy_history)])[-self.regression_window:]
+			accuracy_history = np.array([self.accuracy_history[key] for key in self.accuracy_history])[-self.regression_window:]
 			y = np.array(accuracy_history)
-			x = np.array([[i] for i in range(1, self.regression_window+1)])
+			x = np.array([[i] for i in range(0, self.regression_window)])
 			reg = LinearRegression().fit(x, y)
 			coef = reg.coef_[0]
 			std = st.stdev(y)
-		self.fedproposed_metrics[server_round] = {}
+		self.fedproposed_metrics['acc'] = self.accuracy_history
+		self.fedproposed_metrics['coef'] = coef
 		# low std means stable global parameters
 		# low coef means that global parameters are not very useful
-		self.fedproposed_metrics[server_round]['coef'] = coef
-		self.fedproposed_metrics[server_round]['std'] = std
+		# self.fedproposed_metrics[server_round]['coef'] = coef
+		# self.fedproposed_metrics[server_round]['std'] = std
 
 
 	def train_and_evaluate_proto_model(self):

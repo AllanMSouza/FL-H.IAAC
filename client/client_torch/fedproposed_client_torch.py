@@ -3,6 +3,7 @@ from client.client_torch.fedper_client_torch import FedPerClientTorch
 from torch.nn.parameter import Parameter
 import torch
 import json
+import math
 from pathlib import Path
 from model_definition_torch import DNN, DNN_proto_2, DNN_proto_4, Logistic, FedAvgCNNProto
 import numpy as np
@@ -56,6 +57,7 @@ class FedProposedClientTorch(FedPerClientTorch):
 		self.clone_model = self.create_model()
 		self.round_of_last_fit = -1
 		self.rounds_of_fit = 0
+		self.accuracy_of_last_round_of_fit = -1
 
 	def create_model(self):
 
@@ -201,7 +203,7 @@ class FedProposedClientTorch(FedPerClientTorch):
 				# if self.rounds_of_fit > 0:
 				rounds_without_fit = server_round - self.round_of_last_fit
 				metric = config['metrics']
-				# 	print("recebeu: ", metric)global_
+				self._process_metrics(metric, server_round, rounds_without_fit)
 				if self.rounds_of_fit <= 1:
 					parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
 					for new_param, old_param in zip(parameters, self.model.parameters()):
@@ -213,6 +215,43 @@ class FedProposedClientTorch(FedPerClientTorch):
 		except Exception as e:
 			print("Set parameters to model")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+	def _process_metrics(self, metric, server_round, rounds_without_fit):
+
+		try:
+			# calcular o peso das rodadas sem treinamento dentre a quantidade total de rodadas
+			# rounds_without_fit = rounds_without_fit/server_round
+			accuracies = metric['acc']
+			coef = metric['coef']
+			global_acc_of_last_round_of_fit = 0
+			if self.round_of_last_fit > 0:
+				global_acc_of_last_round_of_fit = accuracies[self.round_of_last_fit]
+			mean_acc = global_acc_of_last_round_of_fit
+			std_acc = global_acc_of_last_round_of_fit
+			interval_acc = []
+			if self.round_of_last_fit < server_round:
+				for i in range(max([self.round_of_last_fit, server_round-3, 1]), server_round):
+					interval_acc.append(accuracies[i])
+				mean_acc = np.mean(interval_acc)
+				std_acc = np.std(interval_acc)
+
+			diff_mean_acc = mean_acc - self.accuracy_of_last_round_of_fit
+
+			if diff_mean_acc >= 0.01:
+				# A acurácia cresceu desde a última rodada de treinamento.
+				# Modelo global evoluiu
+				# Ângulo da reta que passa pela acurácia da última rodada treinada pelo cliente e o ponto médio atual da acurácia global
+				acc_growth_angle = diff_mean_acc/min(rounds_without_fit, 3)
+				# Valor próximo de 1 indica que o modelo global está com alta taxa de crescimento
+				# Valor próximo de 0 indica que o modelo global está convergindo
+				print("acuracia media: ", mean_acc)
+				print("Angulo0: ", coef)
+				acc_growth_angle = np.sin(math.radians(acc_growth_angle))
+				print("Angulo: ", acc_growth_angle, " rodada: ", server_round)
+		except Exception as e:
+			print("process metrics")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
 
 	def fit(self, parameters, config):
 		try:
@@ -334,6 +373,8 @@ class FedProposedClientTorch(FedPerClientTorch):
 				"cid"      : self.cid,
 				"accuracy" : float(accuracy)
 			}
+
+			self.accuracy_of_last_round_of_fit = float(accuracy)
 
 			return loss, test_num, evaluation_response
 		except Exception as e:
