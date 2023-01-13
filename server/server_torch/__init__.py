@@ -6,7 +6,7 @@ from server.server_torch.fedavgm_server_torch import FedAvgMServerTorch
 from server.server_torch.qfedavg_server_torch import QFedAvgServerTorch
 from server.server_torch.fedyogi_server_torch import FedYogiServerTorch
 from server.server_torch.fedclassavg_server_torch import FedClassAvgServerTorch
-from server.server_torch.fedproposed_server_torch import FedProposedServerTorch
+from server.server_torch.fedpredict_server_torch import FedPredictServerTorch
 
 __all__ = [
     "FedProtoServerTorch",
@@ -17,5 +17,5 @@ __all__ = [
     "QFedAvgServerTorch",
     "FedYogiServerTorch",
     "FedClassAvgServerTorch",
-    "FedProposedServerTorch"
+    "FedPredictServerTorch"
 ]

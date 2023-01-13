@@ -1,4 +1,4 @@
-from server.common_base_server import FedProposedBaseServer
+from server.common_base_server import FedPredictBaseServer
 from pathlib import Path
 import shutil
 from flwr.common import (
@@ -17,7 +17,7 @@ from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
 from typing import Callable, Dict, List, Optional, Tuple, Union
 import copy
 
-class FedProposedServerTorch(FedProposedBaseServer):
+class FedPredictServerTorch(FedPredictBaseServer):
 
     def __init__(self,
                  aggregation_method,
@@ -32,7 +32,7 @@ class FedProposedServerTorch(FedProposedBaseServer):
                  decay=0,
                  perc_of_clients=0,
                  dataset='',
-                 strategy_name='FedProposed',
+                 strategy_name='FedPredict',
                  model_name='',
                  new_clients=False,
                  new_clients_train=False):
@@ -49,7 +49,7 @@ class FedProposedServerTorch(FedProposedBaseServer):
                          server_momentum=server_momentum,
                          perc_of_clients=perc_of_clients,
                          dataset=dataset,
-                         strategy_name='FedProposed',
+                         strategy_name='FedPredict',
                          model_name=model_name,
                          new_clients=new_clients,
                          new_clients_train=new_clients_train)

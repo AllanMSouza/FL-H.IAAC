@@ -1,6 +1,6 @@
 import flwr as fl
-from client import FedAvgClientTf, FedPerClientTf, FedProtoClientTf, FedLocalClientTf, FedAvgClientTorch, FedProtoClientTorch, FedPerClientTorch, FedLocalClientTorch, FedAvgMClientTorch, QFedAvgClientTorch, FedYogiClientTorch, FedClassAvgClientTorch, FedProposedClientTorch
-from server import FedPerServerTf, FedProtoServerTf, FedAvgServerTf, FedLocalServerTf, FedAvgServerTorch, FedProtoServerTorch, FedPerServerTorch, FedLocalServerTorch, FedAvgMServerTorch, QFedAvgServerTorch, FedYogiServerTorch, FedClassAvgServerTorch, FedProposedServerTorch
+from client import FedAvgClientTf, FedPerClientTf, FedProtoClientTf, FedLocalClientTf, FedAvgClientTorch, FedProtoClientTorch, FedPerClientTorch, FedLocalClientTorch, FedAvgMClientTorch, QFedAvgClientTorch, FedYogiClientTorch, FedClassAvgClientTorch, FedPredictClientTorch
+from server import FedPerServerTf, FedProtoServerTf, FedAvgServerTf, FedLocalServerTf, FedAvgServerTorch, FedProtoServerTorch, FedPerServerTorch, FedLocalServerTorch, FedAvgMServerTorch, QFedAvgServerTorch, FedYogiServerTorch, FedClassAvgServerTorch, FedPredictServerTorch
 
 from optparse import OptionParser
 import tensorflow as tf
@@ -134,22 +134,22 @@ class SimulationFL():
 										   non_iid=self.non_iid,
 										   new_clients=self.new_clients,
 										   new_clients_train=self.new_clients_train)
-			if self.strategy_name == 'FedProposed':
+			if self.strategy_name == 'FedPredict':
 				# print("foi cliente")
-				return FedProposedClientTorch(cid=cid,
-										   n_clients=self.n_clients,
-										   n_classes=self.n_classes,
-										   epochs=self.epochs,
-										   model_name=self.model_name,
-										   client_selection=self.client_selection,
-										   strategy_name=self.strategy_name,
-										   aggregation_method=self.aggregation_method,
-										   dataset=self.dataset,
-										   perc_of_clients=self.poc,
-										   decay=self.decay,
-										   non_iid=self.non_iid,
-										   new_clients=self.new_clients,
-										   new_clients_train=self.new_clients_train)
+				return FedPredictClientTorch(cid=cid,
+                                             n_clients=self.n_clients,
+                                             n_classes=self.n_classes,
+                                             epochs=self.epochs,
+                                             model_name=self.model_name,
+                                             client_selection=self.client_selection,
+                                             strategy_name=self.strategy_name,
+                                             aggregation_method=self.aggregation_method,
+                                             dataset=self.dataset,
+                                             perc_of_clients=self.poc,
+                                             decay=self.decay,
+                                             non_iid=self.non_iid,
+                                             new_clients=self.new_clients,
+                                             new_clients_train=self.new_clients_train)
 			elif self.strategy_name == 'FedPer':
 				return  FedPerClientTorch(cid=cid,
 										  n_clients=self.n_clients,
@@ -338,22 +338,22 @@ class SimulationFL():
 										model_name=self.model_name,
 										new_clients=self.new_clients,
 										new_clients_train=self.new_clients_train)
-			if self.strategy_name == 'FedProposed':
+			if self.strategy_name == 'FedPredict':
 				# print("foi servidor")
-				return FedProposedServerTorch(aggregation_method=self.aggregation_method,
-										n_classes=self.n_classes,
-										fraction_fit=1,
-										num_clients=self.n_clients,
-										num_rounds=self.rounds,
-										num_epochs=self.epochs,
-										model=copy.deepcopy(self.create_client(0).create_model()),
-										decay=self.decay,
-										perc_of_clients=self.poc,
-										strategy_name=self.strategy_name,
-										dataset=self.dataset,
-										model_name=self.model_name,
-										new_clients=self.new_clients,
-										new_clients_train=self.new_clients_train)
+				return FedPredictServerTorch(aggregation_method=self.aggregation_method,
+											 n_classes=self.n_classes,
+											 fraction_fit=1,
+											 num_clients=self.n_clients,
+											 num_rounds=self.rounds,
+											 num_epochs=self.epochs,
+											 model=copy.deepcopy(self.create_client(0).create_model()),
+											 decay=self.decay,
+											 perc_of_clients=self.poc,
+											 strategy_name=self.strategy_name,
+											 dataset=self.dataset,
+											 model_name=self.model_name,
+											 new_clients=self.new_clients,
+											 new_clients_train=self.new_clients_train)
 			elif self.strategy_name == 'FedPer':
 				return  FedPerServerTorch(aggregation_method=self.aggregation_method,
 										n_classes=self.n_classes,

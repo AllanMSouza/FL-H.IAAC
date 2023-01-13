@@ -215,7 +215,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			# else:
 			# 	self.perc_of_clients = self.aux_perc_of_clients
 
-			self.clients2select = int(len(available_clients) * float(self.perc_of_clients))
+			self.clients2select = int(len(available_clients) * self.perc_of_clients)
 			if len(available_clients) == 0 and server_round != 1:
 				print("Erro na rodada: ", server_round)
 				exit()
@@ -335,7 +335,8 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		else:
 			clients2select = int(len(list_of_valid_clients_for_evaluate) * self.perc_of_clients)
 		print("clientes para selecionar (evaluate): ", clients2select, " de ", len(list_of_valid_clients_for_evaluate))
-		selected_clients_evaluate = random.sample(list_of_valid_clients_for_evaluate, clients2select)
+		# selected_clients_evaluate = random.sample(list_of_valid_clients_for_evaluate, clients2select)
+		selected_clients_evaluate = list_of_valid_clients_for_evaluate
 		# Parameters and config
 		config = {
 			'round' : server_round,

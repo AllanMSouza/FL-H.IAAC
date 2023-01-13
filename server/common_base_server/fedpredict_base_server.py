@@ -29,7 +29,7 @@ from server.common_base_server.fedper_base_server import FedPerBaseServer
 from pathlib import Path
 import shutil
 
-class FedProposedBaseServer(FedPerBaseServer):
+class FedPredictBaseServer(FedPerBaseServer):
 
 	def __init__(self,
 				 aggregation_method,
@@ -44,7 +44,7 @@ class FedProposedBaseServer(FedPerBaseServer):
 				 decay=0,
 				 perc_of_clients=0,
 				 dataset='',
-				 strategy_name='FedProposed',
+				 strategy_name='FedPredict',
 				 non_iid=False,
 				 model_name='',
 				 new_clients=False,
@@ -75,11 +75,11 @@ class FedProposedBaseServer(FedPerBaseServer):
 
 	def create_folder(self):
 
-		directory = """fedproposed_saved_weights/{}/""".format(self.model_name)
+		directory = """fedpredict_saved_weights/{}/""".format(self.model_name)
 		if Path(directory).exists():
 			shutil.rmtree(directory)
 		for i in range(self.num_clients):
-			Path("""fedproposed_saved_weights/{}/{}/""".format(self.model_name, i)).mkdir(parents=True, exist_ok=True)
+			Path("""fedpredict_saved_weights/{}/{}/""".format(self.model_name, i)).mkdir(parents=True, exist_ok=True)
 
 
 

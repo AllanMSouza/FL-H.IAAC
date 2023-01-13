@@ -17,7 +17,7 @@ warnings.simplefilter("ignore")
 import logging
 # logging.getLogger("torch").setLevel(logging.ERROR)
 
-class FedProposedClientTorch(FedPerClientTorch):
+class FedPredictClientTorch(FedPerClientTorch):
 
 	def __init__(self,
 				 cid,
@@ -26,7 +26,7 @@ class FedProposedClientTorch(FedPerClientTorch):
 				 epochs=1,
 				 model_name         = 'DNN',
 				 client_selection   = False,
-				 strategy_name      ='FedProposed',
+				 strategy_name      ='FedPredict',
 				 aggregation_method = 'None',
 				 dataset            = '',
 				 perc_of_clients    = 0,
@@ -55,7 +55,7 @@ class FedProposedClientTorch(FedPerClientTorch):
 		self.n_personalized_layers = n_personalized_layers * 2
 		self.lr_loss = torch.nn.MSELoss()
 		self.clone_model = self.create_model()
-		self.round_of_last_fit = -1
+		self.round_of_last_fit = 0
 		self.rounds_of_fit = 0
 		self.accuracy_of_last_round_of_fit = -1
 
@@ -126,7 +126,7 @@ class FedProposedClientTorch(FedPerClientTorch):
 		# ======================================================================================
 		# usando 'torch.save'
 		try:
-			filename = """./fedproposed_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid)
+			filename = """./fedpredict_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid)
 			if Path(filename).exists():
 				os.remove(filename)
 			torch.save(self.model.state_dict(), filename)
@@ -185,7 +185,7 @@ class FedProposedClientTorch(FedPerClientTorch):
 		# ======================================================================================
 		# usando 'torch.load'
 		try:
-			filename = """./fedproposed_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
+			filename = """./fedpredict_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
 			if type == 'fit':
 
 				# todos os fit são com parâmetros novos (do servidor)
@@ -200,10 +200,9 @@ class FedProposedClientTorch(FedPerClientTorch):
 				# 		if i >= 2:
 				# 			old_param.data = torch.div(torch.sum(new_param.data.clone(), old_param.data.clone()), 2)
 			elif type == 'evaluate':
-				# if self.rounds_of_fit > 0:
 				rounds_without_fit = server_round - self.round_of_last_fit
 				metric = config['metrics']
-				self._process_metrics(metric, server_round, rounds_without_fit)
+				# self._process_metrics(metric, server_round, rounds_without_fit)
 				if self.rounds_of_fit <= 1:
 					parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
 					for new_param, old_param in zip(parameters, self.model.parameters()):
