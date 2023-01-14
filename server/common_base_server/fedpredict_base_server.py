@@ -5,6 +5,7 @@ import os
 import time
 import csv
 import random
+import pandas as pd
 
 from logging import WARNING
 from flwr.common import FitIns
@@ -80,6 +81,6 @@ class FedPredictBaseServer(FedPerBaseServer):
 			shutil.rmtree(directory)
 		for i in range(self.num_clients):
 			Path("""fedpredict_saved_weights/{}/{}/""".format(self.model_name, i)).mkdir(parents=True, exist_ok=True)
-
+			pd.DataFrame({'round_of_last_fit': [0]}).to_csv("""fedpredict_saved_weights/{}/{}/{}.csv""".format(self.model_name, i, i), index=False)
 
 

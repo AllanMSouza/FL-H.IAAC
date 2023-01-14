@@ -58,6 +58,7 @@ class FedPredictClientTorch(FedPerClientTorch):
 		self.round_of_last_fit = 0
 		self.rounds_of_fit = 0
 		self.accuracy_of_last_round_of_fit = -1
+		self.start_server = 0
 
 	def create_model(self):
 
@@ -136,17 +137,36 @@ class FedPredictClientTorch(FedPerClientTorch):
 
 	def _merge_models(self, global_parameters, metrics, filename, server_round, rounds_without_fit):
 
+		# max_rounds_without_fit = 3
+		# alpha = 1.2
+		# beta = 9
+		# # normalizar dentro de 0 e 1
+		# rounds_without_fit  = pow(min(rounds_without_fit, max_rounds_without_fit)/max_rounds_without_fit, alpha)
+		# global_model_weight = 1
+		# if rounds_without_fit > 0:
+		# 	# o denominador faz com que a curva se prolongue com menor decaimento
+		# 	# Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
+		# 	eq1 = (-rounds_without_fit-(server_round-self.start_round)/beta)
+		# 	# eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
+		# 	# do modelo global
+		# 	eq2 = pow(2.7, eq1)
+		# 	eq3 = min(eq2, 1)
+		# 	global_model_weight = eq3
 		max_rounds_without_fit = 3
+		alpha = 2
+		beta = 9
+		print("teste3: ", rounds_without_fit, self.round_of_last_fit)
 		# normalizar dentro de 0 e 1
-		rounds_without_fit  = pow(min(rounds_without_fit, max_rounds_without_fit)/max_rounds_without_fit, 1.2)
+		rounds_without_fit = pow(
+			min(rounds_without_fit + 0.00001, max_rounds_without_fit) / (max_rounds_without_fit + 0.00001), -alpha)
 		global_model_weight = 1
 		if rounds_without_fit > 0:
 			# o denominador faz com que a curva se prolongue com menor decaimento
 			# Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
-			eq1 = (-rounds_without_fit-server_round/9)
+			eq1 = (- rounds_without_fit - (server_round-self.start_server) / beta)
 			# eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
 			# do modelo global
-			eq2 = pow(2.7, eq1)
+			eq2 = np.exp(eq1)
 			eq3 = min(eq2, 1)
 			global_model_weight = eq3
 		local_model_weights = 1 - global_model_weight
