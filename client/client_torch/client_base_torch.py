@@ -171,9 +171,6 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		for param, new_param in zip(model.parameters(), new_params):
 			param.data = new_param.data.clone()
 
-	def save_round_of_last_fit(self, server_round):
-		pass
-
 	def set_parameters_to_model(self, parameters):
 		try:
 			parameters = [Parameter(torch.Tensor(i.tolist())) for i in parameters]
@@ -230,7 +227,6 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 				trained_parameters = self.get_parameters_of_model()
 				self.save_parameters()
-				self.save_round_of_last_fit(int(config['round']))
 
 			total_time         = time.process_time() - start_time
 			size_of_parameters = sum([sum(map(sys.getsizeof, trained_parameters[i])) for i in range(len(trained_parameters))])

@@ -23,22 +23,37 @@ class Verify:
         self.server_analysis()
 
     def curve(self, server_round, rounds_without_fit, start_round):
-
         max_rounds_without_fit = 3
-        alpha = 2
+        alpha = 1.2
         beta = 9
         # normalizar dentro de 0 e 1
-        rounds_without_fit = pow(min(rounds_without_fit + 0.00001, max_rounds_without_fit) / (max_rounds_without_fit + 0.00001), -alpha)
+        rounds_without_fit  = pow(min(rounds_without_fit, max_rounds_without_fit)/max_rounds_without_fit, alpha)
         global_model_weight = 1
         if rounds_without_fit > 0:
-            # o denominador faz com que a curva se prolongue com menor decaimento
-            # Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
-            eq1 = (- rounds_without_fit - (server_round - start_round) / beta)
-            # eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
-            # do modelo global
-            eq2 = np.exp(eq1)
-            eq3 = min(eq2, 1)
-            global_model_weight = eq3
+        	# o denominador faz com que a curva se prolongue com menor decaimento
+        	# Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
+        	eq1 = (-rounds_without_fit-(server_round)/beta)
+        	# eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
+        	# do modelo global
+        	eq2 = pow(2.7, eq1)
+        	eq3 = min(eq2, 1)
+        	global_model_weight = eq3
+        # 1
+        # max_rounds_without_fit = 3
+        # alpha = 2
+        # beta = 9
+        # # normalizar dentro de 0 e 1
+        # rounds_without_fit = pow(min(rounds_without_fit + 0.00001, max_rounds_without_fit) / (max_rounds_without_fit + 0.00001), -alpha)
+        # global_model_weight = 1
+        # if rounds_without_fit > 0:
+        #     # o denominador faz com que a curva se prolongue com menor decaimento
+        #     # Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
+        #     eq1 = (- rounds_without_fit - (server_round - start_round) / beta)
+        #     # eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
+        #     # do modelo global
+        #     eq2 = np.exp(eq1)
+        #     eq3 = min(eq2, 1)
+        #     global_model_weight = eq3
 
         return global_model_weight
 

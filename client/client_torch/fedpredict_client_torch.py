@@ -10,6 +10,7 @@ import numpy as np
 import os
 import sys
 import time
+import pandas as pd
 
 import warnings
 warnings.simplefilter("ignore")
@@ -85,6 +86,17 @@ class FedPredictClientTorch(FedPerClientTorch):
 		except Exception as e:
 			print("get parameters of model")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+	def save_round_of_last_fit(self, server_round):
+
+		self.round_of_last_fit = server_round
+		print("teste4: ", server_round)
+		pd.DataFrame({'round_of_last_fit': [server_round]}).to_csv("""fedpredict_saved_weights/{}/{}/{}.csv""".format(self.model_name, self.cid, self.cid), index=False)
+
+	def get_round_of_last_fit(self):
+
+		self.round_of_last_fit = int(pd.read_csv("""fedpredict_saved_weights/{}/{}/{}.csv""".format(self.model_name, self.cid, self.cid))['round_of_last_fit'].iloc[0])
+
 
 	def clone_model_classavg(self, model, target, c):
 		try:
@@ -207,7 +219,7 @@ class FedPredictClientTorch(FedPerClientTorch):
 		try:
 			filename = """./fedpredict_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
 			if type == 'fit':
-
+				self.save_round_of_last_fit(int(config['round']))
 				# todos os fit são com parâmetros novos (do servidor)
 				parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
 				for new_param, old_param in zip(parameters, self.model.parameters()):
@@ -220,6 +232,7 @@ class FedPredictClientTorch(FedPerClientTorch):
 				# 		if i >= 2:
 				# 			old_param.data = torch.div(torch.sum(new_param.data.clone(), old_param.data.clone()), 2)
 			elif type == 'evaluate':
+				self.get_round_of_last_fit()
 				rounds_without_fit = server_round - self.round_of_last_fit
 				metric = config['metrics']
 				# self._process_metrics(metric, server_round, rounds_without_fit)
@@ -230,7 +243,7 @@ class FedPredictClientTorch(FedPerClientTorch):
 				if os.path.exists(filename):
 					# todos os evaluate em rodadas menores que 35 são com os parâmetros personalizados*
 					self.model.load_state_dict(torch.load(filename))
-					self._merge_models(global_parameters, metric, filename, server_round, rounds_without_fit)
+					# self._merge_models(global_parameters, metric, filename, server_round, rounds_without_fit)
 		except Exception as e:
 			print("Set parameters to model")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
