@@ -149,6 +149,7 @@ class FedPredictClientTorch(FedPerClientTorch):
 
 	def _merge_models(self, global_parameters, metrics, filename, server_round, rounds_without_fit):
 
+		# 0
 		# max_rounds_without_fit = 3
 		# alpha = 1.2
 		# beta = 9
@@ -164,23 +165,79 @@ class FedPredictClientTorch(FedPerClientTorch):
 		# 	eq2 = pow(2.7, eq1)
 		# 	eq3 = min(eq2, 1)
 		# 	global_model_weight = eq3
+		# 1
+		# max_rounds_without_fit = 3
+		# alpha = 2
+		# beta = 9
+		# print("teste3: ", rounds_without_fit, self.round_of_last_fit)
+		# # normalizar dentro de 0 e 1
+		# rounds_without_fit = pow(
+		# 	min(rounds_without_fit + 0.00001, max_rounds_without_fit) / (max_rounds_without_fit + 0.00001), -alpha)
+		# global_model_weight = 1
+		# if rounds_without_fit > 0:
+		# 	# o denominador faz com que a curva se prolongue com menor decaimento
+		# 	# Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
+		# 	eq1 = (- rounds_without_fit - (server_round-self.start_server) / beta)
+		# 	# eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
+		# 	# do modelo global
+		# 	eq2 = np.exp(eq1)
+		# 	eq3 = min(eq2, 1)
+		# 	global_model_weight = eq3
+		# 2
+		# max_rounds_without_fit = 3
+		# alpha = 1.2
+		# beta = 7
+		# start_round = 0
+		# # normalizar dentro de 0 e 1
+		# rounds_without_fit = pow(
+		# 	min(rounds_without_fit + 0.0001, max_rounds_without_fit), -alpha)
+		# global_model_weight = 1
+		# if rounds_without_fit > 0:
+		# 	# o denominador faz com que a curva se prolongue com menor decaimento
+		# 	# Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
+		# 	eq1 = (-rounds_without_fit - (server_round - start_round) / beta)
+		# 	# eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
+		# 	# do modelo global
+		# 	eq2 = np.exp(eq1)
+		# 	eq3 = min(eq2, 1)
+		# 	global_model_weight = eq3
+		# 4
+		# max_rounds_without_fit = 3
+		# alpha = 1.2
+		# beta = 9
+		# start_round = self.round_of_last_fit
+		# # normalizar dentro de 0 e 1
+		# rounds_without_fit = pow(
+		# 	min(rounds_without_fit + 0.0001, max_rounds_without_fit), -alpha)
+		# global_model_weight = 1
+		# if rounds_without_fit > 0:
+		# 	# o denominador faz com que a curva se prolongue com menor decaimento
+		# 	# Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
+		# 	eq1 = (-rounds_without_fit - (server_round - start_round) / beta)
+		# 	# eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
+		# 	# do modelo global
+		# 	eq2 = np.exp(eq1)
+		# 	eq3 = min(eq2, 1)
+		# 	global_model_weight = eq3
+		# 5
 		max_rounds_without_fit = 3
-		alpha = 2
+		alpha = 1.2
 		beta = 9
-		print("teste3: ", rounds_without_fit, self.round_of_last_fit)
+		start_round = self.round_of_last_fit
 		# normalizar dentro de 0 e 1
 		rounds_without_fit = pow(
-			min(rounds_without_fit + 0.00001, max_rounds_without_fit) / (max_rounds_without_fit + 0.00001), -alpha)
+			min(rounds_without_fit + 0.0001, max_rounds_without_fit), -alpha)
 		global_model_weight = 1
 		if rounds_without_fit > 0:
 			# o denominador faz com que a curva se prolongue com menor decaimento
 			# Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
-			eq1 = (- rounds_without_fit - (server_round-self.start_server) / beta)
+			eq1 = (-rounds_without_fit - (server_round - start_round) / beta)
 			# eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
 			# do modelo global
 			eq2 = np.exp(eq1)
 			eq3 = min(eq2, 1)
 			global_model_weight = eq3
+
 		local_model_weights = 1 - global_model_weight
 
 		print("rodada: ", server_round, " rounds sem fit: ", rounds_without_fit, "\npeso global: ", global_model_weight, " peso local: ", local_model_weights)
@@ -243,7 +300,7 @@ class FedPredictClientTorch(FedPerClientTorch):
 				if os.path.exists(filename):
 					# todos os evaluate em rodadas menores que 35 são com os parâmetros personalizados*
 					self.model.load_state_dict(torch.load(filename))
-					# self._merge_models(global_parameters, metric, filename, server_round, rounds_without_fit)
+					self._merge_models(global_parameters, metric, filename, server_round, rounds_without_fit)
 		except Exception as e:
 			print("Set parameters to model")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
