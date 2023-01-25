@@ -320,11 +320,14 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 					if client_['max_rounds'] == self.num_rounds:
 						clients_ids.append(i)
 			else:
-				# incluir apenas clientes novos após determinada rodada
+				# # incluir apenas clientes novos após determinada rodada
+				# for i in self.max_rounds_per_client:
+				# 	client_ = self.max_rounds_per_client[i]
+				# 	if client_['max_rounds'] != self.num_rounds:
+				# 		clients_ids.append(i)
+				# incluir todos os clie após determinada rodada
 				for i in self.max_rounds_per_client:
-					client_ = self.max_rounds_per_client[i]
-					if client_['max_rounds'] != self.num_rounds:
-						clients_ids.append(i)
+					clients_ids.append(i)
 
 		else:
 			clients_ids = list(self.max_rounds_per_client.keys())
