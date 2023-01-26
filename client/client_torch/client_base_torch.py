@@ -117,11 +117,13 @@ class ClientBaseTorch(fl.client.NumPyClient):
 	def create_model(self):
 
 		try:
-			# print("tamanho: ", self.input_shape)
+			print("tamanho: ", self.input_shape)
 			input_shape = self.input_shape[1]*self.input_shape[2]
 			if self.model_name == 'Logist Regression':
 				return Logistic(input_shape, self.num_classes)
 			elif self.model_name == 'DNN':
+				# if self.dataset == 'CIFAR10':
+				# 	input_shape = input_shape * self.input_shape[3]
 				return DNN(input_shape=input_shape, num_classes=self.num_classes)
 			elif self.model_name == 'CNN':
 				return FedAvgCNN(input_shape, self.num_classes)

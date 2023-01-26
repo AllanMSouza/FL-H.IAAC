@@ -220,23 +220,59 @@ class FedPredictClientTorch(FedPerClientTorch):
 		# 	eq3 = min(eq2, 1)
 		# 	global_model_weight = eq3
 		# 5
-		max_rounds_without_fit = 3
+		# max_rounds_without_fit = 3
+		# alpha = 1.2
+		# beta = 9
+		# start_round = self.round_of_last_fit
+		# # normalizar dentro de 0 e 1
+		# fx_rounds_without_fit = pow(
+		# 	min(rounds_without_fit + 0.0001, max_rounds_without_fit), -alpha)
+		# global_model_weight = 1
+		# if rounds_without_fit > 0:
+		# 	# o denominador faz com que a curva se prolongue com menor decaimento
+		# 	# Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
+		# 	eq1 = (-fx_rounds_without_fit - (rounds_without_fit/beta))
+		# 	# eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
+		# 	# do modelo global
+		# 	eq2 = np.exp(eq1)
+		# 	eq3 = min(eq2, 1)
+		# 	global_model_weight = eq3
+		# 6
+		# max_rounds_without_fit = 3
+		# alpha = 1.2
+		# beta = 9
+		# # evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
+		# delta = 0.02
+		# start_round = self.round_of_last_fit
+		# # normalizar dentro de 0 e 1
+		# fx_rounds_without_fit = pow(
+		# 	min(rounds_without_fit + delta, max_rounds_without_fit), -alpha)
+		# # global_model_weight = 1
+		# # o denominador faz com que a curva se prolongue com menor decaimento
+		# # Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
+		# eq1 = (-fx_rounds_without_fit - ((rounds_without_fit) / beta))
+		# # eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
+		# # do modelo global
+		# eq2 = np.exp(eq1)
+		# eq3 = min(eq2, 1)
+		# global_model_weight = eq3
+		# 8
+		max_rounds_without_fit = 4
 		alpha = 1.2
 		beta = 9
-		start_round = self.round_of_last_fit
+		mu = -1
+		# evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
+		delta = 0.02
 		# normalizar dentro de 0 e 1
-		rounds_without_fit = pow(
-			min(rounds_without_fit + 0.0001, max_rounds_without_fit), -alpha)
-		global_model_weight = 1
-		if rounds_without_fit > 0:
-			# o denominador faz com que a curva se prolongue com menor decaimento
-			# Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
-			eq1 = (-rounds_without_fit - (server_round - start_round) / beta)
-			# eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
-			# do modelo global
-			eq2 = np.exp(eq1)
-			eq3 = min(eq2, 1)
-			global_model_weight = eq3
+		updated_level = pow(
+			min(rounds_without_fit + delta, max_rounds_without_fit), -alpha)
+		evolutionary_level = (server_round/50)
+
+		eq1 = (-updated_level - evolutionary_level)
+		# eq2 = 1/(sigma*pow((2*np.pi), 1/2))
+		eq2 = 1
+		eq3 = eq2 * np.exp(eq1)
+		global_model_weight = min(eq3, 1)
 
 		local_model_weights = 1 - global_model_weight
 
