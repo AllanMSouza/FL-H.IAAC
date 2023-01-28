@@ -151,7 +151,7 @@ class Verify:
         # eq2 = 1/(sigma*pow((2*np.pi), 1/2))
         eq2 = 1
         eq3 = eq2 * np.exp(eq1)
-        global_model_weight = min(eq3, 1)
+        global_model_weight = eq3
 
         return global_model_weight
 
@@ -176,9 +176,9 @@ class Verify:
 
         x = x*4
         y = y0 + y1 + y2 + y3
-        x_column = 'Evolutionary level'
-        y_column = 'Global parameters weights'
-        hue = 'Outdated level'
+        x_column = 'Round'
+        y_column = 'Weight of global parameters'
+        hue = 'Round(s) without training'
         print(len(x), len(y), len(rounds_without_fit_list))
         df = pd.DataFrame({x_column: x, y_column: y, hue: rounds_without_fit_list})
         title = ""

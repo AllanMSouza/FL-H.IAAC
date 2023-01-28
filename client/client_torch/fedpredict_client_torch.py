@@ -259,8 +259,6 @@ class FedPredictClientTorch(FedPerClientTorch):
 		# 8
 		max_rounds_without_fit = 4
 		alpha = 1.2
-		beta = 9
-		mu = -1
 		# evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
 		delta = 0.02
 		# normalizar dentro de 0 e 1
@@ -272,7 +270,7 @@ class FedPredictClientTorch(FedPerClientTorch):
 		# eq2 = 1/(sigma*pow((2*np.pi), 1/2))
 		eq2 = 1
 		eq3 = eq2 * np.exp(eq1)
-		global_model_weight = min(eq3, 1)
+		global_model_weight = eq3
 
 		local_model_weights = 1 - global_model_weight
 
