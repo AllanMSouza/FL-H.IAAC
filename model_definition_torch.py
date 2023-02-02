@@ -120,7 +120,7 @@ class CNN_proto(nn.Module):
             self.fc2 = nn.Linear(120, 84)
             self.fc3 = nn.Linear(84, num_classes)
         except Exception as e:
-            print("CNN")
+            print("CNN proto")
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
     def forward(self, x):
@@ -134,7 +134,7 @@ class CNN_proto(nn.Module):
             out = self.fc3(out)
             return out, rep
         except Exception as e:
-            print("CNN forward")
+            print("CNN proto forward")
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 # ====================================================================================================================

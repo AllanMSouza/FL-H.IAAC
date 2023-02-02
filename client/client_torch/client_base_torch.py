@@ -70,6 +70,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		self.learning_rate = 0.01
 		self.new_clients = new_clients
 		self.new_clients_train = new_clients_train
+		# self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+		self.device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
 
 		#params
 		if self.aggregation_method == 'POC':
@@ -86,7 +88,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		self.train_client_filename = f"{self.base}/train_client.csv"
 
 		self.trainloader, self.testloader = self.load_data(self.dataset, n_clients=self.n_clients)
-		self.model                                           = self.create_model()
+		self.model                                           = self.create_model().to(self.device)
 		self.device = 'cpu'
 		self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate)
 
@@ -117,11 +119,14 @@ class ClientBaseTorch(fl.client.NumPyClient):
 	def create_model(self):
 
 		try:
-			print("tamanho: ", self.input_shape)
-			input_shape = self.input_shape[1]*self.input_shape[2]
+			print("tamanho: ", self.input_shape, " dispositivo: ", self.device)
+			if self.dataset in ['MNIST', 'CIFAR10']:
+				input_shape = self.input_shape[1]*self.input_shape[2]
 			if self.model_name == 'Logist Regression':
 				return Logistic(input_shape, self.num_classes)
 			elif self.model_name == 'DNN':
+				if self.dataset == 'UCIHAR':
+					input_shape = self.input_shape[1]
 				return DNN(input_shape=input_shape, num_classes=self.num_classes)
 			elif self.model_name == 'CNN':
 				if self.dataset == 'MNIST':
@@ -140,7 +145,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 	def get_parameters(self, config):
 		try:
-			parameters = [i.detach().numpy() for i in self.model.parameters()]
+			parameters = [i.detach().cpu().numpy() for i in self.model.parameters()]
 			return parameters
 		except Exception as e:
 			print("get parameters")

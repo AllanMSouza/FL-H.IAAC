@@ -62,31 +62,31 @@ class FedPredictClientTorch(FedPerClientTorch):
 		self.accuracy_of_last_round_of_fit = 0
 		self.start_server = 0
 
-	def create_model(self):
-
-		try:
-			# print("tamanho: ", self.input_shape)
-			input_shape = self.input_shape[1] * self.input_shape[2]
-			print("shape da entrada: ", self.input_shape)
-			# if self.dataset == 'CIFAR10':
-			# 	input_shape = input_shape*3
-			if self.model_name == 'Logist Regression':
-				return Logistic(input_shape, self.num_classes)
-			elif self.model_name == 'DNN':
-				return DNN_proto_2(input_shape=input_shape, num_classes=self.num_classes)
-			elif self.model_name == 'CNN':
-				if self.dataset == 'MNIST':
-					input_shape = 1
-					mid_dim = 256
-				else:
-					input_shape = 3
-					mid_dim = 400
-				return CNN(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim)
-			else:
-				raise Exception("Wrong model name")
-		except Exception as e:
-			print("create model")
-			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+	# def create_model(self):
+	#
+	# 	try:
+	# 		# print("tamanho: ", self.input_shape)
+	# 		input_shape = self.input_shape[1] * self.input_shape[2]
+	# 		print("shape da entrada: ", self.input_shape)
+	# 		# if self.dataset == 'CIFAR10':
+	# 		# 	input_shape = input_shape*3
+	# 		if self.model_name == 'Logist Regression':
+	# 			return Logistic(input_shape, self.num_classes)
+	# 		elif self.model_name == 'DNN':
+	# 			return DNN_proto_2(input_shape=input_shape, num_classes=self.num_classes)
+	# 		elif self.model_name == 'CNN':
+	# 			if self.dataset == 'MNIST':
+	# 				input_shape = 1
+	# 				mid_dim = 256
+	# 			else:
+	# 				input_shape = 3
+	# 				mid_dim = 400
+	# 			return CNN(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim)
+	# 		else:
+	# 			raise Exception("Wrong model name")
+	# 	except Exception as e:
+	# 		print("create model")
+	# 		print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 
 	def get_parameters_of_model(self):

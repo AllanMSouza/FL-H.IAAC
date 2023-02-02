@@ -53,7 +53,7 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 
 		self.n_personalized_layers = n_personalized_layers * 2
 		self.lr_loss = torch.nn.MSELoss()
-		self.clone_model = self.create_model()
+		self.clone_model = self.create_model().to(self.device)
 
 	def create_model(self):
 

@@ -56,6 +56,7 @@ class ManageDatasets():
 		test.drop('subject', axis=1, inplace=True)
 		test.drop('trial', axis=1, inplace=True)
 		x_test = test.values
+		print("exemplo: ", x_test.shape, y_test.shape)
 	    
 		return x_train, y_train, x_test, y_test
 
@@ -111,7 +112,7 @@ class ManageDatasets():
 
 			y_train = y_train[idx_train]
 			y_test  = y_test[idx_test]
-			
+			exit()
 
 		else:
 
