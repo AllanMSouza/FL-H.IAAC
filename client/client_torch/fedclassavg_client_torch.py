@@ -4,7 +4,7 @@ from torch.nn.parameter import Parameter
 import torch
 import json
 from pathlib import Path
-from model_definition_torch import DNN, DNN_proto_2, DNN_proto_4, Logistic, FedAvgCNNProto
+from model_definition_torch import DNN, DNN_proto_2, DNN_proto_4, Logistic, CNN_proto
 import numpy as np
 import os
 import sys
@@ -65,7 +65,13 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 			elif self.model_name == 'DNN':
 				return DNN_proto_2(input_shape=input_shape, num_classes=self.num_classes)
 			elif self.model_name == 'CNN':
-				return FedAvgCNNProto(input_shape, self.num_classes)
+				if self.dataset == 'MNIST':
+					input_shape = 1
+					mid_in = 256
+				else:
+					input_shape = 3
+					mid_in = 400
+				return CNN_proto(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_in)
 			else:
 				raise Exception("Wrong model name")
 		except Exception as e:

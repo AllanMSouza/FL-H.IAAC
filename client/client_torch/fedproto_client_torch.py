@@ -10,8 +10,8 @@ import time
 import sys
 from collections import defaultdict
 from pathlib import Path
-from dataset_utils import ManageDatasets
-from model_definition_torch import DNN, DNN_proto_2, DNN_proto_4, Logistic, FedAvgCNNProto
+from dataset_utils_torch import ManageDatasets
+from model_definition_torch import DNN, DNN_proto_2, DNN_proto_4, Logistic, CNN_proto
 import csv
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -80,7 +80,13 @@ class FedProtoClientTorch(ClientBaseTorch):
 			elif self.model_name == 'DNN':
 				return DNN_proto_2(input_shape=input_shape, num_classes=self.num_classes)
 			elif self.model_name == 'CNN':
-				return FedAvgCNNProto(input_shape, self.num_classes)
+				if self.dataset == 'MNIST':
+					input_shape = 1
+					mid_dim = 256
+				else:
+					input_shape = 3
+					mid_dim = 400
+				return CNN_proto(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim)
 			else:
 				raise Exception("Wrong model name")
 		except Exception as e:

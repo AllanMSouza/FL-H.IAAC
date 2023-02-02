@@ -81,6 +81,6 @@ class FedPredictBaseServer(FedPerBaseServer):
 			shutil.rmtree(directory)
 		for i in range(self.num_clients):
 			Path("""fedpredict_saved_weights/{}/{}/""".format(self.model_name, i)).mkdir(parents=True, exist_ok=True)
-			pd.DataFrame({'round_of_last_fit': [0]}).to_csv("""fedpredict_saved_weights/{}/{}/{}.csv""".format(self.model_name, i, i), index=False)
+			pd.DataFrame({'round_of_last_fit': [0], 'acc_of_last_fit': [0]}).to_csv("""fedpredict_saved_weights/{}/{}/{}.csv""".format(self.model_name, i, i), index=False)
 
 

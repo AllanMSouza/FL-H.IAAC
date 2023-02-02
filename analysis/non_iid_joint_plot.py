@@ -45,8 +45,8 @@ class NonIid:
 
         return strategy_config
 
-    def start(self, title):
-        title=''
+    def start(self, ax, title):
+
         self.base_dir = """analysis/output/experiment_{}/{}/new_clients_{}_train_{}/{}_clients/{}/{}_local_epochs/{}/""".format(self.experiment,
                                                                                             self.aggregation_method+str(self.perc_of_clients),
                                                                                             self.new_clients,
@@ -86,11 +86,11 @@ class NonIid:
                 else:
                     self.df_files_names[j] = pd.concat([self.df_files_names[j], df], ignore_index=True)
 
-        self.server_analysis(title)
-        self.evaluate_client_analysis()
+        # self.server_analysis()
+        self.evaluate_client_analysis(ax, title)
 
 
-    def server_analysis(self, title):
+    def server_analysis(self):
 
         # server analysis
         df = self.df_files_names['server']
@@ -99,6 +99,7 @@ class NonIid:
         x_column = 'Server round'
         y_column = 'Accuracy aggregated (%)'
         hue = 'Strategy'
+        title = ""
         line_plot(df=df,
                   base_dir=self.base_dir,
                   file_name="server_acc_round_lineplot",
@@ -119,65 +120,65 @@ class NonIid:
                   title=title,
                   hue=hue)
 
-    def evaluate_client_analysis(self):
+    def evaluate_client_analysis(self, ax, title):
         # acc
         df = self.df_files_names['evaluate_client']
         df['Accuracy (%)'] = df['Accuracy'] * 100
         x_column = 'Round'
         y_column = 'Accuracy (%)'
         hue = 'Strategy'
-        title = ""
         line_plot(df=df,
                   base_dir=self.base_dir,
                   file_name="evaluate_client_acc_round_lineplot",
                   x_column=x_column,
                   y_column=y_column,
                   title=title,
-                  hue=hue)
+                  hue=hue,
+                  ax=ax)
 
         # loss
-        x_column = 'Round'
-        y_column = 'Loss'
-        hue = 'Strategy'
-        title = ""
-        line_plot(df=df,
-                  base_dir=self.base_dir,
-                  file_name="evaluate_client_loss_round_lineplot",
-                  x_column=x_column,
-                  y_column=y_column,
-                  title=title,
-                  hue=hue)
-
-        # size of parameters
-        print(df)
-        def strategy(df):
-            parameters = int(df['Size of parameters'].mean())
-
-            return pd.DataFrame({'Size of parameters (bytes)': [parameters]})
-        df_test = df[['Round', 'Size of parameters', 'Strategy']].groupby('Strategy').apply(lambda e: strategy(e)).reset_index()[['Size of parameters (bytes)', 'Strategy']]
-        df_test.to_csv(self.base_dir+"csv/evaluate_client_size_of_parameters_round.csv", index=False)
-        print(df_test)
-        x_column = 'Strategy'
-        y_column = 'Size of parameters (bytes)'
-        hue = None
-        title = "Two layers"
-        bar_plot(df=df_test,
-                  base_dir=self.base_dir,
-                  file_name="evaluate_client_size_of_parameters_round_barplot",
-                  x_column=x_column,
-                  y_column=y_column,
-                  title=title,
-                  hue=hue,
-                 sci=True)
-        bar_plot(df=df_test,
-                 base_dir=self.base_dir,
-                 file_name="evaluate_client_size_of_parameters_round_barplot",
-                 x_column=x_column,
-                 y_column=y_column,
-                 title=title,
-                 hue=hue,
-                 log_scale=True,
-                 sci=True)
+        # x_column = 'Round'
+        # y_column = 'Loss'
+        # hue = 'Strategy'
+        # title = ""
+        # line_plot(df=df,
+        #           base_dir=self.base_dir,
+        #           file_name="evaluate_client_loss_round_lineplot",
+        #           x_column=x_column,
+        #           y_column=y_column,
+        #           title=title,
+        #           hue=hue)
+        #
+        # # size of parameters
+        # print(df)
+        # def strategy(df):
+        #     parameters = int(df['Size of parameters'].mean())
+        #
+        #     return pd.DataFrame({'Size of parameters (bytes)': [parameters]})
+        # df_test = df[['Round', 'Size of parameters', 'Strategy']].groupby('Strategy').apply(lambda e: strategy(e)).reset_index()[['Size of parameters (bytes)', 'Strategy']]
+        # df_test.to_csv(self.base_dir+"csv/evaluate_client_size_of_parameters_round.csv", index=False)
+        # print(df_test)
+        # x_column = 'Strategy'
+        # y_column = 'Size of parameters (bytes)'
+        # hue = None
+        # title = "Two layers"
+        # bar_plot(df=df_test,
+        #           base_dir=self.base_dir,
+        #           file_name="evaluate_client_size_of_parameters_round_barplot",
+        #           x_column=x_column,
+        #           y_column=y_column,
+        #           title=title,
+        #           hue=hue,
+        #          sci=True)
+        # bar_plot(df=df_test,
+        #          base_dir=self.base_dir,
+        #          file_name="evaluate_client_size_of_parameters_round_barplot",
+        #          x_column=x_column,
+        #          y_column=y_column,
+        #          title=title,
+        #          hue=hue,
+        #          log_scale=True,
+        #          sci=True)
 
 
 
@@ -254,11 +255,51 @@ if __name__ == '__main__':
 
     (opt, args) = parser.parse_args()
 
-    # strategy_name_list = ['FedAVG', 'FedAvgM', 'FedClassAvg''QFedAvg', 'FedPer', 'FedProto', 'FedYogi', 'FedLocal']
-    strategy_name_list = opt.strategies
+    strategy_name_list = ['FedPredict', 'FedAVG', 'FedClassAvg', 'FedPer']
+    # strategy_name_list = opt.strategies
 
     # noniid = NonIID(int(opt.n_clients), opt.aggregation_method, opt.model_name, strategy_name_list, opt.dataset)
     # noniid.start()
-    c = NonIid(int(opt.n_clients), opt.aggregation_method, float(opt.poc), ast.literal_eval(opt.non_iid), opt.model_name, strategy_name_list, opt.dataset, ast.literal_eval(opt.new_clients), ast.literal_eval(opt.new_clients_train), opt.experiment, opt.comment, opt.epochs)
+    fig, axs = plt.subplots(2, 2, figsize=(12,9))
+    n_clients = 50
+    aggregation_method = 'POC'
+    poc = 0.2
+    non_iid = True
+    comment = ''
+    epochs = 1
+    model = 'DNN'
+    dataset = 'MNIST'
+    # Experiment 1
+    new_clients = False
+    new_clients_train = False
+    experiment = 1
+    c = NonIid(n_clients, aggregation_method, poc, non_iid, model, strategy_name_list, dataset, new_clients, new_clients_train, experiment, comment, epochs)
+    c.start(ax=axs[0, 0], title='Exp. ' + str(experiment))
+    # Experiment 2
+    new_clients = True
+    new_clients_train = False
+    experiment = 2
+    c = NonIid(n_clients, aggregation_method, poc, non_iid, model, strategy_name_list, dataset, new_clients,
+               new_clients_train, experiment, comment, epochs)
+    c.start(ax=axs[0, 1], title='Exp. ' + str(experiment))
+    axs[0, 1].get_legend().remove()
+    # Experiment 3
+    new_clients = True
+    new_clients_train = True
+    experiment = 3
+    c = NonIid(n_clients, aggregation_method, poc, non_iid, model, strategy_name_list, dataset, new_clients,
+               new_clients_train, experiment, comment, epochs)
+    c.start(ax=axs[1, 0], title='Exp. ' + str(experiment))
+    axs[1, 0].get_legend().remove()
+    # Experiment 4
+    new_clients = True
+    new_clients_train = True
+    experiment = 4
+    c = NonIid(n_clients, aggregation_method, poc, non_iid, model, strategy_name_list, dataset, new_clients,
+               new_clients_train, experiment, comment, epochs)
     print(c.n_clients, " ", c.strategy_name_list)
-    c.start('Exp. ' + str(int(opt.experiment)-1))
+    c.start(ax=axs[1, 1], title='Exp. ' + str(experiment))
+    axs[1, 1].get_legend().remove()
+
+    fig.savefig("joint_plot.png", bbox_inches='tight', dpi=400)
+    fig.savefig("joint_plot.svg", bbox_inches='tight', dpi=400)

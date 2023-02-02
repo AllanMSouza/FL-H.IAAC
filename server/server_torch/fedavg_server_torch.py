@@ -3,7 +3,7 @@ import sys
 from server.common_base_server import FedAvgBaseServer
 
 import torch
-from dataset_utils import ManageDatasets
+from dataset_utils_torch import ManageDatasets
 from torch.utils.data import TensorDataset, DataLoader
 
 class FedAvgServerTorch(FedAvgBaseServer):

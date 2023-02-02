@@ -5,8 +5,9 @@ import torch
 import json
 import math
 from pathlib import Path
-from model_definition_torch import DNN, DNN_proto_2, DNN_proto_4, Logistic, FedAvgCNNProto
+from model_definition_torch import DNN, DNN_proto_2, DNN_proto_4, Logistic, CNN
 import numpy as np
+import json
 import os
 import sys
 import time
@@ -58,7 +59,7 @@ class FedPredictClientTorch(FedPerClientTorch):
 		self.clone_model = self.create_model()
 		self.round_of_last_fit = 0
 		self.rounds_of_fit = 0
-		self.accuracy_of_last_round_of_fit = -1
+		self.accuracy_of_last_round_of_fit = 0
 		self.start_server = 0
 
 	def create_model(self):
@@ -66,12 +67,21 @@ class FedPredictClientTorch(FedPerClientTorch):
 		try:
 			# print("tamanho: ", self.input_shape)
 			input_shape = self.input_shape[1] * self.input_shape[2]
+			print("shape da entrada: ", self.input_shape)
+			# if self.dataset == 'CIFAR10':
+			# 	input_shape = input_shape*3
 			if self.model_name == 'Logist Regression':
 				return Logistic(input_shape, self.num_classes)
 			elif self.model_name == 'DNN':
 				return DNN_proto_2(input_shape=input_shape, num_classes=self.num_classes)
 			elif self.model_name == 'CNN':
-				return FedAvgCNNProto(input_shape, self.num_classes)
+				if self.dataset == 'MNIST':
+					input_shape = 1
+					mid_dim = 256
+				else:
+					input_shape = 3
+					mid_dim = 400
+				return CNN(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim)
 			else:
 				raise Exception("Wrong model name")
 		except Exception as e:
@@ -88,14 +98,23 @@ class FedPredictClientTorch(FedPerClientTorch):
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def save_round_of_last_fit(self, server_round):
-
-		self.round_of_last_fit = server_round
-		print("teste4: ", server_round)
-		pd.DataFrame({'round_of_last_fit': [server_round]}).to_csv("""fedpredict_saved_weights/{}/{}/{}.csv""".format(self.model_name, self.cid, self.cid), index=False)
-
+		try:
+			self.round_of_last_fit = server_round
+			print("teste4: ", server_round)
+			pd.DataFrame(
+				{'round_of_last_fit': [server_round], 'acc_of_last_fit': [self.accuracy_of_last_round_of_fit]}).to_csv(
+				"""fedpredict_saved_weights/{}/{}/{}.csv""".format(self.model_name, self.cid, self.cid), index=False)
+		except Exception as e:
+			print("save_round_of_last_fit")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 	def get_round_of_last_fit(self):
-
-		self.round_of_last_fit = int(pd.read_csv("""fedpredict_saved_weights/{}/{}/{}.csv""".format(self.model_name, self.cid, self.cid))['round_of_last_fit'].iloc[0])
+		try:
+			row = pd.read_csv("""fedpredict_saved_weights/{}/{}/{}.csv""".format(self.model_name, self.cid, self.cid))
+			self.round_of_last_fit = int(row['round_of_last_fit'])
+			self.accuracy_of_last_round_of_fit = float(row['acc_of_last_fit'])
+		except Exception as e:
+			print("On get_round_of_last_fit", " user id: ", self.cid, " row: ", row)
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 
 	def clone_model_classavg(self, model, target, c):
@@ -149,140 +168,148 @@ class FedPredictClientTorch(FedPerClientTorch):
 
 	def _merge_models(self, global_parameters, metrics, filename, server_round, rounds_without_fit):
 
-		# 0
-		# max_rounds_without_fit = 3
-		# alpha = 1.2
-		# beta = 9
-		# # normalizar dentro de 0 e 1
-		# rounds_without_fit  = pow(min(rounds_without_fit, max_rounds_without_fit)/max_rounds_without_fit, alpha)
-		# global_model_weight = 1
-		# if rounds_without_fit > 0:
-		# 	# o denominador faz com que a curva se prolongue com menor decaimento
-		# 	# Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
-		# 	eq1 = (-rounds_without_fit-(server_round-self.start_round)/beta)
-		# 	# eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
-		# 	# do modelo global
-		# 	eq2 = pow(2.7, eq1)
-		# 	eq3 = min(eq2, 1)
-		# 	global_model_weight = eq3
-		# 1
-		# max_rounds_without_fit = 3
-		# alpha = 2
-		# beta = 9
-		# print("teste3: ", rounds_without_fit, self.round_of_last_fit)
-		# # normalizar dentro de 0 e 1
-		# rounds_without_fit = pow(
-		# 	min(rounds_without_fit + 0.00001, max_rounds_without_fit) / (max_rounds_without_fit + 0.00001), -alpha)
-		# global_model_weight = 1
-		# if rounds_without_fit > 0:
-		# 	# o denominador faz com que a curva se prolongue com menor decaimento
-		# 	# Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
-		# 	eq1 = (- rounds_without_fit - (server_round-self.start_server) / beta)
-		# 	# eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
-		# 	# do modelo global
-		# 	eq2 = np.exp(eq1)
-		# 	eq3 = min(eq2, 1)
-		# 	global_model_weight = eq3
-		# 2
-		# max_rounds_without_fit = 3
-		# alpha = 1.2
-		# beta = 7
-		# start_round = 0
-		# # normalizar dentro de 0 e 1
-		# rounds_without_fit = pow(
-		# 	min(rounds_without_fit + 0.0001, max_rounds_without_fit), -alpha)
-		# global_model_weight = 1
-		# if rounds_without_fit > 0:
-		# 	# o denominador faz com que a curva se prolongue com menor decaimento
-		# 	# Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
-		# 	eq1 = (-rounds_without_fit - (server_round - start_round) / beta)
-		# 	# eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
-		# 	# do modelo global
-		# 	eq2 = np.exp(eq1)
-		# 	eq3 = min(eq2, 1)
-		# 	global_model_weight = eq3
-		# 4
-		# max_rounds_without_fit = 3
-		# alpha = 1.2
-		# beta = 9
-		# start_round = self.round_of_last_fit
-		# # normalizar dentro de 0 e 1
-		# rounds_without_fit = pow(
-		# 	min(rounds_without_fit + 0.0001, max_rounds_without_fit), -alpha)
-		# global_model_weight = 1
-		# if rounds_without_fit > 0:
-		# 	# o denominador faz com que a curva se prolongue com menor decaimento
-		# 	# Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
-		# 	eq1 = (-rounds_without_fit - (server_round - start_round) / beta)
-		# 	# eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
-		# 	# do modelo global
-		# 	eq2 = np.exp(eq1)
-		# 	eq3 = min(eq2, 1)
-		# 	global_model_weight = eq3
-		# 5
-		# max_rounds_without_fit = 3
-		# alpha = 1.2
-		# beta = 9
-		# start_round = self.round_of_last_fit
-		# # normalizar dentro de 0 e 1
-		# fx_rounds_without_fit = pow(
-		# 	min(rounds_without_fit + 0.0001, max_rounds_without_fit), -alpha)
-		# global_model_weight = 1
-		# if rounds_without_fit > 0:
-		# 	# o denominador faz com que a curva se prolongue com menor decaimento
-		# 	# Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
-		# 	eq1 = (-fx_rounds_without_fit - (rounds_without_fit/beta))
-		# 	# eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
-		# 	# do modelo global
-		# 	eq2 = np.exp(eq1)
-		# 	eq3 = min(eq2, 1)
-		# 	global_model_weight = eq3
-		# 6
-		# max_rounds_without_fit = 3
-		# alpha = 1.2
-		# beta = 9
-		# # evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
-		# delta = 0.02
-		# start_round = self.round_of_last_fit
-		# # normalizar dentro de 0 e 1
-		# fx_rounds_without_fit = pow(
-		# 	min(rounds_without_fit + delta, max_rounds_without_fit), -alpha)
-		# # global_model_weight = 1
-		# # o denominador faz com que a curva se prolongue com menor decaimento
-		# # Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
-		# eq1 = (-fx_rounds_without_fit - ((rounds_without_fit) / beta))
-		# # eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
-		# # do modelo global
-		# eq2 = np.exp(eq1)
-		# eq3 = min(eq2, 1)
-		# global_model_weight = eq3
-		# 8
-		max_rounds_without_fit = 4
-		alpha = 1.2
-		# evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
-		delta = 0.02
-		# normalizar dentro de 0 e 1
-		updated_level = pow(
-			min(rounds_without_fit + delta, max_rounds_without_fit), -alpha)
-		evolutionary_level = (server_round/50)
+		try:
+			#print("metrica: ", type(metrics), metrics)
+			if server_round > 1:
+				acc = metrics['acc'][server_round-1]
+				#print("acc: ", acc)
+			else:
+				acc = 0
+			# 0
+			# max_rounds_without_fit = 3
+			# alpha = 1.2
+			# beta = 9
+			# # normalizar dentro de 0 e 1
+			# rounds_without_fit  = pow(min(rounds_without_fit, max_rounds_without_fit)/max_rounds_without_fit, alpha)
+			# global_model_weight = 1
+			# if rounds_without_fit > 0:
+			# 	# o denominador faz com que a curva se prolongue com menor decaimento
+			# 	# Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
+			# 	eq1 = (-rounds_without_fit-(server_round-self.start_round)/beta)
+			# 	# eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
+			# 	# do modelo global
+			# 	eq2 = pow(2.7, eq1)
+			# 	eq3 = min(eq2, 1)
+			# 	global_model_weight = eq3
+			# 1
+			# max_rounds_without_fit = 3
+			# alpha = 2
+			# beta = 9
+			# print("teste3: ", rounds_without_fit, self.round_of_last_fit)
+			# # normalizar dentro de 0 e 1
+			# rounds_without_fit = pow(
+			# 	min(rounds_without_fit + 0.00001, max_rounds_without_fit) / (max_rounds_without_fit + 0.00001), -alpha)
+			# global_model_weight = 1
+			# if rounds_without_fit > 0:
+			# 	# o denominador faz com que a curva se prolongue com menor decaimento
+			# 	# Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
+			# 	eq1 = (- rounds_without_fit - (server_round-self.start_server) / beta)
+			# 	# eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
+			# 	# do modelo global
+			# 	eq2 = np.exp(eq1)
+			# 	eq3 = min(eq2, 1)
+			# 	global_model_weight = eq3
+			# 2
+			# max_rounds_without_fit = 3
+			# alpha = 1.2
+			# beta = 7
+			# start_round = 0
+			# # normalizar dentro de 0 e 1
+			# rounds_without_fit = pow(
+			# 	min(rounds_without_fit + 0.0001, max_rounds_without_fit), -alpha)
+			# global_model_weight = 1
+			# if rounds_without_fit > 0:
+			# 	# o denominador faz com que a curva se prolongue com menor decaimento
+			# 	# Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
+			# 	eq1 = (-rounds_without_fit - (server_round - start_round) / beta)
+			# 	# eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
+			# 	# do modelo global
+			# 	eq2 = np.exp(eq1)
+			# 	eq3 = min(eq2, 1)
+			# 	global_model_weight = eq3
+			# 4
+			# max_rounds_without_fit = 3
+			# alpha = 1.2
+			# beta = 9
+			# start_round = self.round_of_last_fit
+			# # normalizar dentro de 0 e 1
+			# rounds_without_fit = pow(
+			# 	min(rounds_without_fit + 0.0001, max_rounds_without_fit), -alpha)
+			# global_model_weight = 1
+			# if rounds_without_fit > 0:
+			# 	# o denominador faz com que a curva se prolongue com menor decaimento
+			# 	# Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
+			# 	eq1 = (-rounds_without_fit - (server_round - start_round) / beta)
+			# 	# eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
+			# 	# do modelo global
+			# 	eq2 = np.exp(eq1)
+			# 	eq3 = min(eq2, 1)
+			# 	global_model_weight = eq3
+			# 5
+			# max_rounds_without_fit = 3
+			# alpha = 1.2
+			# beta = 9
+			# start_round = self.round_of_last_fit
+			# # normalizar dentro de 0 e 1
+			# fx_rounds_without_fit = pow(
+			# 	min(rounds_without_fit + 0.0001, max_rounds_without_fit), -alpha)
+			# global_model_weight = 1
+			# if rounds_without_fit > 0:
+			# 	# o denominador faz com que a curva se prolongue com menor decaimento
+			# 	# Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
+			# 	eq1 = (-fx_rounds_without_fit - (rounds_without_fit/beta))
+			# 	# eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
+			# 	# do modelo global
+			# 	eq2 = np.exp(eq1)
+			# 	eq3 = min(eq2, 1)
+			# 	global_model_weight = eq3
+			# 6
+			# max_rounds_without_fit = 3
+			# alpha = 1.2
+			# beta = 9
+			# # evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
+			# delta = 0.02
+			# start_round = self.round_of_last_fit
+			# # normalizar dentro de 0 e 1
+			# fx_rounds_without_fit = pow(
+			# 	min(rounds_without_fit + delta, max_rounds_without_fit), -alpha)
+			# # global_model_weight = 1
+			# # o denominador faz com que a curva se prolongue com menor decaimento
+			# # Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
+			# eq1 = (-fx_rounds_without_fit - ((rounds_without_fit) / beta))
+			# # eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
+			# # do modelo global
+			# eq2 = np.exp(eq1)
+			# eq3 = min(eq2, 1)
+			# global_model_weight = eq3
+			# 8
+			max_rounds_without_fit = 4
+			alpha = 1.2
+			# evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
+			delta = 0.01
+			# normalizar dentro de 0 e 1
+			updated_level = pow(
+				min(rounds_without_fit + delta, max_rounds_without_fit), -alpha)
+			evolutionary_level = (server_round/50)
 
-		eq1 = (-updated_level - evolutionary_level)
-		# eq2 = 1/(sigma*pow((2*np.pi), 1/2))
-		eq2 = 1
-		eq3 = eq2 * np.exp(eq1)
-		global_model_weight = eq3
+			eq1 = (-updated_level - (acc*evolutionary_level)/(acc+evolutionary_level))
+			eq2 = round(np.exp(eq1), 6)
+			global_model_weight = eq2
 
-		local_model_weights = 1 - global_model_weight
+			local_model_weights = 1 - global_model_weight
 
-		print("rodada: ", server_round, " rounds sem fit: ", rounds_without_fit, "\npeso global: ", global_model_weight, " peso local: ", local_model_weights)
+			print("rodada: ", server_round, " rounds sem fit: ", rounds_without_fit, "\npeso global: ", global_model_weight, " peso local: ", local_model_weights)
 
-		global_parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
-		for new_param, old_param in zip(global_parameters, self.clone_model.parameters()):
-			old_param.data = new_param.data.clone()
-		# self.clone_model.load_state_dict(torch.load(filename))
-		i = 0
-		for new_param, old_param in zip(self.clone_model.parameters(), self.model.parameters()):
-			old_param.data = (global_model_weight*new_param.data.clone() + local_model_weights*old_param.data.clone())
+			global_parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
+			for new_param, old_param in zip(global_parameters, self.clone_model.parameters()):
+				old_param.data = new_param.data.clone()
+			# self.clone_model.load_state_dict(torch.load(filename))
+			i = 0
+			for new_param, old_param in zip(self.clone_model.parameters(), self.model.parameters()):
+				old_param.data = (global_model_weight*new_param.data.clone() + local_model_weights*old_param.data.clone())
+		except Exception as e:
+			print("merge models")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def set_parameters_to_model(self, global_parameters, server_round, type, config):
 		# ======================================================================================
@@ -412,7 +439,9 @@ class FedPredictClientTorch(FedPerClientTorch):
 						train_num += y.shape[0]
 
 						self.optimizer.zero_grad()
-						output, rep = self.model(x)
+						output = self.model(x)
+						print("saida: ", output.shape, y.shape)
+						# print(output)
 						y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
 						loss = self.loss(output, y)
 						# local_parameters = [torch.Tensor(i) for i in self.get_parameters_of_model()]
@@ -434,6 +463,9 @@ class FedPredictClientTorch(FedPerClientTorch):
 			avg_loss_train     = train_loss/train_num
 			avg_acc_train      = train_acc/train_num
 
+			loss, accuracy, test_num = self.model_eval()
+			self.accuracy_of_last_round_of_fit = accuracy
+
 			data = [config['round'], self.cid, selected, total_time, size_of_parameters, avg_loss_train, avg_acc_train]
 
 			self._write_output(
@@ -450,14 +482,9 @@ class FedPredictClientTorch(FedPerClientTorch):
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 
-	def evaluate(self, parameters, config):
+	def model_eval(self):
 		try:
-			server_round = int(config['round'])
-			self.set_parameters_to_model(parameters, server_round, 'evaluate', config)
-			# loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
 			self.model.eval()
-			# clone_model = self.clone_model
-			# self.clone_model_classavg(self.model, clone_model, parameters)
 
 			test_acc = 0
 			test_loss = 0
@@ -472,21 +499,30 @@ class FedPredictClientTorch(FedPerClientTorch):
 					self.optimizer.zero_grad()
 					y = y.to(self.device)
 					y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
-					output, rep = self.model(x)
-					# output2, rep2 = self.clone_model(x)
-					# output = output + torch.mul(output2, 4/int(server_round))
+					output = self.model(x)
+					# print("saida: ", output.shape)
 					loss = self.loss(output, y)
-					# local_parameters = [torch.Tensor(i) for i in self.get_parameters_of_model()]
-					# global_parameters = [torch.Tensor(i) for i in parameters]
-					# for i in range(len(local_parameters)):
-					# 	loss += torch.mul(self.lr_loss(local_parameters[i], global_parameters[i]), 1/int(config['round']))
 					test_loss += loss.item() * y.shape[0]
 					test_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
 					test_num += y.shape[0]
 
+			loss = test_loss / test_num
+			accuracy = test_acc / test_num
+
+			return loss, accuracy, test_num
+		except Exception as e:
+			print("model_eval")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+	def evaluate(self, parameters, config):
+		try:
+			server_round = int(config['round'])
+			self.set_parameters_to_model(parameters, server_round, 'evaluate', config)
+			# loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
+
+
 			size_of_parameters = sum([sum(map(sys.getsizeof, parameters[i])) for i in range(len(parameters))])
-			loss = test_loss/test_num
-			accuracy = test_acc/test_num
+			loss, accuracy, test_num = self.model_eval()
 			data = [config['round'], self.cid, size_of_parameters, loss, accuracy]
 
 			self._write_output(filename=self.evaluate_client_filename,
@@ -496,8 +532,6 @@ class FedPredictClientTorch(FedPerClientTorch):
 				"cid"      : self.cid,
 				"accuracy" : float(accuracy)
 			}
-
-			self.accuracy_of_last_round_of_fit = float(accuracy)
 
 			return loss, test_num, evaluation_response
 		except Exception as e:

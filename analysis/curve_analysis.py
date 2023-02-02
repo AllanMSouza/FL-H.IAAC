@@ -138,20 +138,19 @@ class Verify:
         # 8
         max_rounds_without_fit = 4
         alpha = 1.2
-        beta = 9
-        mu = -1
         # evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
-        delta = 0.02
+        delta = 0.01
         # normalizar dentro de 0 e 1
         updated_level = pow(
             min(rounds_without_fit + delta, max_rounds_without_fit), -alpha)
         evolutionary_level = (server_round / 50)
 
         eq1 = (-updated_level - evolutionary_level)
-        # eq2 = 1/(sigma*pow((2*np.pi), 1/2))
-        eq2 = 1
-        eq3 = eq2 * np.exp(eq1)
-        global_model_weight = eq3
+        eq2 = round(np.exp(eq1), 6)
+        global_model_weight = eq2
+
+        if rounds_without_fit == 0:
+            print(global_model_weight)
 
         return global_model_weight
 
@@ -176,9 +175,9 @@ class Verify:
 
         x = x*4
         y = y0 + y1 + y2 + y3
-        x_column = 'Round'
-        y_column = 'Weight of global parameters'
-        hue = 'Round(s) without training'
+        x_column = 'Round (t)'
+        y_column = 'Weight of global parameters (gw)'
+        hue = 'Round(s) since the last training (\u03B8)'
         print(len(x), len(y), len(rounds_without_fit_list))
         df = pd.DataFrame({x_column: x, y_column: y, hue: rounds_without_fit_list})
         title = ""
@@ -188,7 +187,8 @@ class Verify:
                   x_column=x_column,
                   y_column=y_column,
                   title=title,
-                  hue=hue)
+                  hue=hue,
+                  type=1)
 
 if __name__ == '__main__':
 

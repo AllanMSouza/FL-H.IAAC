@@ -8,8 +8,8 @@ import os
 import time
 import sys
 
-from dataset_utils import ManageDatasets
-from model_definition_torch import DNN, DNN_proto_2, DNN_proto_4, Logistic, FedAvgCNN
+from dataset_utils_torch import ManageDatasets
+from model_definition_torch import DNN, DNN_proto_2, DNN_proto_4, Logistic, CNN
 import csv
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -92,7 +92,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 	def load_data(self, dataset_name, n_clients, batch_size=32):
 		try:
-			x_train, y_train, x_test, y_test = ManageDatasets(self.cid).select_dataset(dataset_name, n_clients, self.non_iid)
+			x_train, y_train, x_test, y_test = ManageDatasets(self.cid, self.model_name).select_dataset(dataset_name, n_clients, self.non_iid)
 			# print("y test")
 			# print(np.unique(y_test))
 			# exit()
@@ -122,11 +122,15 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			if self.model_name == 'Logist Regression':
 				return Logistic(input_shape, self.num_classes)
 			elif self.model_name == 'DNN':
-				# if self.dataset == 'CIFAR10':
-				# 	input_shape = input_shape * self.input_shape[3]
 				return DNN(input_shape=input_shape, num_classes=self.num_classes)
 			elif self.model_name == 'CNN':
-				return FedAvgCNN(input_shape, self.num_classes)
+				if self.dataset == 'MNIST':
+					input_shape = 1
+					mid_dim = 256
+				else:
+					input_shape = 3
+					mid_dim = 400
+				return CNN(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim)
 			else:
 				raise Exception("Wrong model name")
 		except Exception as e:
