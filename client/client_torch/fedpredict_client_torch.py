@@ -130,7 +130,6 @@ class FedPredictClientTorch(FedPerClientTorch):
 				else:
 					target_param.data = param.data.clone()
 				i+=1
-			print("iterador: ", i)
 			# target_param.grad = param.grad.clone()
 		except Exception as e:
 			print("clone model")
@@ -440,7 +439,6 @@ class FedPredictClientTorch(FedPerClientTorch):
 
 						self.optimizer.zero_grad()
 						output = self.model(x)
-						print("saida: ", output.shape, y.shape)
 						# print(output)
 						y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
 						loss = self.loss(output, y)

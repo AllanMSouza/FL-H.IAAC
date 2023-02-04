@@ -97,7 +97,6 @@ class CNN(nn.Module):
 
     def forward(self, x):
         try:
-            # print("rodar: ", x.shape)
             out = self.pool(F.relu(self.conv1(x)))
             out = self.pool(F.relu(self.conv2(out)))
             rep = torch.flatten(out, 1)  # flatten all dimensions except batch
@@ -125,7 +124,6 @@ class CNN_proto(nn.Module):
 
     def forward(self, x):
         try:
-            print("rodar: ", x.shape)
             out = self.pool(F.relu(self.conv1(x)))
             out = self.pool(F.relu(self.conv2(out)))
             rep = torch.flatten(out, 1)  # flatten all dimensions except batch

@@ -55,30 +55,6 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 		self.lr_loss = torch.nn.MSELoss()
 		self.clone_model = self.create_model().to(self.device)
 
-	def create_model(self):
-
-		try:
-			# print("tamanho: ", self.input_shape)
-			input_shape = self.input_shape[1] * self.input_shape[2]
-			if self.model_name == 'Logist Regression':
-				return Logistic(input_shape, self.num_classes)
-			elif self.model_name == 'DNN':
-				return DNN_proto_2(input_shape=input_shape, num_classes=self.num_classes)
-			elif self.model_name == 'CNN':
-				if self.dataset == 'MNIST':
-					input_shape = 1
-					mid_in = 256
-				else:
-					input_shape = 3
-					mid_in = 400
-				return CNN_proto(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_in)
-			else:
-				raise Exception("Wrong model name")
-		except Exception as e:
-			print("create model")
-			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
-
-
 	def get_parameters_of_model(self):
 		try:
 			parameters = [i.detach().numpy() for i in self.model.parameters()]
@@ -91,18 +67,18 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 	def clone_model_classavg(self, model, target, c):
 		try:
 			i = 0
-			size = 4
 			parameters = [Parameter(torch.Tensor(i.tolist())) for i in c]
+			size = len(self.get_parameters({}))
 			j = 0
 			for param, target_param in zip(model.parameters(), target.parameters()):
+				# Set the global parameters in the last layer
 				if i >= size - 2:
 					target_param.data = parameters[j].data.clone()
 					j+=1
 				else:
 					target_param.data = param.data.clone()
 				i+=1
-			print("iterador: ", i)
-			# target_param.grad = param.grad.clone()
+			# print("iterador: ", i)
 		except Exception as e:
 			print("clone model")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
@@ -209,7 +185,7 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 						train_num += y.shape[0]
 
 						self.optimizer.zero_grad()
-						output, rep = self.model(x)
+						output = self.model(x)
 						y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
 						loss = self.loss(output, y)
 						local_parameters = [torch.Tensor(i) for i in self.get_parameters_of_model()]
@@ -269,8 +245,8 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 					self.optimizer.zero_grad()
 					y = y.to(self.device)
 					y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
-					output, rep = self.model(x)
-					output2, rep2 = self.clone_model(x)
+					output = self.model(x)
+					output2 = self.clone_model(x)
 					output = output + torch.mul(output2, 4/int(server_round))
 					loss = self.loss(output, y)
 					local_parameters = [torch.Tensor(i) for i in self.get_parameters_of_model()]
