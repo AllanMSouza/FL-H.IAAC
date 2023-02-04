@@ -119,7 +119,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 	def create_model(self):
 
 		try:
-			print("tamanho: ", self.input_shape, " dispositivo: ", self.device)
+			# print("tamanho: ", self.input_shape, " dispositivo: ", self.device)
 			if self.dataset in ['MNIST', 'CIFAR10']:
 				input_shape = self.input_shape[1]*self.input_shape[2]
 			if self.model_name == 'Logist Regression':

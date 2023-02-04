@@ -6,6 +6,8 @@ import pickle
 import pandas as pd
 from torch.utils.data import TensorDataset, DataLoader
 from sklearn.model_selection import train_test_split
+import time
+import sys
 
 #from sklearn.preprocessing import Normalizer
 
@@ -108,22 +110,24 @@ class ManageDatasets():
 			with open(f'data/CIFAR10/{n_clients}/idx_test_{self.cid}.pickle', 'rb') as handle:
 				idx_test = pickle.load(handle)
 
-
+			if self.cid >= 5:
+				time.sleep(4)
 			(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
 			y_train = np.array([i[0] for i in y_train])
 			y_test = np.array([i[0] for i in y_test])
 			x_train, x_test                      = x_train/255.0, x_test/255.0
-			print("ex antes: ", x_train.shape)
-			x_train = np.array([np.moveaxis(i, -1, 0) for i in x_train])
-			print("ex depois: ", x_train.shape)
-			x_test = np.array([np.moveaxis(i, -1, 0) for i in x_test])
+
 
 			x_train = x_train[idx_train]
 			x_test  = x_test[idx_test]
 
 			y_train = y_train[idx_train]
 			y_test  = y_test[idx_test]
-			
+
+			# print("ex antes: ", x_train.shape)
+			x_train = np.array([np.moveaxis(i, -1, 0) for i in x_train])
+			# print("ex depois: ", x_train.shape)
+			x_test = np.array([np.moveaxis(i, -1, 0) for i in x_test])
 
 		else:
 
