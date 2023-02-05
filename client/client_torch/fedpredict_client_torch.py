@@ -116,26 +116,6 @@ class FedPredictClientTorch(FedPerClientTorch):
 			print("On get_round_of_last_fit", " user id: ", self.cid, " row: ", row)
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-
-	def clone_model_classavg(self, model, target, c):
-		try:
-			i = 0
-			size = 4
-			parameters = [Parameter(torch.Tensor(i.tolist())) for i in c]
-			j = 0
-			for param, target_param in zip(model.parameters(), target.parameters()):
-				if i >= size - 2:
-					target_param.data = parameters[j].data.clone()
-					j+=1
-				else:
-					target_param.data = param.data.clone()
-				i+=1
-			# target_param.grad = param.grad.clone()
-		except Exception as e:
-			print("clone model")
-			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
-
-
 	def save_parameters(self):
 
 		# ======================================================================================
@@ -291,7 +271,7 @@ class FedPredictClientTorch(FedPerClientTorch):
 				min(rounds_without_fit + delta, max_rounds_without_fit), -alpha)
 			evolutionary_level = (server_round/50)
 
-			eq1 = (-updated_level - (acc*evolutionary_level)/(acc+evolutionary_level))
+			eq1 = (-updated_level - evolutionary_level)
 			eq2 = round(np.exp(eq1), 6)
 			global_model_weight = eq2
 

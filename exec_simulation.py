@@ -30,34 +30,34 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 # Algorithm = 'None'
 # ======================================================================
 # EXPERIMENT 2
-# Algorithm = 'POC', poc=0.2 and  new_client = FALSE
+# Algorithm = 'POC', poc=[0.1, 0.2, 0.3] and  new_client = FALSE
 # ======================================================================
 # EXPERIMENT 3
-# Algorithm = 'POC' and new_client = TRUE new_clients_train = FALSE
+# Algorithm = 'POC', poc=[0.1, 0.2, 0.3] and new_client = TRUE new_clients_train = FALSE
 # ======================================================================
 # EXPERIMENT 4
-# Algorithm = 'POC' and new_client = TRUE new_clients_train = TRUE
+# Algorithm = 'POC', poc=[0.1, 0.2, 0.3] and new_client = TRUE new_clients_train = TRUE
 # ======================================================================
 # EXPERIMENT 5
-# Algorithm = 'POC' and new_client = TRUE new_clients_train = TRUE
+# Algorithm = 'POC, poc=[0.1, 0.2, 0.3]' and new_client = TRUE new_clients_train = TRUE
 #  Local epochs = 2
 # ======================================================================
 # Configurations
 # DATASETS      				= ('MNIST', 'CIFAR10', )
-DATASETS      					= ('MNIST',)
+DATASETS      					= ('CIFAR10',)
 MODELS        					= ('CNN',)
 ALGORITHMS    					= ('None', 'POC',)
 EPOCHS        					= {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2]}
 # CLIENTS       				= {'MNIST': 50, 'CIFAR10': 50, 'CIFAR100': 50, 'MotionSense': 50, 'UCIHAR': 50}
-CLIENTS       					= {'MNIST': [50], 'CIFAR10': [10]}
-CLIENTS2SELCT 					= {'None': (1,), 'POC': (0.2,)}
+CLIENTS       					= {'MNIST': [50], 'CIFAR10': [50]}
+CLIENTS2SELCT 					= {'None': (1,), 'POC': (0.1, 0.2, 0.3,)}
 NEW_CLIENTS 					= {'None': ('FALSE',), 'POC': ('FALSE', 'TRUE')}
 NEW_CLIENTS_TRAIN 				= {'FALSE': ('FALSE',), 'TRUE': ('FALSE', 'TRUE',)}
 # DECAY         				= (0.001, 0.005, 0.009)
 ROUNDS        					= 50
 # STRATEGIES 					= ('FedAVG', 'FedAvgM', 'FedClassAvg''QFedAvg', 'FedPer', 'FedProto', 'FedYogi', 'FedLocal',)
 STRATEGIES_FOR_ANALYSIS 		= ['FedPredict', 'FedAVG', 'FedClassAvg', 'FedPer']
-STRATEGIES_TO_EXECUTE 			= []
+STRATEGIES_TO_EXECUTE 			= ['FedPredict', 'FedAVG', 'FedClassAvg', 'FedPer']
 
 EXPERIMENTS 		= {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''},
 					   2: {'algorithm': 'POC', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''},

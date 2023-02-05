@@ -47,12 +47,13 @@ class NonIid:
 
     def start(self, title):
         title=''
-        self.base_dir = """analysis/output/experiment_{}/{}/new_clients_{}_train_{}/{}_clients/{}/{}_local_epochs/{}/""".format(self.experiment,
+        self.base_dir = """analysis/output/experiment_{}/{}/new_clients_{}_train_{}/{}_clients/{}/{}/{}_local_epochs/{}/""".format(self.experiment,
                                                                                             self.aggregation_method+str(self.perc_of_clients),
                                                                                             self.new_clients,
                                                                                               self.new_clients_train,
                                                                                             self.n_clients,
                                                                                             self.dataset_name,
+                                                                                            self.model_name,
                                                                                             self.epochs,
                                                                                             self.comment)
 
@@ -123,6 +124,7 @@ class NonIid:
         # acc
         df = self.df_files_names['evaluate_client']
         df['Accuracy (%)'] = df['Accuracy'] * 100
+        df['Accuracy (%)'] = df['Accuracy (%)'].round(4)
         x_column = 'Round'
         y_column = 'Accuracy (%)'
         hue = 'Strategy'
@@ -178,6 +180,8 @@ class NonIid:
                  hue=hue,
                  log_scale=True,
                  sci=True)
+
+
 
 
 
