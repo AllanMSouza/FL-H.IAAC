@@ -71,7 +71,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		self.new_clients = new_clients
 		self.new_clients_train = new_clients_train
 		# self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-		self.device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
+		self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 		#params
 		if self.aggregation_method == 'POC':
