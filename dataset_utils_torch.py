@@ -110,8 +110,8 @@ class ManageDatasets():
 			with open(f'data/CIFAR10/{n_clients}/idx_test_{self.cid}.pickle', 'rb') as handle:
 				idx_test = pickle.load(handle)
 
-			if self.cid >= 5:
-				time.sleep(4)
+			# if self.cid >= 5:
+			# 	time.sleep(4)
 			(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
 			y_train = np.array([i[0] for i in y_train])
 			y_test = np.array([i[0] for i in y_test])
