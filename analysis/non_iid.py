@@ -64,7 +64,7 @@ class NonIid:
 
         models_directories = {self.strategy_name_list[i]:
                               """{}/{}/new_clients_{}_train_{}/{}/{}/{}/{}_local_epochs/""".
-                              format('/home/claudio/Documentos/pycharm_projects/FedLTA/logs',
+                              format(os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FedLTA/logs",
                                      self._get_strategy_config(self.strategy_name_list[i]),
                                      self.new_clients,
                                      self.new_clients_train,

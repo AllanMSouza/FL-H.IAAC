@@ -136,7 +136,7 @@ class Verify:
         # eq3 = eq2*np.exp(eq1)
         # global_model_weight = eq3
         # 8
-        max_rounds_without_fit = 4
+        max_rounds_without_fit = 3
         alpha = 1.2
         # evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
         delta = 0.01
@@ -149,8 +149,8 @@ class Verify:
         eq2 = round(np.exp(eq1), 6)
         global_model_weight = eq2
 
-        if rounds_without_fit == 0:
-            print(global_model_weight)
+        # if rounds_without_fit == 0:
+        #     print(global_model_weight)
 
         return global_model_weight
 
@@ -177,7 +177,7 @@ class Verify:
         y = y0 + y1 + y2 + y3
         x_column = 'Round (t)'
         y_column = 'Weight of global parameters (gw)'
-        hue = 'Round(s) since the last training (\u03B8)'
+        hue = 'Round(s) since the last training (nt)'
         print(len(x), len(y), len(rounds_without_fit_list))
         df = pd.DataFrame({x_column: x, y_column: y, hue: rounds_without_fit_list})
         title = ""
