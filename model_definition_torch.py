@@ -105,7 +105,7 @@ class CNN(nn.Module):
                 nn.MaxPool2d(kernel_size=(2, 2))
             )
             self.fc1 = nn.Sequential(
-                nn.Linear(mid_dim, 512),
+                nn.Linear(mid_dim*4, 512),
                 nn.ReLU(inplace=True)
             )
             self.fc = nn.Linear(512, num_classes)
