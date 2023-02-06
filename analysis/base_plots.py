@@ -35,12 +35,10 @@ def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_
 
     if ax is None:
         plt.figure()
-    palette = sns.color_palette("Blues")
-    sns.set(style='whitegrid', palette=palette)
+    sns.set(style='whitegrid')
     if type is not None:
-        print('oi')
-
-
+        palette = sns.color_palette("Blues")
+        sns.set(style='whitegrid', palette=palette)
 
     log = ""
     if log_scale:
