@@ -23,8 +23,8 @@ then
   echo ""
 else
   echo "Realizar commit"
-  git config --global user.name "Cláudio"
-  git config --global user.email claudiogs.capanema@gmail.com
+  git config user.name "Cláudio"
+  git config user.email claudiogs.capanema@gmail.com
   git add ./analysis/output
   git commit -m "Resultado de experimento"
   git push FedPer2
