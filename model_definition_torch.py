@@ -84,26 +84,73 @@ class CNN(nn.Module):
     def __init__(self, input_shape=1, mid_dim=256, num_classes=10):
         try:
             super(CNN, self).__init__()
-            self.conv1 = nn.Conv2d(input_shape, 128, 3)
-            self.pool = nn.MaxPool2d(2, 2)
-            self.conv2 = nn.Conv2d(128, 128, 3)
-            self.conv3 = nn.Conv2d(128, 128, 3)
-            self.fc1 = nn.Linear(128 * 4 * 4, num_classes)
+            self.conv1 = nn.Sequential(
+                nn.Conv2d(input_shape,
+                          32,
+                          kernel_size=5,
+                          padding=0,
+                          stride=1,
+                          bias=True),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(kernel_size=(2, 2))
+            )
+            self.conv2 = nn.Sequential(
+                nn.Conv2d(32,
+                          64,
+                          kernel_size=5,
+                          padding=0,
+                          stride=1,
+                          bias=True),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(kernel_size=(2, 2))
+            )
+            self.fc1 = nn.Sequential(
+                nn.Linear(mid_dim, 512),
+                nn.ReLU(inplace=True)
+            )
+            self.fc = nn.Linear(512, num_classes)
         except Exception as e:
             print("CNN")
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
     def forward(self, x):
         try:
-            out = self.pool(F.relu(self.conv1(x)))
-            out = self.pool(F.relu(self.conv2(out)))
-            out = F.relu(self.conv3(out))
-            out = out.view(-1, 128 * 4 * 4)
+            out = self.conv1(x)
+            out = self.conv2(out)
+            out = torch.flatten(out, 1)
             out = self.fc1(out)
+            out = self.fc(out)
             return out
         except Exception as e:
             print("CNN forward")
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+
+# melhor
+# class CNN(nn.Module):
+#     def __init__(self, input_shape=1, mid_dim=256, num_classes=10):
+#         try:
+#             super(CNN, self).__init__()
+#             self.conv1 = nn.Conv2d(input_shape, 128, 3)
+#             self.pool = nn.MaxPool2d(2, 2)
+#             self.conv2 = nn.Conv2d(128, 128, 3)
+#             self.conv3 = nn.Conv2d(128, 128, 3)
+#             self.fc1 = nn.Linear(128 * 4 * 4, num_classes)
+#         except Exception as e:
+#             print("CNN")
+#             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+#
+#     def forward(self, x):
+#         try:
+#             out = self.pool(F.relu(self.conv1(x)))
+#             out = self.pool(F.relu(self.conv2(out)))
+#             out = F.relu(self.conv3(out))
+#             out = out.view(-1, 128 * 4 * 4)
+#             out = self.fc1(out)
+#             return out
+#         except Exception as e:
+#             print("CNN forward")
+#             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 # class CNN(nn.Module):
 #     def __init__(self, input_shape=1, mid_dim=256, num_classes=10):
