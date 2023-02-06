@@ -89,7 +89,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 		self.trainloader, self.testloader = self.load_data(self.dataset, n_clients=self.n_clients)
 		self.model                                           = self.create_model().to(self.device)
-		self.device = 'cpu'
+		# self.device = 'cpu'
 		self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate)
 
 	def load_data(self, dataset_name, n_clients, batch_size=32):
