@@ -46,7 +46,6 @@ class NonIid:
         return strategy_config
 
     def start(self, title):
-        title=''
         self.base_dir = """analysis/output/experiment_{}/{}/new_clients_{}_train_{}/{}_clients/{}/{}/{}_local_epochs/{}/""".format(self.experiment,
                                                                                             self.aggregation_method+str(self.perc_of_clients),
                                                                                             self.new_clients,
@@ -265,4 +264,7 @@ if __name__ == '__main__':
     # noniid.start()
     c = NonIid(int(opt.n_clients), opt.aggregation_method, float(opt.poc), ast.literal_eval(opt.non_iid), opt.model_name, strategy_name_list, opt.dataset, ast.literal_eval(opt.new_clients), ast.literal_eval(opt.new_clients_train), opt.experiment, opt.comment, opt.epochs)
     print(c.n_clients, " ", c.strategy_name_list)
-    c.start('Exp. ' + str(int(opt.experiment)-1))
+    dataset = opt.dataset
+    if dataset == 'CIFAR10':
+        dataset = 'CIFAR-10'
+    c.start('Exp. ' + str(int(opt.experiment)-1) + dataset)
