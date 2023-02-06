@@ -1,7 +1,0 @@
-Size of parameters (bytes),Strategy
-15840,FedAVG
-15840,FedAvgM
-1440,FedClassAvg
-15840,FedLocal
-14400,FedPer
-5120,FedProto
