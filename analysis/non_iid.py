@@ -101,7 +101,7 @@ class NonIid:
         hue = 'Strategy'
         line_plot(df=df,
                   base_dir=self.base_dir,
-                  file_name="server_acc_round_lineplot",
+                  file_name="server_acc_round_lineplot_" + str(int(self.experiment) -1),
                   x_column=x_column,
                   y_column=y_column,
                   title=title,
