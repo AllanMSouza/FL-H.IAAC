@@ -27,5 +27,5 @@ else
   git config user.email claudiogs.capanema@gmail.com
   git add ./analysis/output
   git commit -m "Resultado de experimento"
-  git push FedPer2
+  git push origin FedPer2
 fi
