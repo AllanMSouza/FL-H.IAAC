@@ -267,4 +267,4 @@ if __name__ == '__main__':
     dataset = opt.dataset
     if dataset == 'CIFAR10':
         dataset = 'CIFAR-10'
-    c.start('Exp. ' + str(int(opt.experiment)-1) + dataset)
+    c.start('Exp. ' + str(int(opt.experiment)-1) + " (" + dataset + ")")
