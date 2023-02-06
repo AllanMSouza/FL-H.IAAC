@@ -88,7 +88,7 @@ class CNN(nn.Module):
             self.pool = nn.MaxPool2d(2, 2)
             self.conv2 = nn.Conv2d(128, 128, 3)
             self.conv3 = nn.Conv2d(128, 128, 3)
-            self.fc1 = nn.Linear(128 * 4 * 4, 10)
+            self.fc1 = nn.Linear(128 * 4 * 4, num_classes)
         except Exception as e:
             print("CNN")
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
