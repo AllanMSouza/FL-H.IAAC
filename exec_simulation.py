@@ -1,5 +1,3 @@
-import flwr as fl
-import tensorflow as tf
 from optparse import OptionParser
 
 import subprocess
