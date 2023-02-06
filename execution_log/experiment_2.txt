@@ -1,0 +1,36 @@
+2023-02-05 18:02:12.605351: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2023-02-05 18:02:12.708117: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2023-02-05 18:02:12.708143: I tensorflow/compiler/xla/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2023-02-05 18:02:13.179074: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
+2023-02-05 18:02:13.179132: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
+2023-02-05 18:02:13.179142: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
+50   ['FedPredict', 'FedAVG', 'FedClassAvg', 'FedPer']
+antes:  POC FedPredict-POC-0.2
+antes:  POC FedAVG-POC-0.2
+antes:  POC FedClassAvg-POC-0.2
+antes:  POC FedPer-POC-0.2
+{'FedPredict': '/home/claudio/Documentos/pycharm_projects/FedLTA/logs/FedPredict-POC-0.2/new_clients_False_train_False/50/DNN/MNIST/1_local_epochs/', 'FedAVG': '/home/claudio/Documentos/pycharm_projects/FedLTA/logs/FedAVG-POC-0.2/new_clients_False_train_False/50/DNN/MNIST/1_local_epochs/', 'FedClassAvg': '/home/claudio/Documentos/pycharm_projects/FedLTA/logs/FedClassAvg-POC-0.2/new_clients_False_train_False/50/DNN/MNIST/1_local_epochs/', 'FedPer': '/home/claudio/Documentos/pycharm_projects/FedLTA/logs/FedPer-POC-0.2/new_clients_False_train_False/50/DNN/MNIST/1_local_epochs/'}
+      Round  Cid  Size of parameters  ...  Accuracy    Strategy Accuracy (%)
+0         1   18               15400  ...  0.046296  FedPredict       4.6296
+1         1   15               15400  ...  0.617788  FedPredict      61.7788
+2         1   25               15400  ...  0.575000  FedPredict      57.5000
+3         1   31               15400  ...  0.880208  FedPredict      88.0208
+4         1   32               15400  ...  0.000000  FedPredict       0.0000
+...     ...  ...                 ...  ...       ...         ...          ...
+9995     50   49               14000  ...  0.887228      FedPer      88.7228
+9996     50   17               14000  ...  0.902961      FedPer      90.2961
+9997     50   11               14000  ...  0.927951      FedPer      92.7951
+9998     50   25               14000  ...  0.952083      FedPer      95.2083
+9999     50    3               14000  ...  0.967448      FedPer      96.7448
+
+[10000 rows x 7 columns]
+   Size of parameters (bytes)     Strategy
+0                       15400       FedAVG
+1                        1400  FedClassAvg
+2                       14000       FedPer
+3                       15400   FedPredict
+=====================================
+Executando analytics... 
+ python analysis/non_iid.py --dataset='MNIST' --model='DNN' --round=50 --client=50 --aggregation_method='POC' --poc=0.2 --new_clients=False --new_clients_train=False --non-iid=True --comment='' --epochs=1 --experiment=2  --strategy='FedPredict' --strategy='FedAVG' --strategy='FedClassAvg' --strategy='FedPer' 
+=====================================
