@@ -1,4 +1,5 @@
 #!/bin/bash
+git checkout FedPer2
 git fetch
 git pull
 
