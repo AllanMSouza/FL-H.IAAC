@@ -80,6 +80,7 @@ class DNN(nn.Module):
         x = F.log_softmax(x, dim=1)
         return x
 # ====================================================================================================================
+# melhor 3
 class CNN(nn.Module):
     def __init__(self, input_shape=1, mid_dim=256, num_classes=10):
         try:
@@ -126,7 +127,7 @@ class CNN(nn.Module):
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 
-# melhor
+# melhor 2
 # class CNN(nn.Module):
 #     def __init__(self, input_shape=1, mid_dim=256, num_classes=10):
 #         try:
