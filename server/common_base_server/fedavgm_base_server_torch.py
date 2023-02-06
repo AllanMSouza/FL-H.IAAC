@@ -59,7 +59,8 @@ class FedAvgMBaseServerTorch(FedAvgBaseServer):
         self.server_learning_rate = server_learning_rate
         self.server_momentum = server_momentum
         self.momentum_vector = None
-        self.model = model
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.model = model.to(self.device)
         self.server_opt = (self.server_momentum != 0.0) or (
                 self.server_learning_rate != 1.0)
 
