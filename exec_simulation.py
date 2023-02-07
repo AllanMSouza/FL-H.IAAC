@@ -42,7 +42,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 # ======================================================================
 # Configurations
 # DATASETS      				= ('MNIST', 'CIFAR10', )
-DATASETS      					= ('MNIST',)
+DATASETS      					= ('CIFAR10',)
 MODELS        					= ('CNN',)
 ALGORITHMS    					= ('None', 'POC',)
 EPOCHS        					= {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2]}
@@ -55,7 +55,7 @@ NEW_CLIENTS_TRAIN 				= {'FALSE': ('FALSE',), 'TRUE': ('FALSE', 'TRUE',)}
 ROUNDS        					= 100
 # STRATEGIES 					= ('FedAVG', 'FedAvgM', 'FedClassAvg''QFedAvg', 'FedPer', 'FedProto', 'FedYogi', 'FedLocal',)
 STRATEGIES_FOR_ANALYSIS 		= ['FedPredict', 'FedAVG', 'FedProto', 'FedClassAvg', 'FedPer']
-STRATEGIES_TO_EXECUTE 			= ['FedPredict']
+STRATEGIES_TO_EXECUTE 			= ['FedPredict', 'FedAVG', 'FedProto', 'FedClassAvg', 'FedPer']
 
 EXPERIMENTS 		= {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''},
 					   2: {'algorithm': 'POC', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''},
