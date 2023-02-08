@@ -33,13 +33,13 @@ class NonIid:
 
     def _get_strategy_config(self, strategy_name):
         if self.aggregation_method == 'POC':
-            strategy_config = f"{strategy_name}-{self.aggregation_method}-{self.perc_of_clients}"
+            strategy_config = """{}-{}-{}""".format(strategy_name, self.aggregation_method, self.perc_of_clients)
 
         # elif self.aggregation_method == 'FedLTA':
         #     strategy_config = f"{self.strategy_name}-{self.aggregation_method}-{self.decay_factor}"
 
         elif self.aggregation_method == 'None':
-            strategy_config = f"{strategy_name}-{self.aggregation_method}"
+            strategy_config = """{}-{}""".format(strategy_name, self.aggregation_method)
 
         print("antes: ", self.aggregation_method, strategy_config)
 
