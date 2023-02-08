@@ -18,15 +18,15 @@ python3 exec_simulation.py --experiment_id=2 > execution_log/experiment_2.txt 2>
 #echo "Executing experiment 5..."
 #python3 exec_simulation.py --experiment_id=5 > execution_log/experiment_5.txt 2>&1
 
-#hostname=$(hostname)
-#if [[ $hostname == "claudio-Predator-PH315-52" ]]
-#then
-#  echo ""
-#else
-#  echo "Realizar commit"
-#  git config user.name "Cláudio"
-#  git config user.email claudiogs.capanema@gmail.com
-#  git add ./analysis/output
-#  git commit -m "Resultado de experimento"
-#  git push origin FedPer2
-#fi
+hostname=$(hostname)
+if [[ $hostname == "claudio-Predator-PH315-52" ]]
+then
+  echo ""
+else
+  echo "Realizar commit"
+  git config user.name "Cláudio"
+  git config user.email claudiogs.capanema@gmail.com
+  git add ./analysis/output
+  git commit -m "Resultado de experimento"
+  git push origin FedPer2
+fi
