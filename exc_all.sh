@@ -1,7 +1,7 @@
 #!/bin/bash
-#git checkout FedPer2
-#git fetch
-#git pull
+git checkout FedPer2
+git fetch
+git pull
 
 #echo "Executing experiment 1..."
 #python3 exec_simulation.py --experiment_id=1 > execution_log/experiment_1.txt 2>&1
