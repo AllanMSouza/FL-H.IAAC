@@ -20,7 +20,8 @@ class Verify:
             os.makedirs(self.base_dir + "png/")
             os.makedirs(self.base_dir + "svg/")
 
-        self.server_analysis()
+        self.server_analysis(0)
+        self.server_analysis(1)
 
     def curve(self, server_round, rounds_without_fit, start_round):
         # 0
@@ -135,60 +136,97 @@ class Verify:
         # eq2 = 1/2
         # eq3 = eq2*np.exp(eq1)
         # global_model_weight = eq3
-        # 8
-        max_rounds_without_fit = 3
-        alpha = 1.2
-        # evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
-        delta = 0.01
-        # normalizar dentro de 0 e 1
-        updated_level = pow(
-            min(rounds_without_fit + delta, max_rounds_without_fit), -alpha)
-        evolutionary_level = (server_round / 50)
+        # 8 plotar
+        # max_rounds_without_fit = 100
+        # alpha = 1.2
+        # # evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
+        # delta = 0.01
+        # # normalizar dentro de 0 e 1
+        # updated_level = pow(
+        #     min(rounds_without_fit + delta, max_rounds_without_fit), -alpha)
+        # evolutionary_level = (server_round / 50)
+        #
+        # eq1 = (-updated_level - evolutionary_level)
+        # eq2 = round(np.exp(eq1), 6)
+        # global_model_weight = eq2
+        #
+        # # if rounds_without_fit == 0:
+        # #     print(global_model_weight)
+        #
+        # return global_model_weight, updated_level
+        # 9
+        if rounds_without_fit == 0:
+            global_model_weight = 0
+            updated_level = 1
+        else:
+            max_rounds_without_fit = 100
+            alpha = 1
+            # evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
+            # normalizar dentro de 0 e 1
+            updated_level = 1/min(rounds_without_fit, max_rounds_without_fit)
+            evolutionary_level = (server_round / 50)
 
-        eq1 = (-updated_level - evolutionary_level)
-        eq2 = round(np.exp(eq1), 6)
-        global_model_weight = eq2
+            eq1 = (-updated_level - evolutionary_level)
+            eq2 = round(np.exp(eq1), 6)
+            global_model_weight = eq2
 
-        # if rounds_without_fit == 0:
-        #     print(global_model_weight)
+            # if rounds_without_fit == 0:
+            #     print(global_model_weight)
 
-        return global_model_weight
+        return global_model_weight, updated_level
 
-    def server_analysis(self):
+    def server_analysis(self, index):
 
-        rounds = 50
-        rounds_without_fit = 0
+        rounds = 100
+        rounds_without_fit = 1
         rounds_without_fit_list = []
         start_round = 0
         x = [i for i in range(1, rounds + 1)]
         rounds_without_fit_list = rounds_without_fit_list + [rounds_without_fit] * len(x)
-        y0 = [self.curve(i, rounds_without_fit, start_round) for i in x]
-        rounds_without_fit = 1
-        rounds_without_fit_list = rounds_without_fit_list + [rounds_without_fit] * len(x)
-        y1 = [self.curve(i, rounds_without_fit, start_round) for i in x]
+        y0 = [self.curve(i, rounds_without_fit, start_round)[index] for i in x]
         rounds_without_fit = 2
         rounds_without_fit_list = rounds_without_fit_list + [rounds_without_fit] * len(x)
-        y2 = [self.curve(i, rounds_without_fit, start_round) for i in x]
-        rounds_without_fit = 3
+        y1 = [self.curve(i, rounds_without_fit, start_round)[index] for i in x]
+        rounds_without_fit = 5
         rounds_without_fit_list = rounds_without_fit_list + [rounds_without_fit] * len(x)
-        y3 = [self.curve(i, rounds_without_fit, start_round) for i in x]
+        y2 = [self.curve(i, rounds_without_fit, start_round)[index] for i in x]
+        rounds_without_fit = 10
+        rounds_without_fit_list = rounds_without_fit_list + [rounds_without_fit] * len(x)
+        y3 = [self.curve(i, rounds_without_fit, start_round)[index] for i in x]
+        rounds_without_fit = 100
+        rounds_without_fit_list = rounds_without_fit_list + [rounds_without_fit] * len(x)
+        y4 = [self.curve(i, rounds_without_fit, start_round)[index] for i in x]
 
-        x = x*4
-        y = y0 + y1 + y2 + y3
+        x = x*5
+        y = y0 + y1 + y2 + y3 + y4
         x_column = 'Round (t)'
-        y_column = 'Weight of global parameters (gw)'
-        hue = 'Round(s) since the last training (nt)'
+        if index == 0:
+            y_column = 'Weight of global parameters (gw)'
+        else:
+            y_column = 'Updated level (ul)'
+        hue = 'Rounds since the last training (nt)'
         print(len(x), len(y), len(rounds_without_fit_list))
         df = pd.DataFrame({x_column: x, y_column: y, hue: rounds_without_fit_list})
         title = ""
-        line_plot(df=df,
-                  base_dir=self.base_dir,
-                  file_name="curve",
-                  x_column=x_column,
-                  y_column=y_column,
-                  title=title,
-                  hue=hue,
-                  type=1)
+        if index == 1:
+            print(df.drop_duplicates(subset=[y_column, hue]))
+            print("Ola")
+            df = df.round(4)
+            bar_plot(df=df,
+                      base_dir=self.base_dir,
+                      file_name="bar_" + str(index),
+                      x_column=hue,
+                      y_column=y_column,
+                      title=title)
+        else:
+            line_plot(df=df,
+                     base_dir=self.base_dir,
+                     file_name="curve_" + str(index),
+                     x_column=x_column,
+                     y_column=y_column,
+                     title=title,
+                        hue=hue,
+                      type=1)
 
 if __name__ == '__main__':
 

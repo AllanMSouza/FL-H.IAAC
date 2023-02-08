@@ -123,7 +123,7 @@ class NonIid:
 
         self.server_analysis()
         df = self.evaluate_client_analysis(ax, title)
-        self.export_reports(df=df, solution_column='Strategy', poc_column='POC', index='Dataset')
+        # self.export_reports(df=df, solution_column='Strategy', poc_column='POC', index='Dataset')
 
     def server_analysis(self):
 

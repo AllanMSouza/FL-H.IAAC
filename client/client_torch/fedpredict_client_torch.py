@@ -262,18 +262,31 @@ class FedPredictClientTorch(FedPerClientTorch):
 			# eq3 = min(eq2, 1)
 			# global_model_weight = eq3
 			# 8
-			max_rounds_without_fit = 4
-			alpha = 1.2
-			# evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
-			delta = 0.01
-			# normalizar dentro de 0 e 1
-			updated_level = pow(
-				min(rounds_without_fit + delta, max_rounds_without_fit), -alpha)
-			evolutionary_level = (server_round/50)
+			# max_rounds_without_fit = 4
+			# alpha = 1.2
+			# # evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
+			# delta = 0.01
+			# # normalizar dentro de 0 e 1
+			# updated_level = pow(
+			# 	min(rounds_without_fit + delta, max_rounds_without_fit), -alpha)
+			# evolutionary_level = (server_round/50)
+			#
+			# eq1 = (-updated_level - evolutionary_level)
+			# eq2 = round(np.exp(eq1), 6)
+			# global_model_weight = eq2
+			# 9
+			if rounds_without_fit == 0:
+				global_model_weight = 0
+				updated_level = 1
+			else:
+				# evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
+				# normalizar dentro de 0 e 1
+				updated_level = 1/min(rounds_without_fit)
+				evolutionary_level = (server_round / 50)
 
-			eq1 = (-updated_level - evolutionary_level)
-			eq2 = round(np.exp(eq1), 6)
-			global_model_weight = eq2
+				eq1 = (-updated_level - evolutionary_level)
+				eq2 = round(np.exp(eq1), 6)
+				global_model_weight = eq2
 
 			local_model_weights = 1 - global_model_weight
 
