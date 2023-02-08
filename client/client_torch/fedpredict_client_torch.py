@@ -281,8 +281,8 @@ class FedPredictClientTorch(FedPerClientTorch):
 			else:
 				# evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
 				# normalizar dentro de 0 e 1
-				updated_level = 1/min(rounds_without_fit)
-				evolutionary_level = (server_round / 50)
+				updated_level = 1/rounds_without_fit
+				evolutionary_level = (server_round / 100)
 
 				eq1 = (-updated_level - evolutionary_level)
 				eq2 = round(np.exp(eq1), 6)
