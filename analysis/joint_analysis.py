@@ -37,7 +37,7 @@ class JointAnalysis():
                             df_concat = pd.concat([df_concat, df], ignore_index=True)
 
                         i += 1
-        pocs = [0.1, 0.3, 0.4]
+        pocs = [0.2, 0.3, 0.4]
         print(df_concat)
         # plots
         self.joint_plot(df=df_concat, experiment=1, pocs=pocs)
@@ -189,9 +189,9 @@ if __name__ == '__main__':
 
     strategies = ['FedPredict', 'FedAVG', 'FedClassAvg', 'FedPer', 'FedProto']
     # pocs = [0.1, 0.2, 0.3]
-    pocs = [0.1, 0.3, 0.4]
+    pocs = [0.2, 0.3, 0.4]
     # datasets = ['MNIST', 'CIFAR10']
-    datasets = ['MNIST', 'CIFAR10']
+    datasets = ['CIFAR10']
     clients = '50'
     model = 'CNN'
     file_type = 'evaluate_client.csv'
