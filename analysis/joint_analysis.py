@@ -165,9 +165,9 @@ if __name__ == '__main__':
     # pocs = [0.1, 0.2, 0.3]
     pocs = [0.2, 0.3, 0.4]
     # datasets = ['MNIST', 'CIFAR10']
-    datasets = ['MNIST']
+    datasets = ['MNIST', 'CIFAR10']
     clients = '50'
-    model = 'DNN'
+    model = 'CNN'
     file_type = 'evaluate_client.csv'
 
     joint_plot = JointAnalysis()
