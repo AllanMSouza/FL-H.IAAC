@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from t_distribution import T_Distribution
+from t_distribution import t_distribution_test
 from base_plots import bar_plot, line_plot
 import matplotlib.pyplot as plt
 import os
@@ -37,14 +37,40 @@ class JointAnalysis():
                             df_concat = pd.concat([df_concat, df], ignore_index=True)
 
                         i += 1
-        pocs = [0.2, 0.3, 0.4]
+        pocs = [0.1, 0.3, 0.4]
         print(df_concat)
+        # plots
         self.joint_plot(df=df_concat, experiment=1, pocs=pocs)
         # self.joint_plot(df=df_concat, experiment=2, pocs=pocs)
         # self.joint_plot(df=df_concat, experiment=3, pocs=pocs)
         # self.joint_plot(df=df_concat, experiment=4, pocs=pocs)
 
-    def groupb_by(self, df):
+        # table
+
+    def groupb_by_table(self, df):
+        parameters = int(df['Size of parameters'].mean())
+        accuracy = t_distribution_test(df['Accuracy'].tolist())
+
+        return pd.DataFrame({'Size of parameters (bytes)': [parameters], 'Accuracy': [accuracy]})
+
+    def joint_table(self, df, pocs, strategies):
+
+        df_test = df[['Round', 'Size of parameters', 'Strategy', 'Accuracy', 'Experiment', 'POC', 'Dataset']].groupby(
+            ['Round', 'Strategy', 'Experiment', 'POC', 'Dataset']).apply(
+            lambda e: self.groupb_by_plot(e)).reset_index()[
+            ['Round', 'Strategy', 'Experiment', 'POC', 'Dataset', 'Size of parameters (bytes)', 'Accuracy']]
+
+        df_test = df_test.query("""Round in [10, 100]""")
+
+
+
+
+
+
+
+        #  df.to_latex().replace("\}", "}").replace("\{", "{").replace("\\\nRecall", "\\\n\hline\nRecall").replace("\\\nF-score", "\\\n\hline\nF1-score")
+
+    def groupb_by_plot(self, df):
         parameters = int(df['Size of parameters'].mean())
         accuracy = float(df['Accuracy'].mean())
 
@@ -59,7 +85,7 @@ class JointAnalysis():
     def joint_plot(self, df, experiment, pocs):
         print("Joint plot exeprimento: ", experiment)
 
-        df_test = df[['Round', 'Size of parameters', 'Strategy', 'Accuracy', 'Experiment', 'POC', 'Dataset']].groupby(['Round', 'Strategy', 'Experiment', 'POC', 'Dataset']).apply(lambda e: self.groupb_by(e)).reset_index()[['Round', 'Strategy', 'Experiment', 'POC', 'Dataset', 'Size of parameters (bytes)', 'Accuracy']]
+        df_test = df[['Round', 'Size of parameters', 'Strategy', 'Accuracy', 'Experiment', 'POC', 'Dataset']].groupby(['Round', 'Strategy', 'Experiment', 'POC', 'Dataset']).apply(lambda e: self.groupb_by_plot(e)).reset_index()[['Round', 'Strategy', 'Experiment', 'POC', 'Dataset', 'Size of parameters (bytes)', 'Accuracy']]
         print("agrupou")
         print(df_test)
         # figsize=(12, 9),
@@ -163,7 +189,7 @@ if __name__ == '__main__':
 
     strategies = ['FedPredict', 'FedAVG', 'FedClassAvg', 'FedPer', 'FedProto']
     # pocs = [0.1, 0.2, 0.3]
-    pocs = [0.2, 0.3, 0.4]
+    pocs = [0.1, 0.3, 0.4]
     # datasets = ['MNIST', 'CIFAR10']
     datasets = ['MNIST', 'CIFAR10']
     clients = '50'
