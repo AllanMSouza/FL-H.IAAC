@@ -4,6 +4,7 @@ from t_distribution import t_distribution_test
 from base_plots import bar_plot, line_plot
 import matplotlib.pyplot as plt
 import seaborn as sns
+import scipy.stats as st
 import os
 
 class JointAnalysis():
@@ -48,6 +49,9 @@ class JointAnalysis():
 
         # table
         self.joint_table(df_concat, pocs, strategies, experiment=1)
+        self.joint_table(df_concat, pocs, strategies, experiment=2)
+        self.joint_table(df_concat, pocs, strategies, experiment=3)
+        self.joint_table(df_concat, pocs, strategies, experiment=4)
 
 
 
@@ -66,21 +70,28 @@ class JointAnalysis():
             lambda e: self.groupb_by_table(e)).reset_index()[
             ['Round', 'Strategy', 'Experiment', 'POC', 'Dataset', 'Size of parameters (bytes)', 'Accuracy']]
 
-        df_test = df_test.query("""Round in [10, 100]""")
+        # df_test = df_test.query("""Round in [10, 100]""")
+        print("agropou")
+        print(df_test)
 
         columns = ['0.3', '0.4']
 
         index = [np.array(['MNIST'] * len(columns) + ['CIFAR-10'] * len(columns)), np.array(columns * 2)]
 
         models_dict = {}
+        ci = 0.95
         for model_name in model_report:
 
             mnist_acc = {}
             cifar10_acc = {}
             for column in columns:
 
-                mnist_acc[column] = self.filter(df_test, experiment, 'MNIST', float(column))['Accuracy']
-                cifar10_acc[column] = self.filter(df_test, experiment, 'CIFAR10', float(column))['Accuracy']
+                # mnist_acc[column] = (self.filter(df_test, experiment, 'MNIST', float(column), strategy=model_name)['Accuracy']*100).mean().round(6)
+                # cifar10_acc[column] = (self.filter(df_test, experiment, 'CIFAR10', float(column), strategy=model_name)['Accuracy']*100).mean().round(6)
+                mnist_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'MNIST', float(column), strategy=model_name)[
+                                         'Accuracy'] * 100).tolist(), ci)
+                cifar10_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'CIFAR10', float(column), strategy=model_name)[
+                                           'Accuracy'] * 100).tolist(), ci)
 
             model_metrics = []
 
@@ -92,10 +103,30 @@ class JointAnalysis():
             models_dict[model_name] = model_metrics
 
         df_table = pd.DataFrame(models_dict, index=index).round(4)
+        print(df_table.to_string())
+
+
+
+        max_values = self.idmax(df_table)
+        print("zzz", max_values)
+
+        for max_value in max_values:
+            row_index = max_value[0]
+            column = max_value[1]
+            column_values = df_table[column].tolist()
+            column_values[row_index] = "textbf{" + str(column_values[row_index]) + "}"
+
+            df_table[column] = np.array(column_values)
 
         print(df_table)
+        df_table.columns = np.array(['FedPredict', 'FedAvg', 'FedClassAvg', 'FedPer', 'FedProto'])
+        print(df_table.columns)
 
+        latex = df_table.to_latex().replace("\\\nMNIST", "\\\n\hline\nMNIST").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}")
 
+        base_dir = """analysis/output/experiment_{}/""".format(str(experiment + 1))
+        filename = """{}latex_{}.txt""".format(base_dir, str(experiment))
+        pd.DataFrame({'latex': [latex]}).to_csv(filename, header=False, index=False)
 
         #  df.to_latex().replace("\}", "}").replace("\{", "{").replace("\\\nRecall", "\\\n\hline\nRecall").replace("\\\nF-score", "\\\n\hline\nF1-score")
 
@@ -105,10 +136,12 @@ class JointAnalysis():
 
         return pd.DataFrame({'Size of parameters (bytes)': [parameters], 'Accuracy': [accuracy]})
 
-    def filter(self, df, experiment, dataset, poc):
+    def filter(self, df, experiment, dataset, poc, strategy):
 
+        # df['Accuracy'] = df['Accuracy']*100
         df = df.query(
-            """Experiment=={} and POC=={} and Dataset=='{}'""".format(str(experiment), str(poc), str(dataset)))
+            """Experiment=={} and POC=={} and Dataset=='{}' and Strategy=='{}'""".format(str(experiment), str(poc), str(dataset), strategy))
+        print("filtrou: ", df)
 
         return df
 
@@ -217,6 +250,52 @@ class JointAnalysis():
         fig.savefig("""{}joint_plot_{}.png""".format(base_dir, str(experiment)), bbox_inches='tight', dpi=400)
         fig.savefig("""{}joint_plot_{}.svg""".format(base_dir, str(experiment)), bbox_inches='tight', dpi=400)
 
+    def idmax(self, df):
+
+        df_indexes = []
+        columns = df.columns.tolist()
+        print("colunas", columns)
+        for i in range(len(df)):
+
+            row = df.iloc[i].tolist()
+            print("ddd", row)
+            indexes = self.select_mean(i, row, columns)
+            df_indexes += indexes
+
+        return df_indexes
+
+    def select_mean(self, index, values, columns):
+
+        list_of_means = []
+        indexes = []
+        print("ola: ", values, "ola0")
+
+        for i in range(len(values)):
+
+            print("valor: ", values[i])
+            value = float(str(values[i])[:4])
+            list_of_means.append(value)
+
+        max_value = max(list_of_means)
+        print("maximo: ", max_value)
+        for i in range(len(list_of_means)):
+
+            if list_of_means[i] == max_value:
+                indexes.append([index, columns[i]])
+
+        return indexes
+
+    def t_distribution(self, data, ci):
+
+        min_ = st.t.interval(alpha=ci, df=len(data) - 1,
+                      loc=np.mean(data),
+                      scale=st.sem(data))[0]
+
+        mean = np.mean(data)
+        average_variation = (mean - min_).round(1)
+        mean = mean.round(1)
+
+        return str(mean) + u"\u00B1" + str(average_variation)
 
 if __name__ == '__main__':
 
