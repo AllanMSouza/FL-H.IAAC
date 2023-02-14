@@ -44,10 +44,14 @@ class JointAnalysis():
         df_concat['Accuracy (%)'] = df_concat['Accuracy'] * 100
         df_concat['Round (t)'] = df_concat['Round']
         # plots
-        self.joint_plot_acc(df=df_concat, experiment=1, pocs=pocs)
-        self.joint_plot_acc(df=df_concat, experiment=2, pocs=pocs)
-        self.joint_plot_acc(df=df_concat, experiment=3, pocs=pocs)
-        self.joint_plot_acc(df=df_concat, experiment=4, pocs=pocs)
+        # self.joint_plot_acc_two_plots(df=df_concat, experiment=1, pocs=pocs)
+        self.joint_plot_acc_four_plots(df=df_concat, experiment=1, pocs=pocs)
+        # self.joint_plot_acc_two_plots(df=df_concat, experiment=2, pocs=pocs)
+        self.joint_plot_acc_four_plots(df=df_concat, experiment=2, pocs=pocs)
+        # self.joint_plot_acc_two_plots(df=df_concat, experiment=3, pocs=pocs)
+        self.joint_plot_acc_four_plots(df=df_concat, experiment=3, pocs=pocs)
+        # self.joint_plot_acc_two_plots(df=df_concat, experiment=4, pocs=pocs)
+        self.joint_plot_acc_four_plots(df=df_concat, experiment=4, pocs=pocs)
 
         # table
         self.joint_table(df_concat, pocs, strategies, experiment=1)
@@ -158,7 +162,7 @@ class JointAnalysis():
 
         print("filtrado: ", df, df[hue].unique().tolist())
         line_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, type='1')
-    def joint_plot_acc(self, df, experiment, pocs):
+    def joint_plot_acc_two_plots(self, df, experiment, pocs):
         print("Joint plot exeprimento: ", experiment)
 
         df_test = df[['Round (t)', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'POC', 'Dataset']].groupby(['Round (t)', 'Strategy', 'Experiment', 'POC', 'Dataset']).apply(lambda e: self.groupb_by_plot(e)).reset_index()[['Round (t)', 'Strategy', 'Experiment', 'POC', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)']]
@@ -258,6 +262,107 @@ class JointAnalysis():
         # plt.ylabel(y_column)
         fig.savefig("""{}joint_plot_{}.png""".format(base_dir, str(experiment)), bbox_inches='tight', dpi=400)
         fig.savefig("""{}joint_plot_{}.svg""".format(base_dir, str(experiment)), bbox_inches='tight', dpi=400)
+
+    def joint_plot_acc_four_plots(self, df, experiment, pocs):
+        print("Joint plot exeprimento: ", experiment)
+
+        df_test = df[['Round (t)', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'POC', 'Dataset']].groupby(['Round (t)', 'Strategy', 'Experiment', 'POC', 'Dataset']).apply(lambda e: self.groupb_by_plot(e)).reset_index()[['Round (t)', 'Strategy', 'Experiment', 'POC', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)']]
+        print("agrupou")
+        print(df_test)
+        # figsize=(12, 9),
+        sns.set(style='whitegrid')
+        fig, axs = plt.subplots(2, 2,  sharex='all', sharey='all', figsize=(6, 7))
+
+        x_column = 'Round (t)'
+        y_column = 'Accuracy (%)'
+        plt.xlabel(x_column)
+        plt.ylabel(y_column)
+        base_dir = """analysis/output/experiment_{}/""".format(str(experiment+1))
+        # ====================================================================
+        poc = pocs[1]
+        dataset = 'MNIST'
+        title = """{} ({})""".format(dataset, poc)
+        filename = ''
+        i = 0
+        j = 0
+        self.filter_and_plot(ax=axs[i,j], base_dir=base_dir, filename=filename, title=title, df=df_test, experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column, hue='Strategy')
+        # axs[i].get_legend().remove()
+        # axs[i].set_xlabel('')
+        # axs[i].set_ylabel('')
+        # ====================================================================
+        poc = pocs[2]
+        dataset = 'MNIST'
+        title = """{} ({})""".format(dataset, poc)
+        i = 0
+        j = 1
+        self.filter_and_plot(ax=axs[i,j], base_dir=base_dir, filename=filename, title=title, df=df_test, experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column, hue='Strategy')
+        axs[i,j].get_legend().remove()
+        # axs[i].set_xlabel('')
+        # axs[i].set_ylabel('')
+        # ====================================================================
+        poc = pocs[1]
+        dataset = 'CIFAR10'
+        title = """CIFAR-10 ({})""".format(poc)
+        i = 1
+        j = 0
+        self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df_test,
+                             experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
+                             hue='Strategy')
+        axs[i, j].get_legend().remove()
+        axs[i, j].set_xlabel('')
+        axs[i, j].set_ylabel('')
+        # ====================================================================
+        poc = pocs[2]
+        dataset = 'CIFAR10'
+        title = """CIFAR-10 ({})""".format(poc)
+        i = 1
+        j = 1
+        self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df_test,
+                             experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
+                             hue='Strategy')
+        axs[i, j].get_legend().remove()
+        axs[i, j].set_xlabel('')
+        axs[i, j].set_ylabel('')
+        # ====================================================================
+        # poc = pocs[2]
+        # dataset = 'CIFAR10'
+        # title = """CIFAR-10 ({})""".format(poc)
+        # i = 1
+        # j = 1
+        # self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df_test,
+        #                      experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
+        #                      hue='Strategy')
+        # axs[i, j].get_legend().remove()
+        # axs[i, j].set_xlabel('')
+        # axs[i, j].set_ylabel('')
+        # ====================================================================
+        # poc = pocs[2]
+        # dataset = 'CIFAR10'
+        # title = """CIFAR-10 ({})""".format(poc)
+        # i = 1
+        # j = 1
+        # self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df_test,
+        #                      experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
+        #                      hue='Strategy')
+        # legend = axs[i, j].get_legend()
+        # print("legenda: ", legend)
+        # # lines_labels = [ax.get_legend_handles_labels() for ax in fig.axes]
+        # # lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
+        # axs[i, j].get_legend().remove()
+        # axs[i, j].set_xlabel('')
+        # axs[i, j].set_ylabel('')
+        # =========================///////////================================
+        fig.suptitle("""Exp. {}""".format(str(experiment)), fontsize=16)
+        plt.tight_layout()
+        # plt.subplots_adjust(right=0.9)
+        # fig.legend(
+        #            loc="lower right")
+        # fig.legend(lines, labels)
+        # plt.tick_params(labelcolor='none', which='both', top=False, bottom=False, left=False, right=False)
+        plt.xlabel(x_column)
+        # plt.ylabel(y_column)
+        fig.savefig("""{}joint_plot_four_plot_{}.png""".format(base_dir, str(experiment)), bbox_inches='tight', dpi=400)
+        fig.savefig("""{}joint_plot_four_plot_{}.svg""".format(base_dir, str(experiment)), bbox_inches='tight', dpi=400)
 
     def idmax(self, df):
 
