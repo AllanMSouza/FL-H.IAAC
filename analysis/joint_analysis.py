@@ -143,7 +143,7 @@ class JointAnalysis():
         # df['Accuracy (%)'] = df['Accuracy (%)']*100
         if strategy is not None:
             df = df.query(
-                """Experiment=={} and POC=={} and Dataset=='{}' and Strategy=='{}'""".format(str(experiment), str(poc), str(dataset), strategy))
+                """Experiment=={} and POC=={} and Dataset=='{}' and Strategy=='{}'""".format(str(experiment), float(poc), str(dataset), strategy))
         else:
             df = df.query(
                 """Experiment=={} and POC=={} and Dataset=='{}'""".format(str(experiment), str(poc),
@@ -311,7 +311,7 @@ if __name__ == '__main__':
     experiments = {1: {'new_clients': 'new_clients_False_train_False', 'local_epochs': '1_local_epochs'},
                   2: {'new_clients': 'new_clients_True_train_False', 'local_epochs': '1_local_epochs'},
                   3: {'new_clients': 'new_clients_True_train_True', 'local_epochs': '1_local_epochs'},
-                  4: {'new_clients': 'new_clients_True_train_True', 'local_epochs': '1_local_epochs'}}
+                  4: {'new_clients': 'new_clients_True_train_True', 'local_epochs': '2_local_epochs'}}
 
     strategies = ['FedPredict', 'FedAVG', 'FedClassAvg', 'FedPer', 'FedProto']
     # pocs = [0.1, 0.2, 0.3]
