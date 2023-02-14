@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from t_distribution import t_distribution_test
-from base_plots import bar_plot, line_plot
+from base_plots import bar_plot, line_plot, ecdf_plot
 import matplotlib.pyplot as plt
 import seaborn as sns
 import scipy.stats as st
@@ -41,11 +41,13 @@ class JointAnalysis():
                         count += 1
         pocs = [0.2, 0.3, 0.4]
         print(df_concat)
+        df_concat['Accuracy (%)'] = df_concat['Accuracy'] * 100
+        df_concat['Round (t)'] = df_concat['Round']
         # plots
-        # self.joint_plot(df=df_concat, experiment=1, pocs=pocs)
-        # self.joint_plot(df=df_concat, experiment=2, pocs=pocs)
-        # self.joint_plot(df=df_concat, experiment=3, pocs=pocs)
-        # self.joint_plot(df=df_concat, experiment=4, pocs=pocs)
+        self.joint_plot_acc(df=df_concat, experiment=1, pocs=pocs)
+        self.joint_plot_acc(df=df_concat, experiment=2, pocs=pocs)
+        self.joint_plot_acc(df=df_concat, experiment=3, pocs=pocs)
+        self.joint_plot_acc(df=df_concat, experiment=4, pocs=pocs)
 
         # table
         self.joint_table(df_concat, pocs, strategies, experiment=1)
@@ -57,18 +59,18 @@ class JointAnalysis():
 
     def groupb_by_table(self, df):
         parameters = int(df['Size of parameters'].mean())
-        # accuracy = t_distribution_test(df['Accuracy'].tolist())
-        accuracy = df['Accuracy'].mean()
+        # accuracy = t_distribution_test(df['Accuracy (%)'].tolist())
+        accuracy = df['Accuracy (%)'].mean()
 
-        return pd.DataFrame({'Size of parameters (bytes)': [parameters], 'Accuracy': [accuracy]})
+        return pd.DataFrame({'Size of parameters (bytes)': [parameters], 'Accuracy (%)': [accuracy]})
 
     def joint_table(self, df, pocs, strategies, experiment):
 
         model_report = {i: {} for i in strategies}
-        df_test = df[['Round', 'Size of parameters', 'Strategy', 'Accuracy', 'Experiment', 'POC', 'Dataset']].groupby(
-            ['Round', 'Strategy', 'Experiment', 'POC', 'Dataset']).apply(
+        df_test = df[['Round (t)', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'POC', 'Dataset']].groupby(
+            ['Round (t)', 'Strategy', 'Experiment', 'POC', 'Dataset']).apply(
             lambda e: self.groupb_by_table(e)).reset_index()[
-            ['Round', 'Strategy', 'Experiment', 'POC', 'Dataset', 'Size of parameters (bytes)', 'Accuracy']]
+            ['Round (t)', 'Strategy', 'Experiment', 'POC', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)']]
 
         # df_test = df_test.query("""Round in [10, 100]""")
         print("agropou")
@@ -86,12 +88,12 @@ class JointAnalysis():
             cifar10_acc = {}
             for column in columns:
 
-                # mnist_acc[column] = (self.filter(df_test, experiment, 'MNIST', float(column), strategy=model_name)['Accuracy']*100).mean().round(6)
-                # cifar10_acc[column] = (self.filter(df_test, experiment, 'CIFAR10', float(column), strategy=model_name)['Accuracy']*100).mean().round(6)
+                # mnist_acc[column] = (self.filter(df_test, experiment, 'MNIST', float(column), strategy=model_name)['Accuracy (%)']*100).mean().round(6)
+                # cifar10_acc[column] = (self.filter(df_test, experiment, 'CIFAR10', float(column), strategy=model_name)['Accuracy (%)']*100).mean().round(6)
                 mnist_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'MNIST', float(column), strategy=model_name)[
-                                         'Accuracy'] * 100).tolist(), ci)
+                                         'Accuracy (%)']).tolist(), ci)
                 cifar10_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'CIFAR10', float(column), strategy=model_name)[
-                                           'Accuracy'] * 100).tolist(), ci)
+                                           'Accuracy (%)']).tolist(), ci)
 
             model_metrics = []
 
@@ -132,15 +134,20 @@ class JointAnalysis():
 
     def groupb_by_plot(self, df):
         parameters = int(df['Size of parameters'].mean())
-        accuracy = float(df['Accuracy'].mean())
+        accuracy = float(df['Accuracy (%)'].mean())
 
-        return pd.DataFrame({'Size of parameters (bytes)': [parameters], 'Accuracy': [accuracy]})
+        return pd.DataFrame({'Size of parameters (bytes)': [parameters], 'Accuracy (%)': [accuracy]})
 
-    def filter(self, df, experiment, dataset, poc, strategy):
+    def filter(self, df, experiment, dataset, poc, strategy=None):
 
-        # df['Accuracy'] = df['Accuracy']*100
-        df = df.query(
-            """Experiment=={} and POC=={} and Dataset=='{}' and Strategy=='{}'""".format(str(experiment), str(poc), str(dataset), strategy))
+        # df['Accuracy (%)'] = df['Accuracy (%)']*100
+        if strategy is not None:
+            df = df.query(
+                """Experiment=={} and POC=={} and Dataset=='{}' and Strategy=='{}'""".format(str(experiment), str(poc), str(dataset), strategy))
+        else:
+            df = df.query(
+                """Experiment=={} and POC=={} and Dataset=='{}'""".format(str(experiment), str(poc),
+                                                                                             str(dataset)))
         print("filtrou: ", df)
 
         return df
@@ -151,18 +158,20 @@ class JointAnalysis():
 
         print("filtrado: ", df, df[hue].unique().tolist())
         line_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, type='1')
-    def joint_plot(self, df, experiment, pocs):
+    def joint_plot_acc(self, df, experiment, pocs):
         print("Joint plot exeprimento: ", experiment)
 
-        df_test = df[['Round', 'Size of parameters', 'Strategy', 'Accuracy', 'Experiment', 'POC', 'Dataset']].groupby(['Round', 'Strategy', 'Experiment', 'POC', 'Dataset']).apply(lambda e: self.groupb_by_plot(e)).reset_index()[['Round', 'Strategy', 'Experiment', 'POC', 'Dataset', 'Size of parameters (bytes)', 'Accuracy']]
+        df_test = df[['Round (t)', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'POC', 'Dataset']].groupby(['Round (t)', 'Strategy', 'Experiment', 'POC', 'Dataset']).apply(lambda e: self.groupb_by_plot(e)).reset_index()[['Round (t)', 'Strategy', 'Experiment', 'POC', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)']]
         print("agrupou")
         print(df_test)
         # figsize=(12, 9),
         sns.set(style='whitegrid')
         fig, axs = plt.subplots(2, 1,  sharex='all', sharey='all', figsize=(6, 8.8))
 
-        x_column = 'Round'
-        y_column = 'Accuracy'
+        x_column = 'Round (t)'
+        y_column = 'Accuracy (%)'
+        plt.xlabel(x_column)
+        plt.ylabel(y_column)
         base_dir = """analysis/output/experiment_{}/""".format(str(experiment+1))
         # ====================================================================
         poc = pocs[1]
@@ -173,8 +182,8 @@ class JointAnalysis():
         j = 0
         self.filter_and_plot(ax=axs[i], base_dir=base_dir, filename=filename, title=title, df=df_test, experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column, hue='Strategy')
         # axs[i].get_legend().remove()
-        axs[i].set_xlabel('')
-        axs[i].set_ylabel('')
+        # axs[i].set_xlabel('')
+        # axs[i].set_ylabel('')
         # ====================================================================
         poc = pocs[1]
         dataset = 'CIFAR10'
@@ -183,8 +192,8 @@ class JointAnalysis():
         j = 1
         self.filter_and_plot(ax=axs[i], base_dir=base_dir, filename=filename, title=title, df=df_test, experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column, hue='Strategy')
         axs[i].get_legend().remove()
-        axs[i].set_xlabel('')
-        axs[i].set_ylabel('')
+        # axs[i].set_xlabel('')
+        # axs[i].set_ylabel('')
         # # ====================================================================
         # poc = pocs[2]
         # dataset = 'MNIST'
@@ -245,7 +254,7 @@ class JointAnalysis():
         #            loc="lower right")
         # fig.legend(lines, labels)
         # plt.tick_params(labelcolor='none', which='both', top=False, bottom=False, left=False, right=False)
-        # plt.xlabel(x_column)
+        plt.xlabel(x_column)
         # plt.ylabel(y_column)
         fig.savefig("""{}joint_plot_{}.png""".format(base_dir, str(experiment)), bbox_inches='tight', dpi=400)
         fig.savefig("""{}joint_plot_{}.svg""".format(base_dir, str(experiment)), bbox_inches='tight', dpi=400)
