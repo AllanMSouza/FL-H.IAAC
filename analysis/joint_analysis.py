@@ -33,6 +33,7 @@ class JointAnalysis():
                         df['Experiment'] = np.array([i] * len(df))
                         df['POC'] = np.array([poc] * len(df))
                         df['Dataset'] = np.array([dataset] * len(df))
+                        df['Strategy'] = np.array(['FedAvg' if i=='FedAVG' else i for i in df['Strategy'].tolist()])
                         if count == 0:
                             df_concat = df
                         else:
@@ -54,10 +55,10 @@ class JointAnalysis():
         self.joint_plot_acc_four_plots(df=df_concat, experiment=4, pocs=pocs)
 
         # table
-        self.joint_table(df_concat, pocs, strategies, experiment=1)
-        self.joint_table(df_concat, pocs, strategies, experiment=2)
-        self.joint_table(df_concat, pocs, strategies, experiment=3)
-        self.joint_table(df_concat, pocs, strategies, experiment=4)
+        # self.joint_table(df_concat, pocs, strategies, experiment=1)
+        # self.joint_table(df_concat, pocs, strategies, experiment=2)
+        # self.joint_table(df_concat, pocs, strategies, experiment=3)
+        # self.joint_table(df_concat, pocs, strategies, experiment=4)
 
 
 
@@ -79,8 +80,10 @@ class JointAnalysis():
         # df_test = df_test.query("""Round in [10, 100]""")
         print("agropou")
         print(df_test)
+        convert_dict = {0.1: 5, 0.2: 10, 0.3: 15, 0.4: 20}
+        df_test['POC'] = np.array([convert_dict[i] for i in df_test['POC'].tolist()])
 
-        columns = ['0.3', '0.4']
+        columns = ['15', '20']
 
         index = [np.array(['MNIST'] * len(columns) + ['CIFAR-10'] * len(columns)), np.array(columns * 2)]
 
@@ -156,12 +159,12 @@ class JointAnalysis():
 
         return df
 
-    def filter_and_plot(self, ax, base_dir, filename, title, df, experiment, dataset, poc, x_column, y_column, hue):
+    def filter_and_plot(self, ax, base_dir, filename, title, df, experiment, dataset, poc, x_column, y_column, hue, hue_order=None):
 
         df = self.filter(df, experiment, dataset, poc)
 
         print("filtrado: ", df, df[hue].unique().tolist())
-        line_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, type='1')
+        line_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, type='1', hue_order=hue_order)
     def joint_plot_acc_two_plots(self, df, experiment, pocs):
         print("Joint plot exeprimento: ", experiment)
 
@@ -271,7 +274,7 @@ class JointAnalysis():
         print(df_test)
         # figsize=(12, 9),
         sns.set(style='whitegrid')
-        fig, axs = plt.subplots(2, 2,  sharex='all', sharey='all', figsize=(6, 7))
+        fig, axs = plt.subplots(2, 2,  sharex='all', sharey='all', figsize=(6, 6.5))
 
         x_column = 'Round (t)'
         y_column = 'Accuracy (%)'
@@ -281,45 +284,62 @@ class JointAnalysis():
         # ====================================================================
         poc = pocs[1]
         dataset = 'MNIST'
-        title = """{} ({})""".format(dataset, poc)
+        title = """{} (C={})""".format(dataset, int(float(poc)*50))
         filename = ''
         i = 0
         j = 0
-        self.filter_and_plot(ax=axs[i,j], base_dir=base_dir, filename=filename, title=title, df=df_test, experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column, hue='Strategy')
+        hue_order = ['FedPredict', 'FedClassAvg', 'FedPer', 'FedProto', 'FedAvg']
+        self.filter_and_plot(ax=axs[i,j], base_dir=base_dir, filename=filename, title=title, df=df_test,
+                             experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
+                             hue='Strategy', hue_order=hue_order)
         # axs[i].get_legend().remove()
         # axs[i].set_xlabel('')
         # axs[i].set_ylabel('')
+        handles, labels = axs[i, j].get_legend_handles_labels()
+        # sort both labels and handles by labels
+        # order = ['FedPredict', 'FedClassAvg', 'FedPer', 'FedAvg', 'FedProto']
+        # order = {k: f for k, f in zip(order, handles)}
+
+        # handles, labels = plt.gca().get_legend_handles_labels()
+        #
+        # # specify order of items in legend
+        # order = [1, 2, 0, 4, 3]
+        #
+        # # add legend to plot
+        # plt.legend([handles[idx] for idx in order], [labels[idx] for idx in order])
         # ====================================================================
         poc = pocs[2]
         dataset = 'MNIST'
-        title = """{} ({})""".format(dataset, poc)
+        title = """{} (C={})""".format(dataset, int(float(poc)*50))
         i = 0
         j = 1
-        self.filter_and_plot(ax=axs[i,j], base_dir=base_dir, filename=filename, title=title, df=df_test, experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column, hue='Strategy')
+        self.filter_and_plot(ax=axs[i,j], base_dir=base_dir, filename=filename, title=title, df=df_test,
+                             experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
+                             hue='Strategy', hue_order=hue_order)
         axs[i,j].get_legend().remove()
         # axs[i].set_xlabel('')
         # axs[i].set_ylabel('')
         # ====================================================================
         poc = pocs[1]
         dataset = 'CIFAR10'
-        title = """CIFAR-10 ({})""".format(poc)
+        title = """CIFAR-10 (C={})""".format(int(float(poc)*50))
         i = 1
         j = 0
         self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df_test,
                              experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
-                             hue='Strategy')
+                             hue='Strategy', hue_order=hue_order)
         axs[i, j].get_legend().remove()
         axs[i, j].set_xlabel('')
         axs[i, j].set_ylabel('')
         # ====================================================================
         poc = pocs[2]
         dataset = 'CIFAR10'
-        title = """CIFAR-10 ({})""".format(poc)
+        title = """CIFAR-10 (C={})""".format(int(float(poc)*50))
         i = 1
         j = 1
         self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df_test,
                              experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
-                             hue='Strategy')
+                             hue='Strategy', hue_order=hue_order)
         axs[i, j].get_legend().remove()
         axs[i, j].set_xlabel('')
         axs[i, j].set_ylabel('')

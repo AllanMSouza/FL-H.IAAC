@@ -30,7 +30,7 @@ def bar_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_s
     figure.savefig(base_dir + "png/" + file_name + log + ".png", bbox_inches='tight', dpi=400)
     figure.savefig(base_dir + "svg/" + file_name + log + ".svg", bbox_inches='tight', dpi=400)
 
-def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_scale=False, ax=None, type=None):
+def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_scale=False, ax=None, type=None, hue_order=None):
     Path(base_dir).mkdir(parents=True, exist_ok=True)
 
     if ax is None:
@@ -42,9 +42,12 @@ def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_
         log = "_log_"
     if type is not None:
         palette = sns.color_palette()
-        figure = sns.lineplot(x=x_column, y=y_column, data=df, hue=hue, ax=ax, palette=palette).set_title(title)
+        figure = sns.lineplot(x=x_column, y=y_column, data=df, hue=hue, ax=ax, palette=palette, hue_order=hue_order).set_title(title)
     else:
-        figure = sns.lineplot(x=x_column, y=y_column, data=df, hue=hue, ax=ax).set_title(title)
+        figure = sns.lineplot(x=x_column, y=y_column, data=df, hue=hue, ax=ax, hue_order=hue_order).set_title(title)
+
+    if type == 2:
+        plt.legend(bbox_to_anchor=(0.5, 1), loc='upper left', borderaxespad=0, title='Rounds since the last training (nt)')
 
     # sns.set(style='whitegrid', palette=palette)
 

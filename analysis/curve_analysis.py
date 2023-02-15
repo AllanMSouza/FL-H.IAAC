@@ -199,10 +199,11 @@ class Verify:
         y = y0 + y1 + y2 + y3 + y4
         x_column = 'Round (t)'
         if index == 0:
-            y_column = 'Weight of global parameters (gw)'
+            y_column = 'Weight of global parameter (gw)'
         else:
             y_column = 'Updated level (ul)'
         hue = 'Rounds since the last training (nt)'
+        hue_order = [100, 10, 5, 2, 1]
         print(len(x), len(y), len(rounds_without_fit_list))
         df = pd.DataFrame({x_column: x, y_column: y, hue: rounds_without_fit_list})
         title = ""
@@ -224,7 +225,8 @@ class Verify:
                      y_column=y_column,
                      title=title,
                         hue=hue,
-                      type=1)
+                      type=2,
+                      hue_order=hue_order)
 
 if __name__ == '__main__':
 
