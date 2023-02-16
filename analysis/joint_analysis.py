@@ -274,7 +274,7 @@ class JointAnalysis():
         print(df_test)
         # figsize=(12, 9),
         sns.set(style='whitegrid')
-        fig, axs = plt.subplots(2, 2,  sharex='all', sharey='all', figsize=(6, 6.5))
+        fig, axs = plt.subplots(2, 2,  sharex='all', sharey='all', figsize=(6, 6))
 
         x_column = 'Round (t)'
         y_column = 'Accuracy (%)'
@@ -292,10 +292,9 @@ class JointAnalysis():
         self.filter_and_plot(ax=axs[i,j], base_dir=base_dir, filename=filename, title=title, df=df_test,
                              experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order)
-        # axs[i].get_legend().remove()
-        # axs[i].set_xlabel('')
-        # axs[i].set_ylabel('')
-        handles, labels = axs[i, j].get_legend_handles_labels()
+        axs[i,j].get_legend().remove()
+        axs[i,j].set_xlabel('')
+        axs[i,j].set_ylabel('')
         # sort both labels and handles by labels
         # order = ['FedPredict', 'FedClassAvg', 'FedPer', 'FedAvg', 'FedProto']
         # order = {k: f for k, f in zip(order, handles)}
@@ -372,15 +371,21 @@ class JointAnalysis():
         # axs[i, j].set_xlabel('')
         # axs[i, j].set_ylabel('')
         # =========================///////////================================
-        fig.suptitle("""Exp. {}""".format(str(experiment)), fontsize=16)
+        fig.suptitle("", fontsize=16)
         plt.tight_layout()
+        plt.subplots_adjust(wspace=0.07, hspace=0.14)
         # plt.subplots_adjust(right=0.9)
         # fig.legend(
         #            loc="lower right")
         # fig.legend(lines, labels)
         # plt.tick_params(labelcolor='none', which='both', top=False, bottom=False, left=False, right=False)
-        plt.xlabel(x_column)
-        # plt.ylabel(y_column)
+        fig.supxlabel(x_column, y=-0.02)
+        fig.supylabel(y_column, x=-0.01)
+
+
+        lines_labels = [axs[0, 0].get_legend_handles_labels()]
+        lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
+        fig.legend(lines, labels, loc='upper center', ncol=3, bbox_to_anchor=(0.5, 1.06))
         fig.savefig("""{}joint_plot_four_plot_{}.png""".format(base_dir, str(experiment)), bbox_inches='tight', dpi=400)
         fig.savefig("""{}joint_plot_four_plot_{}.svg""".format(base_dir, str(experiment)), bbox_inches='tight', dpi=400)
 
