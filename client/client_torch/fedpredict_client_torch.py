@@ -62,33 +62,6 @@ class FedPredictClientTorch(FedPerClientTorch):
 		self.accuracy_of_last_round_of_fit = 0
 		self.start_server = 0
 
-	# def create_model(self):
-	#
-	# 	try:
-	# 		# print("tamanho: ", self.input_shape)
-	# 		input_shape = self.input_shape[1] * self.input_shape[2]
-	# 		print("shape da entrada: ", self.input_shape)
-	# 		# if self.dataset == 'CIFAR10':
-	# 		# 	input_shape = input_shape*3
-	# 		if self.model_name == 'Logist Regression':
-	# 			return Logistic(input_shape, self.num_classes)
-	# 		elif self.model_name == 'DNN':
-	# 			return DNN_proto_2(input_shape=input_shape, num_classes=self.num_classes)
-	# 		elif self.model_name == 'CNN':
-	# 			if self.dataset == 'MNIST':
-	# 				input_shape = 1
-	# 				mid_dim = 256
-	# 			else:
-	# 				input_shape = 3
-	# 				mid_dim = 400
-	# 			return CNN(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim)
-	# 		else:
-	# 			raise Exception("Wrong model name")
-	# 	except Exception as e:
-	# 		print("create model")
-	# 		print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
-
-
 	def get_parameters_of_model(self):
 		try:
 			parameters = [i.detach().numpy() for i in self.model.parameters()]
@@ -117,24 +90,6 @@ class FedPredictClientTorch(FedPerClientTorch):
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def save_parameters(self):
-
-		# ======================================================================================
-		# usando json
-		# try:
-		# 	filename = """./fedper_saved_weights/{}/{}/{}.json""".format(self.model_name, self.cid, self.cid)
-		# 	weights = self.get_parameters(config={})
-		# 	personalized_layers_weights = []
-		# 	for i in range(self.n_personalized_layers):
-		# 		personalized_layers_weights.append(weights[len(weights)-self.n_personalized_layers+i])
-		# 	data = json.dumps([i.tolist() for i in personalized_layers_weights])
-		# 	jsonFile = open(filename, "w")
-		# 	jsonFile.write(data)
-		# 	jsonFile.close()
-		# except Exception as e:
-		# 	print("save parameters")
-		# 	print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
-
-		# ======================================================================================
 		# usando 'torch.save'
 		try:
 			filename = """./fedpredict_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid)
@@ -154,130 +109,10 @@ class FedPredictClientTorch(FedPerClientTorch):
 				#print("acc: ", acc)
 			else:
 				acc = 0
-			# 0
-			# max_rounds_without_fit = 3
-			# alpha = 1.2
-			# beta = 9
-			# # normalizar dentro de 0 e 1
-			# rounds_without_fit  = pow(min(rounds_without_fit, max_rounds_without_fit)/max_rounds_without_fit, alpha)
-			# global_model_weight = 1
-			# if rounds_without_fit > 0:
-			# 	# o denominador faz com que a curva se prolongue com menor decaimento
-			# 	# Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
-			# 	eq1 = (-rounds_without_fit-(server_round-self.start_round)/beta)
-			# 	# eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
-			# 	# do modelo global
-			# 	eq2 = pow(2.7, eq1)
-			# 	eq3 = min(eq2, 1)
-			# 	global_model_weight = eq3
-			# 1
-			# max_rounds_without_fit = 3
-			# alpha = 2
-			# beta = 9
-			# print("teste3: ", rounds_without_fit, self.round_of_last_fit)
-			# # normalizar dentro de 0 e 1
-			# rounds_without_fit = pow(
-			# 	min(rounds_without_fit + 0.00001, max_rounds_without_fit) / (max_rounds_without_fit + 0.00001), -alpha)
-			# global_model_weight = 1
-			# if rounds_without_fit > 0:
-			# 	# o denominador faz com que a curva se prolongue com menor decaimento
-			# 	# Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
-			# 	eq1 = (- rounds_without_fit - (server_round-self.start_server) / beta)
-			# 	# eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
-			# 	# do modelo global
-			# 	eq2 = np.exp(eq1)
-			# 	eq3 = min(eq2, 1)
-			# 	global_model_weight = eq3
-			# 2
-			# max_rounds_without_fit = 3
-			# alpha = 1.2
-			# beta = 7
-			# start_round = 0
-			# # normalizar dentro de 0 e 1
-			# rounds_without_fit = pow(
-			# 	min(rounds_without_fit + 0.0001, max_rounds_without_fit), -alpha)
-			# global_model_weight = 1
-			# if rounds_without_fit > 0:
-			# 	# o denominador faz com que a curva se prolongue com menor decaimento
-			# 	# Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
-			# 	eq1 = (-rounds_without_fit - (server_round - start_round) / beta)
-			# 	# eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
-			# 	# do modelo global
-			# 	eq2 = np.exp(eq1)
-			# 	eq3 = min(eq2, 1)
-			# 	global_model_weight = eq3
-			# 4
-			# max_rounds_without_fit = 3
-			# alpha = 1.2
-			# beta = 9
-			# start_round = self.round_of_last_fit
-			# # normalizar dentro de 0 e 1
-			# rounds_without_fit = pow(
-			# 	min(rounds_without_fit + 0.0001, max_rounds_without_fit), -alpha)
-			# global_model_weight = 1
-			# if rounds_without_fit > 0:
-			# 	# o denominador faz com que a curva se prolongue com menor decaimento
-			# 	# Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
-			# 	eq1 = (-rounds_without_fit - (server_round - start_round) / beta)
-			# 	# eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
-			# 	# do modelo global
-			# 	eq2 = np.exp(eq1)
-			# 	eq3 = min(eq2, 1)
-			# 	global_model_weight = eq3
-			# 5
-			# max_rounds_without_fit = 3
-			# alpha = 1.2
-			# beta = 9
-			# start_round = self.round_of_last_fit
-			# # normalizar dentro de 0 e 1
-			# fx_rounds_without_fit = pow(
-			# 	min(rounds_without_fit + 0.0001, max_rounds_without_fit), -alpha)
-			# global_model_weight = 1
-			# if rounds_without_fit > 0:
-			# 	# o denominador faz com que a curva se prolongue com menor decaimento
-			# 	# Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
-			# 	eq1 = (-fx_rounds_without_fit - (rounds_without_fit/beta))
-			# 	# eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
-			# 	# do modelo global
-			# 	eq2 = np.exp(eq1)
-			# 	eq3 = min(eq2, 1)
-			# 	global_model_weight = eq3
-			# 6
-			# max_rounds_without_fit = 3
-			# alpha = 1.2
-			# beta = 9
-			# # evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
-			# delta = 0.02
-			# start_round = self.round_of_last_fit
-			# # normalizar dentro de 0 e 1
-			# fx_rounds_without_fit = pow(
-			# 	min(rounds_without_fit + delta, max_rounds_without_fit), -alpha)
-			# # global_model_weight = 1
-			# # o denominador faz com que a curva se prolongue com menor decaimento
-			# # Quanto mais demorada for a convergência do modelo, maior deve ser o valor do denominador
-			# eq1 = (-fx_rounds_without_fit - ((rounds_without_fit) / beta))
-			# # eq2: se divide por "rounds_without_fit" porque quanto mais rodadas sem treinamento, maior deve ser o peso
-			# # do modelo global
-			# eq2 = np.exp(eq1)
-			# eq3 = min(eq2, 1)
-			# global_model_weight = eq3
-			# 8
-			# max_rounds_without_fit = 4
-			# alpha = 1.2
-			# # evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
-			# delta = 0.01
-			# # normalizar dentro de 0 e 1
-			# updated_level = pow(
-			# 	min(rounds_without_fit + delta, max_rounds_without_fit), -alpha)
-			# evolutionary_level = (server_round/50)
-			#
-			# eq1 = (-updated_level - evolutionary_level)
-			# eq2 = round(np.exp(eq1), 6)
-			# global_model_weight = eq2
+
 			# 9
 			if rounds_without_fit == 0:
 				global_model_weight = 0
-				updated_level = 1
 			else:
 				# evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
 				# normalizar dentro de 0 e 1
@@ -304,27 +139,6 @@ class FedPredictClientTorch(FedPerClientTorch):
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def set_parameters_to_model(self, global_parameters, server_round, type, config):
-		# ======================================================================================
-		# usando json
-		# try:
-		# 	filename = """./fedclassavg_saved_weights/{}/{}/{}.json""".format( self.model_name, self.cid, self.cid)
-		# 	if os.path.exists(filename):
-		# 		fileObject = open(filename, "r")
-		# 		jsonContent = fileObject.read()
-		# 		aList = [np.array(i) for i in json.loads(jsonContent)]
-		# 		size = len(parameters)
-		# 		# updating only the personalized layers, which were previously saved in a file
-		# 		# for i in range(self.n_personalized_layers):
-		# 		# 	parameters[size-self.n_personalized_layers+i] = aList[i]
-		# 		parameters = parameters + aList
-		# 		parameters = [Parameter(torch.Tensor(i.tolist())) for i in parameters]
-		# 		for new_param, old_param in zip(parameters, self.model.parameters()):
-		# 			old_param.data = new_param.data.clone()
-		# except Exception as e:
-		# 	print("Set parameters to model")
-		# 	print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
-
-		# ======================================================================================
 		# usando 'torch.load'
 		try:
 			filename = """./fedpredict_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
@@ -435,11 +249,6 @@ class FedPredictClientTorch(FedPerClientTorch):
 						# print(output)
 						y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
 						loss = self.loss(output, y)
-						# local_parameters = [torch.Tensor(i) for i in self.get_parameters_of_model()]
-						# global_parameters = [torch.Tensor(i) for i in parameters]
-						# if config['round'] > 1:
-						# 	for i in range(len(local_parameters)):
-						# 		loss += torch.mul(self.lr_loss(local_parameters[i], global_parameters[i]), 1)
 						train_loss += loss.item() * y.shape[0]
 						loss.backward()
 						self.optimizer.step()

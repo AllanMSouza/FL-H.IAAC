@@ -327,19 +327,10 @@ class FedProtoClientTorch(ClientBaseTorch):
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def set_parameters_to_model(self, parameters=[]):
-		# filename = """./fedproto_saved_weights/{}/{}/{}.json""".format(self.model_name, self.cid, self.cid)
-		# if Path(filename).exists():
-		# 	fileObject = open(filename, "r")
-		# 	jsonContent = fileObject.read()
-		# 	aList = [i for i in json.loads(jsonContent)]
-		# 	self.set_parameters_to_model(aList)
 		filename = """./fedproto_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
 		if os.path.exists(filename):
 			self.model.load_state_dict(torch.load(filename))
 		else:
-			# parameters = [Parameter(torch.Tensor(i.tolist())) for i in parameters]
-			# for new_param, old_param in zip(parameters, self.model.parameters()):
-			# 	old_param.data = new_param.data.clone()
 			print("Model does not exist")
 			pass
 
