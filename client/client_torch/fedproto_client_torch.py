@@ -74,7 +74,8 @@ class FedProtoClientTorch(ClientBaseTorch):
 
 		try:
 			# print("tamanho: ", self.input_shape)
-			input_shape = self.input_shape[1] * self.input_shape[2]
+			if self.dataset in ['MNIST', 'CIFAR10']:
+				input_shape = self.input_shape[1] * self.input_shape[2]
 			if self.model_name == 'Logist Regression':
 				return Logistic(input_shape, self.num_classes)
 			elif self.model_name == 'DNN':
