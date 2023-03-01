@@ -42,7 +42,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 # ======================================================================
 # Configurations
 # DATASETS      				= ('MNIST', 'CIFAR10', )
-DATASETS      					= ('MNIST',)
+DATASETS      					= ('MNIST', 'CIFAR10',)
 MODELS        					= ('CNN',)
 ALGORITHMS    					= ('None', 'POC',)
 EPOCHS        					= {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2]}

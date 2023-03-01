@@ -220,7 +220,7 @@ class CNN_proto(nn.Module):
             out = self.conv2(out)
             out = torch.flatten(out, 1)
             rep = self.fc1(out)
-            out = self.fc(out)
+            out = self.fc(rep)
             return out, rep
         except Exception as e:
             print("CNN proto forward")
