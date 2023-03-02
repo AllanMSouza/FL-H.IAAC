@@ -3,4 +3,4 @@ Size of parameters (bytes),Strategy
 1435,FedClassAvg
 90341,FedPer
 91777,FedPredict
-11360,FedProto
+21600,FedProto
