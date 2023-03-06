@@ -63,7 +63,7 @@ EXPERIMENTS 		= {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_tra
 					   4: {'algorithm': 'POC', 'new_client': 'True', 'new_client_train': 'True', 'comment': """apos a rodada {}, apenas novos clientes sao testados - novos clientes treinam apenas 1 vez (um round) - """.format(int(ROUNDS*0.7))},
 					   5: {'algorithm': 'POC', 'new_client': 'True', 'new_client_train': 'True', 'comment': """apos a rodada {}, apenas novos clientes sao testados - novos clientes treinam apenas 1 vez (um round) com duas épocas locais """.format(int(ROUNDS*0.7))}}
 
-def execute_experiment(experiment, algorithm, new_client, new_client_train, comment):
+def execute_experiment(experiment, algorithm, new_client, new_client_train, comment, type):
 
 	try:
 		for dataset in DATASETS:
@@ -74,7 +74,7 @@ def execute_experiment(experiment, algorithm, new_client, new_client_train, comm
 								for strategy in STRATEGIES_TO_EXECUTE:
 
 									print(f'Starting {strategy} POC-{poc} simulation for {dataset} clients with {model} model ...', os.getcwd())
-									test_config = """python {}/simulation.py --dataset='{}' --model='{}' --strategy='{}' --epochs={} --round={} --client={} --type='torch' --non-iid={} --aggregation_method='{}' --poc={} --new_clients={} --new_clients_train={}""".format(os.getcwd(), dataset, model, strategy, epochs, ROUNDS, clients, True, algorithm,  poc, new_client, new_client_train)
+									test_config = """python {}/simulation.py --dataset='{}' --model='{}' --strategy='{}' --epochs={} --round={} --client={} --type='torch' --non-iid={} --aggregation_method='{}' --poc={} --new_clients={} --new_clients_train={}""".format(os.getcwd(), dataset, model, strategy, epochs, ROUNDS, clients, type, True, algorithm,  poc, new_client, new_client_train)
 									print("=====================================\nExecutando... \n", test_config, "\n=====================================")
 									subprocess.Popen(test_config, shell=True).wait()
 									pass
@@ -99,11 +99,12 @@ def main():
 
 	# parser.add_option("-a", "--algorithm", dest="algorithm", default='None',   help="Algorithm used for selecting clients", metavar="STR")
 	parser.add_option("",   "--experiment_id",   dest="experiment_id",   default=1,  help="", metavar="INT")
+	parser.add_option("", "--type", dest="type", default="torch", help="", metavar="STR")
 
 	(opt, args) = parser.parse_args()
 
 	experiment = EXPERIMENTS[int(opt.experiment_id)]
-	execute_experiment(opt.experiment_id, experiment['algorithm'], experiment['new_client'], experiment['new_client_train'], experiment['comment'])
+	execute_experiment(opt.experiment_id, experiment['algorithm'], experiment['new_client'], experiment['new_client_train'], experiment['comment'], opt.type)
 	remove_lines("""execution_log/experiment_{}.txt""".format(opt.experiment_id))
 
 		
