@@ -54,7 +54,8 @@ class FedAvgMBaseServerTorch(FedAvgBaseServer):
                          non_iid=non_iid,
                          model_name=model_name,
                          new_clients=new_clients,
-                         new_clients_train=new_clients_train)
+                         new_clients_train=new_clients_train,
+                         type='torch')
 
         self.server_learning_rate = server_learning_rate
         self.server_momentum = server_momentum

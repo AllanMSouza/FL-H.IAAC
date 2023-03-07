@@ -26,6 +26,7 @@ class FedProtoBaseServer(FedAvgBaseServer):
                  num_clients,
                  num_rounds,
                  num_epochs,
+                 type,
                  decay=0,
                  perc_of_clients=0,
                  dataset='',
@@ -46,7 +47,8 @@ class FedProtoBaseServer(FedAvgBaseServer):
                          strategy_name=strategy_name,
                          model_name=model_name,
                          new_clients=new_clients,
-                         new_clients_train=new_clients_train)
+                         new_clients_train=new_clients_train,
+                         type=type)
 
         self.global_protos = [np.array([np.nan]) for i in range(self.n_classes)]
 

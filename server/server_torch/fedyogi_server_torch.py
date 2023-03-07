@@ -49,7 +49,8 @@ class FedYogiServerTorch(FedYogiBaseServer):
                          strategy_name=strategy_name,
                          model_name=model_name,
                          new_clients=new_clients,
-                         new_clients_train=new_clients_train)
+                         new_clients_train=new_clients_train,
+                         type='torch')
 
     def set_initial_parameters(
             self

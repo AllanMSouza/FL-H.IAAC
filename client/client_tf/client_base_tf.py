@@ -34,6 +34,8 @@ class ClientBaseTf(fl.client.NumPyClient):
 				 perc_of_clients    = 0,
 				 decay              = 0,
 				 non_iid            = False,
+				 new_clients = False,
+				 new_clients_train	= False
 				 ):
 
 		self.cid          = int(cid)
@@ -59,6 +61,14 @@ class ClientBaseTf(fl.client.NumPyClient):
 		self.perc_of_clients  = perc_of_clients
 		self.decay            = decay
 
+		self.loss = tf.keras.losses.CategoricalCrossentropy
+		self.learning_rate = 0.01
+		self.new_clients = new_clients
+		self.new_clients_train = new_clients_train
+		# self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+		self.device = tf.device("cuda:0" if tf.test.is_gpu_available() else "cpu")
+		self.type = 'tf'
+
 		#params
 		if self.aggregation_method == 'POC':
 			self.solution_name = f"{solution_name}-{aggregation_method}-{self.perc_of_clients}"
@@ -68,6 +78,10 @@ class ClientBaseTf(fl.client.NumPyClient):
 
 		elif self.aggregation_method == 'None':
 			self.solution_name = f"{solution_name}-{aggregation_method}"
+
+		self.base = f"logs/{self.type}/{self.solution_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.n_clients}/{self.model_name}/{self.dataset}/{self.local_epochs}_local_epochs"
+		self.evaluate_client_filename = f"{self.base}/evaluate_client.csv"
+		self.train_client_filename = f"{self.base}/train_client.csv"
 
 		self.x_train, self.y_train, self.x_test, self.y_test = self.load_data(self.dataset, n_clients=self.n_clients)
 		self.model                                           = self.create_model()
@@ -122,11 +136,10 @@ class ClientBaseTf(fl.client.NumPyClient):
 		avg_loss_train     = np.mean(history.history['loss'])
 		avg_acc_train      = np.mean(history.history['accuracy'])
 
-		filename = f"logs/{self.solution_name}/{self.n_clients}/{self.model_name}/{self.dataset}/train_client.csv"
 		data = [config['round'], self.cid, selected, total_time, size_of_parameters, avg_loss_train, avg_acc_train]
 
 		self._write_output(
-			filename=filename,
+			filename=self.train_client_filename,
 			data=data)
 
 		fit_response = {
@@ -141,10 +154,9 @@ class ClientBaseTf(fl.client.NumPyClient):
 		loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
 		size_of_parameters = sum(map(sys.getsizeof, parameters))
 
-		filename = f"logs/{self.solution_name}/{self.n_clients}/{self.model_name}/{self.dataset}/evaluate_client.csv"
 		data = [config['round'], self.cid, size_of_parameters, loss, accuracy]
 
-		self._write_output(filename=filename,
+		self._write_output(filename=self.evaluate_client_filename,
 						   data=data)
 
 		evaluation_response = {

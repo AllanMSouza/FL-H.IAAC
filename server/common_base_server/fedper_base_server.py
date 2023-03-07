@@ -38,6 +38,7 @@ class FedPerBaseServer(FedAvgBaseServer):
 				 num_clients,
 				 num_rounds,
                  num_epochs,
+				 type,
 				 decay=0,
 				 perc_of_clients=0,
 				 dataset='',
@@ -59,7 +60,8 @@ class FedPerBaseServer(FedAvgBaseServer):
 						 strategy_name=strategy_name,
 						 model_name=model_name,
 						 new_clients=new_clients,
-						 new_clients_train=new_clients_train)
+						 new_clients_train=new_clients_train,
+						 type=type)
 
 		self.create_folder()
 

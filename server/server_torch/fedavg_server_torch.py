@@ -35,7 +35,8 @@ class FedAvgServerTorch(FedAvgBaseServer):
                          strategy_name=strategy_name,
                          model_name=model_name,
                          new_clients=new_clients,
-                         new_clients_train=new_clients_train)
+                         new_clients_train=new_clients_train,
+                         type='torch')
 
     def load_data(self, dataset_name, n_clients, batch_size=32):
         try:

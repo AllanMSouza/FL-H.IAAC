@@ -37,6 +37,7 @@ class FedYogiBaseServer(FedOptBaseServer):
 				 num_rounds,
                  num_epochs,
 				 model,
+				 type,
 				 decay=0,
 				 perc_of_clients=0,
 				 dataset='',
@@ -69,7 +70,8 @@ class FedYogiBaseServer(FedOptBaseServer):
 							beta_1=beta_1,
 							beta_2=beta_2,
 							tau=tau,
-						 new_clients_train=new_clients_train
+						 new_clients_train=new_clients_train,
+						 	type=type
 							)
 
 		self.set_initial_parameters()

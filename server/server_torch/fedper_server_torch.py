@@ -31,4 +31,5 @@ class FedPerServerTorch(FedPerBaseServer):
                          strategy_name='FedPer',
                          model_name=model_name,
                          new_clients=new_clients,
-                         new_clients_train=new_clients_train)
+                         new_clients_train=new_clients_train,
+                         type='torch')

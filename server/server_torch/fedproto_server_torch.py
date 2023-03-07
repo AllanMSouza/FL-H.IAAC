@@ -41,4 +41,5 @@ class FedProtoServerTorch(FedProtoBaseServer):
                          strategy_name='FedProto',
                          model_name=model_name,
                          new_clients=new_clients,
-                         new_clients_train=new_clients_train)
+                         new_clients_train=new_clients_train,
+                         type='torch')

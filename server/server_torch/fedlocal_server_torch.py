@@ -31,7 +31,8 @@ class FedLocalServerTorch(FedAvgBaseServer):
                          strategy_name='FedLocal',
                          model_name=model_name,
                          new_clients=new_clients,
-                         new_clients_train=new_clients_train)
+                         new_clients_train=new_clients_train,
+                         type='torch')
 
         self.create_folder()
 

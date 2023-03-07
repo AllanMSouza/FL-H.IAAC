@@ -11,7 +11,7 @@ class JointAnalysis():
     def __int__(self):
         pass
 
-    def build_filenames_and_read(self, strategies, pocs, datasets, experiments, clients='50', model='CNN', file_type='evaluate_client.csv'):
+    def build_filenames_and_read(self, type, strategies, pocs, datasets, experiments, clients='50', model='CNN', file_type='evaluate_client.csv'):
 
         df_concat = None
         count = 0
@@ -26,7 +26,17 @@ class JointAnalysis():
 
                     for strategy in strategies:
 
-                        filename = """{}/{}-POC-{}/{}/{}/{}/{}/{}/{}""".format(os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FedLTA/logs", strategy, poc, new_clients, clients, model, dataset, local_epochs, file_type)
+                        filename = """{}/{}/{}-POC-{}/{}/{}/{}/{}/{}/{}""".format(os.path.abspath(os.path.join(os.getcwd(), 
+                                                                                                                os.pardir)) + "/FedLTA/logs",
+                                                                                                                type,
+                                                                                                                strategy,
+                                                                                                                poc,
+                                                                                                                new_clients,
+                                                                                                                clients,
+                                                                                                                model,
+                                                                                                                dataset,
+                                                                                                                local_epochs,
+                                                                                                                file_type)
 
                         df = pd.read_csv(filename)
                         df['Strategy'] = np.array([strategy] * len(df))
@@ -450,7 +460,8 @@ if __name__ == '__main__':
     datasets = ['MNIST', 'CIFAR10']
     clients = '50'
     model = 'CNN'
+    type = 'torch'
     file_type = 'evaluate_client.csv'
 
     joint_plot = JointAnalysis()
-    joint_plot.build_filenames_and_read(strategies, pocs, datasets, experiments, clients, model, file_type)
+    joint_plot.build_filenames_and_read(type, strategies, pocs, datasets, experiments, clients, model, file_type)

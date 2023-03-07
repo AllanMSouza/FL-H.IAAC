@@ -52,7 +52,8 @@ class FedPredictServerTorch(FedPredictBaseServer):
                          strategy_name='FedPredict',
                          model_name=model_name,
                          new_clients=new_clients,
-                         new_clients_train=new_clients_train)
+                         new_clients_train=new_clients_train,
+                         type='torch')
 
 
     def set_initial_parameters(

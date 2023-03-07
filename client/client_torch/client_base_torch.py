@@ -72,6 +72,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		self.new_clients_train = new_clients_train
 		# self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 		self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+		self.type = 'torch'
 
 		#params
 		if self.aggregation_method == 'POC':
@@ -83,7 +84,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		elif self.aggregation_method == 'None':
 			self.solution_name = f"{solution_name}-{aggregation_method}"
 
-		self.base = f"logs/{self.solution_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.n_clients}/{self.model_name}/{self.dataset}/{self.local_epochs}_local_epochs"
+		self.base = f"logs/{self.type}/{self.solution_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.n_clients}/{self.model_name}/{self.dataset}/{self.local_epochs}_local_epochs"
 		self.evaluate_client_filename = f"{self.base}/evaluate_client.csv"
 		self.train_client_filename = f"{self.base}/train_client.csv"
 

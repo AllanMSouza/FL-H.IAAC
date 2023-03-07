@@ -40,6 +40,7 @@ class FedPredictBaseServer(FedPerBaseServer):
 				 num_rounds,
                  num_epochs,
 				 model,
+				 type,
 				 server_learning_rate=1,
 				 server_momentum=1,
 				 decay=0,
@@ -63,7 +64,8 @@ class FedPredictBaseServer(FedPerBaseServer):
 						 strategy_name=strategy_name,
 						 model_name=model_name,
 						 new_clients=new_clients,
-						 new_clients_train=new_clients_train)
+						 new_clients_train=new_clients_train,
+						 type=type)
 
 		self.server_learning_rate = server_learning_rate
 		self.server_momentum = server_momentum

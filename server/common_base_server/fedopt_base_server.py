@@ -37,6 +37,7 @@ class FedOptBaseServer(FedAvgBaseServer):
 				 num_rounds,
                  num_epochs,
 				 model,
+				 type,
 				 decay=0,
 				 perc_of_clients=0,
 				 dataset='',
@@ -63,7 +64,8 @@ class FedOptBaseServer(FedAvgBaseServer):
 						 strategy_name=strategy_name,
 						 model_name=model_name,
 						 new_clients=new_clients,
-						 new_clients_train=new_clients_train)
+						 new_clients_train=new_clients_train,
+						 type=type)
 
 		self.model = model
 		self.current_weights = None

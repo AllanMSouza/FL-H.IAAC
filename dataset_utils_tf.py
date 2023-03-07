@@ -104,15 +104,12 @@ class ManageDatasets():
 
 			(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
 			x_train, x_test                      = x_train/255.0, x_test/255.0
-			x_train = np.array([np.moveaxis(i, -1, 0) for i in x_train])
-			x_test = np.array([np.moveaxis(i, -1, 0) for i in x_test])
 
 			x_train = x_train[idx_train]
 			x_test  = x_test[idx_test]
 
 			y_train = y_train[idx_train]
 			y_test  = y_test[idx_test]
-			exit()
 
 		else:
 

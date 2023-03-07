@@ -37,6 +37,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 				 num_clients,
 				 num_rounds,
 				 num_epochs,
+				 type,
 				 decay=0,
 				 perc_of_clients=0,
 				 dataset='',
@@ -80,6 +81,8 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.clients_fit_rounds_history = {i: -1 for i in range(self.num_clients)}
 		self.regression_window = 5
 		self.fedproposed_metrics = {}
+
+		self.type = type
 
 		#params
 		if self.aggregation_method == 'POC':
@@ -467,7 +470,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 	def _write_output_files_headers(self):
 
-		self.base = f"logs/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/{self.epochs}_local_epochs/"
+		self.base = f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/{self.epochs}_local_epochs/"
 		self.server_filename = f"{self.base}server.csv"
 		self.train_filename = f"{self.base}train_client.csv"
 		self.evaluate_filename= f"{self.base}evaluate_client.csv"

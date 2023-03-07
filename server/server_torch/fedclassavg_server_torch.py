@@ -31,4 +31,5 @@ class FedClassAvgServerTorch(FedClassAvgBaseServer):
                          strategy_name='FedClassAvg',
                          model_name=model_name,
                          new_clients=new_clients,
-                         new_clients_train=new_clients_train)
+                         new_clients_train=new_clients_train,
+                         type='torch')
