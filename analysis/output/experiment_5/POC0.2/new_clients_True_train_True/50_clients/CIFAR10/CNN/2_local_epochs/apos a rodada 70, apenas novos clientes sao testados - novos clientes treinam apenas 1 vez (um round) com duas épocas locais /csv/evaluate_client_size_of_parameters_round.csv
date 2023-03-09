@@ -1,0 +1,6 @@
+Size of parameters (bytes),Strategy
+90206,FedAVG
+1409,FedClassAvg
+88796,FedPer
+90206,FedPredict
+21600,FedProto

@@ -1,12 +1,20 @@
 import flwr as fl
-from client import FedAvgClient, FedPerClient, FedProtoClient
-from server import ServerBase, FedPerServer, FedProtoServer, FedAvgServer
+from client import FedAvgClientTf, FedPerClientTf, FedProtoClientTf, FedLocalClientTf, FedAvgClientTorch, FedProtoClientTorch, FedPerClientTorch, FedLocalClientTorch, FedAvgMClientTorch, QFedAvgClientTorch, FedYogiClientTorch, FedClassAvgClientTorch, FedPredictClientTorch
+from server import FedPerServerTf, FedProtoServerTf, FedAvgServerTf, FedLocalServerTf, FedAvgServerTorch, FedProtoServerTorch, FedPerServerTorch, FedLocalServerTorch, FedAvgMServerTorch, QFedAvgServerTorch, FedYogiServerTorch, FedClassAvgServerTorch, FedPredictServerTorch
 
 from optparse import OptionParser
 import tensorflow as tf
+import torch
+import random
+import numpy as np
+import copy
+import ast
+random.seed(0)
+np.random.seed(0)
+torch.manual_seed(0)
 
 import logging
-logging.getLogger("tensorflow").setLevel(logging.ERROR)
+logging.getLogger("tensorflow").setLevel(logging.DEBUG)
 
 import os; os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
@@ -14,7 +22,22 @@ tf.random.set_seed(0)
 
 class SimulationFL():
 	"""docstring for Simulation"""
-	def __init__(self, n_clients, aggregation_method, model_name, strategy_name, dataset, n_classes, local_epochs, rounds, poc, decay, non_iid):
+	def __init__(self,
+				 n_clients,
+				 aggregation_method,
+				 model_name,
+				 strategy_name,
+				 dataset,
+				 n_classes,
+				 local_epochs,
+				 rounds,
+				 poc,
+				 decay,
+				 non_iid,
+				 nn_type,
+				 new_clients,
+				 new_clients_train
+				 ):
 		
 		self.n_clients        		= n_clients
 		self.aggregation_method     = aggregation_method
@@ -28,6 +51,9 @@ class SimulationFL():
 		self.client_selection 		= False
 		self.strategy_name    		= strategy_name # Old "self.solution_name"
 		self.non_iid          		= non_iid
+		self.nn_type = nn_type
+		self.new_clients = new_clients
+		self.new_clients_train		= new_clients_train
 
 	
 	def create_client(self, cid):
@@ -35,90 +61,397 @@ class SimulationFL():
 		if self.aggregation_method != 'None':
 			self.client_selection = True
 
-		if self.epochs > 1:
-			self.strategy_name = 'FedAVG'
+		if self.nn_type == 'tf':
+			if self.strategy_name == 'FedPer':
+				return FedPerClientTf(cid=cid,
+									  n_clients=self.n_clients,
+									  n_classes=self.n_classes,
+									  epochs=self.epochs,
+									  model_name=self.model_name,
+									  client_selection=self.client_selection,
+									  solution_name=self.strategy_name,
+									  aggregation_method=self.aggregation_method,
+									  dataset=self.dataset,
+									  perc_of_clients=self.poc,
+									  decay=self.decay,
+									  non_iid=self.non_iid)
 
-		if self.strategy_name == 'FedPer':
-			return FedPerClient(cid=cid,
-								n_clients=self.n_clients,
-								n_classes=self.n_classes,
-								epochs=self.epochs,
-								model_name=self.model_name,
-								client_selection=self.client_selection,
-								solution_name=self.strategy_name,
-								aggregation_method=self.aggregation_method,
-								dataset=self.dataset,
-								perc_of_clients=self.poc,
-								decay=self.decay,
-								non_iid=self.non_iid,
-								n_personalized_layers=1)
+			elif self.strategy_name == 'FedLocal':
+				return FedLocalClientTf(cid=cid,
+										n_clients=self.n_clients,
+										n_classes=self.n_classes,
+										epochs=self.epochs,
+										model_name=self.model_name,
+										client_selection=self.client_selection,
+										solution_name=self.strategy_name,
+										aggregation_method=self.aggregation_method,
+										dataset=self.dataset,
+										perc_of_clients=self.poc,
+										decay=self.decay,
+										non_iid=self.non_iid)
 
-		elif self.strategy_name == 'FedProto':
-			return FedProtoClient(cid=cid,
-								  n_clients=self.n_clients,
-								  n_classes=self.n_classes,
-								  epochs=self.epochs,
-								  model_name=self.model_name,
-								  client_selection=self.client_selection,
-								  solution_name=self.strategy_name,
-								  aggregation_method=self.aggregation_method,
-								  dataset=self.dataset,
-								  perc_of_clients=self.poc,
-								  decay=self.decay,
-								  non_iid=self.non_iid)
+			elif self.strategy_name == 'FedProto':
+				return FedProtoClientTf(cid=cid,
+										n_clients=self.n_clients,
+										n_classes=self.n_classes,
+										epochs=self.epochs,
+										model_name=self.model_name,
+										client_selection=self.client_selection,
+										solution_name=self.strategy_name,
+										aggregation_method=self.aggregation_method,
+										dataset=self.dataset,
+										perc_of_clients=self.poc,
+										decay=self.decay,
+										non_iid=self.non_iid)
 
-		else:
-			return FedAvgClient(cid=cid,
-								n_clients=self.n_clients,
-								n_classes=self.n_classes,
-								model_name=self.model_name,
-								client_selection=self.client_selection,
-								epochs=self.epochs,
-								solution_name=self.strategy_name,
-								aggregation_method=self.aggregation_method,
-								dataset=self.dataset,
-								perc_of_clients=self.poc,
-								decay=self.decay,
-								non_iid=self.non_iid)
+			else:
+				return FedAvgClientTf(cid=cid,
+									  n_clients=self.n_clients,
+									  n_classes=self.n_classes,
+									  model_name=self.model_name,
+									  client_selection=self.client_selection,
+									  epochs=self.epochs,
+									  solution_name=self.strategy_name,
+									  aggregation_method=self.aggregation_method,
+									  dataset=self.dataset,
+									  perc_of_clients=self.poc,
+									  decay=self.decay,
+									  non_iid=self.non_iid)
+		elif self.nn_type == 'torch':
+			if self.strategy_name == 'FedProto':
+				# print("foi cliente")
+				return FedProtoClientTorch(cid=cid,
+										   n_clients=self.n_clients,
+										   n_classes=self.n_classes,
+										   epochs=self.epochs,
+										   model_name=self.model_name,
+										   client_selection=self.client_selection,
+										   strategy_name=self.strategy_name,
+										   aggregation_method=self.aggregation_method,
+										   dataset=self.dataset,
+										   perc_of_clients=self.poc,
+										   decay=self.decay,
+										   non_iid=self.non_iid,
+										   new_clients=self.new_clients,
+										   new_clients_train=self.new_clients_train)
+			if self.strategy_name == 'FedPredict':
+				# print("foi cliente")
+				return FedPredictClientTorch(cid=cid,
+                                             n_clients=self.n_clients,
+                                             n_classes=self.n_classes,
+                                             epochs=self.epochs,
+                                             model_name=self.model_name,
+                                             client_selection=self.client_selection,
+                                             strategy_name=self.strategy_name,
+                                             aggregation_method=self.aggregation_method,
+                                             dataset=self.dataset,
+                                             perc_of_clients=self.poc,
+                                             decay=self.decay,
+                                             non_iid=self.non_iid,
+                                             new_clients=self.new_clients,
+                                             new_clients_train=self.new_clients_train)
+			elif self.strategy_name == 'FedPer':
+				return  FedPerClientTorch(cid=cid,
+										  n_clients=self.n_clients,
+										  n_classes=self.n_classes,
+										  epochs=self.epochs,
+										  model_name=self.model_name,
+										  client_selection=self.client_selection,
+										  strategy_name=self.strategy_name,
+										  aggregation_method=self.aggregation_method,
+										  dataset=self.dataset,
+										  perc_of_clients=self.poc,
+										  decay=self.decay,
+										  non_iid=self.non_iid,
+										  new_clients=self.new_clients,
+										  new_clients_train=self.new_clients_train)
+			elif self.strategy_name == 'FedClassAvg':
+				return  FedClassAvgClientTorch(cid=cid,
+											   n_clients=self.n_clients,
+											   n_classes=self.n_classes,
+											   epochs=self.epochs,
+											   model_name=self.model_name,
+											   client_selection=self.client_selection,
+											   strategy_name=self.strategy_name,
+											   aggregation_method=self.aggregation_method,
+											   dataset=self.dataset,
+											   perc_of_clients=self.poc,
+											   decay=self.decay,
+											   non_iid=self.non_iid,
+											   new_clients=self.new_clients,
+											   new_clients_train=self.new_clients_train)
+			elif self.strategy_name == 'FedLocal':
+				return  FedLocalClientTorch(cid=cid,
+											n_clients=self.n_clients,
+											n_classes=self.n_classes,
+											epochs=self.epochs,
+											model_name=self.model_name,
+											client_selection=self.client_selection,
+											strategy_name=self.strategy_name,
+											aggregation_method=self.aggregation_method,
+											dataset=self.dataset,
+											perc_of_clients=self.poc,
+											decay=self.decay,
+											non_iid=self.non_iid,
+											new_clients=self.new_clients,
+											new_clients_train=self.new_clients_train)
+			elif self.strategy_name == 'FedAvgM':
+				return FedAvgMClientTorch(cid=cid,
+										  n_clients=self.n_clients,
+										  n_classes=self.n_classes,
+										  model_name=self.model_name,
+										  client_selection=self.client_selection,
+										  epochs=self.epochs,
+										  strategy_name=self.strategy_name,
+										  aggregation_method=self.aggregation_method,
+										  dataset=self.dataset,
+										  perc_of_clients=self.poc,
+										  decay=self.decay,
+										  non_iid=self.non_iid,
+										  new_clients=self.new_clients,
+										  new_clients_train=self.new_clients_train)
+			elif self.strategy_name == 'QFedAvg':
+				return QFedAvgClientTorch(cid=cid,
+										  n_clients=self.n_clients,
+										  n_classes=self.n_classes,
+										  model_name=self.model_name,
+										  client_selection=self.client_selection,
+										  epochs=self.epochs,
+										  strategy_name=self.strategy_name,
+										  aggregation_method=self.aggregation_method,
+										  dataset=self.dataset,
+										  perc_of_clients=self.poc,
+										  decay=self.decay,
+										  non_iid=self.non_iid,
+										  new_clients=self.new_clients,
+										  new_clients_train=self.new_clients_train)
+			elif self.strategy_name == "FedYogi":
+				return FedYogiClientTorch(cid=cid,
+										  n_clients=self.n_clients,
+										  n_classes=self.n_classes,
+										  model_name=self.model_name,
+										  client_selection=self.client_selection,
+										  epochs=self.epochs,
+										  strategy_name=self.strategy_name,
+										  aggregation_method=self.aggregation_method,
+										  dataset=self.dataset,
+										  perc_of_clients=self.poc,
+										  decay=self.decay,
+										  non_iid=self.non_iid,
+										  new_clients=self.new_clients,
+										  new_clients_train=self.new_clients_train)
+			else:
+				return FedAvgClientTorch(cid=cid,
+										 n_clients=self.n_clients,
+										 n_classes=self.n_classes,
+										 model_name=self.model_name,
+										 client_selection=self.client_selection,
+										 epochs=self.epochs,
+										 strategy_name=self.strategy_name,
+										 aggregation_method=self.aggregation_method,
+										 dataset=self.dataset,
+										 perc_of_clients=self.poc,
+										 decay=self.decay,
+										 non_iid=self.non_iid,
+										 new_clients=self.new_clients,
+										 new_clients_train=self.new_clients_train)
+
 
 	def create_strategy(self):
 
-		if self.epochs > 1:
-			self.strategy_name = 'FedAVG'
+		if self.nn_type == 'tf':
+			if self.strategy_name == 'FedPer':
+				return FedPerServerTf(aggregation_method=self.aggregation_method,
+										n_classes=self.n_classes,
+										fraction_fit=1,
+										num_clients=self.n_clients,
+										num_rounds=self.rounds,
+										num_epochs=self.epochs,
+										decay=self.decay,
+										perc_of_clients=self.poc,
+										strategy_name=self.strategy_name,
+										dataset=self.dataset,
+										model_name=self.model_name,
+										new_clients=self.new_clients,
+										new_clients_train=self.new_clients_train)
 
-		if self.strategy_name == 'FedPer':
-			return FedPerServer(aggregation_method=self.aggregation_method,
-								n_classes=self.n_classes,
-								fraction_fit=1,
-								num_clients=self.n_clients,
-								decay=self.decay,
-								perc_of_clients=self.poc,
-								strategy_name=self.strategy_name,
-								dataset=self.dataset,
-								model_name=self.model_name)
-
-		elif self.strategy_name == 'FedProto':
-			return FedProtoServer(aggregation_method=self.aggregation_method,
-								  n_classes=self.n_classes,
-								  fraction_fit=1,
-								  num_clients=self.n_clients,
-								  decay=self.decay,
-								  perc_of_clients=self.poc,
-								  strategy_name=self.strategy_name,
-								  dataset=self.dataset,
-								  model_name=self.model_name)
-
-		else:
-			return FedAvgServer(aggregation_method=self.aggregation_method,
-								n_classes=self.n_classes,
-								fraction_fit=1,
-								num_clients=self.n_clients,
-								decay=self.decay,
-								perc_of_clients=self.poc,
-								strategy_name=self.strategy_name,
-								dataset=self.dataset,
-								model_name=self.model_name)
-
+			elif self.strategy_name == 'FedProto':
+				return FedProtoServerTf(aggregation_method=self.aggregation_method,
+										n_classes=self.n_classes,
+										fraction_fit=1,
+										num_clients=self.n_clients,
+										num_rounds=self.rounds,
+										num_epochs=self.epochs,
+										decay=self.decay,
+										perc_of_clients=self.poc,
+										strategy_name=self.strategy_name,
+										dataset=self.dataset,
+										model_name=self.model_name,
+										new_clients=self.new_clients,
+										new_clients_train=self.new_clients_train)
+			elif self.strategy_name == 'FedLocal':
+				return FedLocalServerTf(aggregation_method=self.aggregation_method,
+										n_classes=self.n_classes,
+										fraction_fit=1,
+										num_clients=self.n_clients,
+										num_rounds=self.rounds,
+										num_epochs=self.epochs,
+										decay=self.decay,
+										perc_of_clients=self.poc,
+										strategy_name=self.strategy_name,
+										dataset=self.dataset,
+										model_name=self.model_name,
+										new_clients=self.new_clients,
+										new_clients_train=self.new_clients_train)
+			else:
+				return FedAvgServerTf(aggregation_method=self.aggregation_method,
+										n_classes=self.n_classes,
+										fraction_fit=1,
+										num_clients=self.n_clients,
+										num_rounds=self.rounds,
+										num_epochs=self.epochs,
+										decay=self.decay,
+										perc_of_clients=self.poc,
+										strategy_name=self.strategy_name,
+										dataset=self.dataset,
+										model_name=self.model_name,
+										new_clients=self.new_clients,
+										new_clients_train=self.new_clients_train)
+		elif self.nn_type == 'torch':
+			if self.strategy_name == 'FedProto':
+				# print("foi servidor")
+				return FedProtoServerTorch(aggregation_method=self.aggregation_method,
+										n_classes=self.n_classes,
+										fraction_fit=1,
+										num_clients=self.n_clients,
+										num_rounds=self.rounds,
+										num_epochs=self.epochs,
+										decay=self.decay,
+										perc_of_clients=self.poc,
+										strategy_name=self.strategy_name,
+										dataset=self.dataset,
+										model_name=self.model_name,
+										new_clients=self.new_clients,
+										new_clients_train=self.new_clients_train)
+			if self.strategy_name == 'FedPredict':
+				# print("foi servidor")
+				return FedPredictServerTorch(aggregation_method=self.aggregation_method,
+											 n_classes=self.n_classes,
+											 fraction_fit=1,
+											 num_clients=self.n_clients,
+											 num_rounds=self.rounds,
+											 num_epochs=self.epochs,
+											 model=copy.deepcopy(self.create_client(0).create_model()),
+											 decay=self.decay,
+											 perc_of_clients=self.poc,
+											 strategy_name=self.strategy_name,
+											 dataset=self.dataset,
+											 model_name=self.model_name,
+											 new_clients=self.new_clients,
+											 new_clients_train=self.new_clients_train)
+			elif self.strategy_name == 'FedPer':
+				return  FedPerServerTorch(aggregation_method=self.aggregation_method,
+										n_classes=self.n_classes,
+										fraction_fit=1,
+										num_clients=self.n_clients,
+										num_rounds=self.rounds,
+										num_epochs=self.epochs,
+										decay=self.decay,
+										perc_of_clients=self.poc,
+										strategy_name=self.strategy_name,
+										dataset=self.dataset,
+										model_name=self.model_name,
+										new_clients=self.new_clients,
+										new_clients_train=self.new_clients_train)
+			elif self.strategy_name == 'FedClassAvg':
+				return  FedClassAvgServerTorch(aggregation_method=self.aggregation_method,
+												n_classes=self.n_classes,
+												fraction_fit=1,
+												num_clients=self.n_clients,
+												num_rounds=self.rounds,
+												num_epochs=self.epochs,
+												decay=self.decay,
+												perc_of_clients=self.poc,
+												strategy_name=self.strategy_name,
+												dataset=self.dataset,
+												model_name=self.model_name,
+												new_clients=self.new_clients,
+												new_clients_train=self.new_clients_train)
+			elif self.strategy_name == 'FedLocal':
+				return  FedLocalServerTorch(aggregation_method=self.aggregation_method,
+											n_classes=self.n_classes,
+											fraction_fit=1,
+											num_clients=self.n_clients,
+											num_rounds=self.rounds,
+											num_epochs=self.epochs,
+											decay=self.decay,
+											perc_of_clients=self.poc,
+											strategy_name=self.strategy_name,
+											dataset=self.dataset,
+											model_name=self.model_name,
+											new_clients=self.new_clients,
+											new_clients_train=self.new_clients_train)
+			elif self.strategy_name == 'FedAvgM':
+				return FedAvgMServerTorch(aggregation_method=self.aggregation_method,
+										n_classes=self.n_classes,
+										fraction_fit=1,
+										num_clients=self.n_clients,
+										num_rounds=self.rounds,
+										num_epochs=self.epochs,
+										model=copy.deepcopy(self.create_client(0).create_model()),
+										server_learning_rate=1, # melhor lr=1
+										server_momentum=0.2, # melhor server_momentum=0.2
+										decay=self.decay,
+										perc_of_clients=self.poc,
+										dataset=self.dataset,
+										non_iid=self.non_iid,
+										model_name=self.model_name,
+										new_clients=self.new_clients,
+										new_clients_train=self.new_clients_train)
+			elif self.strategy_name == 'QFedAvg':
+				return QFedAvgServerTorch(aggregation_method=self.aggregation_method,
+										n_classes=self.n_classes,
+										fraction_fit=1,
+										num_clients=self.n_clients,
+										num_rounds=self.rounds,
+										num_epochs=self.epochs,
+										model=copy.deepcopy(self.create_client(0).create_model()),
+										server_learning_rate=1, # melhor lr=1
+										q_param=0, # melhor server_momentum=0.2
+										decay=self.decay,
+										perc_of_clients=self.poc,
+										dataset=self.dataset,
+										model_name=self.model_name,
+										new_clients_train=self.new_clients_train)
+			elif self.strategy_name == "FedYogi":
+				return FedYogiServerTorch(aggregation_method=self.aggregation_method,
+										n_classes=self.n_classes,
+										fraction_fit=1,
+										num_clients=self.n_clients,
+										num_rounds=self.rounds,
+										num_epochs=self.epochs,
+										model=copy.deepcopy(self.create_client(0).create_model()),
+										decay=self.decay,
+										perc_of_clients=self.poc,
+										strategy_name=self.strategy_name,
+										dataset=self.dataset,
+										model_name=self.model_name,
+										new_clients=self.new_clients,
+										new_clients_train=self.new_clients_train)
+			else:
+				return FedAvgServerTorch(aggregation_method=self.aggregation_method,
+										n_classes=self.n_classes,
+										fraction_fit=1,
+										num_clients=self.n_clients,
+										num_rounds=self.rounds,
+										num_epochs=self.epochs,
+										decay=self.decay,
+										perc_of_clients=self.poc,
+										strategy_name=self.strategy_name,
+										dataset=self.dataset,
+										model_name=self.model_name,
+										new_clients=self.new_clients,
+										new_clients_train=self.new_clients_train)
 
 
 	def start_simulation(self):
@@ -141,23 +474,32 @@ class SimulationFL():
 def main():
 	parser = OptionParser()
 
-	parser.add_option("-c", "--clients",     		dest="n_clients",     default=10,        help="Number of clients in the simulation", metavar="INT")
-	parser.add_option("-s", "--strategy",    		dest="strategy_name", default='FedSGD',  help="Strategy of the federated learning", metavar="STR")
-	parser.add_option("-a", "--aggregation_method", dest="aggregation_method",     default='None',    help="Algorithm used for selecting clients", metavar="STR")
-	parser.add_option("-m", "--model",       		dest="model_name",    default='DNN',     help="Model used for trainning", metavar="STR")
-	parser.add_option("-d", "--dataset",     		dest="dataset",       default='MNIST',   help="Dataset used for trainning", metavar="STR")
-	parser.add_option("-e", "--epochs",      		dest="local_epochs",  default=1,         help="Number of epochs in each round", metavar="STR")
-	parser.add_option("-r", "--round",       		dest="rounds",        default=5,         help="Number of communication rounds", metavar="INT")
-	parser.add_option("",   "--poc",         		dest="poc",           default=0,         help="Percentage clients to be selected", metavar="FLOAT")
-	parser.add_option("",   "--decay",       		dest="decay",         default=0,         help="Decay factor for FedLTA", metavar="FLOAT")
-	parser.add_option("",   "--non-iid",     		dest="non_iid",       default=False,     help="Non IID distribution", metavar="BOOLEAN")
-	parser.add_option("-y", "--classes",     		dest="n_classes",     default=10, help="Number of classes", metavar="INT")
+	parser.add_option("-c", "--clients",     		dest="n_clients",          default=10,        help="Number of clients in the simulation",    metavar="INT")
+	parser.add_option("-s", "--strategy",    		dest="strategy_name",      default='FedSGD',  help="Strategy of the federated learning",     metavar="STR")
+	parser.add_option("-a", "--aggregation_method", dest="aggregation_method", default='None',    help="Algorithm used for selecting clients",   metavar="STR")
+	parser.add_option("-m", "--model",       		dest="model_name",         default='DNN',     help="Model used for trainning",               metavar="STR")
+	parser.add_option("-d", "--dataset",     		dest="dataset",            default='MNIST',   help="Dataset used for trainning",             metavar="STR")
+	parser.add_option("-e", "--epochs",      		dest="local_epochs",       default=1,         help="Number of epochs in each round",         metavar="STR")
+	parser.add_option("-r", "--round",       		dest="rounds",             default=5,         help="Number of communication rounds",         metavar="INT")
+	parser.add_option("",   "--poc",         		dest="poc",                default=0,         help="Percentage clients to be selected",      metavar="FLOAT")
+	parser.add_option("",   "--decay",       		dest="decay",              default=0,         help="Decay factor for FedLTA",                metavar="FLOAT")
+	parser.add_option("",   "--non-iid",     		dest="non_iid",            default=False,     help="Non IID distribution",                   metavar="BOOLEAN")
+	parser.add_option("-y", "--classes",     		dest="n_classes",          default=10,        help="Number of classes",                      metavar="INT")
+	parser.add_option("-t", "--type",               dest="type",               default='tf',      help="Neural network framework (tf or torch)", metavar="STR")
+	parser.add_option("", "--new_clients", dest="new_clients", default='False', help="Add new clients after a specific number of rounds",
+					  metavar="STR")
+	parser.add_option("", "--new_clients_train", dest="new_clients_train", default='False',
+					  help="wheter to train or not new clients",
+					  metavar="STR")
 
 	(opt, args) = parser.parse_args()
 
-	simulation = SimulationFL(int(opt.n_clients), opt.aggregation_method, opt.model_name, opt.strategy_name, opt.dataset, int(opt.n_classes),
-							  int(opt.local_epochs), int(opt.rounds), float(opt.poc), float(opt.decay),
-							  bool(opt.non_iid))
+	print("Simulacao da estratégia: ", opt.strategy_name)
+	simulation = SimulationFL(int(opt.n_clients), opt.aggregation_method, opt.model_name,
+							  opt.strategy_name, opt.dataset, int(opt.n_classes),
+							  int(opt.local_epochs), int(opt.rounds), float(opt.poc),
+							  float(opt.decay), ast.literal_eval(opt.non_iid), opt.type,
+							  ast.literal_eval(opt.new_clients), ast.literal_eval(opt.new_clients_train))
 
 	simulation.start_simulation()
 
