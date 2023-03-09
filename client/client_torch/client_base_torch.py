@@ -9,7 +9,7 @@ import time
 import sys
 
 from dataset_utils_torch import ManageDatasets
-from model_definition_torch import DNN, DNN_proto_2, DNN_proto_4, Logistic, CNN
+from model_definition_torch import DNN, Logistic, CNN
 import csv
 import torch.nn as nn
 from torch.utils.data import DataLoader

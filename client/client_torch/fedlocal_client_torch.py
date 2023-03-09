@@ -3,8 +3,6 @@ from torch.nn.parameter import Parameter
 import torch
 import json
 from pathlib import Path
-import shutil
-from model_definition_torch import DNN, DNN_proto_2, DNN_proto_4, Logistic, CNN
 import numpy as np
 import os
 import sys

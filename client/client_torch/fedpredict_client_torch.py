@@ -5,7 +5,6 @@ import torch
 import json
 import math
 from pathlib import Path
-from model_definition_torch import DNN, DNN_proto_2, DNN_proto_4, Logistic, CNN
 import numpy as np
 import json
 import os

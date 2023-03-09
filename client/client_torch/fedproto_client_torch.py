@@ -11,7 +11,7 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 from dataset_utils_torch import ManageDatasets
-from model_definition_torch import DNN, DNN_proto_2, DNN_proto_4, Logistic, CNN_proto
+from model_definition_torch import DNN_proto, Logistic_Proto, CNN_proto
 import csv
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -77,9 +77,9 @@ class FedProtoClientTorch(ClientBaseTorch):
 			if self.dataset in ['MNIST', 'CIFAR10']:
 				input_shape = self.input_shape[1] * self.input_shape[2]
 			if self.model_name == 'Logist Regression':
-				return Logistic(input_shape, self.num_classes)
+				return Logistic_Proto(input_shape, self.num_classes)
 			elif self.model_name == 'DNN':
-				return DNN_proto_2(input_shape=input_shape, num_classes=self.num_classes)
+				return DNN_proto(input_shape=input_shape, num_classes=self.num_classes)
 			elif self.model_name == 'CNN':
 				if self.dataset == 'MNIST':
 					input_shape = 1
