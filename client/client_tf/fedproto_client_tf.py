@@ -62,6 +62,7 @@ class FedProtoClientTf(ClientBaseTf):
 		self.saved_parameters = None
 		self.modify_dataset()
 		self.create_folder()
+		self.model = self.create_model(use_proto=True)
 
 	def create_folder(self):
 		Path("""fedproto_saved_weights/{}/{}/""".format(self.model_name, self.cid, self.cid)).mkdir(parents=True, exist_ok=True)
@@ -110,160 +111,147 @@ class FedProtoClientTf(ClientBaseTf):
 	def set_proto(self, protos):
 		self.global_protos = protos
 
-	def create_model(self):
-		input_shape = self.x_train.shape
-
-		if self.model_name == 'Logist Regression':
-			return ModelCreation().create_LogisticRegression(input_shape, self.num_classes, use_proto=True)
-
-		elif self.model_name == 'DNN':
-			return ModelCreation().create_DNN(input_shape, self.num_classes, use_proto=True)
-
-		elif self.model_name == 'CNN':
-			return ModelCreation().create_CNN(input_shape, self.num_classes, use_proto=True)
-
-		else:
-			raise Exception("Wrong model name")
-
 	def fit(self, parameters, config):
-		selected_clients = []
-		selected = 0
+		try:
+			selected_clients = []
+			selected = 0
 
-		loss_train_history = []
-		acc_train_history = []
+			loss_train_history = []
+			acc_train_history = []
 
-		if config['selected_clients'] != '':
-			selected_clients = [int(cid_selected) for cid_selected in config['selected_clients'].split(' ')]
+			if config['selected_clients'] != '':
+				selected_clients = [int(cid_selected) for cid_selected in config['selected_clients'].split(' ')]
 
-		start_time = time.process_time()
-		# print("entrada: ", len(parameters), parameters[0].shape)
-		if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
-			if int(config['round']) > 1:
-				self.set_proto(parameters)
+			start_time = time.process_time()
+			# print("entrada: ", len(parameters), parameters[0].shape)
+			if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
+				if int(config['round']) > 1:
+					self.set_proto(parameters)
+					# the parameters are saved in a file because in each round new instances of client are created
+					self.load_and_set_parameters()
+
+				selected = 1
+
+				# training
+				# =========================================================
+				for epoch in range(self.local_epochs):
+					# print("\nStart of epoch %d" % (epoch,))
+
+
+					# Iterate over the batches of the dataset.
+					for step, (x_batch_train, y_batch_train) in enumerate(self.train_dataset):
+
+
+						self.classes = []
+						for i, yy in enumerate(y_batch_train):
+							self.classes.append(yy)
+
+						with tf.GradientTape() as tape:
+							#print("antes", y_batch_train)
+							logits, rep = self.model(x_batch_train, training=True)
+							loss_value = self.loss_fn(y_batch_train, logits)
+							# loss_value += sum(self.model.losses)
+							#print("perda n: ", loss_value)
+							if self.global_protos != None:
+								proto_new = np.zeros(rep.shape)
+								for i in range(len(y_batch_train)):
+									yy = self.classes[i]
+									y_c = tf.get_static_value(yy)
+									proto_new[i] = self.global_protos[y_c]
+
+								proto_new = tf.constant(proto_new)
+								mse_loss = tf.reduce_mean(self.loss_mse(proto_new, rep))
+								loss_value = tf.math.add(loss_value, mse_loss)
+
+						grads = tape.gradient(loss_value, self.model.trainable_weights)
+						self.optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
+						self.train_acc_metric.update_state(y_batch_train, logits)
+
+						for i, yy in enumerate(y_batch_train):
+							y_c = int(yy)
+							if self.protos[y_c].shape[0] == 0:
+								self.protos[y_c] = tf.gather_nd(rep, tf.constant([[i]]))
+							else:
+								self.protos[y_c] = tf.add(self.protos[y_c], (tf.gather_nd(rep, tf.constant([[i]]))))
+							self.protos_samples_per_class[y_c] += 1
+
+						loss_train_history.append(loss_value)
+
+					# Display metrics at the end of each epoch.
+					train_acc = float(self.train_acc_metric.result())
+					# print("Training acc over epoch: %.4f" % (float(train_acc),), " id: ", self.cid)
+
+					# Reset training metrics at the end of each epoch
+					self.train_acc_metric.reset_states()
+					acc_train_history.append(train_acc)
+
+				# =========================================================
+
+				trained_parameters = self.model.get_weights()
 				# the parameters are saved in a file because in each round new instances of client are created
-				self.load_and_set_parameters()
+				self.save_parameters()
+				self.saved_parameters = copy.deepcopy(trained_parameters)
 
-			selected = 1
+			avg_loss_train = float(np.mean(loss_train_history))
+			avg_acc_train = float(np.mean(acc_train_history))
+			# print("loss media: ", avg_loss_train)
+			# print("acc media: ", avg_acc_train)
 
-			# training
-			# =========================================================
-			for epoch in range(self.local_epochs):
-				# print("\nStart of epoch %d" % (epoch,))
+			total_time = time.process_time() - start_time
+			size_of_parameters = sum(map(sys.getsizeof, self.protos))
 
+			data = [config['round'], self.cid, selected, total_time, size_of_parameters, avg_loss_train, avg_acc_train]
 
-				# Iterate over the batches of the dataset.
-				for step, (x_batch_train, y_batch_train) in enumerate(self.train_dataset):
+			self._write_output(
+				filename=self.train_client_filename,
+				data=data)
 
+			self.normalize_proto()
+			protos_result = self.dict_to_numpy(self.protos)
 
-					self.classes = []
-					for i, yy in enumerate(y_batch_train):
-						self.classes.append(yy)
+			fit_response = {
+				'cid': self.cid,
+				'protos_samples_per_class': self.protos_samples_per_class,
+				'proto': protos_result
+			}
 
-					with tf.GradientTape() as tape:
-						#print("antes", y_batch_train)
-						logits, rep = self.model(x_batch_train, training=True)
-						loss_value = self.loss_fn(y_batch_train, logits)
-						# loss_value += sum(self.model.losses)
-						#print("perda n: ", loss_value)
-						if self.global_protos != None:
-							proto_new = np.zeros(rep.shape)
-							for i in range(len(y_batch_train)):
-								yy = self.classes[i]
-								y_c = tf.get_static_value(yy)
-								proto_new[i] = self.global_protos[y_c]
+			return protos_result, len(self.x_train), fit_response
+		except Exception as e:
+			print("fit")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-							proto_new = tf.constant(proto_new)
-							mse_loss = tf.reduce_mean(self.loss_mse(proto_new, rep))
-							loss_value = tf.math.add(loss_value, mse_loss)
-
-					grads = tape.gradient(loss_value, self.model.trainable_weights)
-					self.optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
-					self.train_acc_metric.update_state(y_batch_train, logits)
-
-					#print("atualizou")
-					for i, yy in enumerate(y_batch_train):
-						y_c = int(yy)
-						if self.protos[y_c].shape[0] == 0:
-							self.protos[y_c] = tf.gather_nd(rep, tf.constant([[i]]))
-						else:
-							self.protos[y_c] = tf.add(self.protos[y_c], (tf.gather_nd(rep, tf.constant([[i]]))))
-						self.protos_samples_per_class[y_c] += 1
-					#print("manip")
-					loss_train_history.append(loss_value)
-
-				# Display metrics at the end of each epoch.
-				train_acc = float(self.train_acc_metric.result())
-				# print("Training acc over epoch: %.4f" % (float(train_acc),), " id: ", self.cid)
-
-				# Reset training metrics at the end of each epoch
-				self.train_acc_metric.reset_states()
-				acc_train_history.append(train_acc)
-
-			# =========================================================
-
-			trained_parameters = self.model.get_weights()
-			# the parameters are saved in a file because in each round new instances of client are created
-			self.save_parameters()
-			self.saved_parameters = copy.deepcopy(trained_parameters)
-
-		avg_loss_train = float(np.mean(loss_train_history))
-		avg_acc_train = float(np.mean(acc_train_history))
-		# print("loss media: ", avg_loss_train)
-		# print("acc media: ", avg_acc_train)
-
-		total_time = time.process_time() - start_time
-		size_of_parameters = sum(map(sys.getsizeof, self.protos))
-
-		filename = f"logs/{self.solution_name}/{self.n_clients}/{self.model_name}/{self.dataset}/train_client.csv"
-		data = [config['round'], self.cid, selected, total_time, size_of_parameters, avg_loss_train, avg_acc_train]
-
-		self._write_output(
-			filename=filename,
-			data=data)
-
-		fit_response = {
-			'cid': self.cid,
-			'protos_samples_per_class': self.protos_samples_per_class
-		}
-
-		self.normalize_proto()
-		protos_result = self.dict_to_numpy(self.protos)
-
-		return protos_result, len(self.x_train), fit_response
 	def dict_to_numpy(self, data):
 
 		list_data = []
-
 		for key in data:
-
 			list_data += [np.array(data[key])]
 		return list_data
 
 	def normalize_proto(self):
 
 		for key in self.protos:
-
 			self.protos[key] = self.protos[key]/self.protos_samples_per_class[key]
 
 	def evaluate(self, proto, config):
-		self.set_proto(proto)
-		self.load_and_set_parameters()
-		avg_loss_test, avg_acc_test = self.evaluate_step()
+		try:
+			self.set_proto(proto)
+			self.load_and_set_parameters()
+			avg_loss_test, avg_acc_test = self.evaluate_step()
+			size_of_parameters = sum(map(sys.getsizeof, proto))
+			data = [config['round'], self.cid, size_of_parameters, avg_loss_test, avg_acc_test]
+			self._write_output(filename=self.evaluate_client_filename,
+							   data=data)
 
-		size_of_parameters = sum(map(sys.getsizeof, proto))
+			evaluation_response = {
+				"cid": self.cid,
+				"accuracy": float(avg_acc_test),
+				"mse_loss": avg_loss_test
+			}
 
-		filename = f"logs/{self.solution_name}/{self.n_clients}/{self.model_name}/{self.dataset}/evaluate_client.csv"
-		data = [config['round'], self.cid, size_of_parameters, avg_loss_test, avg_acc_test]
-
-		self._write_output(filename=filename,
-						   data=data)
-
-		evaluation_response = {
-			"cid": self.cid,
-			"accuracy": float(avg_acc_test)
-		}
-
-		return avg_loss_test, len(self.x_test), evaluation_response
+			return avg_loss_test, len(self.x_test), evaluation_response
+		except Exception as e:
+			print("evaluate")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def evaluate_step(self):
 		try:
@@ -302,10 +290,12 @@ class FedProtoClientTf(ClientBaseTf):
 
 			avg_loss_test = float(np.mean(loss_history))
 			avg_acc_test = float(np.mean(acc_history))
-		except Exception as e:
-			print("erro: ", e)
 
-		return avg_loss_test, avg_acc_test
+			return avg_loss_test, avg_acc_test
+
+		except Exception as e:
+			print("evaluate step")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def agg_func(self, protos):
 		"""
@@ -318,55 +308,19 @@ class FedProtoClientTf(ClientBaseTf):
 		return protos
 
 	def load_and_set_parameters(self):
-		filename = """./fedproto_saved_weights/{}/{}/saved_model/my_model""".format(self.model_name, self.cid)
-		if Path(filename+"/saved_model.pb").exists():
-			self.model = tf.keras.models.load_model(filename)
+		try:
+			filename = """./fedproto_saved_weights/{}/{}/saved_model/my_model""".format(self.model_name, self.cid)
+			if Path(filename+"/saved_model.pb").exists():
+				self.model = tf.keras.models.load_model(filename)
+		except Exception as e:
+			print("load and set parameters")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def save_parameters(self):
-		filename = """./fedproto_saved_weights/{}/{}/saved_model/my_model""".format(self.model_name, self.cid)
-		self.model.save(filename)
-
-
-# acc_history = []
-# 			loss_history = []
-# 			for x_batch_val, y_batch_val in self.val_dataset:
-# 				val_logits, rep = self.model(x_batch_val, training=False)
-#
-#
-# 				self.val_acc_metric.update_state(y_batch_val, val_logits)
-# 				# val_loss = self.loss_fn(y_batch_val, val_logits)
-# 				proto_new = []
-# 				self.classes = []
-# 				output = np.ones(shape=(y_batch_val.shape[0], self.num_classes))
-# 				for i, yy in enumerate(y_batch_val):
-# 					self.classes.append(tf.get_static_value(yy))
-#
-# 				for i in range(len(rep)):
-# 					i_rep = rep[i]
-# 					for j in range(self.num_classes):
-# 						global_proto = self.global_protos[j]
-# 						val_loss = tf.get_static_value(tf.reduce_mean(self.loss_mse(global_proto, i_rep)))
-# 						output[i, j] = val_loss
-#
-# 				acc = np.mean(np.argmin(output, axis=1)==self.classes)
-# 				loss_history.append(val_loss)
-
-# 			for x_batch_val, y_batch_val in self.val_dataset:
-# 				val_logits, rep = self.model(x_batch_val, training=False)
-#
-#
-# 				self.val_acc_metric.update_state(y_batch_val, val_logits)
-# 				# val_loss = self.loss_fn(y_batch_val, val_logits)
-# 				proto_new = []
-# 				self.classes = []
-# 				for i, yy in enumerate(y_batch_val):
-# 					self.classes.append(tf.get_static_value(yy))
-# 				for i in range(len(y_batch_val)):
-# 					y_c = self.classes[i]
-# 					print("classe", y_c, self.global_protos[y_c])
-# 					proto_new.append(self.global_protos[y_c])
-# 				proto_new = np.array(proto_new)
-# 				print("proto new: ", proto_new)
-# 				val_loss = tf.make_ndarray(tf.reduce_mean(self.loss_mse(proto_new, rep)))[0]
-# 				loss_history.append(val_loss)
+		try:
+			filename = """./fedproto_saved_weights/{}/{}/saved_model/my_model""".format(self.model_name, self.cid)
+			self.model.save(filename)
+		except Exception as e:
+			print("save parameters")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 

@@ -27,35 +27,41 @@ class ModelCreation():
 # ====================================================================================================================
 	def create_CNN(self, input_shape, num_classes, use_proto=False):
 
-		deep_cnn = Sequential()
+		# deep_cnn = Sequential()
 
 		if len(input_shape) == 3:
-			deep_cnn.add(InputLayer(input_shape=(input_shape[1], input_shape[2], 1)))
+			# deep_cnn.add(InputLayer(input_shape=(input_shape[1], input_shape[2], 1)))
+			input = Input(shape=(input_shape[1], input_shape[2], 1))
 		else:
-			deep_cnn.add(InputLayer(input_shape=(input_shape[1:])))
+			# deep_cnn.add(InputLayer(input_shape=(input_shape[1:])))
+			input = Input(shape=(input_shape[1:]))
 
-		deep_cnn.add(Conv2D(128, (5, 5), activation='relu', strides=(1, 1), padding='same'))
-		deep_cnn.add(MaxPool2D(pool_size=(2, 2)))
+		x = Conv2D(128, (5, 5), activation='relu', strides=(1, 1), padding='same')(input)
+		x = MaxPool2D(pool_size=(2, 2))(x)
 
-		deep_cnn.add(Conv2D(64, (5, 5), activation='relu', strides=(2, 2), padding='same'))
-		deep_cnn.add(MaxPool2D(pool_size=(2, 2)))
-		deep_cnn.add(BatchNormalization())
+		x = Conv2D(64, (5, 5), activation='relu', strides=(2, 2), padding='same')(x)
+		x = MaxPool2D(pool_size=(2, 2))(x)
+		x = BatchNormalization()(x)
 
-		deep_cnn.add(Conv2D(32, (3, 3), activation='relu', strides=(2, 2), padding='same'))
-		deep_cnn.add(MaxPool2D(pool_size=(2, 2)))
-		deep_cnn.add(BatchNormalization())
+		x = Conv2D(32, (3, 3), activation='relu', strides=(2, 2), padding='same')(x)
+		x = MaxPool2D(pool_size=(2, 2))(x)
+		x = BatchNormalization()(x)
 
-		deep_cnn.add(Flatten())
+		x = Flatten()(x)
 
-		deep_cnn.add(Dense(100, activation='relu'))
-		deep_cnn.add(Dense(100, activation='relu'))
-		deep_cnn.add(Dropout(0.25))
+		x = Dense(100, activation='relu')(x)
+		x = Dense(100, activation='relu')(x)
+		x = Dropout(0.25)(x)
 
-		deep_cnn.add(Dense(num_classes, activation='softmax'))
+		out = Dense(num_classes, activation='softmax')(x)
 
-		deep_cnn.compile(optimizer='sgd', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+		if use_proto:
+			model = Model(inputs=input, outputs=[out, x])
+		else:
+			model = Model(inputs=input, outputs=[out])
+			model.compile(optimizer='sgd', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
-		return deep_cnn
+		return model
 
 # ====================================================================================================================
 	def create_LogisticRegression(self, input_shape, num_classes, use_proto=False):

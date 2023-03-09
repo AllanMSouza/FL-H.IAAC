@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-from t_distribution import t_distribution_test
 from base_plots import bar_plot, line_plot, ecdf_plot
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -74,7 +73,6 @@ class JointAnalysis():
 
     def groupb_by_table(self, df):
         parameters = int(df['Size of parameters'].mean())
-        # accuracy = t_distribution_test(df['Accuracy (%)'].tolist())
         accuracy = df['Accuracy (%)'].mean()
 
         return pd.DataFrame({'Size of parameters (bytes)': [parameters], 'Accuracy (%)': [accuracy]})
@@ -127,7 +125,7 @@ class JointAnalysis():
 
 
         max_values = self.idmax(df_table)
-        print("zzz", max_values)
+        print("max values", max_values)
 
         for max_value in max_values:
             row_index = max_value[0]
@@ -447,6 +445,10 @@ class JointAnalysis():
         return str(mean) + u"\u00B1" + str(average_variation)
 
 if __name__ == '__main__':
+    """
+        This code generates a joint plot (multiples plots in one image) and a table of accuracy.
+        It is done for each experiment.
+    """
 
     experiments = {1: {'new_clients': 'new_clients_False_train_False', 'local_epochs': '1_local_epochs'},
                   2: {'new_clients': 'new_clients_True_train_False', 'local_epochs': '1_local_epochs'},
