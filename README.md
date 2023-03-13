@@ -16,6 +16,15 @@ It has support for TensorFlow and PyTorch.
 | [QFedAvg](https://arxiv.org/pdf/1905.10497.pdf) | :heavy_check_mark: | :white_check_mark: |
 | FedPredict | :heavy_check_mark: | :white_check_mark: |
 
+## Available datasets
+
+The following datasets are available both in IID and non-IID settings:
+
+- CIFAR-10
+- MNIST
+- Motion sense
+- UCI-HAR
+
 ## Project structure - main components 
 
 Each strategy is evaluated through `simulation.py` which creates the set of clients and the server of the selected strategy under the given setting.
