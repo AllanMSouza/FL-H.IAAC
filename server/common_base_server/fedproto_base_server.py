@@ -133,7 +133,7 @@ class FedProtoBaseServer(FedAvgBaseServer):
         metrics_aggregated = {}
 
         if server_round == 1:
-            print("treinados rodada 1: ", self.max_rounds_per_client)
+            print("treinados rodada 1: ", self.clients_metrics)
 
         return parameters_aggregated, metrics_aggregated
 

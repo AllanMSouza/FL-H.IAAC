@@ -7,24 +7,6 @@ import csv
 import random
 import pandas as pd
 
-from logging import WARNING
-from flwr.common import FitIns
-from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
-from flwr.common.logger import log
-
-from flwr.common import (
-    EvaluateIns,
-    EvaluateRes,
-    FitIns,
-    FitRes,
-    MetricsAggregationFn,
-    NDArrays,
-    Parameters,
-    Scalar,
-    ndarrays_to_parameters,
-    parameters_to_ndarrays,
-)
-
 from server.common_base_server.fedper_base_server import FedPerBaseServer
 
 from pathlib import Path
@@ -71,6 +53,7 @@ class FedPredictBaseServer(FedPerBaseServer):
 		self.server_momentum = server_momentum
 		self.momentum_vector = None
 		self.model = model
+		self.window_of_previous_accs = 4
 		self.server_opt = (self.server_momentum != 0.0) or (
 				self.server_learning_rate != 1.0)
 
@@ -85,4 +68,38 @@ class FedPredictBaseServer(FedPerBaseServer):
 			Path("""fedpredict_saved_weights/{}/{}/""".format(self.model_name, i)).mkdir(parents=True, exist_ok=True)
 			pd.DataFrame({'round_of_last_fit': [0], 'acc_of_last_fit': [0]}).to_csv("""fedpredict_saved_weights/{}/{}/{}.csv""".format(self.model_name, i, i), index=False)
 
+	def _calculate_evolution_level(self, server_round):
 
+		acc_list = np.array(list(self.accuracy_history.values()))
+		last_acc = acc_list[-1]
+		reference_acc = acc_list[-self.window_of_previous_accs]
+
+		if reference_acc > last_acc:
+			# Drop in the performance. New clients where introduced
+			t = self._get_round_of_the_most_similar_previous_acc(acc_list, last_acc)
+			el = t/self.num_rounds
+		else:
+			el = server_round/self.num_rounds
+
+		return el
+
+	def _get_round_of_the_most_similar_previous_acc(self, acc_list, last_acc):
+
+		# Get the round based on the minimum difference between accuracies. 
+		# It adds +1 to adjust index that starts from 0
+		t = np.argmin(acc_list-last_acc) + 1
+
+		return t
+
+	def _update_fedpredict_metrics(self, server_round):
+
+		# self.fedpredict_metrics['acc'] = self.accuracy_history
+		# It works as a table where for each round it has a line with two columns for the accuracy and
+		# the evolution level of the respective round
+		self.fedpredict_metrics['round_acc_el'] = {round: {'acc': self.accuracy_history[round], 'el': round/self.num_rounds} for round in self.accuracy_history}
+		self.fedpredict_metrics['nt'] = self.clients_metrics['nt']
+		self.fedpredict_metrics['el'] = self._calculate_evolution_level(server_round)
+
+	def _get_metrics(self):
+
+		return {'el': self.fedpredict_metrics['el']}
