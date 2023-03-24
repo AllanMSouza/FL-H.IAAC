@@ -5,7 +5,7 @@ It has support for TensorFlow and PyTorch.
 
 ## Current implemented strategies
 
-| Strategy | Pytorch | TensorFlow |      pproach |
+| Strategy | Pytorch | TensorFlow |     Approach |
 | :---         |     :---:      |     :---:     |-------------:|
 | [FedAvg](http://proceedings.mlr.press/v54/mcmahan17a/mcmahan17a.pdf) | :heavy_check_mark:  | :heavy_check_mark:  |  Traditional |
 | [FedPer](https://arxiv.org/pdf/1912.00818.pdf) | :heavy_check_mark: | :heavy_check_mark: | Personalized |
