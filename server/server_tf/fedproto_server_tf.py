@@ -22,7 +22,7 @@ class FedProtoServerTf(FedProtoBaseServer):
                  decay=0,
                  perc_of_clients=0,
                  dataset='',
-                 strategy_name='FedAvg',
+                 strategy_name='FedProto',
                  model_name='',
                  new_clients=False,
                  new_clients_train=False):

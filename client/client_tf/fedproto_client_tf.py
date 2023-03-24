@@ -62,7 +62,6 @@ class FedProtoClientTf(ClientBaseTf):
 		self.saved_parameters = None
 		self.modify_dataset()
 		self.create_folder()
-		self.model = self.create_model(use_proto=True)
 
 	def create_folder(self):
 		Path("""fedproto_saved_weights/{}/{}/""".format(self.model_name, self.cid, self.cid)).mkdir(parents=True, exist_ok=True)
@@ -89,6 +88,21 @@ class FedProtoClientTf(ClientBaseTf):
 		self.optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
 		self.train_acc_metric.update_state(y, logits)
 		return loss_value, rep, mse_loss
+
+	def create_model(self):
+		input_shape = self.x_train.shape
+
+		if self.model_name == 'Logist Regression':
+			return ModelCreation().create_LogisticRegression_proto(input_shape, self.num_classes)
+
+		elif self.model_name == 'DNN':
+			return ModelCreation().create_DNN_proto(input_shape, self.num_classes)
+
+		elif self.model_name == 'CNN':
+			return ModelCreation().create_CNN_proto(input_shape, self.num_classes)
+
+		else:
+			raise Exception("Wrong model name")
 
 	def modify_dataset(self):
 
@@ -157,7 +171,11 @@ class FedProtoClientTf(ClientBaseTf):
 								for i in range(len(y_batch_train)):
 									yy = self.classes[i]
 									y_c = tf.get_static_value(yy)
-									proto_new[i] = self.global_protos[y_c]
+									if not np.isnan(self.global_protos[y_c]).any() or np.sum(
+											self.global_protos[y_c] == 0):
+										proto_new[i] = self.global_protos[y_c]
+									else:
+										proto_new[i] = tf.gather(rep, i)
 
 								proto_new = tf.constant(proto_new)
 								mse_loss = tf.reduce_mean(self.loss_mse(proto_new, rep))
@@ -206,8 +224,7 @@ class FedProtoClientTf(ClientBaseTf):
 				filename=self.train_client_filename,
 				data=data)
 
-			self.normalize_proto()
-			protos_result = self.dict_to_numpy(self.protos)
+			protos_result = self.agg_func(self.protos)
 
 			fit_response = {
 				'cid': self.cid,
@@ -222,15 +239,10 @@ class FedProtoClientTf(ClientBaseTf):
 
 	def dict_to_numpy(self, data):
 
-		list_data = []
+		new_data = {}
 		for key in data:
-			list_data += [np.array(data[key])]
-		return list_data
-
-	def normalize_proto(self):
-
-		for key in self.protos:
-			self.protos[key] = self.protos[key]/self.protos_samples_per_class[key]
+			new_data[key] = np.array(data[key])
+		return new_data
 
 	def evaluate(self, proto, config):
 		try:
@@ -260,7 +272,7 @@ class FedProtoClientTf(ClientBaseTf):
 			for x_batch_val, y_batch_val in self.val_dataset:
 				val_logits, rep = self.model(x_batch_val, training=False)
 				self.val_acc_metric.update_state(y_batch_val, val_logits)
-				val_loss = self.loss_fn(y_batch_val, val_logits)
+				val_loss = self.loss_fn(y_batch_val, val_logits).numpy()
 
 				# acc_history.append(val_acc)
 				# output = np.ones((y_batch_val.shape[0], self.num_classes))
@@ -300,12 +312,26 @@ class FedProtoClientTf(ClientBaseTf):
 	def agg_func(self, protos):
 		"""
 		Returns the average of the weights.
+		If the client does not has a prototype of a given class it leverages the one from the 'self.global_protos'
 		"""
-		size = len(protos)
-		for key in protos:
-			protos[key] = np.sum(protos[key], axis=0)/size
+		try:
 
-		return protos
+			for label in protos:
+				protos[label] = np.array(protos[label]) / self.protos_samples_per_class[label]
+
+			proto_shape = protos[label].shape
+
+			if self.global_protos is not None:
+				numpy_protos = copy.deepcopy(self.global_protos)
+			else:
+				numpy_protos = [np.zeros(proto_shape) for i in range(self.num_classes)]
+			for label in protos:
+				numpy_protos[label] = protos[label]
+
+			return numpy_protos
+		except Exception as e:
+			print("agg func")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def load_and_set_parameters(self):
 		try:

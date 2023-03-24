@@ -14,7 +14,7 @@ class FedLocalServerTf(FedAvgBaseServer):
                  decay=0,
                  perc_of_clients=0,
                  dataset='',
-                 strategy_name='FedAvg',
+                 strategy_name='FedLocal',
                  model_name='',
                  new_clients=False,
                  new_clients_train=False):

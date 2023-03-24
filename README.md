@@ -5,16 +5,16 @@ It has support for TensorFlow and PyTorch.
 
 ## Current implemented strategies
 
-| Strategy | Pytorch | TensorFlow |
-| :---         |     :---:      |          ---: |
-| [FedAvg](http://proceedings.mlr.press/v54/mcmahan17a/mcmahan17a.pdf) | :heavy_check_mark:  | :heavy_check_mark:  |
-| [FedPer](https://arxiv.org/pdf/1912.00818.pdf) | :heavy_check_mark: | :heavy_check_mark: |
-| [FedProto](https://ojs.aaai.org/index.php/AAAI/article/view/20819) | :heavy_check_mark: | :heavy_check_mark: |
-| [FedClassAvg](https://dl.acm.org/doi/pdf/10.1145/3545008.3545073) | :heavy_check_mark: | :white_check_mark: |
-| [FedAvgM](https://arxiv.org/pdf/1909.06335.pdf) | :heavy_check_mark: | :white_check_mark: |
-| [FedYogi](https://arxiv.org/pdf/2003.00295.pdf) | :heavy_check_mark: | :white_check_mark: |
-| [QFedAvg](https://arxiv.org/pdf/1905.10497.pdf) | :heavy_check_mark: | :white_check_mark: |
-| FedPredict | :heavy_check_mark: | :white_check_mark: |
+| Strategy | Pytorch | TensorFlow |      pproach |
+| :---         |     :---:      |     :---:     |-------------:|
+| [FedAvg](http://proceedings.mlr.press/v54/mcmahan17a/mcmahan17a.pdf) | :heavy_check_mark:  | :heavy_check_mark:  |  Traditional |
+| [FedPer](https://arxiv.org/pdf/1912.00818.pdf) | :heavy_check_mark: | :heavy_check_mark: | Personalized |
+| [FedProto](https://ojs.aaai.org/index.php/AAAI/article/view/20819) | :heavy_check_mark: | :heavy_check_mark: | Personalized |
+| [FedClassAvg](https://dl.acm.org/doi/pdf/10.1145/3545008.3545073) | :heavy_check_mark: | :white_check_mark: |  Traditional |
+| [FedAvgM](https://arxiv.org/pdf/1909.06335.pdf) | :heavy_check_mark: | :white_check_mark: | Personalized |
+| [FedYogi](https://arxiv.org/pdf/2003.00295.pdf) | :heavy_check_mark: | :white_check_mark: |  Traditional |
+| [QFedAvg](https://arxiv.org/pdf/1905.10497.pdf) | :heavy_check_mark: | :white_check_mark: |  Traditional |
+| FedPredict | :heavy_check_mark: | :white_check_mark: | Personalized |
 
 ## Available datasets
 

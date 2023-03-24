@@ -178,10 +178,6 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			std = st.stdev(y)
 		self.fedproposed_metrics['acc'] = self.accuracy_history
 		self.fedproposed_metrics['coef'] = coef
-		# low std means stable global parameters
-		# low coef means that global parameters are not very useful
-		# self.fedproposed_metrics[server_round]['coef'] = coef
-		# self.fedproposed_metrics[server_round]['std'] = std
 
 
 	def train_and_evaluate_proto_model(self):
@@ -377,8 +373,6 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		# Return client/config pairs
 		return [(client, evaluate_ins) for client in selected_clients]
 
-
-
 	def aggregate_evaluate(
         self,
         server_round,
@@ -495,7 +489,3 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		with open(filename, 'a') as server_log_file:
 			writer = csv.writer(server_log_file)
 			writer.writerow(data)
-
-	def _protos_similarity(self, protos):
-
-		similarity = np.zeros((self.n_classes, self.n_classes))
