@@ -80,7 +80,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.accuracy_history = {}
 		self.clients_fit_rounds_history = {i: -1 for i in range(self.num_clients)}
 		self.regression_window = 5
-		self.fedpredict_metrics = {}
+		self.fedpredict_metrics = {'el': 1/self.num_rounds, 'round_acc_el': {1: {'acc': 0, 'el': 0}}}
 
 		self.type = type
 
@@ -190,7 +190,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			clients_ids = []
 			for i in self.clients_metrics:
 				client_ = self.clients_metrics[i]
-				if client_['count'] < client_['max_rounds']:
+				if client_['count'] < client_['max_rounds'] or server_round >= int(self.num_rounds * self.round_threshold):
 					clients_ids.append(i)
 					# 0 rounds since last training
 					self.clients_metrics[i]['nt'] = 0
@@ -337,7 +337,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		config = {
 			'round' : server_round,
 			'parameters': self.proto_parameters,
-			'metrics': self.get_metrics()
+			'metrics': self._get_metrics()
 		}
 		if self.on_evaluate_config_fn is not None:
 			# Custom evaluation config function provided
@@ -449,7 +449,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 		return selected_clients
 
-	def get_metrics(self):
+	def _get_metrics(self):
 
 		return {}
 

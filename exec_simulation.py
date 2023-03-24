@@ -41,21 +41,22 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 #  Local epochs = 2
 # ======================================================================
 # Configurations
+TYPE = 'torch'
 # DATASETS      				= ('MNIST', 'CIFAR10', )
-DATASETS      					= ('MNIST', 'CIFAR10',)
+DATASETS      					= ('MNIST', )
 MODELS        					= ('CNN',)
 ALGORITHMS    					= ('None', 'POC',)
 EPOCHS        					= {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2]}
 # CLIENTS       				= {'MNIST': 50, 'CIFAR10': 50, 'CIFAR100': 50, 'MotionSense': 50, 'UCIHAR': 50}
 CLIENTS       					= {'MNIST': [50], 'CIFAR10': [50]}
-CLIENTS2SELCT 					= {'None': (1,), 'POC': (0.1, 0.2, 0.3, 0.4,)}
+CLIENTS2SELCT 					= {'None': (1,), 'POC': (0.2, )}
 NEW_CLIENTS 					= {'None': ('FALSE',), 'POC': ('FALSE', 'TRUE',)}
 NEW_CLIENTS_TRAIN 				= {'FALSE': ('FALSE',), 'TRUE': ('FALSE', 'TRUE',)}
 # DECAY         				= (0.001, 0.005, 0.009)
-ROUNDS        					= 100
+ROUNDS        					= 50
 # STRATEGIES 					= ('FedAVG', 'FedAvgM', 'FedClassAvg''QFedAvg', 'FedPer', 'FedProto', 'FedYogi', 'FedLocal',)
-STRATEGIES_FOR_ANALYSIS 		= ['FedPredict', 'FedAVG', 'FedClassAvg', 'FedPer', 'FedProto']
-STRATEGIES_TO_EXECUTE 			= ['FedProto']
+STRATEGIES_FOR_ANALYSIS 		= ['FedAVG', 'FedPer', 'FedPredict']
+STRATEGIES_TO_EXECUTE 			= ['FedPredict']
 
 EXPERIMENTS 		= {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''},
 					   2: {'algorithm': 'POC', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''},
@@ -74,8 +75,10 @@ def execute_experiment(experiment, algorithm, new_client, new_client_train, comm
 								for strategy in STRATEGIES_TO_EXECUTE:
 
 									print(f'Starting {strategy} POC-{poc} simulation for {dataset} clients with {model} model ...', os.getcwd())
-									test_config = """python {}/simulation.py --dataset='{}' --model='{}' --strategy='{}' --epochs={} --round={} --client={} --type='torch' --non-iid={} --aggregation_method='{}' --poc={} --new_clients={} --new_clients_train={}""".format(os.getcwd(), dataset, model, strategy, epochs, ROUNDS, clients, type, True, algorithm,  poc, new_client, new_client_train)
+									test_config = """python {}/simulation.py --dataset='{}' --model='{}' --strategy='{}' --epochs={} --round={} --client={} --type='{}' --non-iid={} --aggregation_method='{}' --poc={} --new_clients={}  --new_clients_train={}""".format(os.getcwd(), dataset, model,
+																	 strategy, epochs, ROUNDS, clients, TYPE, True, algorithm,  poc, new_client, new_client_train)
 									print("=====================================\nExecutando... \n", test_config, "\n=====================================")
+									#exit()
 									subprocess.Popen(test_config, shell=True).wait()
 									pass
 									# subprocess.Popen(['rm', '-fr', '/tmp/ray/']).wait()

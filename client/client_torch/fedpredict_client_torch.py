@@ -60,6 +60,7 @@ class FedPredictClientTorch(FedPerClientTorch):
 		self.rounds_of_fit = 0
 		self.accuracy_of_last_round_of_fit = 0
 		self.start_server = 0
+		self.first_round = -1
 
 	def get_parameters_of_model(self):
 		try:
@@ -69,22 +70,81 @@ class FedPredictClientTorch(FedPerClientTorch):
 			print("get parameters of model")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def save_round_of_last_fit(self, server_round):
+	def save_client_metrics_train(self, server_round):
 		try:
+			row = self.read_client_metrics()
+			if row is not None:
+				first_round = int(row['first_round'])
+				round_of_last_fit = int(row['round_of_last_fit'])
+				round_of_last_evaluate = int(row['round_of_last_evaluate'])
+				acc_of_last_evaluate = float(row['acc_of_last_evaluate'])
+				if first_round == -1:
+					first_round = server_round
+
+			else:
+				first_round = server_round
+				round_of_last_evaluate = -1
+				acc_of_last_evaluate = 0
+			acc_of_last_fit = 0
 			self.round_of_last_fit = server_round
+			self.round_of_last_evaluate = round_of_last_evaluate
+			self.accuracy_of_last_round_of_evalute = acc_of_last_evaluate
+			self.accuracy_of_last_round_of_fit = acc_of_last_fit
+			self.first_round = first_round
 			pd.DataFrame(
-				{'round_of_last_fit': [server_round], 'acc_of_last_fit': [self.accuracy_of_last_round_of_fit]}).to_csv(
+				{'round_of_last_fit': [self.round_of_last_fit], 'round_of_last_evaluate': [self.round_of_last_evaluate],
+				 'acc_of_last_fit': [self.accuracy_of_last_round_of_fit], 'acc_of_last_evaluate': [self.accuracy_of_last_round_of_evalute],
+				 'first_round': [first_round]}).to_csv(
 				"""fedpredict_saved_weights/{}/{}/{}.csv""".format(self.model_name, self.cid, self.cid), index=False)
 		except Exception as e:
-			print("save_round_of_last_fit")
+			print("save_metrics_train")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
-	def get_round_of_last_fit(self):
+
+	def save_client_metrics_evaluate(self, server_round, acc):
 		try:
-			row = pd.read_csv("""fedpredict_saved_weights/{}/{}/{}.csv""".format(self.model_name, self.cid, self.cid))
+			row = self.read_client_metrics()
+			if row is not None:
+				first_round = int(row['first_round'])
+				round_of_last_fit = int(row['round_of_last_fit'])
+				round_of_last_evaluate = int(row['round_of_last_evaluate'])
+			else:
+				first_round = -1
+				round_of_last_fit = -1
+			self.round_of_last_evaluate = server_round
+			self.round_of_last_fit = round_of_last_fit
+			self.accuracy_of_last_round_of_evalute = acc
+			self.first_round = first_round
+			pd.DataFrame(
+				{'round_of_last_fit': [self.round_of_last_fit], 'round_of_last_evaluate': [self.round_of_last_evaluate],
+				 'acc_of_last_fit': [self.accuracy_of_last_round_of_fit], 'acc_of_last_evaluate': [self.accuracy_of_last_round_of_evalute],
+				 'first_round': [first_round]}).to_csv(
+				"""fedpredict_saved_weights/{}/{}/{}.csv""".format(self.model_name, self.cid, self.cid), index=False)
+		except Exception as e:
+			print("save_merics_evaluate")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+	def get_client_metrics(self):
+		try:
+			row = self.read_client_metrics()
 			self.round_of_last_fit = int(row['round_of_last_fit'])
+			self.round_of_last_evaluate = int(row['round_of_last_evaluate'])
+			self.first_round = int(row['first_round'])
 			self.accuracy_of_last_round_of_fit = float(row['acc_of_last_fit'])
+			self.accuracy_of_last_round_of_evalute = float(row['acc_of_last_evaluate'])
 		except Exception as e:
 			print("On get_round_of_last_fit", " user id: ", self.cid, " row: ", row)
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+	def read_client_metrics(self):
+		try:
+			filename = """fedpredict_saved_weights/{}/{}/{}.csv""".format(self.model_name, self.cid, self.cid)
+			if os.path.isfile(filename):
+				row = pd.read_csv(filename)
+				return row
+			else:
+				return None
+		except Exception as e:
+			print("read_client_metrics", " user id: ", self.cid)
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def save_parameters(self):
@@ -98,15 +158,9 @@ class FedPredictClientTorch(FedPerClientTorch):
 			print("save parameters")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def _merge_models(self, global_parameters, metrics, filename, server_round, rounds_without_fit):
+	def _merge_models(self, global_parameters, metrics, filename, server_round, rounds_without_fit, el, acc_of_last_fit):
 
 		try:
-			#print("metrica: ", type(metrics), metrics)
-			if server_round > 1:
-				acc = metrics['acc'][server_round-1]
-				#print("acc: ", acc)
-			else:
-				acc = 0
 
 			# 9
 			if rounds_without_fit == 0:
@@ -114,8 +168,14 @@ class FedPredictClientTorch(FedPerClientTorch):
 			else:
 				# evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
 				# normalizar dentro de 0 e 1
+				# updated_level = 1/rounds_without_fit
+				# updated_level = 1 - max(0, -acc_of_last_fit+self.accuracy_of_last_round_of_evalute)
 				updated_level = 1/rounds_without_fit
-				evolutionary_level = (server_round / 100)
+				# evolutionary_level = (server_round / 50)
+				print("client id: ", self.cid, " primeiro round", self.first_round)
+				evolutionary_level = (server_round)/50
+
+				print("el servidor: ", el, " el local: ", evolutionary_level)
 
 				eq1 = (-updated_level - evolutionary_level)
 				eq2 = round(np.exp(eq1), 6)
@@ -125,22 +185,23 @@ class FedPredictClientTorch(FedPerClientTorch):
 
 			print("rodada: ", server_round, " rounds sem fit: ", rounds_without_fit, "\npeso global: ", global_model_weight, " peso local: ", local_model_weights)
 
+			# Load global parameters into 'self.clone_model' (global model)
 			global_parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
 			for new_param, old_param in zip(global_parameters, self.clone_model.parameters()):
 				old_param.data = new_param.data.clone()
 			# self.clone_model.load_state_dict(torch.load(filename))
-			i = 0
+			# Combine models
 			for new_param, old_param in zip(self.clone_model.parameters(), self.model.parameters()):
 				old_param.data = (global_model_weight*new_param.data.clone() + local_model_weights*old_param.data.clone())
 		except Exception as e:
 			print("merge models")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def set_parameters_to_model_train(self, global_parameters, server_round, type, config):
+	def set_parameters_to_model_train(self, global_parameters, server_round, config):
 		# usando 'torch.load'
 		try:
 			filename = """./fedpredict_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
-			self.save_round_of_last_fit(int(config['round']))
+			self.save_client_metrics_train(int(config['round']))
 			# todos os fit são com parâmetros novos (do servidor)
 			parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
 			for new_param, old_param in zip(parameters, self.model.parameters()):
@@ -160,58 +221,34 @@ class FedPredictClientTorch(FedPerClientTorch):
 		# usando 'torch.load'
 		try:
 			filename = """./fedpredict_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
-			self.get_round_of_last_fit()
-			rounds_without_fit = server_round - self.round_of_last_fit
+			self.get_client_metrics()
+			rounds_without_fit = server_round - max(0, int(self.round_of_last_fit))
 			metric = config['metrics']
-			# self._process_metrics(metric, server_round, rounds_without_fit)
-			if self.rounds_of_fit <= 1:
-				parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
-				for new_param, old_param in zip(parameters, self.model.parameters()):
-					old_param.data = new_param.data.clone()
+			el = metric['el']
+			acc_of_last_fit = 0
+			# if self.round_of_last_fit - server_round > 1:
+			# 	raise "Round of last fit muito maior do que o server round"
+			# if self.round_of_last_fit > 0:
+			# 	acc_of_last_fit = metric['round_acc_el'][self.round_of_last_fit]['acc']
+			# print("encontrou: ", metric['round_acc_el'], " ultima rodada: ", self.round_of_last_fit)
+			round_acc_el = 0
+			#
+			# if self.rounds_of_fit <= 4:
+			# 	parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
+			# 	for new_param, old_param in zip(parameters, self.model.parameters()):
+			# 		old_param.data = new_param.data.clone()
+			# else:
+			# 	print("maior rounds of fit: ", self.rounds_of_fit, " cid: ", self.cid)
+			parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
+			for new_param, old_param in zip(parameters, self.model.parameters()):
+				old_param.data = new_param.data.clone()
 			if os.path.exists(filename):
-				# todos os evaluate em rodadas menores que 35 são com os parâmetros personalizados*
+				# Load local parameters to 'self.model'
 				self.model.load_state_dict(torch.load(filename))
-				self._merge_models(global_parameters, metric, filename, server_round, rounds_without_fit)
+				self._merge_models(global_parameters, metric, filename, server_round, rounds_without_fit, el, acc_of_last_fit)
 		except Exception as e:
 			print("Set parameters to model")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
-
-	def _process_metrics(self, metric, server_round, rounds_without_fit):
-
-		try:
-			# calcular o peso das rodadas sem treinamento dentre a quantidade total de rodadas
-			# rounds_without_fit = rounds_without_fit/server_round
-			accuracies = metric['acc']
-			coef = metric['coef']
-			global_acc_of_last_round_of_fit = 0
-			if self.round_of_last_fit > 0:
-				global_acc_of_last_round_of_fit = accuracies[self.round_of_last_fit]
-			mean_acc = global_acc_of_last_round_of_fit
-			std_acc = global_acc_of_last_round_of_fit
-			interval_acc = []
-			if self.round_of_last_fit < server_round:
-				for i in range(max([self.round_of_last_fit, server_round-3, 1]), server_round):
-					interval_acc.append(accuracies[i])
-				mean_acc = np.mean(interval_acc)
-				std_acc = np.std(interval_acc)
-
-			diff_mean_acc = mean_acc - self.accuracy_of_last_round_of_fit
-
-			if diff_mean_acc >= 0.01:
-				# A acurácia cresceu desde a última rodada de treinamento.
-				# Modelo global evoluiu
-				# Ângulo da reta que passa pela acurácia da última rodada treinada pelo cliente e o ponto médio atual da acurácia global
-				acc_growth_angle = diff_mean_acc/min(rounds_without_fit, 3)
-				# Valor próximo de 1 indica que o modelo global está com alta taxa de crescimento
-				# Valor próximo de 0 indica que o modelo global está convergindo
-				print("acuracia media: ", mean_acc)
-				print("Angulo0: ", coef)
-				acc_growth_angle = np.sin(math.radians(acc_growth_angle))
-				print("Angulo: ", acc_growth_angle, " rodada: ", server_round)
-		except Exception as e:
-			print("process metrics")
-			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
-
 
 	def fit(self, parameters, config):
 		try:
@@ -327,6 +364,7 @@ class FedPredictClientTorch(FedPerClientTorch):
 
 			size_of_parameters = sum([sum(map(sys.getsizeof, parameters[i])) for i in range(len(parameters))])
 			loss, accuracy, test_num = self.model_eval()
+			self.save_client_metrics_evaluate(server_round, accuracy)
 			data = [config['round'], self.cid, size_of_parameters, loss, accuracy]
 
 			self._write_output(filename=self.evaluate_client_filename,
