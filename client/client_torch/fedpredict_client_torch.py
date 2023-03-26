@@ -78,6 +78,7 @@ class FedPredictClientTorch(FedPerClientTorch):
 				round_of_last_fit = int(row['round_of_last_fit'])
 				round_of_last_evaluate = int(row['round_of_last_evaluate'])
 				acc_of_last_evaluate = float(row['acc_of_last_evaluate'])
+				acc_of_last_fit = float(row['acc_of_last_fit'])
 				if first_round == -1:
 					first_round = server_round
 
@@ -85,7 +86,8 @@ class FedPredictClientTorch(FedPerClientTorch):
 				first_round = server_round
 				round_of_last_evaluate = -1
 				acc_of_last_evaluate = 0
-			acc_of_last_fit = 0
+				acc_of_last_fit = 0
+
 			self.round_of_last_fit = server_round
 			self.round_of_last_evaluate = round_of_last_evaluate
 			self.accuracy_of_last_round_of_evalute = acc_of_last_evaluate
@@ -107,11 +109,16 @@ class FedPredictClientTorch(FedPerClientTorch):
 				first_round = int(row['first_round'])
 				round_of_last_fit = int(row['round_of_last_fit'])
 				round_of_last_evaluate = int(row['round_of_last_evaluate'])
+				acc_of_last_fit = float(row['acc_of_last_fit'])
+				if round_of_last_fit == server_round:
+					acc_of_last_fit = acc
 			else:
 				first_round = -1
 				round_of_last_fit = -1
+				acc_of_last_fit = acc
 			self.round_of_last_evaluate = server_round
 			self.round_of_last_fit = round_of_last_fit
+			self.accuracy_of_last_round_of_fit = acc_of_last_fit
 			self.accuracy_of_last_round_of_evalute = acc
 			self.first_round = first_round
 			pd.DataFrame(
@@ -158,7 +165,7 @@ class FedPredictClientTorch(FedPerClientTorch):
 			print("save parameters")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def _merge_models(self, global_parameters, metrics, filename, server_round, rounds_without_fit, el, acc_of_last_fit):
+	def _merge_models(self, global_parameters, metrics, filename, server_round, rounds_without_fit, acc_of_last_fit):
 
 		try:
 
@@ -175,7 +182,7 @@ class FedPredictClientTorch(FedPerClientTorch):
 				print("client id: ", self.cid, " primeiro round", self.first_round)
 				evolutionary_level = (server_round)/50
 
-				print("el servidor: ", el, " el local: ", evolutionary_level)
+				# print("el servidor: ", el, " el local: ", evolutionary_level)
 
 				eq1 = (-updated_level - evolutionary_level)
 				eq2 = round(np.exp(eq1), 6)
@@ -224,8 +231,9 @@ class FedPredictClientTorch(FedPerClientTorch):
 			self.get_client_metrics()
 			rounds_without_fit = server_round - max(0, int(self.round_of_last_fit))
 			metric = config['metrics']
-			el = metric['el']
+			# el = metric['el']
 			acc_of_last_fit = 0
+			print("leu: ", " cid: ", self.cid,  ' fedpredict_client_metrics: ', metric['fedpredict_client_metrics'][str(self.cid)])
 			# if self.round_of_last_fit - server_round > 1:
 			# 	raise "Round of last fit muito maior do que o server round"
 			# if self.round_of_last_fit > 0:
@@ -245,7 +253,7 @@ class FedPredictClientTorch(FedPerClientTorch):
 			if os.path.exists(filename):
 				# Load local parameters to 'self.model'
 				self.model.load_state_dict(torch.load(filename))
-				self._merge_models(global_parameters, metric, filename, server_round, rounds_without_fit, el, acc_of_last_fit)
+				self._merge_models(global_parameters, metric, filename, server_round, rounds_without_fit, acc_of_last_fit)
 		except Exception as e:
 			print("Set parameters to model")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
@@ -305,7 +313,7 @@ class FedPredictClientTorch(FedPerClientTorch):
 			avg_acc_train      = train_acc/train_num
 
 			loss, accuracy, test_num = self.model_eval()
-			self.accuracy_of_last_round_of_fit = accuracy
+			# self.accuracy_of_last_round_of_fit = accuracy
 
 			data = [config['round'], self.cid, selected, total_time, size_of_parameters, avg_loss_train, avg_acc_train]
 

@@ -123,4 +123,4 @@ class FedPredictBaseServer(FedPerBaseServer):
 
 	def _get_metrics(self):
 
-		return {'el': self.fedpredict_metrics['el'], 'round_acc_el': self.fedpredict_metrics['round_acc_el']}
+		return {'el': self.fedpredict_metrics['el'], 'fedpredict_client_metrics': self.fedpredict_clients_metrics}
