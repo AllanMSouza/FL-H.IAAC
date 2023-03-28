@@ -60,7 +60,7 @@ class FedPerClientTorch(ClientBaseTorch):
 
 
 	def save_parameters(self):
-		# usando json
+		# Using json
 		try:
 			filename = """./fedper_saved_weights/{}/{}/{}.json""".format(self.model_name, self.cid, self.cid)
 			weights = self.get_parameters(config={})
@@ -94,8 +94,7 @@ class FedPerClientTorch(ClientBaseTorch):
 				fileObject = open(filename, "r")
 				jsonContent = fileObject.read()
 				aList = [np.array(i) for i in json.loads(jsonContent)]
-				size = len(parameters)
-				# updating only the personalized layers, which were previously saved in a file
+				# Updating only the personalized layers, which were previously saved in a file
 				# for i in range(self.n_personalized_layers):
 				# 	parameters[size-self.n_personalized_layers+i] = aList[i]
 				parameters = parameters + aList

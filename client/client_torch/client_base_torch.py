@@ -1,5 +1,4 @@
 import flwr as fl
-import tensorflow
 import random
 import time
 import numpy as np
@@ -24,6 +23,7 @@ import random
 random.seed(0)
 np.random.seed(0)
 torch.manual_seed(0)
+
 class ClientBaseTorch(fl.client.NumPyClient):
 
 	def __init__(self,
@@ -143,6 +143,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			print("create model")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
+	def save_parameters(self):
+		pass
 
 	def get_parameters(self, config):
 		try:
@@ -152,22 +154,13 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			print("get parameters")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-		# It does the same of "get_parameters", but using "get_parameters" in outside of the core of Flower is causing errors
+	# It does the same of "get_parameters", but using "get_parameters" in outside of the core of Flower is causing errors
 	def get_parameters_of_model(self):
 		try:
 			parameters = [i.detach().numpy() for i in self.model.parameters()]
 			return parameters
 		except Exception as e:
 			print("get parameters of model")
-			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
-
-	def set_parameters(self, parameters):
-		try:
-			parameters = [Parameter(torch.Tensor(i.tolist())) for i in parameters]
-			for new_param, old_param in zip(parameters, self.model.parameters()):
-				old_param.data = new_param.data.clone()
-		except Exception as e:
-			print("set parameters")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def clone_model(self, model, target):
@@ -192,22 +185,34 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			print("set parameters to model")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def save_parameters(self):
-		pass
+	def set_parameters_to_model_fit(self, parameters):
+		try:
+			self.set_parameters_to_model(parameters)
+		except Exception as e:
+			print("set parameters to model train")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+	def set_parameters_to_model_evaluate(self, parameters, config={}):
+		try:
+			self.set_parameters_to_model(parameters)
+		except Exception as e:
+			print("set parameters to model")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def fit(self, parameters, config):
 		try:
-			selected_clients   = []
+			selected_clients = []
 			trained_parameters = []
-			selected           = 0
+			selected = 0
 
 			if config['selected_clients'] != '':
-				selected_clients = [int (cid_selected) for cid_selected in config['selected_clients'].split(' ')]
+				selected_clients = [int(cid_selected) for cid_selected in config['selected_clients'].split(' ')]
 
 			start_time = time.process_time()
-			#print(config)
+			server_round = int(config['round'])
 			if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
-				self.set_parameters_to_model(parameters)
+				self.set_parameters_to_model_fit(parameters)
+				self.round_of_last_fit = server_round
 
 				selected = 1
 				self.model.train()
@@ -240,10 +245,13 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				trained_parameters = self.get_parameters_of_model()
 				self.save_parameters()
 
-			total_time         = time.process_time() - start_time
-			size_of_parameters = sum([sum(map(sys.getsizeof, trained_parameters[i])) for i in range(len(trained_parameters))])
-			avg_loss_train     = train_loss/train_num
-			avg_acc_train      = train_acc/train_num
+			total_time = time.process_time() - start_time
+			size_of_parameters = sum(
+				[sum(map(sys.getsizeof, trained_parameters[i])) for i in range(len(trained_parameters))])
+			avg_loss_train = train_loss / train_num
+			avg_acc_train = train_acc / train_num
+
+			# loss, accuracy, test_num = self.model_eval()
 
 			data = [config['round'], self.cid, selected, total_time, size_of_parameters, avg_loss_train, avg_acc_train]
 
@@ -252,7 +260,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				data=data)
 
 			fit_response = {
-				'cid' : self.cid
+				'cid': self.cid
 			}
 
 			return trained_parameters, train_num, fit_response
@@ -260,11 +268,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			print("fit")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-
-	def evaluate(self, parameters, config):
+	def model_eval(self):
 		try:
-			self.set_parameters_to_model(parameters)
-			# loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
 			self.model.eval()
 
 			test_acc = 0
@@ -281,22 +286,36 @@ class ClientBaseTorch(fl.client.NumPyClient):
 					y = y.to(self.device)
 					y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
 					output = self.model(x)
+					# print("saida: ", output.shape)
 					loss = self.loss(output, y)
 					test_loss += loss.item() * y.shape[0]
 					test_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
 					test_num += y.shape[0]
 
+			loss = test_loss / test_num
+			accuracy = test_acc / test_num
+
+			return loss, accuracy, test_num
+		except Exception as e:
+			print("model_eval")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+	def evaluate(self, parameters, config):
+		try:
+			server_round = int(config['round'])
+			self.set_parameters_to_model_evaluate(parameters, config)
+			# loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
+
 			size_of_parameters = sum([sum(map(sys.getsizeof, parameters[i])) for i in range(len(parameters))])
-			loss = test_loss/test_num
-			accuracy = test_acc/test_num
+			loss, accuracy, test_num = self.model_eval()
 			data = [config['round'], self.cid, size_of_parameters, loss, accuracy]
 
 			self._write_output(filename=self.evaluate_client_filename,
 							   data=data)
 
 			evaluation_response = {
-				"cid"      : self.cid,
-				"accuracy" : float(accuracy)
+				"cid": self.cid,
+				"accuracy": float(accuracy)
 			}
 
 			return loss, test_num, evaluation_response
@@ -309,5 +328,3 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		with open(filename, 'a') as server_log_file:
 			writer = csv.writer(server_log_file)
 			writer.writerow(data)
-
-

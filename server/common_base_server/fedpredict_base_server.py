@@ -9,12 +9,12 @@ import sys
 import pandas as pd
 import copy
 
-from server.common_base_server.fedper_base_server import FedPerBaseServer
+from server.common_base_server import FedAvgBaseServer
 
 from pathlib import Path
 import shutil
 
-class FedPredictBaseServer(FedPerBaseServer):
+class FedPredictBaseServer(FedAvgBaseServer):
 
 	def __init__(self,
 				 aggregation_method,
@@ -60,6 +60,7 @@ class FedPredictBaseServer(FedPerBaseServer):
 				self.server_learning_rate != 1.0)
 
 		self.set_initial_parameters()
+		self.create_folder()
 
 	def create_folder(self):
 
@@ -133,14 +134,8 @@ class FedPredictBaseServer(FedPerBaseServer):
 			client_config = self.fedpredict_clients_metrics[str(client.cid)]
 			config['metrics'] = client_config
 			config['last_global_accuracy'] = accuracy
+			config['total_server_rounds'] = self.num_rounds
 			evaluate_ins = fl.common.EvaluateIns(parameters, config)
 			client_evaluate_list_fedpredict.append((client, evaluate_ins))
 
 		return client_evaluate_list_fedpredict
-
-	def _get_metrics(self):
-
-		accuracy = 0
-		if len(self.accuracy_history) > 0:
-			accuracy = self.accuracy_history[len(self.accuracy_history)]
-		return {'last_global_accuracy': accuracy, 'fedpredict_client_metrics': self.fedpredict_clients_metrics}
