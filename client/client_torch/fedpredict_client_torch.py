@@ -60,7 +60,6 @@ class FedPredictClientTorch(FedPerClientTorch):
 		self.rounds_of_fit = 0
 		self.accuracy_of_last_round_of_fit = 0
 		self.start_server = 0
-		self.first_round = -1
 
 	def get_parameters_of_model(self):
 		try:
@@ -165,21 +164,29 @@ class FedPredictClientTorch(FedPerClientTorch):
 			print("save parameters")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def _merge_models(self, global_parameters, metrics, filename, server_round, rounds_without_fit, acc_of_last_fit):
+	def _fedpredict_plugin(self, global_parameters, server_round, last_global_accuracy, client_metrics):
 
 		try:
-
+			nt = client_metrics['nt']
+			round_of_last_fit = client_metrics['round_of_last_fit']
+			round_of_last_evaluate = client_metrics['round_of_last_evaluate']
+			first_round = client_metrics['first_round']
+			acc_of_last_fit = client_metrics['acc_of_last_fit']
+			acc_of_last_evaluate = client_metrics['acc_of_last_evaluate']
 			# 9
-			if rounds_without_fit == 0:
+			if nt == 0:
 				global_model_weight = 0
 			else:
 				# evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
 				# normalizar dentro de 0 e 1
 				# updated_level = 1/rounds_without_fit
 				# updated_level = 1 - max(0, -acc_of_last_fit+self.accuracy_of_last_round_of_evalute)
-				updated_level = 1/rounds_without_fit
+				# if acc_of_last_evaluate < last_global_accuracy:
+				# updated_level = max(-last_global_accuracy + acc_of_last_evaluate, 0)
+				# else:
+				updated_level = 1/nt
 				# evolutionary_level = (server_round / 50)
-				print("client id: ", self.cid, " primeiro round", self.first_round)
+				# print("client id: ", self.cid, " primeiro round", self.first_round)
 				evolutionary_level = (server_round)/50
 
 				# print("el servidor: ", el, " el local: ", evolutionary_level)
@@ -190,7 +197,7 @@ class FedPredictClientTorch(FedPerClientTorch):
 
 			local_model_weights = 1 - global_model_weight
 
-			print("rodada: ", server_round, " rounds sem fit: ", rounds_without_fit, "\npeso global: ", global_model_weight, " peso local: ", local_model_weights)
+			print("rodada: ", server_round, " rounds sem fit: ", nt, "\npeso global: ", global_model_weight, " peso local: ", local_model_weights)
 
 			# Load global parameters into 'self.clone_model' (global model)
 			global_parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
@@ -228,12 +235,19 @@ class FedPredictClientTorch(FedPerClientTorch):
 		# usando 'torch.load'
 		try:
 			filename = """./fedpredict_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
-			self.get_client_metrics()
-			rounds_without_fit = server_round - max(0, int(self.round_of_last_fit))
+			# self.get_client_metrics()
+			# rounds_without_fit = server_round - max(0, int(self.round_of_last_fit))
+			print("configura: ", config)
+			print("metricas: ", config['metrics'])
 			metric = config['metrics']
 			# el = metric['el']
 			acc_of_last_fit = 0
-			print("leu: ", " cid: ", self.cid,  ' fedpredict_client_metrics: ', metric['fedpredict_client_metrics'][str(self.cid)])
+			# 'round_of_last_fit': 0, 'round_of_last_evaluate': 0, 'first_round': -1,
+			# 											   'acc_of_last_fit': 0, 'acc_of_last_evaluate':
+			# print("leu: ", " cid: ", self.cid,  ' fedpredict_client_metrics: ', metric['fedpredict_client_metrics'][str(self.cid)])
+			client_metrics = config['metrics']
+			last_global_accuracy = config['last_global_accuracy']
+
 			# if self.round_of_last_fit - server_round > 1:
 			# 	raise "Round of last fit muito maior do que o server round"
 			# if self.round_of_last_fit > 0:
@@ -253,7 +267,7 @@ class FedPredictClientTorch(FedPerClientTorch):
 			if os.path.exists(filename):
 				# Load local parameters to 'self.model'
 				self.model.load_state_dict(torch.load(filename))
-				self._merge_models(global_parameters, metric, filename, server_round, rounds_without_fit, acc_of_last_fit)
+				self._fedpredict_plugin(global_parameters, server_round, last_global_accuracy, client_metrics)
 		except Exception as e:
 			print("Set parameters to model")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
@@ -268,12 +282,10 @@ class FedPredictClientTorch(FedPerClientTorch):
 				selected_clients = [int (cid_selected) for cid_selected in config['selected_clients'].split(' ')]
 
 			start_time = time.process_time()
-			#print(config)
 			server_round = int(config['round'])
 			if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
 				self.set_parameters_to_model_train(parameters, server_round, config)
 				self.round_of_last_fit = server_round
-				self.rounds_of_fit += 1
 
 				selected = 1
 				self.model.train()

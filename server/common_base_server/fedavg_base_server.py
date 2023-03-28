@@ -107,6 +107,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.train_filename = None
 		self.evaluate_filename = None
 		self.clients_metrics = self._clients_metrics()
+		self.evaluate_config = {}
 		self._write_output_files_headers()
 
 		super().__init__(fraction_fit=fraction_fit, min_available_clients=num_clients, min_fit_clients=num_clients, min_evaluate_clients=num_clients)
@@ -265,6 +266,8 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			self.fedpredict_clients_metrics[client.cid]['round_of_last_fit'] = server_round
 			if self.fedpredict_clients_metrics[client.cid]['first_round'] == -1:
 				self.fedpredict_clients_metrics[client.cid]['first_round'] = server_round
+		for client in self.fedpredict_clients_metrics:
+			self.fedpredict_clients_metrics[str(client)]['nt'] = server_round - self.fedpredict_clients_metrics[str(client)]['round_of_last_fit']
 
 		if server_round == self.num_rounds:
 			print("=======")
@@ -338,12 +341,13 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		# Parameters and config
 		config = {
 			'round' : server_round,
-			'parameters': self.proto_parameters,
-			'metrics': self._get_metrics()
+			'parameters': self.proto_parameters
 		}
+
 		if self.on_evaluate_config_fn is not None:
 			# Custom evaluation config function provided
 			config = self.on_evaluate_config_fn(server_round)
+		self.evaluate_config = config
 		evaluate_ins = fl.common.EvaluateIns(parameters, config)
 
 		# Sample clients
@@ -403,7 +407,11 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		# Weigh accuracy of each client by number of examples used
 		accuracies = [r.metrics["accuracy"] * r.num_examples for _, r in results]
 		examples   = [r.num_examples for _, r in results]
-
+		# # For FedPredict
+		# for _, r in results:
+		# 	client_id = r['cid']
+		# 	acc = r['accuracy']
+		# 	self.fedpredict_clients_metrics[str(client_id)]['acc_of_last_evaluate'] = acc
 		# Aggregate and print custom metric
 		accuracy_aggregated = sum(accuracies) / sum(examples)
 		accuracy_std = np.std(accuracies)

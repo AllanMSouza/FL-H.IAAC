@@ -7,6 +7,7 @@ import csv
 import random
 import sys
 import pandas as pd
+import copy
 
 from server.common_base_server.fedper_base_server import FedPerBaseServer
 
@@ -120,7 +121,26 @@ class FedPredictBaseServer(FedPerBaseServer):
 			print("update fedpredict metrics")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
+	def configure_evaluate(self, server_round, parameters, client_manager):
+		client_evaluate_list = super().configure_evaluate(server_round, parameters, client_manager)
+		client_evaluate_list_fedpredict = []
+		accuracy = 0
+		if len(self.accuracy_history) > 0:
+			accuracy = self.accuracy_history[len(self.accuracy_history)]
+		for client_tuple in client_evaluate_list:
+			client = client_tuple[0]
+			config = copy.copy(self.evaluate_config)
+			client_config = self.fedpredict_clients_metrics[str(client.cid)]
+			config['metrics'] = client_config
+			config['last_global_accuracy'] = accuracy
+			evaluate_ins = fl.common.EvaluateIns(parameters, config)
+			client_evaluate_list_fedpredict.append((client, evaluate_ins))
+
+		return client_evaluate_list_fedpredict
 
 	def _get_metrics(self):
 
-		return {'el': self.fedpredict_metrics['el'], 'fedpredict_client_metrics': self.fedpredict_clients_metrics}
+		accuracy = 0
+		if len(self.accuracy_history) > 0:
+			accuracy = self.accuracy_history[len(self.accuracy_history)]
+		return {'last_global_accuracy': accuracy, 'fedpredict_client_metrics': self.fedpredict_clients_metrics}
