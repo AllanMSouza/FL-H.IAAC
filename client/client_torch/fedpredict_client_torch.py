@@ -72,15 +72,10 @@ class FedPredictClientTorch(FedAvgClientTorch):
 			print("save parameters")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def _fedpredict_plugin(self, global_parameters, t, T, last_global_accuracy, client_metrics):
+	def _fedpredict_plugin(self, global_parameters, t, T, nt):
 
 		try:
-			nt = client_metrics['nt']
-			round_of_last_fit = client_metrics['round_of_last_fit']
-			round_of_last_evaluate = client_metrics['round_of_last_evaluate']
-			first_round = client_metrics['first_round']
-			acc_of_last_fit = client_metrics['acc_of_last_fit']
-			acc_of_last_evaluate = client_metrics['acc_of_last_evaluate']
+
 			# 9
 			if nt == 0:
 				global_model_weight = 0
@@ -92,14 +87,14 @@ class FedPredictClientTorch(FedAvgClientTorch):
 				# if acc_of_last_evaluate < last_global_accuracy:
 				# updated_level = max(-last_global_accuracy + acc_of_last_evaluate, 0)
 				# else:
-				updated_level = 1/nt
+				update_level = 1/nt
 				# evolutionary_level = (server_round / 50)
 				# print("client id: ", self.cid, " primeiro round", self.first_round)
-				evolutionary_level = t/T
+				evolution_level = t/T
 
 				# print("el servidor: ", el, " el local: ", evolutionary_level)
 
-				eq1 = (-updated_level - evolutionary_level)
+				eq1 = (-update_level - evolution_level)
 				eq2 = round(np.exp(eq1), 6)
 				global_model_weight = eq2
 
@@ -126,6 +121,14 @@ class FedPredictClientTorch(FedAvgClientTorch):
 			t = int(config['round'])
 			T = int(config['total_server_rounds'])
 			client_metrics = config['metrics']
+			# Client's metrics
+			nt = client_metrics['nt']
+			round_of_last_fit = client_metrics['round_of_last_fit']
+			round_of_last_evaluate = client_metrics['round_of_last_evaluate']
+			first_round = client_metrics['first_round']
+			acc_of_last_fit = client_metrics['acc_of_last_fit']
+			acc_of_last_evaluate = client_metrics['acc_of_last_evaluate']
+			# Server's metrics
 			last_global_accuracy = config['last_global_accuracy']
 			parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
 			for new_param, old_param in zip(parameters, self.model.parameters()):
@@ -133,7 +136,7 @@ class FedPredictClientTorch(FedAvgClientTorch):
 			if os.path.exists(filename):
 				# Load local parameters to 'self.model'
 				self.model.load_state_dict(torch.load(filename))
-				self._fedpredict_plugin(global_parameters, t, T, last_global_accuracy, client_metrics)
+				self._fedpredict_plugin(global_parameters, t, T, nt)
 		except Exception as e:
 			print("Set parameters to model")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
