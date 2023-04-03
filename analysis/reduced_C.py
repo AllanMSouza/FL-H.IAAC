@@ -284,7 +284,7 @@ class JointAnalysis():
     def groupb_by_plot_reduced_C_part_2(self, df):
 
         pocs = df['POC'].unique().tolist()
-        accuracies_differences = [0]
+        accuracies_differences = []
         print("entrou: ", df)
         accuracies_dict = {}
 
@@ -293,9 +293,9 @@ class JointAnalysis():
             acc = df[df['POC'] == poc]['Accuracy (%)'].tolist()[0]
             accuracies_dict[poc] = acc
 
-        for i in range(1, len(pocs)):
+        for i in range(len(pocs)):
 
-            accuracies_differences.append(accuracies_dict[pocs[i]] - accuracies_dict[pocs[i-1]])
+            accuracies_differences.append(accuracies_dict[pocs[i]])
 
 
         return pd.DataFrame({'Accuracy reduced (%)': accuracies_differences, 'POC': pocs})
@@ -330,11 +330,24 @@ class JointAnalysis():
         filename = 'reduced'
         i = 0
         j = 0
-        hue_order = ['FedPredict', 'FedAvg']
+        hue_order = ['FedPredict', 'FedPer', 'FedAvg']
         self.filter_and_plot(ax=axs[i], base_dir=base_dir, filename=filename, title=title, df=df_test,
                              experiment=experiment, dataset=dataset, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order)
         axs[i].get_legend().remove()
+        axs[i].set_xlabel('')
+        axs[i].set_ylabel('')
+        # ====================================================================
+        dataset = 'CIFAR10'
+        title = """{}""".format(dataset)
+        filename = 'reduced'
+        i = 1
+        j = 0
+        hue_order = ['FedPredict', 'FedPer', 'FedAvg']
+        self.filter_and_plot(ax=axs[i], base_dir=base_dir, filename=filename, title=title, df=df_test,
+                             experiment=experiment, dataset=dataset, x_column=x_column, y_column=y_column,
+                             hue='Strategy', hue_order=hue_order)
+        # axs[i].get_legend().remove()
         axs[i].set_xlabel('')
         axs[i].set_ylabel('')
 
@@ -415,11 +428,11 @@ if __name__ == '__main__':
     #               4: {'new_clients': 'new_clients_True_train_True', 'local_epochs': '2_local_epochs'}}
     experiments = {1: {'new_clients': 'new_clients_False_train_False', 'local_epochs': '1_local_epochs'}}
 
-    strategies = ['FedPredict', 'FedAVG']
+    strategies = ['FedPredict', 'FedPer', 'FedAVG']
     # pocs = [0.1, 0.2, 0.3]
-    pocs = [0.2, 0.3]
-    # datasets = ['MNIST', 'CIFAR10']
-    datasets = ['MNIST']
+    pocs = [0.1, 0.2, 0.3, 0.4]
+    datasets = ['MNIST', 'CIFAR10']
+    # datasets = ['MNIST']
     clients = '50'
     model = 'CNN'
     type = 'torch'
