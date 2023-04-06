@@ -199,12 +199,12 @@ class JointAnalysis():
         # ====================================================================
         dataset = 'MNIST'
         solutions_set = 1
-        title = """Solutions {}""".format(solutions_set)
+        title = """{}""".format(dataset)
         filename = ''
         i = 0
         j = 0
         hue_order = ['FedPredict', 'FedAvg', 'FedAvgM', 'FedClassAvg', 'QFedAvg', 'FedPer', 'FedProto', 'FedYogi']
-        df = df_test.query("Strategy in " + str(solutions[solutions_set]))
+        df = df_test
         self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df,
                              experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order)
@@ -212,12 +212,12 @@ class JointAnalysis():
         axs[i, j].set_xlabel('')
         axs[i, j].set_ylabel('')
         # ====================================================================
-        dataset = 'MNIST'
+        dataset = 'CIFAR10'
         solutions_set = 2
-        title = """Solutions {}""".format(solutions_set)
+        title = """{}""".format('CIFAR-10')
         i = 0
         j = 1
-        df = df_test.query("Strategy in " + str(solutions[solutions_set]))
+        df = df_test
         self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df,
                              experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order)
@@ -230,7 +230,7 @@ class JointAnalysis():
         title = """"""
         i = 1
         j = 0
-        df = df_test.query("Strategy in " + str(solutions[solutions_set]))
+        df = df_test
         self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df,
                              experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order)
@@ -243,7 +243,7 @@ class JointAnalysis():
         title = """"""
         i = 1
         j = 1
-        df = df_test.query("Strategy in " + str(solutions[solutions_set]))
+        df = df_test
         self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df,
                              experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order)
@@ -329,7 +329,7 @@ if __name__ == '__main__':
     pocs = [0.2]
     experiments = {1: experiments[1]}
     # datasets = ['MNIST', 'CIFAR10']
-    datasets = ['MNIST']
+    datasets = ['MNIST', 'CIFAR10']
     clients = '50'
     model = 'CNN'
     type = 'torch'

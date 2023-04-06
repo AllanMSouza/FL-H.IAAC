@@ -142,9 +142,9 @@ class CNN_proto(nn.Module):
 
 # ====================================================================================================================
 class Logistic(nn.Module):
-    def __init__(self, input_dim=1 * 28 * 28, num_classes=10):
+    def __init__(self, input_shape=1 * 28 * 28, num_classes=10):
         super(Logistic, self).__init__()
-        self.fc = nn.Linear(input_dim, num_classes)
+        self.fc = nn.Linear(input_shape, num_classes)
 
     def forward(self, x):
         x = torch.flatten(x, 1)

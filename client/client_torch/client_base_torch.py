@@ -121,16 +121,17 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 		try:
 			# print("tamanho: ", self.input_shape, " dispositivo: ", self.device)
+			input_shape = self.input_shape
 			if self.dataset in ['MNIST', 'CIFAR10']:
 				input_shape = self.input_shape[1]*self.input_shape[2]
+			elif self.dataset in ['MotionSense', 'UCIHAR']:
+				input_shape = self.input_shape[1]
 			if self.model_name == 'Logist Regression':
-				return Logistic(input_shape, self.num_classes)
+				return Logistic(input_shape=input_shape, num_classes=self.num_classes)
 			elif self.model_name == 'DNN':
-				if self.dataset == 'UCIHAR':
-					input_shape = self.input_shape[1]
 				return DNN(input_shape=input_shape, num_classes=self.num_classes)
 			elif self.model_name == 'CNN':
-				if self.dataset == 'MNIST':
+				if self.dataset in ['MNIST']:
 					input_shape = 1
 					mid_dim = 256
 				else:
@@ -286,7 +287,6 @@ class ClientBaseTorch(fl.client.NumPyClient):
 					y = y.to(self.device)
 					y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
 					output = self.model(x)
-					# print("saida: ", output.shape)
 					loss = self.loss(output, y)
 					test_loss += loss.item() * y.shape[0]
 					test_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()

@@ -62,7 +62,6 @@ class ManageDatasets():
 		test.drop('trial', axis=1, inplace=True)
 		x_test = test.values
 		print("exemplo motion: ", x_test.shape, x_train.shape)
-		exit()
 	    
 		return x_train, y_train, x_test, y_test
 
