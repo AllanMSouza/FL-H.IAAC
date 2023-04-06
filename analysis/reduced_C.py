@@ -425,7 +425,7 @@ if __name__ == '__main__':
     # experiments = {1: {'new_clients': 'new_clients_False_train_False', 'local_epochs': '1_local_epochs'},
     #               2: {'new_clients': 'new_clients_True_train_False', 'local_epochs': '1_local_epochs'},
     #               3: {'new_clients': 'new_clients_True_train_True', 'local_epochs': '1_local_epochs'},
-    #               4: {'new_clients': 'new_clients_True_train_True', 'local_epochs': '2_local_epochs'}}
+    #                                                                                                                                                                       4: {'new_clients': 'new_clients_True_train_True', 'local_epochs': '2_local_epochs'}}
     experiments = {1: {'new_clients': 'new_clients_False_train_False', 'local_epochs': '1_local_epochs'}}
 
     strategies = ['FedPredict', 'FedPer', 'FedAVG']
