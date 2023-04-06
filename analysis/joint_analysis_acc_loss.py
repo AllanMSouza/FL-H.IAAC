@@ -54,7 +54,7 @@ class JointAnalysis():
         df_concat['Accuracy (%)'] = df_concat['Accuracy'] * 100
         df_concat['Round (t)'] = df_concat['Round']
         # plots
-        self.joint_plot_acc_two_plots(df=df_concat, experiment=1, pocs=pocs)
+        self.joint_plot_acc_acc_loss_plots(df=df_concat, experiment=1, pocs=pocs)
         # self.joint_plot_acc_two_plots(df=df_concat, experiment=1, pocs=pocs)
         # self.joint_plot_acc_four_plots(df=df_concat, experiment=1, pocs=pocs)
         # self.joint_plot_acc_two_plots(df=df_concat, experiment=2, pocs=pocs)
@@ -175,7 +175,7 @@ class JointAnalysis():
 
         print("filtrado: ", df, df[hue].unique().tolist())
         line_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, type='1', hue_order=hue_order)
-    def joint_plot_acc_two_plots(self, df, experiment, pocs):
+    def joint_plot_acc_acc_loss_plots(self, df, experiment, pocs):
         print("Joint plot exeprimento: ", experiment)
 
         df_test = df[['Round (t)', 'Loss', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'POC',
@@ -195,7 +195,7 @@ class JointAnalysis():
         plt.xlabel(x_column)
         plt.ylabel(y_column)
         base_dir = """analysis/output/experiment_{}/""".format(str(experiment + 1))
-        solutions = {1: ['FedPredict', 'FedPer', 'FedAvg'], 2: ['FedClassAvg', 'FedProto']}
+        solutions = {1: ['FedPredict', 'FedAvg', 'FedAvgM', 'FedClassAvg', 'QFedAvg', 'FedPer', 'FedProto', 'FedYogi'], 2: ['FedClassAvg', 'FedProto']}
         # ====================================================================
         dataset = 'MNIST'
         solutions_set = 1
@@ -203,14 +203,14 @@ class JointAnalysis():
         filename = ''
         i = 0
         j = 0
-        hue_order = ['FedPredict', 'FedClassAvg', 'FedPer', 'FedProto', 'FedAvg']
+        hue_order = ['FedPredict', 'FedAvg', 'FedAvgM', 'FedClassAvg', 'QFedAvg', 'FedPer', 'FedProto', 'FedYogi']
         df = df_test.query("Strategy in " + str(solutions[solutions_set]))
         self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df,
                              experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order)
         axs[i, j].get_legend().remove()
         axs[i, j].set_xlabel('')
-        # axs[i, j].set_ylabel('')
+        axs[i, j].set_ylabel('')
         # ====================================================================
         dataset = 'MNIST'
         solutions_set = 2
@@ -221,12 +221,11 @@ class JointAnalysis():
         self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df,
                              experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order)
-        # axs[i, j].get_legend().remove()
+        axs[i, j].get_legend().remove()
         axs[i, j].set_xlabel('')
         axs[i, j].set_ylabel('')
         # ====================================================================
         dataset = 'MNIST'
-        y_column = 'Loss'
         solutions_set = 1
         title = """"""
         i = 1
@@ -237,7 +236,7 @@ class JointAnalysis():
                              hue='Strategy', hue_order=hue_order)
         axs[i, j].get_legend().remove()
         axs[i, j].set_xlabel('')
-        # axs[i, j].set_ylabel('')
+        axs[i, j].set_ylabel('')
         # ====================================================================
         dataset = 'MNIST'
         solutions_set = 2
@@ -248,7 +247,7 @@ class JointAnalysis():
         self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df,
                              experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order)
-        # axs[i, j].get_legend().remove()
+        axs[i, j].get_legend().remove()
         axs[i, j].set_xlabel('')
         axs[i, j].set_ylabel('')
         # ====================================================================
@@ -262,14 +261,13 @@ class JointAnalysis():
         # fig.legend(lines, labels)
         # plt.tick_params(labelcolor='none', which='both', top=False, bottom=False, left=False, right=False)
         fig.supxlabel(x_column, y=-0.02)
-        # fig.supylabel(y_column, x=-0.01)
-        fig.suptitle("""{}""".format(dataset))
+        fig.supylabel(y_column, x=-0.01)
 
         lines_labels = [axs[0, 0].get_legend_handles_labels()]
         lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
         fig.legend(lines, labels, loc='upper center', ncol=3, bbox_to_anchor=(0.5, 1.10))
-        fig.savefig("""{}joint_plot_two_plot_{}_{}.png""".format(base_dir, str(experiment), dataset), bbox_inches='tight', dpi=400)
-        fig.savefig("""{}joint_plot_two_plot_{}_{}.svg""".format(base_dir, str(experiment), dataset), bbox_inches='tight', dpi=400)
+        fig.savefig("""{}joint_plot_acc_loss_plot_{}_{}.png""".format(base_dir, str(experiment), dataset), bbox_inches='tight', dpi=400)
+        fig.savefig("""{}joint_plot_acc_loss_plot_{}_{}.svg""".format(base_dir, str(experiment), dataset), bbox_inches='tight', dpi=400)
 
     def idmax(self, df):
 
@@ -326,7 +324,7 @@ if __name__ == '__main__':
 
     experiments = {1: {'new_clients': 'new_clients_False_train_False', 'local_epochs': '1_local_epochs'}}
 
-    strategies = ['FedAVG', 'FedAvgM', 'FedClassAvg', 'QFedAvg', 'FedPer', 'FedProto', 'FedYogi']
+    strategies = ['FedPredict', 'FedAVG', 'FedAvgM', 'FedClassAvg', 'QFedAvg', 'FedPer', 'FedProto', 'FedYogi']
     # pocs = [0.1, 0.2, 0.3]
     pocs = [0.2]
     experiments = {1: experiments[1]}
