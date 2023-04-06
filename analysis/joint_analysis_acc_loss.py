@@ -21,11 +21,21 @@ class JointAnalysis():
 
             for dataset in datasets:
 
+                if dataset == 'MotionSense':
+                    clients = 24
+                    model = 'DNN'
+                elif dataset == 'UCIHAR':
+                    clients = 30
+                    model = 'DNN'
+                else:
+                    clients = 50
+                    model = 'CNN'
+
                 for poc in pocs:
 
                     for strategy in strategies:
 
-                        filename = """{}/{}/{}-POC-{}/{}/{}/{}/{}/{}/{}""".format(os.path.abspath(os.path.join(os.getcwd(), 
+                        filename = """{}/{}/{}-POC-{}/{}/{}/{}/{}/{}/{}""".format(os.path.abspath(os.path.join(os.getcwd(),
                                                                                                                 os.pardir)) + "/FedLTA/logs",
                                                                                                                 type,
                                                                                                                 strategy,
@@ -225,7 +235,7 @@ class JointAnalysis():
         axs[i, j].set_xlabel('')
         axs[i, j].set_ylabel('')
         # ====================================================================
-        dataset = 'MNIST'
+        dataset = 'MotionSense'
         solutions_set = 1
         title = """"""
         i = 1
@@ -238,7 +248,7 @@ class JointAnalysis():
         axs[i, j].set_xlabel('')
         axs[i, j].set_ylabel('')
         # ====================================================================
-        dataset = 'MNIST'
+        dataset = 'UCIHAR'
         solutions_set = 2
         title = """"""
         i = 1
@@ -329,7 +339,7 @@ if __name__ == '__main__':
     pocs = [0.2]
     experiments = {1: experiments[1]}
     # datasets = ['MNIST', 'CIFAR10']
-    datasets = ['MNIST', 'CIFAR10']
+    datasets = ['MNIST', 'CIFAR10', 'MotionSense', 'UCIHAR']
     clients = '50'
     model = 'CNN'
     type = 'torch'
