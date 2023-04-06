@@ -175,111 +175,83 @@ class JointAnalysis():
 
         print("filtrado: ", df, df[hue].unique().tolist())
         line_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, type='1', hue_order=hue_order)
-
-    def joint_plot_acc_four_plots(self, df, experiment, pocs):
+    def joint_plot_acc_two_plots(self, df, experiment, pocs):
         print("Joint plot exeprimento: ", experiment)
 
-        df_test = df[['Round (t)', 'Loss', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'POC', 'Dataset']].groupby(['Round (t)', 'Strategy', 'Experiment', 'POC', 'Dataset']).apply(lambda e: self.groupb_by_plot(e)).reset_index()[['Round (t)', 'Strategy', 'Experiment', 'POC', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)', 'Loss']]
+        df_test = df[['Round (t)', 'Loss', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'POC',
+                      'Dataset']].groupby(['Round (t)', 'Strategy', 'Experiment', 'POC', 'Dataset']).apply(
+            lambda e: self.groupb_by_plot(e)).reset_index()[
+            ['Round (t)', 'Strategy', 'Experiment', 'POC', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)',
+             'Loss']]
         print("agrupou")
         print(df_test)
         # figsize=(12, 9),
         sns.set(style='whitegrid')
-        fig, axs = plt.subplots(2, 2,  sharex='all', sharey='all', figsize=(6, 6))
+        fig, axs = plt.subplots(2, 2, sharex='all', sharey='all', figsize=(6, 6))
 
         x_column = 'Round (t)'
         y_column = 'Accuracy (%)'
+        poc = 0.2
         plt.xlabel(x_column)
         plt.ylabel(y_column)
-        base_dir = """analysis/output/experiment_{}/""".format(str(experiment+1))
+        base_dir = """analysis/output/experiment_{}/""".format(str(experiment + 1))
+        solutions = {1: ['FedPredict', 'FedPer', 'FedAvg'], 2: ['FedClassAvg', 'FedProto']}
         # ====================================================================
-        poc = pocs[1]
         dataset = 'MNIST'
-        title = """{} (C={})""".format(dataset, int(float(poc)*50))
+        solutions_set = 1
+        title = """Solutions {}""".format(solutions_set)
         filename = ''
         i = 0
         j = 0
         hue_order = ['FedPredict', 'FedClassAvg', 'FedPer', 'FedProto', 'FedAvg']
-        self.filter_and_plot(ax=axs[i,j], base_dir=base_dir, filename=filename, title=title, df=df_test,
+        df = df_test.query("Strategy in " + str(solutions[solutions_set]))
+        self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df,
                              experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order)
-        axs[i,j].get_legend().remove()
-        axs[i,j].set_xlabel('')
-        axs[i,j].set_ylabel('')
-        # sort both labels and handles by labels
-        # order = ['FedPredict', 'FedClassAvg', 'FedPer', 'FedAvg', 'FedProto']
-        # order = {k: f for k, f in zip(order, handles)}
-
-        # handles, labels = plt.gca().get_legend_handles_labels()
-        #
-        # # specify order of items in legend
-        # order = [1, 2, 0, 4, 3]
-        #
-        # # add legend to plot
-        # plt.legend([handles[idx] for idx in order], [labels[idx] for idx in order])
+        axs[i, j].get_legend().remove()
+        axs[i, j].set_xlabel('')
+        # axs[i, j].set_ylabel('')
         # ====================================================================
-        poc = pocs[2]
         dataset = 'MNIST'
-        title = """{} (C={})""".format(dataset, int(float(poc)*50))
+        solutions_set = 2
+        title = """Solutions {}""".format(solutions_set)
         i = 0
         j = 1
-        self.filter_and_plot(ax=axs[i,j], base_dir=base_dir, filename=filename, title=title, df=df_test,
+        df = df_test.query("Strategy in " + str(solutions[solutions_set]))
+        self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df,
                              experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order)
-        axs[i,j].get_legend().remove()
-        # axs[i].set_xlabel('')
-        # axs[i].set_ylabel('')
+        # axs[i, j].get_legend().remove()
+        axs[i, j].set_xlabel('')
+        axs[i, j].set_ylabel('')
         # ====================================================================
-        poc = pocs[1]
-        dataset = 'CIFAR10'
-        title = """CIFAR-10 (C={})""".format(int(float(poc)*50))
+        dataset = 'MNIST'
+        y_column = 'Loss'
+        solutions_set = 1
+        title = """"""
         i = 1
         j = 0
-        self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df_test,
+        df = df_test.query("Strategy in " + str(solutions[solutions_set]))
+        self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df,
                              experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order)
         axs[i, j].get_legend().remove()
         axs[i, j].set_xlabel('')
-        axs[i, j].set_ylabel('')
+        # axs[i, j].set_ylabel('')
         # ====================================================================
-        poc = pocs[2]
-        dataset = 'CIFAR10'
-        title = """CIFAR-10 (C={})""".format(int(float(poc)*50))
+        dataset = 'MNIST'
+        solutions_set = 2
+        title = """"""
         i = 1
         j = 1
-        self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df_test,
+        df = df_test.query("Strategy in " + str(solutions[solutions_set]))
+        self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df,
                              experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order)
-        axs[i, j].get_legend().remove()
+        # axs[i, j].get_legend().remove()
         axs[i, j].set_xlabel('')
         axs[i, j].set_ylabel('')
         # ====================================================================
-        # poc = pocs[2]
-        # dataset = 'CIFAR10'
-        # title = """CIFAR-10 ({})""".format(poc)
-        # i = 1
-        # j = 1
-        # self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df_test,
-        #                      experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
-        #                      hue='Strategy')
-        # axs[i, j].get_legend().remove()
-        # axs[i, j].set_xlabel('')
-        # axs[i, j].set_ylabel('')
-        # ====================================================================
-        # poc = pocs[2]
-        # dataset = 'CIFAR10'
-        # title = """CIFAR-10 ({})""".format(poc)
-        # i = 1
-        # j = 1
-        # self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df_test,
-        #                      experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
-        #                      hue='Strategy')
-        # legend = axs[i, j].get_legend()
-        # print("legenda: ", legend)
-        # # lines_labels = [ax.get_legend_handles_labels() for ax in fig.axes]
-        # # lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-        # axs[i, j].get_legend().remove()
-        # axs[i, j].set_xlabel('')
-        # axs[i, j].set_ylabel('')
         # =========================///////////================================
         fig.suptitle("", fontsize=16)
         plt.tight_layout()
@@ -290,14 +262,14 @@ class JointAnalysis():
         # fig.legend(lines, labels)
         # plt.tick_params(labelcolor='none', which='both', top=False, bottom=False, left=False, right=False)
         fig.supxlabel(x_column, y=-0.02)
-        fig.supylabel(y_column, x=-0.01)
-
+        # fig.supylabel(y_column, x=-0.01)
+        fig.suptitle("""{}""".format(dataset))
 
         lines_labels = [axs[0, 0].get_legend_handles_labels()]
         lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-        fig.legend(lines, labels, loc='upper center', ncol=3, bbox_to_anchor=(0.5, 1.06))
-        fig.savefig("""{}joint_plot_four_plot_{}.png""".format(base_dir, str(experiment)), bbox_inches='tight', dpi=400)
-        fig.savefig("""{}joint_plot_four_plot_{}.svg""".format(base_dir, str(experiment)), bbox_inches='tight', dpi=400)
+        fig.legend(lines, labels, loc='upper center', ncol=3, bbox_to_anchor=(0.5, 1.10))
+        fig.savefig("""{}joint_plot_two_plot_{}_{}.png""".format(base_dir, str(experiment), dataset), bbox_inches='tight', dpi=400)
+        fig.savefig("""{}joint_plot_two_plot_{}_{}.svg""".format(base_dir, str(experiment), dataset), bbox_inches='tight', dpi=400)
 
     def idmax(self, df):
 
@@ -352,16 +324,14 @@ if __name__ == '__main__':
         It is done for each experiment.
     """
 
-    experiments = {1: {'new_clients': 'new_clients_False_train_False', 'local_epochs': '1_local_epochs'},
-                  2: {'new_clients': 'new_clients_True_train_False', 'local_epochs': '1_local_epochs'},
-                  3: {'new_clients': 'new_clients_True_train_True', 'local_epochs': '1_local_epochs'},
-                  4: {'new_clients': 'new_clients_True_train_True', 'local_epochs': '2_local_epochs'}}
+    experiments = {1: {'new_clients': 'new_clients_False_train_False', 'local_epochs': '1_local_epochs'}}
 
-    strategies = ['FedPredict', 'FedAVG', 'FedClassAvg', 'FedPer', 'FedProto']
+    strategies = ['FedAVG', 'FedAvgM', 'FedClassAvg', 'QFedAvg', 'FedPer', 'FedProto', 'FedYogi']
     # pocs = [0.1, 0.2, 0.3]
-    pocs = [0.2, 0.3, 0.4]
+    pocs = [0.2]
+    experiments = {1: experiments[1]}
     # datasets = ['MNIST', 'CIFAR10']
-    datasets = ['MNIST', 'CIFAR10']
+    datasets = ['MNIST']
     clients = '50'
     model = 'CNN'
     type = 'torch'
