@@ -55,8 +55,8 @@ NEW_CLIENTS_TRAIN 				= {'FALSE': ['FALSE'], 'TRUE': ['FALSE', 'TRUE']}
 # DECAY         				= (0.001, 0.005, 0.009)
 ROUNDS        					= 25
 # STRATEGIES 					= ('FedAVG', 'FedAvgM', 'FedClassAvg', 'QFedAvg', 'FedPer', 'FedProto', 'FedYogi', 'FedLocal',)
-STRATEGIES_FOR_ANALYSIS 		= ['FedAVG', 'FedPer', 'FedPredict']
-STRATEGIES_TO_EXECUTE 			= ['FedAVG', 'FedPer', 'FedPredict']
+STRATEGIES_FOR_ANALYSIS 		= ['FedAVG', 'FedAvgM', 'FedClassAvg', 'QFedAvg', 'FedPer', 'FedProto', 'FedYogi']
+STRATEGIES_TO_EXECUTE 			= ['FedYogi', 'FedAvgM', 'FedClassAvg', 'QFedAvg']
 
 EXPERIMENTS 		= {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''},
 					   2: {'algorithm': 'POC', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''},

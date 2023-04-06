@@ -199,56 +199,56 @@ class JointAnalysis():
         # ====================================================================
         dataset = 'MNIST'
         solutions_set = 1
-        title = """{} (solutions {})""".format(dataset, solutions_set)
+        title = """Solutions {}""".format(solutions_set)
         filename = ''
         i = 0
         j = 0
         hue_order = ['FedPredict', 'FedClassAvg', 'FedPer', 'FedProto', 'FedAvg']
-        df = df[df['Strategy'] in solutions[solutions_set]]
+        df = df_test.query("Strategy in " + str(solutions[solutions_set]))
         self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df,
                              experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order)
         axs[i, j].get_legend().remove()
         axs[i, j].set_xlabel('')
-        axs[i, j].set_ylabel('')
+        # axs[i, j].set_ylabel('')
         # ====================================================================
         dataset = 'MNIST'
         solutions_set = 2
-        title = """{} (solutions {})""".format(dataset, solutions_set)
+        title = """Solutions {}""".format(solutions_set)
         i = 0
         j = 1
-        df = df[df['Strategy'] in solutions[solutions_set]]
+        df = df_test.query("Strategy in " + str(solutions[solutions_set]))
         self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df,
                              experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order)
-        axs[i, j].get_legend().remove()
-        # axs[i].set_xlabel('')
-        # axs[i].set_ylabel('')
+        # axs[i, j].get_legend().remove()
+        axs[i, j].set_xlabel('')
+        axs[i, j].set_ylabel('')
         # ====================================================================
         dataset = 'MNIST'
         y_column = 'Loss'
         solutions_set = 1
-        title = """{} (solutions {})""".format(dataset, solutions_set)
+        title = """"""
         i = 1
         j = 0
-        df = df[df['Strategy'] in solutions[solutions_set]]
+        df = df_test.query("Strategy in " + str(solutions[solutions_set]))
         self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df,
                              experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order)
         axs[i, j].get_legend().remove()
         axs[i, j].set_xlabel('')
-        axs[i, j].set_ylabel('')
+        # axs[i, j].set_ylabel('')
         # ====================================================================
         dataset = 'MNIST'
         solutions_set = 2
-        title = """{} (solutions {})""".format(dataset, solutions_set)
+        title = """"""
         i = 1
         j = 1
-        df = df[df['Strategy'] in solutions[solutions_set]]
+        df = df_test.query("Strategy in " + str(solutions[solutions_set]))
         self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df,
                              experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order)
-        axs[i, j].get_legend().remove()
+        # axs[i, j].get_legend().remove()
         axs[i, j].set_xlabel('')
         axs[i, j].set_ylabel('')
         # ====================================================================
@@ -262,11 +262,12 @@ class JointAnalysis():
         # fig.legend(lines, labels)
         # plt.tick_params(labelcolor='none', which='both', top=False, bottom=False, left=False, right=False)
         fig.supxlabel(x_column, y=-0.02)
-        fig.supylabel(y_column, x=-0.01)
+        # fig.supylabel(y_column, x=-0.01)
+        fig.suptitle("""{}""".format(dataset))
 
         lines_labels = [axs[0, 0].get_legend_handles_labels()]
         lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-        fig.legend(lines, labels, loc='upper center', ncol=3, bbox_to_anchor=(0.5, 1.06))
+        fig.legend(lines, labels, loc='upper center', ncol=3, bbox_to_anchor=(0.5, 1.10))
         fig.savefig("""{}joint_plot_two_plot_{}.png""".format(base_dir, str(experiment)), bbox_inches='tight', dpi=400)
         fig.savefig("""{}joint_plot_two_plot_{}.svg""".format(base_dir, str(experiment)), bbox_inches='tight', dpi=400)
 
@@ -455,6 +456,7 @@ if __name__ == '__main__':
     strategies = ['FedPredict', 'FedAVG', 'FedPer']
     # pocs = [0.1, 0.2, 0.3]
     pocs = [0.2, 0.3, 0.4]
+    experiments = {1: experiments[1]}
     # datasets = ['MNIST', 'CIFAR10']
     datasets = ['MNIST']
     clients = '50'
