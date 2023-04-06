@@ -24,13 +24,17 @@ class JointAnalysis():
                 if dataset == 'MotionSense':
                     clients = 24
                     model = 'DNN'
+                    poc = 0.4
                 elif dataset == 'UCIHAR':
                     clients = 30
                     model = 'DNN'
+                    poc = 0.4
                 else:
                     clients = 50
                     model = 'CNN'
+                    poc = 0.2
 
+                pocs = [poc]
                 for poc in pocs:
 
                     for strategy in strategies:
@@ -59,7 +63,7 @@ class JointAnalysis():
                             df_concat = pd.concat([df_concat, df], ignore_index=True)
 
                         count += 1
-        pocs = [0.2, 0.3, 0.4]
+        pocs = [0.2, 0.33]
         print(df_concat)
         df_concat['Accuracy (%)'] = df_concat['Accuracy'] * 100
         df_concat['Round (t)'] = df_concat['Round']
@@ -173,13 +177,12 @@ class JointAnalysis():
                 """Experiment=={} and POC=={} and Dataset=='{}' and Strategy=='{}'""".format(str(experiment), float(poc), str(dataset), strategy))
         else:
             df = df.query(
-                """Experiment=={} and POC=={} and Dataset=='{}'""".format(str(experiment), str(poc),
-                                                                                             str(dataset)))
+                """Experiment=={} and Dataset=='{}'""".format(str(experiment), str(dataset)))
         print("filtrou: ", df)
 
         return df
 
-    def filter_and_plot(self, ax, base_dir, filename, title, df, experiment, dataset, poc, x_column, y_column, hue, hue_order=None):
+    def filter_and_plot(self, ax, base_dir, filename, title, df, experiment, dataset, x_column, y_column, hue, hue_order=None, poc=None):
 
         df = self.filter(df, experiment, dataset, poc)
 
@@ -201,7 +204,7 @@ class JointAnalysis():
 
         x_column = 'Round (t)'
         y_column = 'Accuracy (%)'
-        poc = 0.2
+        poc = None
         plt.xlabel(x_column)
         plt.ylabel(y_column)
         base_dir = """analysis/output/experiment_{}/""".format(str(experiment + 1))
@@ -216,8 +219,8 @@ class JointAnalysis():
         hue_order = ['FedPredict', 'FedAvg', 'FedAvgM', 'FedClassAvg', 'QFedAvg', 'FedPer', 'FedProto', 'FedYogi']
         df = df_test
         self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df,
-                             experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
-                             hue='Strategy', hue_order=hue_order)
+                             experiment=experiment, dataset=dataset, x_column=x_column, y_column=y_column,
+                             hue='Strategy', hue_order=hue_order, poc=poc)
         axs[i, j].get_legend().remove()
         axs[i, j].set_xlabel('')
         axs[i, j].set_ylabel('')
@@ -237,7 +240,7 @@ class JointAnalysis():
         # ====================================================================
         dataset = 'MotionSense'
         solutions_set = 1
-        title = """"""
+        title = """{}""".format(dataset)
         i = 1
         j = 0
         df = df_test
@@ -250,7 +253,7 @@ class JointAnalysis():
         # ====================================================================
         dataset = 'UCIHAR'
         solutions_set = 2
-        title = """"""
+        title = """{}""".format(dataset)
         i = 1
         j = 1
         df = df_test
