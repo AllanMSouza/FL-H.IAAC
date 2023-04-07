@@ -40,10 +40,12 @@ class DNN(nn.Module):
         super(DNN, self).__init__()
 
         self.fc1 = nn.Linear(input_shape, mid_dim)
-        self.fc = nn.Linear(mid_dim, num_classes)
+        self.fc1 = nn.Linear(mid_dim, 50)
+        self.fc = nn.Linear(50, num_classes)
     def forward(self, x):
         x = torch.flatten(x, 1)
         x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
         x = self.fc(x)
         x = F.log_softmax(x, dim=1)
         return x

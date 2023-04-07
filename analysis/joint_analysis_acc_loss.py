@@ -38,7 +38,10 @@ class JointAnalysis():
                 for poc in pocs:
 
                     for strategy in strategies:
-
+                        if strategy == 'FedPredict':
+                            poc = 0.3
+                        else:
+                            poc = 0.2
                         filename = """{}/{}/{}-POC-{}/{}/{}/{}/{}/{}/{}""".format(os.path.abspath(os.path.join(os.getcwd(),
                                                                                                                 os.pardir)) + "/FedLTA/logs",
                                                                                                                 type,
