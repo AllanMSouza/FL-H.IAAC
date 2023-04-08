@@ -24,7 +24,7 @@ class JointAnalysis():
                 if dataset == 'MotionSense':
                     clients = 24
                     model = 'DNN'
-                    poc = 0.4
+                    poc = 0.3
                 elif dataset == 'UCIHAR':
                     clients = 30
                     model = 'DNN'
@@ -254,18 +254,18 @@ class JointAnalysis():
         axs[i, j].set_xlabel('')
         axs[i, j].set_ylabel('')
         # ====================================================================
-        dataset = 'UCIHAR'
-        solutions_set = 2
-        title = """{}""".format(dataset)
-        i = 1
-        j = 1
-        df = df_test
-        self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df,
-                             experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
-                             hue='Strategy', hue_order=hue_order)
-        axs[i, j].get_legend().remove()
-        axs[i, j].set_xlabel('')
-        axs[i, j].set_ylabel('')
+        # dataset = 'UCIHAR'
+        # solutions_set = 2
+        # title = """{}""".format(dataset)
+        # i = 1
+        # j = 1
+        # df = df_test
+        # self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df,
+        #                      experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
+        #                      hue='Strategy', hue_order=hue_order)
+        # axs[i, j].get_legend().remove()
+        # axs[i, j].set_xlabel('')
+        # axs[i, j].set_ylabel('')
         # ====================================================================
         # =========================///////////================================
         fig.suptitle("", fontsize=16)
@@ -345,7 +345,7 @@ if __name__ == '__main__':
     pocs = [0.2]
     experiments = {1: experiments[1]}
     # datasets = ['MNIST', 'CIFAR10']
-    datasets = ['MNIST', 'CIFAR10', 'MotionSense', 'UCIHAR']
+    datasets = ['MNIST', 'CIFAR10', 'MotionSense']
     clients = '50'
     model = 'CNN'
     type = 'torch'
