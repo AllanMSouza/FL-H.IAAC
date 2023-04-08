@@ -43,7 +43,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 # Configurations
 TYPE = 'torch'
 # DATASETS      				= ['MNIST', 'CIFAR10']
-DATASETS      					= ['UCIHAR']
+DATASETS      					= ['UCIHAR', 'MotionSense']
 MODELS        					= ['DNN']
 ALGORITHMS    					= ['None', 'POC']
 EPOCHS        					= {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2]}
