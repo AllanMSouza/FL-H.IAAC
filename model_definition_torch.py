@@ -40,7 +40,7 @@ class DNN(nn.Module):
         super(DNN, self).__init__()
 
         self.fc1 = nn.Linear(input_shape, mid_dim)
-        self.fc1 = nn.Linear(mid_dim, 50)
+        self.fc2 = nn.Linear(mid_dim, 50)
         self.fc = nn.Linear(50, num_classes)
     def forward(self, x):
         x = torch.flatten(x, 1)
