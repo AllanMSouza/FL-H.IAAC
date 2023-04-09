@@ -58,6 +58,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		self.y_test       = None
 
 		#logs
+		self.strategy_name = solution_name
+		# "solution_name" is will be further modified
 		self.solution_name      = solution_name
 		self.aggregation_method = aggregation_method
 		self.dataset            = dataset
@@ -122,7 +124,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		try:
 			# print("tamanho: ", self.input_shape, " dispositivo: ", self.device)
 			input_shape = self.input_shape
-			if self.dataset in ['MNIST', 'CIFAR10']:
+			if self.dataset in ['MNIST', 'CIFAR10', 'CIFAR100']:
 				input_shape = self.input_shape[1]*self.input_shape[2]
 			elif self.dataset in ['MotionSense', 'UCIHAR']:
 				input_shape = self.input_shape[1]

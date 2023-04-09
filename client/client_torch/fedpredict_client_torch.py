@@ -60,14 +60,15 @@ class FedPredictClientTorch(FedAvgClientTorch):
 		self.rounds_of_fit = 0
 		self.accuracy_of_last_round_of_fit = 0
 		self.start_server = 0
+		self.filename = """./{}_saved_weights/{}/{}/model.pth""".format(self.strategy_name.lower(), self.model_name, self.cid)
 
 	def save_parameters(self):
 		# Using 'torch.save'
 		try:
-			filename = """./fedpredict_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid)
-			if Path(filename).exists():
-				os.remove(filename)
-			torch.save(self.model.state_dict(), filename)
+			# filename = """./fedpredict_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid)
+			if Path(self.filename).exists():
+				os.remove(self.filename)
+			torch.save(self.model.state_dict(), self.filename)
 		except Exception as e:
 			print("save parameters")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
@@ -117,7 +118,7 @@ class FedPredictClientTorch(FedAvgClientTorch):
 	def set_parameters_to_model_evaluate(self, global_parameters, config={}):
 		# Using 'torch.load'
 		try:
-			filename = """./fedpredict_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
+			# filename = """./fedpredict_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
 			t = int(config['round'])
 			T = int(config['total_server_rounds'])
 			client_metrics = config['metrics']
@@ -133,9 +134,9 @@ class FedPredictClientTorch(FedAvgClientTorch):
 			parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
 			for new_param, old_param in zip(parameters, self.model.parameters()):
 				old_param.data = new_param.data.clone()
-			if os.path.exists(filename):
+			if os.path.exists(self.filename):
 				# Load local parameters to 'self.model'
-				self.model.load_state_dict(torch.load(filename))
+				self.model.load_state_dict(torch.load(self.filename))
 				self._fedpredict_plugin(global_parameters, t, T, nt)
 		except Exception as e:
 			print("Set parameters to model")

@@ -32,7 +32,7 @@ class JointAnalysis():
                 else:
                     clients = 50
                     model = 'CNN'
-                    poc = 0.2
+                    poc = 0.3
 
                 pocs = [poc]
                 for poc in pocs:
@@ -341,7 +341,7 @@ if __name__ == '__main__':
 
     strategies = ['FedPredict', 'FedAVG', 'FedAvgM', 'FedClassAvg', 'QFedAvg', 'FedPer', 'FedProto', 'FedYogi']
     # pocs = [0.1, 0.2, 0.3]
-    pocs = [0.2]
+    pocs = [0.3]
     experiments = {1: experiments[1]}
     # datasets = ['MNIST', 'CIFAR10']
     datasets = ['MNIST', 'CIFAR10', 'MotionSense', 'UCIHAR']
