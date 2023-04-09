@@ -281,8 +281,8 @@ class JointAnalysis():
         lines_labels = [axs[0, 0].get_legend_handles_labels()]
         lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
         fig.legend(lines, labels, loc='upper center', ncol=3, bbox_to_anchor=(0.5, 1.10))
-        fig.savefig("""{}joint_plot_acc_loss_plot_{}_{}_{}.png""".format(base_dir, str(experiment), dataset, y_column), bbox_inches='tight', dpi=400)
-        fig.savefig("""{}joint_plot_acc_loss_plot_{}_{}_{}.svg""".format(base_dir, str(experiment), dataset, y_column), bbox_inches='tight', dpi=400)
+        fig.savefig("""{}joint_plot_acc_loss_plot_{}_{}.png""".format(base_dir, str(experiment), y_column.replace('(%)',"")), bbox_inches='tight', dpi=400)
+        fig.savefig("""{}joint_plot_acc_loss_plot_{}_{}.svg""".format(base_dir, str(experiment), y_column.replace('(%)',"")), bbox_inches='tight', dpi=400)
 
     def idmax(self, df):
 
