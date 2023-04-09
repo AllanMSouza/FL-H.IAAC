@@ -24,7 +24,7 @@ class JointAnalysis():
                 if dataset == 'MotionSense':
                     clients = 24
                     model = 'DNN'
-                    poc = 0.3
+                    poc = 0.4
                 elif dataset == 'UCIHAR':
                     clients = 30
                     model = 'DNN'
@@ -38,10 +38,10 @@ class JointAnalysis():
                 for poc in pocs:
 
                     for strategy in strategies:
-                        if strategy == 'FedPredict':
-                            poc = 0.3
-                        else:
-                            poc = 0.2
+                        # if strategy == 'FedPredict':
+                        #     poc = 0.3
+                        # else:
+                        #     poc = 0.2
                         filename = """{}/{}/{}-POC-{}/{}/{}/{}/{}/{}/{}""".format(os.path.abspath(os.path.join(os.getcwd(),
                                                                                                                 os.pardir)) + "/FedLTA/logs",
                                                                                                                 type,
@@ -71,7 +71,8 @@ class JointAnalysis():
         df_concat['Accuracy (%)'] = df_concat['Accuracy'] * 100
         df_concat['Round (t)'] = df_concat['Round']
         # plots
-        self.joint_plot_acc_acc_loss_plots(df=df_concat, experiment=1, pocs=pocs)
+        self.joint_plot_acc_acc_loss_plots(df=df_concat, experiment=1, pocs=pocs, y_column='Accuracy (%)')
+        self.joint_plot_acc_acc_loss_plots(df=df_concat, experiment=1, pocs=pocs, y_column='Loss')
         # self.joint_plot_acc_two_plots(df=df_concat, experiment=1, pocs=pocs)
         # self.joint_plot_acc_four_plots(df=df_concat, experiment=1, pocs=pocs)
         # self.joint_plot_acc_two_plots(df=df_concat, experiment=2, pocs=pocs)
@@ -191,7 +192,7 @@ class JointAnalysis():
 
         print("filtrado: ", df, df[hue].unique().tolist())
         line_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, type='1', hue_order=hue_order)
-    def joint_plot_acc_acc_loss_plots(self, df, experiment, pocs):
+    def joint_plot_acc_acc_loss_plots(self, df, experiment, pocs, y_column = 'Accuracy (%)'):
         print("Joint plot exeprimento: ", experiment)
 
         df_test = df[['Round (t)', 'Loss', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'POC',
@@ -206,7 +207,6 @@ class JointAnalysis():
         fig, axs = plt.subplots(2, 2, sharex='all', sharey='all', figsize=(6, 6))
 
         x_column = 'Round (t)'
-        y_column = 'Accuracy (%)'
         poc = None
         plt.xlabel(x_column)
         plt.ylabel(y_column)
@@ -254,18 +254,17 @@ class JointAnalysis():
         axs[i, j].set_xlabel('')
         axs[i, j].set_ylabel('')
         # ====================================================================
-        # dataset = 'UCIHAR'
-        # solutions_set = 2
-        # title = """{}""".format(dataset)
-        # i = 1
-        # j = 1
-        # df = df_test
-        # self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df,
-        #                      experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
-        #                      hue='Strategy', hue_order=hue_order)
-        # axs[i, j].get_legend().remove()
-        # axs[i, j].set_xlabel('')
-        # axs[i, j].set_ylabel('')
+        dataset = 'UCIHAR'
+        title = """{}""".format(dataset)
+        i = 1
+        j = 1
+        df = df_test
+        self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df,
+                             experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
+                             hue='Strategy', hue_order=hue_order)
+        axs[i, j].get_legend().remove()
+        axs[i, j].set_xlabel('')
+        axs[i, j].set_ylabel('')
         # ====================================================================
         # =========================///////////================================
         fig.suptitle("", fontsize=16)
@@ -282,8 +281,8 @@ class JointAnalysis():
         lines_labels = [axs[0, 0].get_legend_handles_labels()]
         lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
         fig.legend(lines, labels, loc='upper center', ncol=3, bbox_to_anchor=(0.5, 1.10))
-        fig.savefig("""{}joint_plot_acc_loss_plot_{}_{}.png""".format(base_dir, str(experiment), dataset), bbox_inches='tight', dpi=400)
-        fig.savefig("""{}joint_plot_acc_loss_plot_{}_{}.svg""".format(base_dir, str(experiment), dataset), bbox_inches='tight', dpi=400)
+        fig.savefig("""{}joint_plot_acc_loss_plot_{}_{}_{}.png""".format(base_dir, str(experiment), dataset, y_column), bbox_inches='tight', dpi=400)
+        fig.savefig("""{}joint_plot_acc_loss_plot_{}_{}_{}.svg""".format(base_dir, str(experiment), dataset, y_column), bbox_inches='tight', dpi=400)
 
     def idmax(self, df):
 
@@ -345,7 +344,7 @@ if __name__ == '__main__':
     pocs = [0.2]
     experiments = {1: experiments[1]}
     # datasets = ['MNIST', 'CIFAR10']
-    datasets = ['MNIST', 'CIFAR10', 'MotionSense']
+    datasets = ['MNIST', 'CIFAR10', 'MotionSense', 'UCIHAR']
     clients = '50'
     model = 'CNN'
     type = 'torch'
