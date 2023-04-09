@@ -73,7 +73,11 @@ class FedProtoClientTorch(ClientBaseTorch):
 	def create_model(self):
 
 		try:
-			# print("tamanho: ", self.input_shape)
+			input_shape = self.input_shape
+			if self.dataset in ['MNIST', 'CIFAR10']:
+				input_shape = self.input_shape[1] * self.input_shape[2]
+			elif self.dataset in ['MotionSense', 'UCIHAR']:
+				input_shape = self.input_shape[1]
 			if self.dataset in ['MNIST', 'CIFAR10']:
 				input_shape = self.input_shape[1] * self.input_shape[2]
 			if self.model_name == 'Logist Regression':
