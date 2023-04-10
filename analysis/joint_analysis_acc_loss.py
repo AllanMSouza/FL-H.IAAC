@@ -24,11 +24,11 @@ class JointAnalysis():
                 if dataset == 'MotionSense':
                     clients = 24
                     model = 'DNN'
-                    poc = 0.4
+                    poc = 0.3
                 elif dataset == 'UCIHAR':
                     clients = 30
                     model = 'DNN'
-                    poc = 0.4
+                    poc = 0.3
                 else:
                     clients = 50
                     model = 'CNN'
@@ -211,15 +211,15 @@ class JointAnalysis():
         plt.xlabel(x_column)
         plt.ylabel(y_column)
         base_dir = """analysis/output/experiment_{}/""".format(str(experiment + 1))
-        solutions = {1: ['FedPredict', 'FedAvg', 'FedAvgM', 'FedClassAvg', 'QFedAvg', 'FedPer', 'FedProto', 'FedYogi'], 2: ['FedClassAvg', 'FedProto']}
+        solutions = {1: ['FedPredict', 'FedAvg', 'FedClassAvg', 'QFedAvg', 'FedPer', 'FedProto', 'FedYogi'], 2: ['FedClassAvg', 'FedProto']}
         # ====================================================================
         dataset = 'MNIST'
         solutions_set = 1
-        title = """{}""".format(dataset)
+        title = """{}""".format(dataset+' (non-IID)')
         filename = ''
         i = 0
         j = 0
-        hue_order = ['FedPredict', 'FedAvg', 'FedAvgM', 'FedClassAvg', 'QFedAvg', 'FedPer', 'FedProto', 'FedYogi']
+        hue_order = ['FedPredict', 'FedAvg', 'FedClassAvg', 'QFedAvg', 'FedPer', 'FedProto', 'FedYogi']
         df = df_test
         self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df,
                              experiment=experiment, dataset=dataset, x_column=x_column, y_column=y_column,
@@ -230,7 +230,7 @@ class JointAnalysis():
         # ====================================================================
         dataset = 'CIFAR10'
         solutions_set = 2
-        title = """{}""".format('CIFAR-10')
+        title = """{}""".format('CIFAR-10'+' (non-IID)')
         i = 0
         j = 1
         df = df_test
@@ -243,7 +243,7 @@ class JointAnalysis():
         # ====================================================================
         dataset = 'MotionSense'
         solutions_set = 1
-        title = """{}""".format(dataset)
+        title = """{}""".format(dataset+' (IID)')
         i = 1
         j = 0
         df = df_test
@@ -255,7 +255,7 @@ class JointAnalysis():
         axs[i, j].set_ylabel('')
         # ====================================================================
         dataset = 'UCIHAR'
-        title = """{}""".format(dataset)
+        title = """{}""".format(dataset+' (IID)')
         i = 1
         j = 1
         df = df_test
@@ -281,8 +281,8 @@ class JointAnalysis():
         lines_labels = [axs[0, 0].get_legend_handles_labels()]
         lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
         fig.legend(lines, labels, loc='upper center', ncol=3, bbox_to_anchor=(0.5, 1.10))
-        fig.savefig("""{}joint_plot_acc_loss_plot_{}_{}.png""".format(base_dir, str(experiment), y_column.replace('(%)',"")), bbox_inches='tight', dpi=400)
-        fig.savefig("""{}joint_plot_acc_loss_plot_{}_{}.svg""".format(base_dir, str(experiment), y_column.replace('(%)',"")), bbox_inches='tight', dpi=400)
+        fig.savefig("""{}joint_plot_acc_loss_plot_{}_{}.png""".format(base_dir, str(experiment), y_column.replace(' (%)',"")), bbox_inches='tight', dpi=400)
+        fig.savefig("""{}joint_plot_acc_loss_plot_{}_{}.svg""".format(base_dir, str(experiment), y_column.replace(' (%)',"")), bbox_inches='tight', dpi=400)
 
     def idmax(self, df):
 
@@ -339,7 +339,7 @@ if __name__ == '__main__':
 
     experiments = {1: {'new_clients': 'new_clients_False_train_False', 'local_epochs': '1_local_epochs'}}
 
-    strategies = ['FedPredict', 'FedAVG', 'FedAvgM', 'FedClassAvg', 'QFedAvg', 'FedPer', 'FedProto', 'FedYogi']
+    strategies = ['FedPredict', 'FedAVG', 'FedClassAvg', 'QFedAvg', 'FedPer', 'FedProto', 'FedYogi']
     # pocs = [0.1, 0.2, 0.3]
     pocs = [0.3]
     experiments = {1: experiments[1]}
