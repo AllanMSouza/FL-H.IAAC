@@ -83,7 +83,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 										   for i in range(0, self.num_clients + 1)}
 
 		# FedPredictSelection
-		self.server_nt_acc = {round: {nt: [] for nt in range(0, self.num_rounds + 1)} for round in range(self.num_rounds)}
+		self.server_nt_acc = {round: {nt: [] for nt in range(0, self.num_rounds + 1)} for round in range(self.num_rounds + 1)}
 
 		self.type = type
 
