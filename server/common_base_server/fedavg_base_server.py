@@ -5,15 +5,12 @@ import statistics as st
 import os
 import sys
 import time
-from abc import abstractmethod
 import csv
 import random
 
 from logging import WARNING
 from flwr.common import FitIns
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
-from flwr.common.logger import log
-from sklearn.linear_model import LinearRegression
 
 from flwr.common import (
     EvaluateIns,
@@ -84,6 +81,9 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.fedpredict_clients_metrics = {str(i): {'round_of_last_fit': 0, 'round_of_last_evaluate': 0, 'first_round': -1,
 											   'acc_of_last_fit': 0, 'acc_of_last_evaluate': 0, 'nt': 0}
 										   for i in range(0, self.num_clients + 1)}
+
+		# FedPredictSelection
+		self.server_nt_acc = {round: {nt: [] for nt in range(0, self.num_rounds + 1)} for round in range(self.num_rounds)}
 
 		self.type = type
 
@@ -395,6 +395,8 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			self.fedpredict_clients_metrics[str(client_id)]['round_of_last_evaluate'] = server_round
 			if self.fedpredict_clients_metrics[str(client_id)]['round_of_last_fit'] == server_round:
 				self.fedpredict_clients_metrics[str(client_id)]['acc_of_last_fit'] = client_accuracy
+			# FedPredictSelection
+			self.server_nt_acc[server_round][self.fedpredict_clients_metrics[str(client_id)]['nt']].append(client_accuracy)
 
 		local_list_clients.sort(key=lambda x: x[1])
 
@@ -403,6 +405,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 		accs.sort()
 		self.average_accuracy   = np.mean(accs)
+		self._calculate_mean_of_server_nt_acc(server_round)
 
 		# Weigh accuracy of each client by number of examples used
 		accuracies = [r.metrics["accuracy"] * r.num_examples for _, r in results]
@@ -462,6 +465,15 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 		return selected_clients
 
+	def _calculate_mean_of_server_nt_acc(self, server_round):
+
+		for nt in range(self.num_rounds):
+
+			if len(self.server_nt_acc[server_round][nt]) > 0:
+				self.server_nt_acc[server_round][nt] = np.mean(self.server_nt_acc[server_round][nt])
+			else:
+				self.server_nt_acc[server_round][nt] = 0
+
 	def _get_metrics(self):
 
 		return {}
@@ -478,21 +490,24 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.base = f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/{self.epochs}_local_epochs/"
 		self.server_filename = f"{self.base}server.csv"
 		self.train_filename = f"{self.base}train_client.csv"
-		self.evaluate_filename= f"{self.base}evaluate_client.csv"
+		self.evaluate_filename = f"{self.base}evaluate_client.csv"
+		self.server_nt_acc_filename = f"{self.base}server_nt_acc.csv"
 
 		server_header = ["Time", "Server round", "Accuracy aggregated", "Accuracy std", "Top5", "Top1"]
 		train_header = ["Round", "Cid", "Selected", "Total time", "Size of parameters", "Avg loss train", "Avg accuracy train"]
 		evaluate_header = ["Round", "Cid", "Size of parameters", "Loss", "Accuracy"]
+		server_nt_acc_header = ["Round", "Accuracy (%)", "nt"]
 
 		# Remove previous files
 		if os.path.exists(self.server_filename): os.remove(self.server_filename)
 		if os.path.exists(self.train_filename): os.remove(self.train_filename)
 		if os.path.exists(self.evaluate_filename): os.remove(self.evaluate_filename)
+		if os.path.exists(self.server_nt_acc_filename): os.remove(self.server_nt_acc_filename)
 		# Create new files
 		self._write_header(self.server_filename, server_header)
 		self._write_header(self.train_filename, train_header)
 		self._write_header(self.evaluate_filename, evaluate_header)
-
+		self._write_header(self.server_nt_acc_filename, server_nt_acc_header)
 
 
 	def _write_output(self, filename, data):

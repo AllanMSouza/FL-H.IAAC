@@ -221,12 +221,12 @@ class JointAnalysis():
         j = 0
         hue_order = ['FedPredict', 'FedAvg', 'FedClassAvg', 'QFedAvg', 'FedPer', 'FedProto', 'FedYogi']
         df = df_test
-        self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df,
+        self.filter_and_plot(ax=None, base_dir=base_dir, filename=title+y_column.replace("(%)", ""), title=title, df=df,
                              experiment=experiment, dataset=dataset, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order, poc=poc)
-        axs[i, j].get_legend().remove()
-        axs[i, j].set_xlabel('')
-        axs[i, j].set_ylabel('')
+        # axs[i, j].get_legend().remove()
+        # axs[i, j].set_xlabel('')
+        # axs[i, j].set_ylabel('')
         # ====================================================================
         dataset = 'CIFAR10'
         solutions_set = 2
@@ -234,12 +234,12 @@ class JointAnalysis():
         i = 0
         j = 1
         df = df_test
-        self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df,
+        self.filter_and_plot(ax=None, base_dir=base_dir, filename=title+y_column.replace("(%)", ""), title=title, df=df,
                              experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order)
-        axs[i, j].get_legend().remove()
-        axs[i, j].set_xlabel('')
-        axs[i, j].set_ylabel('')
+        # axs[i, j].get_legend().remove()
+        # axs[i, j].set_xlabel('')
+        # axs[i, j].set_ylabel('')
         # ====================================================================
         dataset = 'MotionSense'
         solutions_set = 1
@@ -247,42 +247,42 @@ class JointAnalysis():
         i = 1
         j = 0
         df = df_test
-        self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df,
+        self.filter_and_plot(ax=None, base_dir=base_dir, filename=title+y_column.replace("(%)", ""), title=title, df=df,
                              experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order)
-        axs[i, j].get_legend().remove()
-        axs[i, j].set_xlabel('')
-        axs[i, j].set_ylabel('')
+        # axs[i, j].get_legend().remove()
+        # axs[i, j].set_xlabel('')
+        # axs[i, j].set_ylabel('')
         # ====================================================================
         dataset = 'UCIHAR'
         title = """{}""".format(dataset+' (IID)')
         i = 1
         j = 1
         df = df_test
-        self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df,
+        self.filter_and_plot(ax=None, base_dir=base_dir, filename=title+y_column.replace("(%)", ""), title=title, df=df,
                              experiment=experiment, dataset=dataset, poc=poc, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order)
-        axs[i, j].get_legend().remove()
-        axs[i, j].set_xlabel('')
-        axs[i, j].set_ylabel('')
+        # axs[i, j].get_legend().remove()
+        # axs[i, j].set_xlabel('')
+        # axs[i, j].set_ylabel('')
         # ====================================================================
         # =========================///////////================================
-        fig.suptitle("", fontsize=16)
-        plt.tight_layout()
-        plt.subplots_adjust(wspace=0.07, hspace=0.14)
-        # plt.subplots_adjust(right=0.9)
-        # fig.legend(
-        #            loc="lower right")
-        # fig.legend(lines, labels)
-        # plt.tick_params(labelcolor='none', which='both', top=False, bottom=False, left=False, right=False)
-        fig.supxlabel(x_column, y=-0.02)
-        fig.supylabel(y_column, x=-0.01)
-
-        lines_labels = [axs[0, 0].get_legend_handles_labels()]
-        lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-        fig.legend(lines, labels, loc='upper center', ncol=3, bbox_to_anchor=(0.5, 1.10))
-        fig.savefig("""{}joint_plot_acc_loss_plot_{}_{}.png""".format(base_dir, str(experiment), y_column.replace(' (%)',"")), bbox_inches='tight', dpi=400)
-        fig.savefig("""{}joint_plot_acc_loss_plot_{}_{}.svg""".format(base_dir, str(experiment), y_column.replace(' (%)',"")), bbox_inches='tight', dpi=400)
+        # fig.suptitle("", fontsize=16)
+        # plt.tight_layout()
+        # plt.subplots_adjust(wspace=0.07, hspace=0.14)
+        # # plt.subplots_adjust(right=0.9)
+        # # fig.legend(
+        # #            loc="lower right")
+        # # fig.legend(lines, labels)
+        # # plt.tick_params(labelcolor='none', which='both', top=False, bottom=False, left=False, right=False)
+        # fig.supxlabel(x_column, y=-0.02)
+        # fig.supylabel(y_column, x=-0.01)
+        #
+        # lines_labels = [axs[0, 0].get_legend_handles_labels()]
+        # lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
+        # fig.legend(lines, labels, loc='upper center', ncol=3, bbox_to_anchor=(0.5, 1.10))
+        # fig.savefig("""{}joint_plot_acc_loss_plot_{}_{}.png""".format(base_dir, str(experiment), y_column.replace(' (%)',"")), bbox_inches='tight', dpi=400)
+        # fig.savefig("""{}joint_plot_acc_loss_plot_{}_{}.svg""".format(base_dir, str(experiment), y_column.replace(' (%)',"")), bbox_inches='tight', dpi=400)
 
     def idmax(self, df):
 
