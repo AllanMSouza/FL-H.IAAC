@@ -188,7 +188,7 @@ class NonIid:
         # size of parameters
         print(df)
         def strategy(df):
-            parameters = int(df['Size of parameters'].mean())
+            parameters = int(df['Size of parameters'].sum())
 
             return pd.DataFrame({'Size of parameters (bytes)': [parameters]})
         df_test = df[['Round', 'Size of parameters', 'Strategy']].groupby('Strategy').apply(lambda e: strategy(e)).reset_index()[['Size of parameters (bytes)', 'Strategy']]
@@ -290,9 +290,9 @@ if __name__ == '__main__':
                       help="")
     parser.add_option("--strategy", action='append', dest="strategies", default=[])
     parser.add_option("--experiment",  dest="experiment", default='')
+    parser.add_option("--decay", dest="decay", default=0)
     parser.add_option("--comment", dest="comment", default='')
     parser.add_option("--epochs", dest="epochs", default=1)
-    parser.add_option("", "--decay", dest="decay", default=0)
 
     (opt, args) = parser.parse_args()
 
@@ -303,7 +303,7 @@ if __name__ == '__main__':
     # noniid.start()
     c = NonIid(int(opt.n_clients), opt.aggregation_method, float(opt.poc), ast.literal_eval(opt.non_iid),
                opt.model_name, strategy_name_list, opt.dataset, ast.literal_eval(opt.new_clients),
-               ast.literal_eval(opt.new_clients_train), opt.experiment, opt.comment, opt.epochs, opt.type, float(opt.decay))
+               ast.literal_eval(opt.new_clients_train), opt.experiment, opt.comment, opt.epochs, opt.type, opt.decay)
 
     print(c.n_clients, " ", c.strategy_name_list)
     dataset = opt.dataset
