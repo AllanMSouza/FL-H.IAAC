@@ -54,10 +54,10 @@ CLIENTS2SELCT 					= {'None': [1], 'POC': [0.2]}
 NEW_CLIENTS 					= {'None': ['FALSE'], 'POC': ['FALSE', 'TRUE']}
 NEW_CLIENTS_TRAIN 				= {'FALSE': ['FALSE'], 'TRUE': ['FALSE', 'TRUE']}
 # DECAY         				= (0.001, 0.005, 0.009)
-ROUNDS        					= 30
+ROUNDS        					= 20
 # STRATEGIES 					= ('FedAVG', 'FedAvgM', 'FedClassAvg', 'QFedAvg', 'FedPer', 'FedProto', 'FedYogi', 'FedLocal',)
 STRATEGIES_FOR_ANALYSIS 		= []
-STRATEGIES_TO_EXECUTE 			= ['FedPrdict', 'FedAVG']
+STRATEGIES_TO_EXECUTE 			= ['FedPredict', 'FedAVG']
 
 EXPERIMENTS 		= {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''},
 					   2: {'algorithm': 'POC', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''},
