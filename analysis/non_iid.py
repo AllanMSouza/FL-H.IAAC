@@ -110,17 +110,20 @@ class NonIid:
         y_column = 'Accuracy (%)'
         hue = 'nt'
 
-        nt_values = [0, 1, 2, 10, 15, 20]
+        nt_values = [0, 2, 4]
+        hue_order = nt_values
         df = df.query("Strategy == '" + strategy + "' and nt in " + str(nt_values))
         title = strategy
-        filename = "server_nt_acc_" + str(int(self.experiment) - 1)
+        filename = "server_nt_acc_" + str(int(self.experiment) - 1) + "_" + strategy
         line_plot(df=df,
                   base_dir=self.base_dir,
                   file_name=filename,
                   x_column=x_column,
                   y_column=y_column,
                   title=title,
-                  hue=hue)
+                  type='1',
+                  hue=hue,
+                  hue_order=hue_order)
 
     def server_analysis(self, title):
 

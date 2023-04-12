@@ -43,21 +43,21 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 # Configurations
 TYPE = 'torch'
 # DATASETS      				= ['MNIST', 'CIFAR10']
-DATASETS      				= ['MNIST']
+DATASETS      				= ['MNIST', 'CIFAR10']
 # DATASETS      					= ['UCIHAR', 'MotionSense']
-MODELS        					= ['DNN']
+MODELS        					= ['CNN']
 ALGORITHMS    					= ['None', 'POC']
 EPOCHS        					= {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2]}
 # CLIENTS       				= {'MNIST': 50, 'CIFAR10': 50, 'CIFAR100': 50, 'MotionSense': 50, 'UCIHAR': 50}
 CLIENTS       					= {'MNIST': [50], 'CIFAR10': [50], 'CIFAR100': [50], 'MotionSense': [24], 'UCIHAR': [30]}
-CLIENTS2SELCT 					= {'None': [1], 'POC': [0.2]}
+CLIENTS2SELCT 					= {'None': [1], 'POC': [0.1, 0.2, 0.3, 0.4]}
 NEW_CLIENTS 					= {'None': ['FALSE'], 'POC': ['FALSE', 'TRUE']}
 NEW_CLIENTS_TRAIN 				= {'FALSE': ['FALSE'], 'TRUE': ['FALSE', 'TRUE']}
 # DECAY         				= (0.001, 0.005, 0.009)
-ROUNDS        					= 20
+ROUNDS        					= 30
 # STRATEGIES 					= ('FedAVG', 'FedAvgM', 'FedClassAvg', 'QFedAvg', 'FedPer', 'FedProto', 'FedYogi', 'FedLocal',)
-STRATEGIES_FOR_ANALYSIS 		= ['FedAVG', 'FedPredict']
-STRATEGIES_TO_EXECUTE 			= ['FedAVG', 'FedPredict']
+STRATEGIES_FOR_ANALYSIS 		= ['FedPredict', 'FedPer', 'FedAVG']
+STRATEGIES_TO_EXECUTE 			= ['FedPredict', 'FedPer', 'FedAVG']
 
 EXPERIMENTS 		= {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''},
 					   2: {'algorithm': 'POC', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''},
