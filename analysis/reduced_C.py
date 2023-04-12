@@ -347,7 +347,7 @@ class JointAnalysis():
         self.filter_and_plot(ax=axs[i], base_dir=base_dir, filename=filename, title=title, df=df_test,
                              experiment=experiment, dataset=dataset, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order)
-        # axs[i].get_legend().remove()
+        axs[i].get_legend().remove()
         axs[i].set_xlabel('')
         axs[i].set_ylabel('')
 

@@ -10,7 +10,7 @@ import os
 import ast
 
 class NonIid:
-    def __init__(self, num_clients, aggregation_method, perc_of_clients, non_iid, model_name, strategy_name_list, dataset_name, new_clients,new_clients_train, experiment, comment, epochs, type):
+    def __init__(self, num_clients, aggregation_method, perc_of_clients, non_iid, model_name, strategy_name_list, dataset_name, new_clients,new_clients_train, experiment, comment, epochs, type, decay):
         self.n_clients = num_clients
         self.aggregation_method = aggregation_method
         self.perc_of_clients = perc_of_clients
@@ -23,6 +23,7 @@ class NonIid:
         self.experiment = experiment
         self.comment = comment
         self.epochs = epochs
+        self.decay = decay
         self.type = type
         self.base_files_names = {'evaluate_client': 'evaluate_client.csv',
                                  'server': 'server.csv',
@@ -38,8 +39,8 @@ class NonIid:
         if self.aggregation_method == 'POC':
             strategy_config = f"{strategy_name}-{self.aggregation_method}-{self.perc_of_clients}"
 
-        # elif self.aggregation_method == 'FedLTA':
-        #     strategy_config = f"{self.strategy_name}-{self.aggregation_method}-{self.decay_factor}"
+        elif self.aggregation_method == 'FedLTA':
+            strategy_config = f"{strategy_name}-{self.aggregation_method}-{self.decay}"
 
         elif self.aggregation_method == 'None':
             strategy_config = f"{strategy_name}-{self.aggregation_method}"
@@ -291,6 +292,7 @@ if __name__ == '__main__':
     parser.add_option("--experiment",  dest="experiment", default='')
     parser.add_option("--comment", dest="comment", default='')
     parser.add_option("--epochs", dest="epochs", default=1)
+    parser.add_option("", "--decay", dest="decay", default=0)
 
     (opt, args) = parser.parse_args()
 
@@ -301,7 +303,7 @@ if __name__ == '__main__':
     # noniid.start()
     c = NonIid(int(opt.n_clients), opt.aggregation_method, float(opt.poc), ast.literal_eval(opt.non_iid),
                opt.model_name, strategy_name_list, opt.dataset, ast.literal_eval(opt.new_clients),
-               ast.literal_eval(opt.new_clients_train), opt.experiment, opt.comment, opt.epochs, opt.type)
+               ast.literal_eval(opt.new_clients_train), opt.experiment, opt.comment, opt.epochs, opt.type, float(opt.decay))
 
     print(c.n_clients, " ", c.strategy_name_list)
     dataset = opt.dataset
