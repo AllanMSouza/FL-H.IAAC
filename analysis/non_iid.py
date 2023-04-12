@@ -26,11 +26,13 @@ class NonIid:
         self.type = type
         self.base_files_names = {'evaluate_client': 'evaluate_client.csv',
                                  'server': 'server.csv',
-                                 'train_client': 'train_client.csv'}
+                                 'train_client': 'train_client.csv',
+                                 'server_nt_acc': 'server_nt_acc.csv'}
 
         self.df_files_names = {'evaluate_client': None,
                                'server': None,
-                               'train_client': None}
+                               'train_client': None,
+                               'server_nt_acc': None}
 
     def _get_strategy_config(self, strategy_name):
         if self.aggregation_method == 'POC':
@@ -89,9 +91,36 @@ class NonIid:
                 else:
                     self.df_files_names[j] = pd.concat([self.df_files_names[j], df], ignore_index=True)
 
+        print("teste: ", self.df_files_names['server_nt_acc'])
+        self.server_nt_acc_analysis()
         self.server_analysis(title)
         self.evaluate_client_analysis()
 
+    def server_nt_acc_analysis(self):
+
+        strategies = self.df_files_names['server_nt_acc']['Strategy'].unique().tolist()
+
+        for strategy in strategies:
+            self.server_nt_acc_analyse(strategy)
+
+    def server_nt_acc_analyse(self, strategy):
+
+        df = self.df_files_names['server_nt_acc']
+        x_column = 'Round'
+        y_column = 'Accuracy (%)'
+        hue = 'nt'
+
+        nt_values = [0, 1, 2, 10, 15, 20]
+        df = df.query("Strategy == '" + strategy + "' and nt in " + str(nt_values))
+        title = strategy
+        filename = "server_nt_acc_" + str(int(self.experiment) - 1)
+        line_plot(df=df,
+                  base_dir=self.base_dir,
+                  file_name=filename,
+                  x_column=x_column,
+                  y_column=y_column,
+                  title=title,
+                  hue=hue)
 
     def server_analysis(self, title):
 

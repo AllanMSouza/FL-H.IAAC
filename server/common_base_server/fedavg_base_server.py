@@ -441,6 +441,20 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 						   data=data
 						   )
 
+		if server_round == self.num_rounds:
+			assert self.server_nt_acc_filename is not None
+			data_list = []
+			for server_round in self.server_nt_acc:
+				for nt in self.server_nt_acc[server_round]:
+					acc = self.server_nt_acc[server_round][nt]
+					if type(acc) == list:
+						acc = 0
+					data_list.append([server_round, acc, nt])
+
+			self._write_outputs(filename=self.server_nt_acc_filename,
+							   data=data_list
+							   )
+
 		self.accuracy_history[server_round] = accuracy_aggregated
 		self._update_fedpredict_metrics(server_round)
 
@@ -515,3 +529,9 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		with open(filename, 'a') as server_log_file:
 			writer = csv.writer(server_log_file)
 			writer.writerow(data)
+
+	def _write_outputs(self, filename, data):
+
+		with open(filename, 'a') as server_log_file:
+			writer = csv.writer(server_log_file)
+			writer.writerows(data)
