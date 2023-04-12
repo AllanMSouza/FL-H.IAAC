@@ -87,10 +87,11 @@ def execute_experiment(experiment, algorithm, new_client, new_client_train, comm
 								strategies_arg = ""
 								for i in STRATEGIES_FOR_ANALYSIS:
 									strategies_arg = strategies_arg + """ --strategy='{}'""".format(i)
-								analytics_result_dir = """python analysis/non_iid.py --dataset='{}' --model='{}' --round={} --client={} --aggregation_method='{}' --poc={} --new_clients={} --new_clients_train={} --non-iid={} --comment='{}' --epochs={} --experiment={} {}""".format(dataset, model, ROUNDS, clients, algorithm, poc, new_client, new_client_train, True, comment, epochs, experiment, strategies_arg)
-								print("=====================================\nExecutando analytics... \n", analytics_result_dir,
-									  "\n=====================================")
-								subprocess.Popen(analytics_result_dir, shell=True).wait()
+								if len(STRATEGIES_FOR_ANALYSIS) > 0:
+									analytics_result_dir = """python analysis/non_iid.py --dataset='{}' --model='{}' --round={} --client={} --aggregation_method='{}' --poc={} --new_clients={} --new_clients_train={} --non-iid={} --comment='{}' --epochs={} --experiment={} {}""".format(dataset, model, ROUNDS, clients, algorithm, poc, new_client, new_client_train, True, comment, epochs, experiment, strategies_arg)
+									print("=====================================\nExecutando analytics... \n", analytics_result_dir,
+										  "\n=====================================")
+									subprocess.Popen(analytics_result_dir, shell=True).wait()
 
 								# subprocess.Popen(['rm', '-fr', '/tmp/ray/']).wait()
 								# subprocess.Popen(['rm', '/tmp/*.py']).wait()
