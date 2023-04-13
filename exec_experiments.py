@@ -51,13 +51,14 @@ EPOCHS        					= {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2], '6': [1]
 # CLIENTS       				= {'MNIST': 50, 'CIFAR10': 50, 'CIFAR100': 50, 'MotionSense': 50, 'UCIHAR': 50}
 CLIENTS       					= {'MNIST': [50], 'CIFAR10': [50], 'CIFAR100': [50], 'MotionSense': [24], 'UCIHAR': [30]}
 FRACTION_FIT 					= {'None': [1], 'POC': [0.2], 'FedLTA': [0.2]}
+POC 							= {'None': [0], 'POC': [0.2], 'FedLTA': [0]}
 DECAY							= {'None': 0, 'POC': 0, 'FedLTA': 0.1}
 NEW_CLIENTS 					= {'None': ['FALSE'], 'POC': ['FALSE', 'TRUE']}
 NEW_CLIENTS_TRAIN 				= {'FALSE': ['FALSE'], 'TRUE': ['FALSE', 'TRUE']}
 # DECAY         				= (0.001, 0.005, 0.009)
 ROUNDS        					= 30
 # STRATEGIES 					= ('FedAVG', 'FedAvgM', 'FedClassAvg', 'QFedAvg', 'FedPer', 'FedProto', 'FedYogi', 'FedLocal',)
-STRATEGIES_FOR_ANALYSIS 		= ['FedPredict', 'FedPer', 'FedAVG']
+STRATEGIES_FOR_ANALYSIS 		= ['FedPredict', 'FedAVG']
 STRATEGIES_TO_EXECUTE 			= ['FedPredict', 'FedPer', 'FedAVG']
 
 EXPERIMENTS 		= {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''},
@@ -75,11 +76,12 @@ def execute_experiment(experiment, algorithm, new_client, new_client_train, comm
 				for epochs in EPOCHS[experiment]:
 					for clients in CLIENTS[dataset]:
 						for fraction_fit in FRACTION_FIT[algorithm]:
+							for poc in POC[algorithm]:
 								for strategy in STRATEGIES_TO_EXECUTE:
 									decay = DECAY[algorithm]
 									print(f'Starting {strategy} fraction_fit-{fraction_fit} simulation for {dataset} clients with {model} model ...', os.getcwd())
-									test_config = """python {}/simulation.py --dataset='{}' --model='{}' --strategy='{}' --epochs={} --round={} --client={} --type='{}' --non-iid={} --aggregation_method='{}' --fraction_fit={} --new_clients={}  --new_clients_train={} --decay={}""".format(os.getcwd(), dataset, model,
-																	 strategy, epochs, ROUNDS, clients, TYPE, True, algorithm,  fraction_fit, new_client, new_client_train, decay)
+									test_config = """python {}/simulation.py --dataset='{}' --model='{}' --strategy='{}' --epochs={} --round={} --client={} --type='{}' --non-iid={} --aggregation_method='{}' --fraction_fit={} --poc={} --new_clients={} --new_clients_train={} --decay={}""".format(os.getcwd(), dataset, model,
+																	 strategy, epochs, ROUNDS, clients, TYPE, True, algorithm,  fraction_fit, poc, new_client, new_client_train, decay)
 									print("=====================================\nExecutando... \n", test_config, "\n=====================================")
 									#exit()
 									subprocess.Popen(test_config, shell=True).wait()
@@ -90,7 +92,7 @@ def execute_experiment(experiment, algorithm, new_client, new_client_train, comm
 								for i in STRATEGIES_FOR_ANALYSIS:
 									strategies_arg = strategies_arg + """ --strategy='{}'""".format(i)
 								if len(STRATEGIES_FOR_ANALYSIS) > 0:
-									analytics_result_dir = """python analysis/non_iid.py --dataset='{}' --model='{}' --round={} --client={} --aggregation_method='{}' --poc={} --new_clients={} --new_clients_train={} --non-iid={} --comment='{}' --epochs={} --decay={} --experiment={} {}""".format(dataset, model, ROUNDS, clients, algorithm, fraction_fit, new_client, new_client_train, True, comment, epochs, decay, experiment, strategies_arg)
+									analytics_result_dir = """python analysis/non_iid.py --dataset='{}' --model='{}' --round={} --client={} --aggregation_method='{}' --poc={} --new_clients={} --new_clients_train={} --non-iid={} --comment='{}' --epochs={} --decay={} --fraction_fit={} --experiment={} {}""".format(dataset, model, ROUNDS, clients, algorithm, poc, new_client, new_client_train, True, comment, epochs, decay, fraction_fit, experiment, strategies_arg)
 									print("=====================================\nExecutando analytics... \n", analytics_result_dir,
 										  "\n=====================================")
 									subprocess.Popen(analytics_result_dir, shell=True).wait()

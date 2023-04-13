@@ -29,6 +29,7 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 				 dataset            = '',
 				 perc_of_clients    = 0,
 				 decay              = 0,
+				 fraction_fit		= 0,
 				 non_iid            = False,
 				 n_personalized_layers	= 1,
 				 new_clients			= False,
@@ -46,6 +47,7 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 						 dataset=dataset,
 						 perc_of_clients=perc_of_clients,
 						 decay=decay,
+						 fraction_fit=fraction_fit,
 						 non_iid=non_iid,
 						 new_clients=new_clients,
 						 new_clients_train=new_clients_train)

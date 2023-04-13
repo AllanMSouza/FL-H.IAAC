@@ -10,10 +10,11 @@ import os
 import ast
 
 class NonIid:
-    def __init__(self, num_clients, aggregation_method, perc_of_clients, non_iid, model_name, strategy_name_list, dataset_name, new_clients,new_clients_train, experiment, comment, epochs, type, decay):
+    def __init__(self, num_clients, aggregation_method, perc_of_clients, fraction_fit, non_iid, model_name, strategy_name_list, dataset_name, new_clients,new_clients_train, experiment, comment, epochs, type, decay):
         self.n_clients = num_clients
         self.aggregation_method = aggregation_method
         self.perc_of_clients = perc_of_clients
+        self.fraction_fit = fraction_fit
         self.non_iid = non_iid
         self.model_name = model_name
         self.strategy_name_list = strategy_name_list
@@ -43,7 +44,7 @@ class NonIid:
             strategy_config = f"{strategy_name}-{self.aggregation_method}-{self.decay}"
 
         elif self.aggregation_method == 'None':
-            strategy_config = f"{strategy_name}-{self.aggregation_method}"
+            strategy_config = f"{strategy_name}-{self.aggregation_method}-{self.fraction_fit}"
 
         print("antes: ", self.aggregation_method, strategy_config)
 
@@ -293,6 +294,8 @@ if __name__ == '__main__':
     parser.add_option("--decay", dest="decay", default=0)
     parser.add_option("--comment", dest="comment", default='')
     parser.add_option("--epochs", dest="epochs", default=1)
+    parser.add_option("", "--fraction_fit", dest="fraction_fit", default=0,
+                      help="fraction of selected clients to be trained", metavar="FLOAT")
 
     (opt, args) = parser.parse_args()
 
@@ -301,7 +304,7 @@ if __name__ == '__main__':
 
     # noniid = NonIID(int(opt.n_clients), opt.aggregation_method, opt.model_name, strategy_name_list, opt.dataset)
     # noniid.start()
-    c = NonIid(int(opt.n_clients), opt.aggregation_method, float(opt.poc), ast.literal_eval(opt.non_iid),
+    c = NonIid(int(opt.n_clients), opt.aggregation_method, float(opt.poc), float(opt.fraction_fit), ast.literal_eval(opt.non_iid),
                opt.model_name, strategy_name_list, opt.dataset, ast.literal_eval(opt.new_clients),
                ast.literal_eval(opt.new_clients_train), opt.experiment, opt.comment, opt.epochs, opt.type, opt.decay)
 
