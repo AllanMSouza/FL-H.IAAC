@@ -66,7 +66,6 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 		#POC
 		self.perc_of_clients  = perc_of_clients
-		self.aux_perc_of_clients = perc_of_clients
 
 		#FedLTA
 		self.decay_factor = decay
@@ -203,11 +202,6 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			available_clients = clients_ids
 			print("disponiveis: ", available_clients)
 			print("Rodada inicial de novos clientes: ", int(self.num_rounds * self.round_threshold))
-			# if server_round == 1 and 'fedproto' in self.strategy_name.lower():
-			# # if server_round == 1:
-			# 	self.perc_of_clients = 1
-			# else:
-			# 	self.perc_of_clients = self.aux_perc_of_clients
 
 			self.clients2select = int(len(available_clients) * self.perc_of_clients)
 			if len(available_clients) == 0 and server_round != 1:
