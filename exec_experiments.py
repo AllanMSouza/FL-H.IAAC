@@ -45,7 +45,7 @@ TYPE = 'torch'
 # DATASETS      				= ['MNIST', 'CIFAR10']
 DATASETS      				= ['CIFAR10']
 # DATASETS      					= ['UCIHAR', 'MotionSense']
-MODELS        					= ['CNN']
+MODELS        					= ['DNN']
 ALGORITHMS    					= ['None', 'POC', 'FedLTA']
 EPOCHS        					= {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2], '6': [1]}
 # CLIENTS       				= {'MNIST': 50, 'CIFAR10': 50, 'CIFAR100': 50, 'MotionSense': 50, 'UCIHAR': 50}
@@ -59,7 +59,7 @@ NEW_CLIENTS_TRAIN 				= {'FALSE': ['FALSE'], 'TRUE': ['FALSE', 'TRUE']}
 ROUNDS        					= 30
 # STRATEGIES 					= ('FedAVG', 'FedAvgM', 'FedClassAvg', 'QFedAvg', 'FedPer', 'FedProto', 'FedYogi', 'FedLocal',)
 STRATEGIES_FOR_ANALYSIS 		= ['FedPredict', 'FedAVG']
-STRATEGIES_TO_EXECUTE 			= ['FedPredict', 'FedPer', 'FedAVG']
+STRATEGIES_TO_EXECUTE 			= ['FedPredict', 'FedAVG']
 
 EXPERIMENTS 		= {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''},
 					   2: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''},
