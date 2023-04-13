@@ -32,6 +32,7 @@ class SimulationFL():
 				 local_epochs,
 				 rounds,
 				 poc,
+				 fraction_fit,
 				 decay,
 				 non_iid,
 				 nn_type,
@@ -47,6 +48,7 @@ class SimulationFL():
 		self.epochs           		= local_epochs
 		self.rounds           		= rounds
 		self.poc              		= poc
+		self.fraction_fit = fraction_fit
 		self.decay            		= decay
 		self.client_selection 		= False
 		self.strategy_name    		= strategy_name # Old "self.solution_name"
@@ -73,6 +75,7 @@ class SimulationFL():
 									  aggregation_method=self.aggregation_method,
 									  dataset=self.dataset,
 									  perc_of_clients=self.poc,
+									  fraction_fit=self.fraction_fit,
 									  decay=self.decay,
 									  non_iid=self.non_iid)
 
@@ -87,6 +90,7 @@ class SimulationFL():
 										aggregation_method=self.aggregation_method,
 										dataset=self.dataset,
 										perc_of_clients=self.poc,
+										fraction_fit=self.fraction_fit,
 										decay=self.decay,
 										non_iid=self.non_iid)
 
@@ -101,6 +105,7 @@ class SimulationFL():
 										aggregation_method=self.aggregation_method,
 										dataset=self.dataset,
 										perc_of_clients=self.poc,
+										fraction_fit=self.fraction_fit,
 										decay=self.decay,
 										non_iid=self.non_iid)
 
@@ -115,6 +120,7 @@ class SimulationFL():
 									  aggregation_method=self.aggregation_method,
 									  dataset=self.dataset,
 									  perc_of_clients=self.poc,
+									  fraction_fit=self.fraction_fit,
 									  decay=self.decay,
 									  non_iid=self.non_iid)
 		elif self.nn_type == 'torch':
@@ -130,6 +136,7 @@ class SimulationFL():
 										   aggregation_method=self.aggregation_method,
 										   dataset=self.dataset,
 										   perc_of_clients=self.poc,
+										   fraction_fit=self.fraction_fit,
 										   decay=self.decay,
 										   non_iid=self.non_iid,
 										   new_clients=self.new_clients,
@@ -146,6 +153,7 @@ class SimulationFL():
                                              aggregation_method=self.aggregation_method,
                                              dataset=self.dataset,
                                              perc_of_clients=self.poc,
+											 fraction_fit=self.fraction_fit,
                                              decay=self.decay,
                                              non_iid=self.non_iid,
                                              new_clients=self.new_clients,
@@ -161,6 +169,7 @@ class SimulationFL():
 										  aggregation_method=self.aggregation_method,
 										  dataset=self.dataset,
 										  perc_of_clients=self.poc,
+										  fraction_fit=self.fraction_fit,
 										  decay=self.decay,
 										  non_iid=self.non_iid,
 										  new_clients=self.new_clients,
@@ -176,6 +185,7 @@ class SimulationFL():
 											   aggregation_method=self.aggregation_method,
 											   dataset=self.dataset,
 											   perc_of_clients=self.poc,
+											   fraction_fit=self.fraction_fit,
 											   decay=self.decay,
 											   non_iid=self.non_iid,
 											   new_clients=self.new_clients,
@@ -191,6 +201,7 @@ class SimulationFL():
 											aggregation_method=self.aggregation_method,
 											dataset=self.dataset,
 											perc_of_clients=self.poc,
+											fraction_fit=self.fraction_fit,
 											decay=self.decay,
 											non_iid=self.non_iid,
 											new_clients=self.new_clients,
@@ -206,6 +217,7 @@ class SimulationFL():
 										  aggregation_method=self.aggregation_method,
 										  dataset=self.dataset,
 										  perc_of_clients=self.poc,
+										  fraction_fit=self.fraction_fit,
 										  decay=self.decay,
 										  non_iid=self.non_iid,
 										  new_clients=self.new_clients,
@@ -221,6 +233,7 @@ class SimulationFL():
 										  aggregation_method=self.aggregation_method,
 										  dataset=self.dataset,
 										  perc_of_clients=self.poc,
+										  fraction_fit=self.fraction_fit,
 										  decay=self.decay,
 										  non_iid=self.non_iid,
 										  new_clients=self.new_clients,
@@ -236,6 +249,7 @@ class SimulationFL():
 										  aggregation_method=self.aggregation_method,
 										  dataset=self.dataset,
 										  perc_of_clients=self.poc,
+										  fraction_fit=self.fraction_fit,
 										  decay=self.decay,
 										  non_iid=self.non_iid,
 										  new_clients=self.new_clients,
@@ -251,6 +265,7 @@ class SimulationFL():
 										 aggregation_method=self.aggregation_method,
 										 dataset=self.dataset,
 										 perc_of_clients=self.poc,
+										 fraction_fit=self.fraction_fit,
 										 decay=self.decay,
 										 non_iid=self.non_iid,
 										 new_clients=self.new_clients,
@@ -263,7 +278,7 @@ class SimulationFL():
 			if self.strategy_name == 'FedPer':
 				return FedPerServerTf(aggregation_method=self.aggregation_method,
 										n_classes=self.n_classes,
-										fraction_fit=1,
+										fraction_fit=self.fraction_fit,
 										num_clients=self.n_clients,
 										num_rounds=self.rounds,
 										num_epochs=self.epochs,
@@ -278,7 +293,7 @@ class SimulationFL():
 			elif self.strategy_name == 'FedProto':
 				return FedProtoServerTf(aggregation_method=self.aggregation_method,
 										n_classes=self.n_classes,
-										fraction_fit=1,
+										fraction_fit=self.fraction_fit,
 										num_clients=self.n_clients,
 										num_rounds=self.rounds,
 										num_epochs=self.epochs,
@@ -292,7 +307,7 @@ class SimulationFL():
 			elif self.strategy_name == 'FedLocal':
 				return FedLocalServerTf(aggregation_method=self.aggregation_method,
 										n_classes=self.n_classes,
-										fraction_fit=1,
+										fraction_fit=self.fraction_fit,
 										num_clients=self.n_clients,
 										num_rounds=self.rounds,
 										num_epochs=self.epochs,
@@ -306,7 +321,7 @@ class SimulationFL():
 			else:
 				return FedAvgServerTf(aggregation_method=self.aggregation_method,
 										n_classes=self.n_classes,
-										fraction_fit=1,
+										fraction_fit=self.fraction_fit,
 										num_clients=self.n_clients,
 										num_rounds=self.rounds,
 										num_epochs=self.epochs,
@@ -322,7 +337,7 @@ class SimulationFL():
 				# print("foi servidor")
 				return FedProtoServerTorch(aggregation_method=self.aggregation_method,
 										n_classes=self.n_classes,
-										fraction_fit=1,
+										fraction_fit=self.fraction_fit,
 										num_clients=self.n_clients,
 										num_rounds=self.rounds,
 										num_epochs=self.epochs,
@@ -337,7 +352,7 @@ class SimulationFL():
 				# print("foi servidor")
 				return FedPredictServerTorch(aggregation_method=self.aggregation_method,
 											 n_classes=self.n_classes,
-											 fraction_fit=1,
+											 fraction_fit=self.fraction_fit,
 											 num_clients=self.n_clients,
 											 num_rounds=self.rounds,
 											 num_epochs=self.epochs,
@@ -352,7 +367,7 @@ class SimulationFL():
 			elif self.strategy_name == 'FedPer':
 				return  FedPerServerTorch(aggregation_method=self.aggregation_method,
 										n_classes=self.n_classes,
-										fraction_fit=1,
+										fraction_fit=self.fraction_fit,
 										num_clients=self.n_clients,
 										num_rounds=self.rounds,
 										num_epochs=self.epochs,
@@ -366,7 +381,7 @@ class SimulationFL():
 			elif self.strategy_name == 'FedClassAvg':
 				return  FedClassAvgServerTorch(aggregation_method=self.aggregation_method,
 												n_classes=self.n_classes,
-												fraction_fit=1,
+												fraction_fit=self.fraction_fit,
 												num_clients=self.n_clients,
 												num_rounds=self.rounds,
 												num_epochs=self.epochs,
@@ -380,7 +395,7 @@ class SimulationFL():
 			elif self.strategy_name == 'FedLocal':
 				return  FedLocalServerTorch(aggregation_method=self.aggregation_method,
 											n_classes=self.n_classes,
-											fraction_fit=1,
+											fraction_fit=self.fraction_fit,
 											num_clients=self.n_clients,
 											num_rounds=self.rounds,
 											num_epochs=self.epochs,
@@ -394,7 +409,7 @@ class SimulationFL():
 			elif self.strategy_name == 'FedAvgM':
 				return FedAvgMServerTorch(aggregation_method=self.aggregation_method,
 										n_classes=self.n_classes,
-										fraction_fit=1,
+										fraction_fit=self.fraction_fit,
 										num_clients=self.n_clients,
 										num_rounds=self.rounds,
 										num_epochs=self.epochs,
@@ -411,7 +426,7 @@ class SimulationFL():
 			elif self.strategy_name == 'QFedAvg':
 				return QFedAvgServerTorch(aggregation_method=self.aggregation_method,
 										n_classes=self.n_classes,
-										fraction_fit=1,
+										fraction_fit=self.fraction_fit,
 										num_clients=self.n_clients,
 										num_rounds=self.rounds,
 										num_epochs=self.epochs,
@@ -426,7 +441,7 @@ class SimulationFL():
 			elif self.strategy_name == "FedYogi":
 				return FedYogiServerTorch(aggregation_method=self.aggregation_method,
 										n_classes=self.n_classes,
-										fraction_fit=1,
+										fraction_fit=self.fraction_fit,
 										num_clients=self.n_clients,
 										num_rounds=self.rounds,
 										num_epochs=self.epochs,
@@ -441,7 +456,7 @@ class SimulationFL():
 			else:
 				return FedAvgServerTorch(aggregation_method=self.aggregation_method,
 										n_classes=self.n_classes,
-										fraction_fit=1,
+										fraction_fit=self.fraction_fit,
 										num_clients=self.n_clients,
 										num_rounds=self.rounds,
 										num_epochs=self.epochs,
@@ -484,6 +499,7 @@ def main():
 	parser.add_option("",   "--poc",         		dest="poc",                default=0,         help="Percentage clients to be selected",      metavar="FLOAT")
 	parser.add_option("",   "--decay",       		dest="decay",              default=0,         help="Decay factor for FedLTA",                metavar="FLOAT")
 	parser.add_option("",   "--non-iid",     		dest="non_iid",            default=False,     help="Non IID distribution",                   metavar="BOOLEAN")
+	parser.add_option("", "--fraction_fit", dest="fraction_fit", default=0, help="fraction of selected clients to be trained", metavar="FLOAT")
 	parser.add_option("-y", "--classes",     		dest="n_classes",          default=10,        help="Number of classes",                      metavar="INT")
 	parser.add_option("-t", "--type",               dest="type",               default='tf',      help="Neural network framework (tf or torch)", metavar="STR")
 	parser.add_option("", "--new_clients", dest="new_clients", default='False', help="Add new clients after a specific number of rounds",
@@ -497,7 +513,7 @@ def main():
 	print("Simulacao da estratégia: ", opt.strategy_name)
 	simulation = SimulationFL(int(opt.n_clients), opt.aggregation_method, opt.model_name,
 							  opt.strategy_name, opt.dataset, int(opt.n_classes),
-							  int(opt.local_epochs), int(opt.rounds), float(opt.poc),
+							  int(opt.local_epochs), int(opt.rounds), float(opt.poc), float(opt.fraction_fit),
 							  float(opt.decay), ast.literal_eval(opt.non_iid), opt.type,
 							  ast.literal_eval(opt.new_clients), ast.literal_eval(opt.new_clients_train))
 

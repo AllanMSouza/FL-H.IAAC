@@ -28,13 +28,13 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 # Algorithm = 'None'
 # ======================================================================
 # EXPERIMENT 2
-# Algorithm = 'POC', poc=[0.1, 0.2, 0.3] and  new_client = FALSE
+# Algorithm = 'None', poc=[0.1, 0.2, 0.3] and  new_client = FALSE
 # ======================================================================
 # EXPERIMENT 3
-# Algorithm = 'POC', poc=[0.1, 0.2, 0.3] and new_client = TRUE new_clients_train = FALSE
+# Algorithm = 'None', poc=[0.1, 0.2, 0.3] and new_client = TRUE new_clients_train = FALSE
 # ======================================================================
 # EXPERIMENT 4
-# Algorithm = 'POC', poc=[0.1, 0.2, 0.3] and new_client = TRUE new_clients_train = TRUE
+# Algorithm = 'None', poc=[0.1, 0.2, 0.3] and new_client = TRUE new_clients_train = TRUE
 # ======================================================================
 # EXPERIMENT 5
 # Algorithm = 'POC, poc=[0.1, 0.2, 0.3]' and new_client = TRUE new_clients_train = TRUE
@@ -50,7 +50,7 @@ ALGORITHMS    					= ['None', 'POC', 'FedLTA']
 EPOCHS        					= {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2], '6': [1]}
 # CLIENTS       				= {'MNIST': 50, 'CIFAR10': 50, 'CIFAR100': 50, 'MotionSense': 50, 'UCIHAR': 50}
 CLIENTS       					= {'MNIST': [50], 'CIFAR10': [50], 'CIFAR100': [50], 'MotionSense': [24], 'UCIHAR': [30]}
-CLIENTS2SELCT 					= {'None': [1], 'POC': [0.2], 'FedLTA': [0.2]}
+FRACTION_FIT 					= {'None': [1], 'POC': [0.2], 'FedLTA': [0.2]}
 DECAY							= {'None': 0, 'POC': 0, 'FedLTA': 0.1}
 NEW_CLIENTS 					= {'None': ['FALSE'], 'POC': ['FALSE', 'TRUE']}
 NEW_CLIENTS_TRAIN 				= {'FALSE': ['FALSE'], 'TRUE': ['FALSE', 'TRUE']}
@@ -61,10 +61,10 @@ STRATEGIES_FOR_ANALYSIS 		= ['FedPredict', 'FedPer', 'FedAVG']
 STRATEGIES_TO_EXECUTE 			= ['FedPredict', 'FedPer', 'FedAVG']
 
 EXPERIMENTS 		= {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''},
-					   2: {'algorithm': 'POC', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''},
-					   3: {'algorithm': 'POC', 'new_client': 'True', 'new_client_train': 'False', 'comment': """apos a rodada {}, apenas novos clientes sao testados""".format(int(ROUNDS*0.7))},
-					   4: {'algorithm': 'POC', 'new_client': 'True', 'new_client_train': 'True', 'comment': """apos a rodada {}, apenas novos clientes sao testados - novos clientes treinam apenas 1 vez (um round) - """.format(int(ROUNDS*0.7))},
-					   5: {'algorithm': 'POC', 'new_client': 'True', 'new_client_train': 'True', 'comment': """apos a rodada {}, apenas novos clientes sao testados - novos clientes treinam apenas 1 vez (um round) com duas épocas locais """.format(int(ROUNDS*0.7))},
+					   2: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''},
+					   3: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'False', 'comment': """apos a rodada {}, apenas novos clientes sao testados""".format(int(ROUNDS*0.7))},
+					   4: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'True', 'comment': """apos a rodada {}, apenas novos clientes sao testados - novos clientes treinam apenas 1 vez (um round) - """.format(int(ROUNDS*0.7))},
+					   5: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'True', 'comment': """apos a rodada {}, apenas novos clientes sao testados - novos clientes treinam apenas 1 vez (um round) com duas épocas locais """.format(int(ROUNDS*0.7))},
 					  6: {'algorithm': 'FedLTA', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''}}
 
 def execute_experiment(experiment, algorithm, new_client, new_client_train, comment, type):
@@ -74,12 +74,12 @@ def execute_experiment(experiment, algorithm, new_client, new_client_train, comm
 			for model in MODELS:
 				for epochs in EPOCHS[experiment]:
 					for clients in CLIENTS[dataset]:
-						for poc in CLIENTS2SELCT[algorithm]:
+						for fraction_fit in FRACTION_FIT[algorithm]:
 								for strategy in STRATEGIES_TO_EXECUTE:
 									decay = DECAY[algorithm]
-									print(f'Starting {strategy} POC-{poc} simulation for {dataset} clients with {model} model ...', os.getcwd())
-									test_config = """python {}/simulation.py --dataset='{}' --model='{}' --strategy='{}' --epochs={} --round={} --client={} --type='{}' --non-iid={} --aggregation_method='{}' --poc={} --new_clients={}  --new_clients_train={} --decay={}""".format(os.getcwd(), dataset, model,
-																	 strategy, epochs, ROUNDS, clients, TYPE, True, algorithm,  poc, new_client, new_client_train, decay)
+									print(f'Starting {strategy} fraction_fit-{fraction_fit} simulation for {dataset} clients with {model} model ...', os.getcwd())
+									test_config = """python {}/simulation.py --dataset='{}' --model='{}' --strategy='{}' --epochs={} --round={} --client={} --type='{}' --non-iid={} --aggregation_method='{}' --fraction_fit={} --new_clients={}  --new_clients_train={} --decay={}""".format(os.getcwd(), dataset, model,
+																	 strategy, epochs, ROUNDS, clients, TYPE, True, algorithm,  fraction_fit, new_client, new_client_train, decay)
 									print("=====================================\nExecutando... \n", test_config, "\n=====================================")
 									#exit()
 									subprocess.Popen(test_config, shell=True).wait()
@@ -90,7 +90,7 @@ def execute_experiment(experiment, algorithm, new_client, new_client_train, comm
 								for i in STRATEGIES_FOR_ANALYSIS:
 									strategies_arg = strategies_arg + """ --strategy='{}'""".format(i)
 								if len(STRATEGIES_FOR_ANALYSIS) > 0:
-									analytics_result_dir = """python analysis/non_iid.py --dataset='{}' --model='{}' --round={} --client={} --aggregation_method='{}' --poc={} --new_clients={} --new_clients_train={} --non-iid={} --comment='{}' --epochs={} --decay={} --experiment={} {}""".format(dataset, model, ROUNDS, clients, algorithm, poc, new_client, new_client_train, True, comment, epochs, decay, experiment, strategies_arg)
+									analytics_result_dir = """python analysis/non_iid.py --dataset='{}' --model='{}' --round={} --client={} --aggregation_method='{}' --poc={} --new_clients={} --new_clients_train={} --non-iid={} --comment='{}' --epochs={} --decay={} --experiment={} {}""".format(dataset, model, ROUNDS, clients, algorithm, fraction_fit, new_client, new_client_train, True, comment, epochs, decay, experiment, strategies_arg)
 									print("=====================================\nExecutando analytics... \n", analytics_result_dir,
 										  "\n=====================================")
 									subprocess.Popen(analytics_result_dir, shell=True).wait()

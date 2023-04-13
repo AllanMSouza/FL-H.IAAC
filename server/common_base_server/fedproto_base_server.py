@@ -108,21 +108,11 @@ class FedProtoBaseServer(FedAvgBaseServer):
             protos_samples_per_class = fit_res.metrics['protos_samples_per_class']
             proto = fit_res.metrics['proto']
 
-            if self.aggregation_method not in ['POC', 'FedLTA'] or int(server_round) <= 1:
+            if self.aggregation_method not in ['None', 'POC', 'FedLTA'] or int(server_round) <= 1:
                 weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), protos_samples_per_class, proto))
 
             else:
                 if client_id in self.selected_clients:
-                    # for label in protos_samples_per_class:
-                    #     p = proto[label]
-                    #     samples_per_class = protos_samples_per_class[label]
-                    #     if (np.sum(p) == 0 or np.isnan(p).any()) and samples_per_class != 0:
-                    #         print("usuario errado")
-                    #         exit()
-                    #     if label in [3, 4]:
-                    #         if samples_per_class > 0:
-                    #             print("proto da classe ", label)
-                    #             print(p)
                     weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), protos_samples_per_class, proto))
 
         # print(f'LEN AGGREGATED PARAMETERS: {len(weights_results)}')

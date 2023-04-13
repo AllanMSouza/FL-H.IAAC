@@ -55,8 +55,8 @@ class DNN(nn.Module):
     def __init__(self, input_shape=1*28*28, mid_dim=100, num_classes=10):
         super(DNN, self).__init__()
 
-        self.fc1 = nn.Linear(input_shape, 50)
-        self.fc = nn.Linear(50, num_classes)
+        self.fc1 = nn.Linear(input_shape, mid_dim)
+        self.fc = nn.Linear(mid_dim, num_classes)
     def forward(self, x):
         x = torch.flatten(x, 1)
         x = F.relu(self.fc1(x))

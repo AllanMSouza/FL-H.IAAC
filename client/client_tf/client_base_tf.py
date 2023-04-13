@@ -32,6 +32,7 @@ class ClientBaseTf(fl.client.NumPyClient):
 				 aggregation_method = 'None',
 				 dataset            = '',
 				 perc_of_clients    = 0,
+				 fraction_fit		= 0,
 				 decay              = 0,
 				 non_iid            = False,
 				 new_clients = False,
@@ -60,6 +61,7 @@ class ClientBaseTf(fl.client.NumPyClient):
 		self.client_selection = client_selection
 		self.perc_of_clients  = perc_of_clients
 		self.decay            = decay
+		self.fraction_fit = fraction_fit
 
 		self.loss = tf.keras.losses.CategoricalCrossentropy
 		self.learning_rate = 0.01
@@ -77,7 +79,7 @@ class ClientBaseTf(fl.client.NumPyClient):
 			self.solution_name = f"{solution_name}-{aggregation_method}-{self.decay}"
 
 		elif self.aggregation_method == 'None':
-			self.solution_name = f"{solution_name}-{aggregation_method}"
+			self.solution_name = f"{solution_name}-{aggregation_method}-{self.fraction_fit}"
 
 		self.base = f"logs/{self.type}/{self.solution_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.n_clients}/{self.model_name}/{self.dataset}/{self.local_epochs}_local_epochs"
 		self.evaluate_client_filename = f"{self.base}/evaluate_client.csv"

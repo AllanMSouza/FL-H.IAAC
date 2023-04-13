@@ -26,6 +26,7 @@ class FedPerClientTorch(ClientBaseTorch):
 				 dataset            = '',
 				 perc_of_clients    = 0,
 				 decay              = 0,
+				 fraction_fit		= 0,
 				 non_iid            = False,
 				 n_personalized_layers	= 1,
 				 new_clients			= False,

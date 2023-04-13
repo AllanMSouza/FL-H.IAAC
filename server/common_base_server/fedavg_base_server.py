@@ -1,7 +1,6 @@
 import flwr as fl
 import numpy as np
 import math
-import statistics as st
 import os
 import sys
 import time
@@ -173,24 +172,31 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		pass
 
 	def configure_fit(self, server_round, parameters, client_manager):
-		# """Configure the next round of training."""
+		"""Configure the next round of training."""
 
 		self.start_time = time.time()
 		random.seed(server_round)
-		if type(parameters) != list:
-			weights = parameters_to_ndarrays(parameters)
-		else:
-			weights = parameters
-		self.pre_weights = weights
+
 		if self.aggregation_method == 'POC':
-			# clients2select        = int(float(self.num_clients) * float(self.perc_of_clients))
+			clients2select        = int(float(self.num_clients) * float(self.perc_of_clients))
+			self.selected_clients = self.list_of_clients[:clients2select]
+
+		elif self.aggregation_method == 'FedLTA':
+			self.selected_clients = self.select_clients_bellow_average()
+
+			if self.decay_factor > 0:
+				the_chosen_ones = len(self.selected_clients) * (1 - self.decay_factor) ** int(server_round)
+				self.selected_clients = self.selected_clients[: math.ceil(the_chosen_ones)]
+
+		elif self.aggregation_method == 'None':
 
 			print("lista inicial de clientes: ", self.list_of_clients)
 			# ====================================================================================
 			clients_ids = []
 			for i in self.clients_metrics:
 				client_ = self.clients_metrics[i]
-				if client_['count'] < client_['max_rounds'] or server_round >= int(self.num_rounds * self.round_threshold):
+				if client_['count'] < client_['max_rounds'] or server_round >= int(
+						self.num_rounds * self.round_threshold):
 					clients_ids.append(i)
 					# 0 rounds since last training
 					self.fedpredict_clients_metrics[i]['nt'] = 0
@@ -216,16 +222,6 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			else:
 				print("Quantidade inferior")
 
-		elif self.aggregation_method == 'FedLTA':
-			self.selected_clients = self.select_clients_bellow_average()
-
-			if self.decay_factor > 0:
-				the_chosen_ones = len(self.selected_clients) * (1 - self.decay_factor) ** int(server_round)
-				self.selected_clients = self.selected_clients[: math.ceil(the_chosen_ones)]
-		else:
-			selected_clients = self.selected_clients
-
-		# self.selected_clients = selected_clients
 
 		self.clients_last_round = self.selected_clients
 		config = {
@@ -245,15 +241,15 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		)
 
 		# fit only selected clients
-		selected_clients = []
+		selected_clients_id = []
 		if len(self.selected_clients) > 0:
 			for client in clients:
 				if client.cid in self.selected_clients:
-					selected_clients.append(client)
+					selected_clients_id.append(client)
 		else:
-			selected_clients = clients
+			selected_clients_id = clients
 			self.selected_clients = [client.cid for client in clients]
-		for client in selected_clients:
+		for client in selected_clients_id:
 			self.clients_metrics[client.cid]['count'] += 1
 			self.clients_fit_rounds_history[client.cid] = server_round
 			# For FedPredict
@@ -269,9 +265,10 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			print("Max rounds per client: ", self.clients_metrics)
 			print("=======")
 
-		print("selecionar (fit): ", [client.cid for client in selected_clients])
+		print("selecionar (fit): ", [client.cid for client in selected_clients_id])
+		print("Clientes selecionados: ", len(selected_clients_id))
 		# Return client/config pairs
-		return [(client, fit_ins) for client in selected_clients]
+		return [(client, fit_ins) for client in selected_clients_id]
 
 	def aggregate_fit(self, server_round, results, failures):
 		weights_results = []
