@@ -34,7 +34,7 @@ class FedPredictClientTorch(FedAvgClientTorch):
 				 decay              = 0,
 				 fraction_fit		= 0,
 				 non_iid            = False,
-				 n_personalized_layers	= 1,
+				 m_combining_layers	= 1,
 				 new_clients			= False,
 				 new_clients_train	= False
 				 ):
@@ -55,7 +55,7 @@ class FedPredictClientTorch(FedAvgClientTorch):
 						 new_clients=new_clients,
 						 new_clients_train=new_clients_train)
 
-		self.n_personalized_layers = n_personalized_layers * 2
+		self.m_combining_layers = [i for i in range(len(self.get_parameters_of_model()))]
 		self.lr_loss = torch.nn.MSELoss()
 		self.clone_model = self.create_model().to(self.device)
 		self.round_of_last_fit = 0
@@ -111,8 +111,11 @@ class FedPredictClientTorch(FedAvgClientTorch):
 				old_param.data = new_param.data.clone()
 			# self.clone_model.load_state_dict(torch.load(filename))
 			# Combine models
+			count = 0
 			for new_param, old_param in zip(self.clone_model.parameters(), self.model.parameters()):
-				old_param.data = (global_model_weight*new_param.data.clone() + local_model_weights*old_param.data.clone())
+				if count in self.m_combining_layers:
+					old_param.data = (global_model_weight*new_param.data.clone() + local_model_weights*old_param.data.clone())
+				count += 1
 		except Exception as e:
 			print("merge models")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)

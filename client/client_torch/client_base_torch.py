@@ -311,8 +311,9 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			# loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
 
 			size_of_parameters = sum([sum(map(sys.getsizeof, parameters[i])) for i in range(len(parameters))])
+			size_of_config = self._get_size_of_dict(config)
 			loss, accuracy, test_num = self.model_eval()
-			data = [config['round'], self.cid, size_of_parameters, loss, accuracy]
+			data = [config['round'], self.cid, size_of_parameters, size_of_config, loss, accuracy]
 
 			self._write_output(filename=self.evaluate_client_filename,
 							   data=data)
@@ -332,3 +333,14 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		with open(filename, 'a') as server_log_file:
 			writer = csv.writer(server_log_file)
 			writer.writerow(data)
+
+	def _get_size_of_dict(self, data):
+
+		size = 0
+		if type(data) == dict:
+			for key in data:
+				size += self._get_size_of_dict(data[key])
+		else:
+			size += sys.getsizeof(data)
+
+		return size

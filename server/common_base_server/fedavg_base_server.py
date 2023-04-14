@@ -93,13 +93,11 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			self.strategy_name = f"{strategy_name}-{aggregation_method}-{self.decay_factor}"
 
 		elif self.aggregation_method == 'None':
-			self.strategy_name = f"{strategy_name}-{aggregation_method}"
+			self.strategy_name = f"{strategy_name}-{aggregation_method}-{fraction_fit}"
 
 		self.round_threshold = 0.7
 		self.clients_threshold = 0.7
 		self.clients2select = 5
-
-		self.proto_parameters = None
 
 		self.server_filename = None
 		self.train_filename = None
@@ -209,7 +207,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			print("disponiveis: ", available_clients)
 			print("Rodada inicial de novos clientes: ", int(self.num_rounds * self.round_threshold))
 
-			self.clients2select = int(len(available_clients) * self.perc_of_clients)
+			self.clients2select = int(len(available_clients) * self.fraction_fit)
 			if len(available_clients) == 0 and server_round != 1:
 				print("Erro na rodada: ", server_round)
 				exit()
@@ -226,8 +224,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.clients_last_round = self.selected_clients
 		config = {
 			"selected_clients" : ' '.join(self.selected_clients),
-			"round"            : server_round,
-			"parameters"	: self.proto_parameters,
+			"round"            : server_round
 			}
 
 		fit_ins = FitIns(parameters, config)
@@ -331,8 +328,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		selected_clients_evaluate = list_of_valid_clients_for_evaluate
 		# Parameters and config
 		config = {
-			'round' : server_round,
-			'parameters': self.proto_parameters
+			'round' : server_round
 		}
 
 		if self.on_evaluate_config_fn is not None:
@@ -500,7 +496,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 		server_header = ["Time", "Server round", "Accuracy aggregated", "Accuracy std", "Top5", "Top1"]
 		train_header = ["Round", "Cid", "Selected", "Total time", "Size of parameters", "Avg loss train", "Avg accuracy train"]
-		evaluate_header = ["Round", "Cid", "Size of parameters", "Loss", "Accuracy"]
+		evaluate_header = ["Round", "Cid", "Size of parameters", "Size of config", "Loss", "Accuracy"]
 		server_nt_acc_header = ["Round", "Accuracy (%)", "nt"]
 
 		# Remove previous files

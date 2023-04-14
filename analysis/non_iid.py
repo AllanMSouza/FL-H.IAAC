@@ -10,7 +10,7 @@ import os
 import ast
 
 class NonIid:
-    def __init__(self, num_clients, aggregation_method, perc_of_clients, fraction_fit, non_iid, model_name, strategy_name_list, dataset_name, new_clients,new_clients_train, experiment, comment, epochs, type, decay):
+    def __init__(self, num_clients, aggregation_method, perc_of_clients, fraction_fit, non_iid, model_name, strategy_name_list, dataset_name, new_clients, new_clients_train, experiment, comment, epochs, type, decay):
         self.n_clients = num_clients
         self.aggregation_method = aggregation_method
         self.perc_of_clients = perc_of_clients
@@ -53,7 +53,7 @@ class NonIid:
     def start(self, title):
         self.base_dir = """analysis/output/{}/experiment_{}/{}/new_clients_{}_train_{}/{}_clients/{}/{}/{}_local_epochs/{}/""".format(self.type,
                                                                                                                                     self.experiment,
-                                                                                                                                    self.aggregation_method+str(self.perc_of_clients),
+                                                                                                                                    self.aggregation_method+str(self.fraction_fit),
                                                                                                                                     self.new_clients,
                                                                                                                                     self.new_clients_train,
                                                                                                                                     self.n_clients,
@@ -189,16 +189,19 @@ class NonIid:
         # size of parameters
         print(df)
         def strategy(df):
-            parameters = int(df['Size of parameters'].sum())
+            parameters = float(df['Size of parameters'].mean())
+            config = float(df['Size of config'].mean())
+            total_size = parameters + config
 
-            return pd.DataFrame({'Size of parameters (bytes)': [parameters]})
-        df_test = df[['Round', 'Size of parameters', 'Strategy']].groupby('Strategy').apply(lambda e: strategy(e)).reset_index()[['Size of parameters (bytes)', 'Strategy']]
+            return pd.DataFrame({'Size of parameters (bytes)': [parameters], 'Communication cost (bytes)': [total_size]})
+        df_test = df[['Round', 'Size of parameters', 'Size of config', 'Strategy']].groupby('Strategy').apply(lambda e: strategy(e)).reset_index()[['Size of parameters (bytes)', 'Communication cost (bytes)', 'Strategy']]
         df_test.to_csv(self.base_dir+"csv/evaluate_client_size_of_parameters_round.csv", index=False)
         print(df_test)
+        print(self.base_dir)
         x_column = 'Strategy'
         y_column = 'Size of parameters (bytes)'
         hue = None
-        title = "Two layers"
+        title = "Size of parameters (bytes)"
         bar_plot(df=df_test,
                   base_dir=self.base_dir,
                   file_name="evaluate_client_size_of_parameters_round_barplot",
@@ -207,14 +210,17 @@ class NonIid:
                   title=title,
                   hue=hue,
                  sci=True)
+
+        y_column = 'Communication cost (bytes)'
+        hue = None
+        title = "Communication cost (bytes)"
         bar_plot(df=df_test,
                  base_dir=self.base_dir,
-                 file_name="evaluate_client_size_of_parameters_round_barplot",
+                 file_name="evaluate_client_communication_cost_round_barplot",
                  x_column=x_column,
                  y_column=y_column,
                  title=title,
                  hue=hue,
-                 log_scale=True,
                  sci=True)
 
 
@@ -304,9 +310,9 @@ if __name__ == '__main__':
 
     # noniid = NonIID(int(opt.n_clients), opt.aggregation_method, opt.model_name, strategy_name_list, opt.dataset)
     # noniid.start()
-    c = NonIid(int(opt.n_clients), opt.aggregation_method, float(opt.poc), float(opt.fraction_fit), ast.literal_eval(opt.non_iid),
-               opt.model_name, strategy_name_list, opt.dataset, ast.literal_eval(opt.new_clients),
-               ast.literal_eval(opt.new_clients_train), opt.experiment, opt.comment, opt.epochs, opt.type, opt.decay)
+    c = NonIid(num_clients=int(opt.n_clients), aggregation_method=opt.aggregation_method, perc_of_clients=float(opt.poc), fraction_fit=float(opt.fraction_fit), non_iid=ast.literal_eval(opt.non_iid),
+               model_name=opt.model_name, strategy_name_list=strategy_name_list, dataset_name=opt.dataset, new_clients=ast.literal_eval(opt.new_clients),
+               new_clients_train=ast.literal_eval(opt.new_clients_train), experiment=opt.experiment, comment=opt.comment, epochs=opt.epochs, type=opt.type, decay=opt.decay)
 
     print(c.n_clients, " ", c.strategy_name_list)
     dataset = opt.dataset

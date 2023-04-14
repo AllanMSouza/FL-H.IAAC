@@ -261,7 +261,8 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 			size_of_parameters = sum([sum(map(sys.getsizeof, parameters[i])) for i in range(len(parameters))])
 			loss = test_loss/test_num
 			accuracy = test_acc/test_num
-			data = [config['round'], self.cid, size_of_parameters, loss, accuracy]
+			size_of_config = sys.getsizeof(config)
+			data = [config['round'], self.cid, size_of_parameters, size_of_config, loss, accuracy]
 
 			self._write_output(filename=self.evaluate_client_filename,
 							   data=data)

@@ -35,6 +35,7 @@ class SimulationFL():
 				 fraction_fit,
 				 decay,
 				 non_iid,
+				 m_combining_layers,
 				 nn_type,
 				 new_clients,
 				 new_clients_train
@@ -53,6 +54,7 @@ class SimulationFL():
 		self.client_selection 		= False
 		self.strategy_name    		= strategy_name # Old "self.solution_name"
 		self.non_iid          		= non_iid
+		self.m_combining_layers		= m_combining_layers
 		self.nn_type = nn_type
 		self.new_clients = new_clients
 		self.new_clients_train		= new_clients_train
@@ -156,6 +158,7 @@ class SimulationFL():
 											 fraction_fit=self.fraction_fit,
                                              decay=self.decay,
                                              non_iid=self.non_iid,
+											 m_combining_layers=self.m_combining_layers,
                                              new_clients=self.new_clients,
                                              new_clients_train=self.new_clients_train)
 			elif self.strategy_name == 'FedPer':
@@ -499,6 +502,7 @@ def main():
 	parser.add_option("",   "--poc",         		dest="poc",                default=0,         help="Percentage clients to be selected",      metavar="FLOAT")
 	parser.add_option("",   "--decay",       		dest="decay",              default=0,         help="Decay factor for FedLTA",                metavar="FLOAT")
 	parser.add_option("",   "--non-iid",     		dest="non_iid",            default=False,     help="Non IID distribution",                   metavar="BOOLEAN")
+	parser.add_option("", "--m_combining_layers", dest="m_combining_layers", default=1, help="Number of layers to combine from the last/prediction layer to the top", metavar="INT")
 	parser.add_option("", "--fraction_fit", dest="fraction_fit", default=0, help="fraction of selected clients to be trained", metavar="FLOAT")
 	parser.add_option("-y", "--classes",     		dest="n_classes",          default=10,        help="Number of classes",                      metavar="INT")
 	parser.add_option("-t", "--type",               dest="type",               default='tf',      help="Neural network framework (tf or torch)", metavar="STR")
@@ -511,11 +515,11 @@ def main():
 	(opt, args) = parser.parse_args()
 
 	print("Simulacao da estratégia: ", opt.strategy_name)
-	simulation = SimulationFL(int(opt.n_clients), opt.aggregation_method, opt.model_name,
-							  opt.strategy_name, opt.dataset, int(opt.n_classes),
-							  int(opt.local_epochs), int(opt.rounds), float(opt.poc), float(opt.fraction_fit),
-							  float(opt.decay), ast.literal_eval(opt.non_iid), opt.type,
-							  ast.literal_eval(opt.new_clients), ast.literal_eval(opt.new_clients_train))
+	simulation = SimulationFL(n_clients=int(opt.n_clients), aggregation_method=opt.aggregation_method, model_name=opt.model_name,
+							  strategy_name=opt.strategy_name, dataset=opt.dataset, n_classes=int(opt.n_classes),
+							  local_epochs=int(opt.local_epochs), rounds=int(opt.rounds), poc=float(opt.poc), fraction_fit=float(opt.fraction_fit),
+							  decay=float(opt.decay), non_iid=ast.literal_eval(opt.non_iid), m_combining_layers=int(opt.m_combining_layers), nn_type=opt.type,
+							  new_clients=ast.literal_eval(opt.new_clients), new_clients_train=ast.literal_eval(opt.new_clients_train))
 
 	simulation.start_simulation()
 

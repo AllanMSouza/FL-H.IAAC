@@ -317,7 +317,8 @@ class FedProtoClientTorch(ClientBaseTorch):
 			# print("test loss: ", test_loss)
 			loss = np.mean(test_loss)
 			accuracy = test_acc/test_num
-			data = [config['round'], self.cid, size_of_parameters, loss, accuracy]
+			size_of_config = sys.getsizeof(config)
+			data = [config['round'], self.cid, size_of_parameters, size_of_config, loss, accuracy]
 
 			self._write_output(filename=self.evaluate_client_filename,
 							   data=data)
