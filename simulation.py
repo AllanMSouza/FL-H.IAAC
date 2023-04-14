@@ -514,7 +514,7 @@ def main():
 
 	(opt, args) = parser.parse_args()
 
-	print("Simulacao da estratégia: ", opt.strategy_name)
+	print("Simulacao da estratégia: ", opt.strategy_name, opt.fraction_fit)
 	simulation = SimulationFL(n_clients=int(opt.n_clients), aggregation_method=opt.aggregation_method, model_name=opt.model_name,
 							  strategy_name=opt.strategy_name, dataset=opt.dataset, n_classes=int(opt.n_classes),
 							  local_epochs=int(opt.local_epochs), rounds=int(opt.rounds), poc=float(opt.poc), fraction_fit=float(opt.fraction_fit),

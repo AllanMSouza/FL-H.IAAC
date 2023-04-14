@@ -44,6 +44,7 @@ class FedPerClientTorch(ClientBaseTorch):
 						 dataset=dataset,
 						 perc_of_clients=perc_of_clients,
 						 decay=decay,
+						 fraction_fit=fraction_fit,
 						 non_iid=non_iid,
 						 new_clients=new_clients,
 						 new_clients_train=new_clients_train)
