@@ -43,7 +43,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 # Configurations
 TYPE = 'torch'
 # DATASETS      				= ['MNIST', 'CIFAR10']
-DATASETS      				= ['MNIST']
+DATASETS      				= ['MNIST', 'CIFAR10']
 # DATASETS      					= ['UCIHAR', 'MotionSense']
 MODELS        					= ['CNN']
 ALGORITHMS    					= ['None', 'POC', 'FedLTA']
@@ -56,7 +56,7 @@ DECAY							= {'None': 0, 'POC': 0, 'FedLTA': 0.1}
 NEW_CLIENTS 					= {'None': ['FALSE'], 'POC': ['FALSE', 'TRUE']}
 NEW_CLIENTS_TRAIN 				= {'FALSE': ['FALSE'], 'TRUE': ['FALSE', 'TRUE']}
 # DECAY         				= (0.001, 0.005, 0.009)
-ROUNDS        					= 10
+ROUNDS        					= 100
 # STRATEGIES 					= ('FedAVG', 'FedAvgM', 'FedClassAvg', 'QFedAvg', 'FedPer', 'FedProto', 'FedYogi', 'FedLocal',)
 STRATEGIES_FOR_ANALYSIS 		= ['FedPredict', 'FedAVG', 'FedClassAvg', 'FedPer', 'FedProto']
 STRATEGIES_TO_EXECUTE 			= ['FedPredict', 'FedAVG', 'FedClassAvg', 'FedPer', 'FedProto']
