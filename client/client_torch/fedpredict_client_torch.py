@@ -55,7 +55,7 @@ class FedPredictClientTorch(FedAvgClientTorch):
 						 new_clients=new_clients,
 						 new_clients_train=new_clients_train)
 
-		self.m_combining_layers = [i for i in range(len(self.get_parameters_of_model()))]
+		self.m_combining_layers = [i for i in range(len([i for i in self.create_model().parameters()]))]
 		self.lr_loss = torch.nn.MSELoss()
 		self.clone_model = self.create_model().to(self.device)
 		self.round_of_last_fit = 0
