@@ -1,6 +1,6 @@
 import flwr as fl
-from client import FedAvgClientTf, FedPerClientTf, FedProtoClientTf, FedLocalClientTf, FedAvgClientTorch, FedProtoClientTorch, FedPerClientTorch, FedLocalClientTorch, FedAvgMClientTorch, QFedAvgClientTorch, FedYogiClientTorch, FedClassAvgClientTorch, FedPredictClientTorch
-from server import FedPerServerTf, FedProtoServerTf, FedAvgServerTf, FedLocalServerTf, FedAvgServerTorch, FedProtoServerTorch, FedPerServerTorch, FedLocalServerTorch, FedAvgMServerTorch, QFedAvgServerTorch, FedYogiServerTorch, FedClassAvgServerTorch, FedPredictServerTorch
+from client import FedAvgClientTf, FedPerClientTf, FedProtoClientTf, FedLocalClientTf, FedAvgClientTorch, FedProtoClientTorch, FedPerClientTorch, FedLocalClientTorch, FedAvgMClientTorch, QFedAvgClientTorch, FedYogiClientTorch, FedClassAvgClientTorch, FedPredictClientTorch, FedPer_with_FedPredictClientTorch
+from server import FedPerServerTf, FedProtoServerTf, FedAvgServerTf, FedLocalServerTf, FedAvgServerTorch, FedProtoServerTorch, FedPerServerTorch, FedLocalServerTorch, FedAvgMServerTorch, QFedAvgServerTorch, FedYogiServerTorch, FedClassAvgServerTorch, FedPredictServerTorch, FedPer_with_FedPredictServerTorch
 
 from optparse import OptionParser
 import tensorflow as tf
@@ -161,6 +161,24 @@ class SimulationFL():
 											 m_combining_layers=self.m_combining_layers,
                                              new_clients=self.new_clients,
                                              new_clients_train=self.new_clients_train)
+			if self.strategy_name == 'FedPer_with_FedPredict':
+				# print("foi cliente")
+				return FedPer_with_FedPredictClientTorch(cid=cid,
+											 n_clients=self.n_clients,
+											 n_classes=self.n_classes,
+											 epochs=self.epochs,
+											 model_name=self.model_name,
+											 client_selection=self.client_selection,
+											 strategy_name=self.strategy_name,
+											 aggregation_method=self.aggregation_method,
+											 dataset=self.dataset,
+											 perc_of_clients=self.poc,
+											 fraction_fit=self.fraction_fit,
+											 decay=self.decay,
+											 non_iid=self.non_iid,
+											 m_combining_layers=self.m_combining_layers,
+											 new_clients=self.new_clients,
+											 new_clients_train=self.new_clients_train)
 			elif self.strategy_name == 'FedPer':
 				return  FedPerClientTorch(cid=cid,
 										  n_clients=self.n_clients,
@@ -354,6 +372,22 @@ class SimulationFL():
 			if self.strategy_name == 'FedPredict':
 				# print("foi servidor")
 				return FedPredictServerTorch(aggregation_method=self.aggregation_method,
+											 n_classes=self.n_classes,
+											 fraction_fit=self.fraction_fit,
+											 num_clients=self.n_clients,
+											 num_rounds=self.rounds,
+											 num_epochs=self.epochs,
+											 model=copy.deepcopy(self.create_client(0).create_model()),
+											 decay=self.decay,
+											 perc_of_clients=self.poc,
+											 strategy_name=self.strategy_name,
+											 dataset=self.dataset,
+											 model_name=self.model_name,
+											 new_clients=self.new_clients,
+											 new_clients_train=self.new_clients_train)
+			if self.strategy_name == 'FedPer_with_FedPredict':
+				# print("foi servidor")
+				return FedPer_with_FedPredictServerTorch(aggregation_method=self.aggregation_method,
 											 n_classes=self.n_classes,
 											 fraction_fit=self.fraction_fit,
 											 num_clients=self.n_clients,

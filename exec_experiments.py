@@ -43,9 +43,9 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 # Configurations
 TYPE = 'torch'
 # DATASETS      				= ['MNIST', 'CIFAR10']
-DATASETS      				= ['CIFAR10']
+DATASETS      				= ['MNIST', 'CIFAR10']
 # DATASETS      					= ['UCIHAR', 'MotionSense']
-MODELS        					= ['CNN']
+MODELS        					= ['DNN']
 ALGORITHMS    					= ['None', 'POC', 'FedLTA']
 EPOCHS        					= {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2], '6': [1]}
 # CLIENTS       				= {'MNIST': 50, 'CIFAR10': 50, 'CIFAR100': 50, 'MotionSense': 50, 'UCIHAR': 50}
@@ -58,8 +58,8 @@ NEW_CLIENTS_TRAIN 				= {'FALSE': ['FALSE'], 'TRUE': ['FALSE', 'TRUE']}
 # DECAY         				= (0.001, 0.005, 0.009)
 ROUNDS        					= 100
 # STRATEGIES 					= ('FedAVG', 'FedAvgM', 'FedClassAvg', 'QFedAvg', 'FedPer', 'FedProto', 'FedYogi', 'FedLocal',)
-STRATEGIES_FOR_ANALYSIS 		= ['FedPredict', 'FedAVG', 'FedClassAvg', 'FedPer', 'FedProto']
-STRATEGIES_TO_EXECUTE 			= ['FedPredict', 'FedAVG', 'FedClassAvg', 'FedPer', 'FedProto']
+STRATEGIES_FOR_ANALYSIS 		= ['FedPer_with_FedPredict']
+STRATEGIES_TO_EXECUTE 			= ['FedPer_with_FedPredict']
 
 EXPERIMENTS 		= {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''},
 					   2: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''},
