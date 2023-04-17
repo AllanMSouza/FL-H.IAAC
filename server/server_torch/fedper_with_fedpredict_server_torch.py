@@ -32,7 +32,7 @@ class FedPer_with_FedPredictServerTorch(FedPer_with_FedPredictBaseServer):
                  decay=0,
                  perc_of_clients=0,
                  dataset='',
-                 strategy_name='FedPredict',
+                 strategy_name='FedPer_with_FedPredict',
                  model_name='',
                  new_clients=False,
                  new_clients_train=False):
@@ -49,7 +49,7 @@ class FedPer_with_FedPredictServerTorch(FedPer_with_FedPredictBaseServer):
                          server_momentum=server_momentum,
                          perc_of_clients=perc_of_clients,
                          dataset=dataset,
-                         strategy_name='FedPer_with_FedPredict',
+                         strategy_name=strategy_name,
                          model_name=model_name,
                          new_clients=new_clients,
                          new_clients_train=new_clients_train,

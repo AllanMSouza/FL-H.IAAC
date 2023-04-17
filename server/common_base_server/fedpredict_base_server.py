@@ -60,16 +60,17 @@ class FedPredictBaseServer(FedAvgBaseServer):
 				self.server_learning_rate != 1.0)
 
 		self.set_initial_parameters()
-		self.create_folder()
+		self.create_folder(strategy_name)
 
-	def create_folder(self):
+	def create_folder(self, strategy_name):
 
-		directory = """fedpredict_saved_weights/{}/""".format(self.model_name)
+		directory = """{}_saved_weights/{}/""".format(strategy_name.lower(), self.model_name)
 		if Path(directory).exists():
 			shutil.rmtree(directory)
 		for i in range(self.num_clients):
-			Path("""fedpredict_saved_weights/{}/{}/""".format(self.model_name, i)).mkdir(parents=True, exist_ok=True)
-			pd.DataFrame({'round_of_last_fit': [-1], 'round_of_last_evaluate': [-1], 'acc_of_last_fit': [0], 'first_round': [-1], 'acc_of_last_evaluate': [0]}).to_csv("""fedpredict_saved_weights/{}/{}/{}.csv""".format(self.model_name, i, i), index=False)
+			Path("""{}_saved_weights/{}/{}/""".format(strategy_name.lower(), self.model_name, i)).mkdir(
+				parents=True, exist_ok=True)
+			pd.DataFrame({'round_of_last_fit': [-1], 'round_of_last_evaluate': [-1], 'acc_of_last_fit': [0], 'first_round': [-1], 'acc_of_last_evaluate': [0]}).to_csv("""{}_saved_weights/{}/{}/{}.csv""".format(strategy_name.lower(), self.model_name, i, i), index=False)
 
 	def _calculate_evolution_level(self, server_round):
 		try:

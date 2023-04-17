@@ -54,7 +54,7 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 
 		self.n_personalized_layers = n_personalized_layers * 2
 		self.lr_loss = torch.nn.MSELoss()
-		self.clone_model = self.create_model().to(self.device)
+		self.clone_model_fedclassavg = self.create_model().to(self.device)
 
 	def get_parameters_of_model(self):
 		try:
@@ -106,7 +106,7 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 		# ======================================================================================
 		# usando 'torch.save'
 		try:
-			filename = """./fedclassavg_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid)
+			filename = """./{}_saved_weights/{}/{}/model.pth""".format(self.strategy_name.lower(), self.model_name, self.cid)
 			if Path(filename).exists():
 				os.remove(filename)
 			torch.save(self.model.state_dict(), filename)
@@ -138,7 +138,7 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 		# ======================================================================================
 		# usando 'torch.load'
 		try:
-			filename = """./fedclassavg_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
+			filename = """./{}_saved_weights/{}/{}/model.pth""".format(self.strategy_name.lower(), self.model_name, self.cid, self.cid)
 			if os.path.exists(filename):
 				self.model.load_state_dict(torch.load(filename))
 				# size = len(parameters)
@@ -151,6 +151,35 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 				# 	i += 1
 		except Exception as e:
 			print("Set parameters to model")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+	def set_parameters_to_model_evaluate(self, parameters, config={}):
+		# ======================================================================================
+		# usando json
+		# try:
+		# 	filename = """./fedclassavg_saved_weights/{}/{}/{}.json""".format( self.model_name, self.cid, self.cid)
+		# 	if os.path.exists(filename):
+		# 		fileObject = open(filename, "r")
+		# 		jsonContent = fileObject.read()
+		# 		aList = [np.array(i) for i in json.loads(jsonContent)]
+		# 		size = len(parameters)
+		# 		# updating only the personalized layers, which were previously saved in a file
+		# 		# for i in range(self.n_personalized_layers):
+		# 		# 	parameters[size-self.n_personalized_layers+i] = aList[i]
+		# 		parameters = parameters + aList
+		# 		parameters = [Parameter(torch.Tensor(i.tolist())) for i in parameters]
+		# 		for new_param, old_param in zip(parameters, self.model.parameters()):
+		# 			old_param.data = new_param.data.clone()
+		# except Exception as e:
+		# 	print("Set parameters to model")
+		# 	print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+		# ======================================================================================
+		# usando 'torch.load'
+		try:
+			self.set_parameters_to_model(parameters)
+		except Exception as e:
+			print("Set parameters to model evaluate")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def fit(self, parameters, config):
@@ -226,11 +255,11 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 
 	def evaluate(self, parameters, config):
 		try:
-			self.set_parameters_to_model(parameters)
+			self.set_parameters_to_model_evaluate(parameters, config)
 			# loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
 			self.model.eval()
-			clone_model = self.clone_model
-			self.clone_model_classavg(self.model, clone_model, parameters)
+			clone_model_fedclassavg = self.clone_model_fedclassavg
+			self.clone_model_classavg(self.model, clone_model_fedclassavg, parameters)
 
 			test_acc = 0
 			test_loss = 0
@@ -247,7 +276,7 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 					y = y.to(self.device)
 					y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
 					output = self.model(x)
-					output2 = self.clone_model(x)
+					output2 = self.clone_model_fedclassavg(x)
 					output = output + torch.mul(output2, 4/int(server_round))
 					loss = self.loss(output, y)
 					local_parameters = [torch.Tensor(i) for i in self.get_parameters_of_model()]

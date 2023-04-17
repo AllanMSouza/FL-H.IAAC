@@ -28,7 +28,7 @@ class FedLocalServerTorch(FedAvgBaseServer):
                          decay=decay,
                          perc_of_clients=perc_of_clients,
                          dataset=dataset,
-                         strategy_name='FedLocal',
+                         strategy_name=strategy_name,
                          model_name=model_name,
                          new_clients=new_clients,
                          new_clients_train=new_clients_train,

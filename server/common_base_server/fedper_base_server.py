@@ -63,14 +63,14 @@ class FedPerBaseServer(FedAvgBaseServer):
 						 new_clients_train=new_clients_train,
 						 type=type)
 
-		self.create_folder()
+		self.filename = """{}_saved_weights/{}/""".format(strategy_name.lower(), self.model_name)
+		self.create_folder(strategy_name)
 
-	def create_folder(self):
+	def create_folder(self, strategy_name):
 
-		directory = """fedper_saved_weights/{}/""".format(self.model_name)
-		if Path(directory).exists():
-			shutil.rmtree(directory)
+		if Path(self.filename).exists():
+			shutil.rmtree(self.filename)
 		for i in range(self.num_clients):
-			Path("""fedper_saved_weights/{}/{}/""".format(self.model_name, i)).mkdir(parents=True, exist_ok=True)
+			Path("""{}{}/""".format(self.filename, i)).mkdir(parents=True, exist_ok=True)
 
 

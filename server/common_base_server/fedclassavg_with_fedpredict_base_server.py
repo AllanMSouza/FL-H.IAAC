@@ -9,12 +9,12 @@ import sys
 import pandas as pd
 import copy
 
-from server.common_base_server import FedPredictBaseServer
+from server.common_base_server import FedPredictBaseServer, FedClassAvgBaseServer
 
 from pathlib import Path
 import shutil
 
-class FedPer_with_FedPredictBaseServer(FedPredictBaseServer):
+class FedClassAvg_with_FedPredictBaseServer(FedPredictBaseServer):
 
 	def __init__(self,
 				 aggregation_method,
@@ -30,7 +30,7 @@ class FedPer_with_FedPredictBaseServer(FedPredictBaseServer):
 				 decay=0,
 				 perc_of_clients=0,
 				 dataset='',
-				 strategy_name='FedPer_with_FedPredict',
+				 strategy_name='FedClassAvg_with_FedPredict',
 				 non_iid=False,
 				 model_name='',
 				 new_clients=False,
@@ -51,13 +51,3 @@ class FedPer_with_FedPredictBaseServer(FedPredictBaseServer):
 						 new_clients_train=new_clients_train,
 						 type=type,
 						 model=model)
-
-	def create_folder(self, strategy_name):
-
-		directory = """{}_saved_weights/{}/""".format(strategy_name.lower(), self.model_name)
-		if Path(directory).exists():
-			shutil.rmtree(directory)
-		for i in range(self.num_clients):
-			Path("""{}_saved_weights/{}/{}/""".format(strategy_name.lower(), self.model_name, i)).mkdir(
-				parents=True, exist_ok=True)
-			pd.DataFrame({'round_of_last_fit': [-1], 'round_of_last_evaluate': [-1], 'acc_of_last_fit': [0], 'first_round': [-1], 'acc_of_last_evaluate': [0]}).to_csv("""fedper_with_fedpredict_saved_weights/{}/{}/{}.csv""".format(self.model_name, i, i), index=False)
