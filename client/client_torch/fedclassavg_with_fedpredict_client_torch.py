@@ -1,4 +1,5 @@
 from client.client_torch import FedPredictClientTorch, FedClassAvgClientTorch
+from ..fedpredict_core import fedpredict_core
 from client.client_torch.fedper_client_torch import FedPerClientTorch
 from torch.nn.parameter import Parameter
 import torch
@@ -74,45 +75,24 @@ class FedClassAvg_with_FedPredictClientTorch(FedClassAvgClientTorch):
 
 		try:
 
-			# 9
-			if nt == 0:
-				global_model_weight = 0
-			else:
-				# evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
-				# normalizar dentro de 0 e 1
-				# updated_level = 1/rounds_without_fit
-				# updated_level = 1 - max(0, -acc_of_last_fit+self.accuracy_of_last_round_of_evalute)
-				# if acc_of_last_evaluate < last_global_accuracy:
-				# updated_level = max(-last_global_accuracy + acc_of_last_evaluate, 0)
-				# else:
-				update_level = 1/nt
-				# evolutionary_level = (server_round / 50)
-				# print("client id: ", self.cid, " primeiro round", self.first_round)
-				evolution_level = t/T
-
-				# print("el servidor: ", el, " el local: ", evolutionary_level)
-
-				eq1 = (-update_level - evolution_level)
-				eq2 = round(np.exp(eq1), 6)
-				global_model_weight = eq2
-
-			local_model_weights = 1 - global_model_weight
-
-			print("rodada: ", t, " rounds sem fit: ", nt, "\npeso global: ", global_model_weight, " peso local: ", local_model_weights)
+			local_model_weights, global_model_weight = fedpredict_core(t, T, nt)
 
 			# Load global parameters into 'self.clone_model' (global model)
 			global_parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
-			size = len([i for i in self.model.parameters()])
-			new_global_parameters = ([0] * (size - len(global_parameters))) + global_parameters
+			size_local_parameters = len([i for i in self.model.parameters()])
+			size_global_parameters = len(global_parameters)
+			size = size_local_parameters - size_global_parameters
 			# for new_param, old_param in zip(global_parameters, self.clone_model.parameters()):
 			# 	old_param.data = new_param.data.clone()
 			# self.clone_model.load_state_dict(torch.load(filename))
 			# Combine models
 			count = 0
-			for new_param, old_param in zip(new_global_parameters, self.model.parameters()):
-				if count in self.m_combining_layers:
-					#old_param.data = (global_model_weight*new_param.data.clone() + local_model_weights*old_param.data.clone())
-					pass
+			global_parameter_count = 0
+			for local_param in self.model.parameters():
+				if count >= size:
+					global_param = global_parameters[global_parameter_count]
+					local_param.data = (global_model_weight*global_param.data.clone() + local_model_weights*local_param.data.clone())
+					global_parameter_count += 1
 				count += 1
 		except Exception as e:
 			print("merge models")
@@ -142,7 +122,7 @@ class FedClassAvg_with_FedPredictClientTorch(FedClassAvgClientTorch):
 			if os.path.exists(self.filename):
 				# Load local parameters to 'self.model'
 				self.model.load_state_dict(torch.load(self.filename))
-			# 	self._fedpredict_plugin(global_parameters, t, T, nt)
+				self._fedpredict_plugin(global_parameters, t, T, nt)
 		except Exception as e:
 			print("Set parameters to model")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
