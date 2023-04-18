@@ -193,8 +193,10 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			clients_ids = []
 			for i in self.clients_metrics:
 				client_ = self.clients_metrics[i]
-				if client_['count'] < client_['max_rounds'] or server_round >= int(
-						self.num_rounds * self.round_threshold):
+				# if client_['count'] < client_['max_rounds'] or server_round >= int(
+				# 		self.num_rounds * self.round_threshold):
+				# 	clients_ids.append(i)
+				if client_['count'] < client_['max_rounds']:
 					clients_ids.append(i)
 					# 0 rounds since last training
 					self.fedpredict_clients_metrics[i]['nt'] = 0
