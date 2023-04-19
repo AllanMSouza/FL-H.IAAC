@@ -9,6 +9,7 @@ from server.server_torch.fedclassavg_server_torch import FedClassAvgServerTorch
 from server.server_torch.fedpredict_server_torch import FedPredictServerTorch
 from server.server_torch.fedper_with_fedpredict_server_torch import FedPer_with_FedPredictServerTorch
 from server.server_torch.fedclassavg_with_fedpredict_server_torch import FedClassAvg_with_FedPredictServerTorch
+from server.server_torch.fedprox_server_torch import FedProxServerTorch
 
 __all__ = [
     "FedProtoServerTorch",
@@ -21,5 +22,6 @@ __all__ = [
     "FedClassAvgServerTorch",
     "FedPredictServerTorch",
     "FedPer_with_FedPredictServerTorch",
-    "FedClassAvg_with_FedPredictServerTorch"
+    "FedClassAvg_with_FedPredictServerTorch",
+    "FedProxServerTorch"
 ]
