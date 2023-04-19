@@ -160,11 +160,13 @@ class JointAnalysis():
         # df['Accuracy (%)'] = df['Accuracy (%)']*100
         if strategy is not None:
             df = df.query(
-                """Experiment=={} and Fraction fit=={} and Dataset=='{}' and Strategy=='{}'""".format(str(experiment), float(fraction_fit), str(dataset), strategy))
+                """Experiment=={} and Dataset=='{}' and Strategy=='{}'""".format(str(experiment), str(dataset), strategy))
+            df = df[df['Fraction fit'] == fraction_fit]
         else:
             df = df.query(
-                """Experiment=={} and Fraction fit=={} and Dataset=='{}'""".format(str(experiment), str(fraction_fit),
-                                                                                   str(dataset)))
+                """Experiment=={} and Dataset=='{}'""".format(str(experiment), (dataset)))
+            df = df[df['Fraction fit'] == fraction_fit]
+
         print("filtrou: ", df)
 
         return df
@@ -179,7 +181,7 @@ class JointAnalysis():
     def joint_plot_acc_four_plots(self, df, experiment, fractions_fit):
         print("Joint plot exeprimento: ", experiment)
 
-        df_test = df[['Round (t)', 'Loss', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset']].groupby(['Round (t)', 'Strategy', 'Experiment', 'POC', 'Dataset']).apply(lambda e: self.groupb_by_plot(e)).reset_index()[['Round (t)', 'Strategy', 'Experiment', 'POC', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)', 'Loss']]
+        df_test = df[['Round (t)', 'Loss', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset']].groupby(['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset']).apply(lambda e: self.groupb_by_plot(e)).reset_index()[['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)', 'Loss']]
         print("agrupou")
         print(df_test)
         # figsize=(12, 9),
@@ -193,7 +195,7 @@ class JointAnalysis():
         base_dir = """analysis/output/experiment_{}/""".format(str(experiment+1))
         # ====================================================================
         fraction_fit = fractions_fit[1]
-        dataset = 'MNIST'
+        dataset = 'CIFAR10'
         title = """{} (C={})""".format(dataset, int(float(fraction_fit)*50))
         filename = ''
         i = 0
@@ -217,8 +219,8 @@ class JointAnalysis():
         # # add legend to plot
         # plt.legend([handles[idx] for idx in order], [labels[idx] for idx in order])
         # ====================================================================
-        fraction_fit = fractions_fit[2]
-        dataset = 'MNIST'
+        fraction_fit = fractions_fit[1]
+        dataset = 'CIFAR10'
         title = """{} (C={})""".format(dataset, int(float(fraction_fit)*50))
         i = 0
         j = 1
@@ -241,7 +243,7 @@ class JointAnalysis():
         axs[i, j].set_xlabel('')
         axs[i, j].set_ylabel('')
         # ====================================================================
-        fraction_fit = fractions_fit[2]
+        fraction_fit = fractions_fit[1]
         dataset = 'CIFAR10'
         title = """CIFAR-10 (C={})""".format(int(float(fraction_fit)*50))
         i = 1
@@ -361,7 +363,7 @@ if __name__ == '__main__':
     # pocs = [0.1, 0.2, 0.3]
     fractions_fit = [0.3, 0.4]
     # datasets = ['MNIST', 'CIFAR10']
-    datasets = ['MNIST', 'CIFAR10']
+    datasets = ['CIFAR10']
     clients = '50'
     model = 'CNN'
     type = 'torch'
