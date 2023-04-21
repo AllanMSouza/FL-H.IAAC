@@ -45,7 +45,7 @@ class FedAvgServerTorch(FedAvgBaseServer):
             x_train = np.array([])
             y_train = np.array([])
             for i in range(10):
-                x_train_, y_train_, x_test_, y_test_ = ManageDatasets(i).select_dataset(dataset_name, n_clients,
+                x_train_, y_train_, x_test_, y_test_ = ManageDatasets(i, self.model_name).select_dataset(dataset_name, n_clients,
                                                                                        self.non_iid)
                 print("unitario: ", x_train_.shape, y_train_.shape)
                 if i > 0:

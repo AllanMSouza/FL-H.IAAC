@@ -30,7 +30,7 @@ class FedAvgMServerTorch(FedAvgMBaseServerTorch):
                  num_rounds,
                  num_epochs,
                  model,
-                 server_momentum=1,
+                 server_momentum=0.9,
                  server_learning_rate=1,
                  decay=0,
                  perc_of_clients=0,

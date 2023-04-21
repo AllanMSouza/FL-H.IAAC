@@ -62,7 +62,6 @@ class ManageDatasets():
 		test.drop('trial', axis=1, inplace=True)
 		x_test = test.values
 		print("exemplo motion: ", x_test.shape, x_train.shape)
-		exit()
 	    
 		return x_train, y_train, x_test, y_test
 
@@ -140,7 +139,7 @@ class ManageDatasets():
 
 
 	def load_CIFAR100(self, n_clients, non_iid=False):
-		(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
+		(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar100.load_data()
 		x_train, x_test                      = x_train/255.0, x_test/255.0
 		x_train, y_train, x_test, y_test     = self.slipt_dataset(x_train, y_train, x_test, y_test, n_clients)
 

@@ -1,19 +1,15 @@
 import flwr as fl
 import numpy as np
 import math
-import statistics as st
 import os
 import sys
 import time
-from abc import abstractmethod
 import csv
 import random
 
 from logging import WARNING
 from flwr.common import FitIns
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
-from flwr.common.logger import log
-from sklearn.linear_model import LinearRegression
 
 from flwr.common import (
     EvaluateIns,
@@ -69,7 +65,6 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 		#POC
 		self.perc_of_clients  = perc_of_clients
-		self.aux_perc_of_clients = perc_of_clients
 
 		#FedLTA
 		self.decay_factor = decay
@@ -80,7 +75,13 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.accuracy_history = {}
 		self.clients_fit_rounds_history = {i: -1 for i in range(self.num_clients)}
 		self.regression_window = 5
-		self.fedproposed_metrics = {}
+		self.fedpredict_metrics = {'el': 1/self.num_rounds, 'round_acc_el': {1: {'acc': 0, 'el': 0}}}
+		self.fedpredict_clients_metrics = {str(i): {'round_of_last_fit': 0, 'round_of_last_evaluate': 0, 'first_round': -1,
+											   'acc_of_last_fit': 0, 'acc_of_last_evaluate': 0, 'nt': 0}
+										   for i in range(0, self.num_clients + 1)}
+
+		# FedPredictSelection
+		self.server_nt_acc = {round: {nt: [] for nt in range(0, self.num_rounds + 1)} for round in range(self.num_rounds + 1)}
 
 		self.type = type
 
@@ -92,44 +93,43 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			self.strategy_name = f"{strategy_name}-{aggregation_method}-{self.decay_factor}"
 
 		elif self.aggregation_method == 'None':
-			self.strategy_name = f"{strategy_name}-{aggregation_method}"
+			self.strategy_name = f"{strategy_name}-{aggregation_method}-{fraction_fit}"
 
 		self.round_threshold = 0.7
 		self.clients_threshold = 0.7
 		self.clients2select = 5
 
-		self.proto_parameters = None
-
 		self.server_filename = None
 		self.train_filename = None
 		self.evaluate_filename = None
-		self.max_rounds_per_client = self._max_fit_rounds_per_client()
+		self.clients_metrics = self._clients_metrics()
+		self.evaluate_config = {}
 		self._write_output_files_headers()
 
 		super().__init__(fraction_fit=fraction_fit, min_available_clients=num_clients, min_fit_clients=num_clients, min_evaluate_clients=num_clients)
 
 		print("""===================================================\nStarting training of {}\n""".format(self.strategy_name))
 
-	def _max_fit_rounds_per_client(self):
+	def _clients_metrics(self):
 
-		max_rounds_per_client = {}
+		clients_metrics = {}
 		for i in range(self.num_clients):
 			if i >= int(self.num_clients * self.clients_threshold) and self.new_clients:
 				if self.new_clients_train:
 					count = 0
 				else:
 					count = 1
-				max_rounds_per_client[str(i)] = {'count': count, 'max_rounds': 1}
+				clients_metrics[str(i)] = {'count': count, 'max_rounds': 1}
 			else:
-				max_rounds_per_client[str(i)] = {'count': 0, 'max_rounds': self.num_rounds}
+				clients_metrics[str(i)] = {'count': 0, 'max_rounds': self.num_rounds}
 
-		return max_rounds_per_client
+		return clients_metrics
 
 	def _get_valid_clients_for_fit(self):
 
 		clients_ids = []
-		for i in self.max_rounds_per_client:
-			client_ = self.max_rounds_per_client[i]
+		for i in self.clients_metrics:
+			client_ = self.clients_metrics[i]
 			if client_['count'] < client_['max_rounds']:
 				clients_ids.append(i)
 
@@ -165,56 +165,51 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 	# 		print("get valid clients for evaluate")
 	# 		print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def _update_fedproposed_metrics(self, server_round):
+	def _update_fedpredict_metrics(self, server_round):
 
-		coef = -10
-		std = 0
-		if server_round >= self.regression_window:
-			accuracy_history = np.array([self.accuracy_history[key] for key in self.accuracy_history])[-self.regression_window:]
-			y = np.array(accuracy_history)
-			x = np.array([[i] for i in range(0, self.regression_window)])
-			reg = LinearRegression().fit(x, y)
-			coef = reg.coef_[0]
-			std = st.stdev(y)
-		self.fedproposed_metrics['acc'] = self.accuracy_history
-		self.fedproposed_metrics['coef'] = coef
-
-
-	def train_and_evaluate_proto_model(self):
 		pass
 
 	def configure_fit(self, server_round, parameters, client_manager):
-		# """Configure the next round of training."""
+		"""Configure the next round of training."""
 
 		self.start_time = time.time()
 		random.seed(server_round)
-		if type(parameters) != list:
-			weights = parameters_to_ndarrays(parameters)
-		else:
-			weights = parameters
-		self.pre_weights = weights
+
 		if self.aggregation_method == 'POC':
-			# clients2select        = int(float(self.num_clients) * float(self.perc_of_clients))
+			clients2select        = int(float(self.num_clients) * float(self.perc_of_clients))
+			self.selected_clients = self.list_of_clients[:clients2select]
+
+		elif self.aggregation_method == 'FedLTA':
+			self.selected_clients = self.select_clients_bellow_average()
+
+			if self.decay_factor > 0:
+				the_chosen_ones = len(self.selected_clients) * (1 - self.decay_factor) ** int(server_round)
+				self.selected_clients = self.selected_clients[: math.ceil(the_chosen_ones)]
+
+		elif self.aggregation_method == 'None':
 
 			print("lista inicial de clientes: ", self.list_of_clients)
 			# ====================================================================================
 			clients_ids = []
-			for i in self.max_rounds_per_client:
-				client_ = self.max_rounds_per_client[i]
+			for i in self.clients_metrics:
+				client_ = self.clients_metrics[i]
+				# if client_['count'] < client_['max_rounds'] or server_round >= int(
+				# 		self.num_rounds * self.round_threshold):
+				# 	clients_ids.append(i)
 				if client_['count'] < client_['max_rounds']:
 					clients_ids.append(i)
+					# 0 rounds since last training
+					self.fedpredict_clients_metrics[i]['nt'] = 0
+				else:
+					# Adds 1 more round without training
+					self.fedpredict_clients_metrics[i]['nt'] += 1
 			# available_clients = self._get_valid_clients_for_fit()
 			# ====================================================================================
 			available_clients = clients_ids
 			print("disponiveis: ", available_clients)
 			print("Rodada inicial de novos clientes: ", int(self.num_rounds * self.round_threshold))
-			# if server_round == 1 and 'fedproto' in self.strategy_name.lower():
-			# # if server_round == 1:
-			# 	self.perc_of_clients = 1
-			# else:
-			# 	self.perc_of_clients = self.aux_perc_of_clients
 
-			self.clients2select = int(len(available_clients) * self.perc_of_clients)
+			self.clients2select = int(len(available_clients) * self.fraction_fit)
 			if len(available_clients) == 0 and server_round != 1:
 				print("Erro na rodada: ", server_round)
 				exit()
@@ -227,24 +222,11 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			else:
 				print("Quantidade inferior")
 
-		elif self.aggregation_method == 'FedLTA':
-			self.selected_clients = self.select_clients_bellow_average()
-
-			if self.decay_factor > 0:
-				the_chosen_ones = len(self.selected_clients) * (1 - self.decay_factor) ** int(server_round)
-				self.selected_clients = self.selected_clients[: math.ceil(the_chosen_ones)]
-		else:
-			selected_clients = self.selected_clients
-
-		# self.selected_clients = selected_clients
 
 		self.clients_last_round = self.selected_clients
-		# if server_round == int(self.num_rounds * self.round_threshold):
-		# 	self.train_and_evaluate_proto_model()
 		config = {
 			"selected_clients" : ' '.join(self.selected_clients),
-			"round"            : server_round,
-			"parameters"	: self.proto_parameters,
+			"round"            : server_round
 			}
 
 		fit_ins = FitIns(parameters, config)
@@ -258,27 +240,34 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		)
 
 		# fit only selected clients
-		selected_clients = []
+		selected_clients_id = []
 		if len(self.selected_clients) > 0:
 			for client in clients:
 				if client.cid in self.selected_clients:
-					selected_clients.append(client)
+					selected_clients_id.append(client)
 		else:
-			selected_clients = clients
+			selected_clients_id = clients
 			self.selected_clients = [client.cid for client in clients]
-		for client in selected_clients:
-			self.max_rounds_per_client[client.cid]['count'] += 1
-			self.clients_fit_rounds_history[int(client.cid)] = server_round
+		for client in selected_clients_id:
+			self.clients_metrics[client.cid]['count'] += 1
+			self.clients_fit_rounds_history[client.cid] = server_round
+			# For FedPredict
+			self.fedpredict_clients_metrics[client.cid]['round_of_last_fit'] = server_round
+			if self.fedpredict_clients_metrics[client.cid]['first_round'] == -1:
+				self.fedpredict_clients_metrics[client.cid]['first_round'] = server_round
+		for client in self.fedpredict_clients_metrics:
+			self.fedpredict_clients_metrics[str(client)]['nt'] = server_round - self.fedpredict_clients_metrics[str(client)]['round_of_last_fit']
 
 		if server_round == self.num_rounds:
 			print("=======")
 			print(self.strategy_name)
-			print("Max rounds per client: ", self.max_rounds_per_client)
+			print("Max rounds per client: ", self.clients_metrics)
 			print("=======")
 
-		print("selecionar (fit): ", [client.cid for client in selected_clients])
+		print("selecionar (fit): ", [client.cid for client in selected_clients_id])
+		print("Clientes selecionados: ", len(selected_clients_id))
 		# Return client/config pairs
-		return [(client, fit_ins) for client in selected_clients]
+		return [(client, fit_ins) for client in selected_clients_id]
 
 	def aggregate_fit(self, server_round, results, failures):
 		weights_results = []
@@ -299,7 +288,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		# Aggregate custom metrics if aggregation fn was provided
 		metrics_aggregated = {}
 		if server_round == 1:
-			print("treinados rodada 1: ", self.max_rounds_per_client)
+			print("treinados rodada 1: ", self.clients_metrics)
 
 		return parameters_aggregated, metrics_aggregated
 
@@ -313,8 +302,8 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		if self.new_clients:
 			# incluir apenas clientes velhos
 			if server_round < int(self.num_rounds * self.round_threshold):
-				for i in self.max_rounds_per_client:
-					client_ = self.max_rounds_per_client[i]
+				for i in self.clients_metrics:
+					client_ = self.clients_metrics[i]
 					# clientes velhos podem participar de todas as rodadas
 					if client_['max_rounds'] == self.num_rounds:
 						clients_ids.append(i)
@@ -325,11 +314,11 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 				# 	if client_['max_rounds'] != self.num_rounds:
 				# 		clients_ids.append(i)
 				# incluir todos os clie após determinada rodada
-				for i in self.max_rounds_per_client:
+				for i in self.clients_metrics:
 					clients_ids.append(i)
 
 		else:
-			clients_ids = list(self.max_rounds_per_client.keys())
+			clients_ids = list(self.clients_metrics.keys())
 		# ====================================================================================
 		list_of_valid_clients_for_evaluate = clients_ids
 		if self.new_clients:
@@ -341,13 +330,13 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		selected_clients_evaluate = list_of_valid_clients_for_evaluate
 		# Parameters and config
 		config = {
-			'round' : server_round,
-			'parameters': self.proto_parameters,
-			'metrics': self.fedproposed_metrics
+			'round' : server_round
 		}
+
 		if self.on_evaluate_config_fn is not None:
 			# Custom evaluation config function provided
 			config = self.on_evaluate_config_fn(server_round)
+		self.evaluate_config = config
 		evaluate_ins = fl.common.EvaluateIns(parameters, config)
 
 		# Sample clients
@@ -368,7 +357,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			selected_clients = clients
 		print("selecionar (evaluate): ", [client.cid for client in selected_clients])
 		for client in selected_clients:
-			if self.max_rounds_per_client[client.cid]['count'] == 0:
+			if self.clients_metrics[client.cid]['count'] == 0:
 				print("Cliente: ", client.cid, " nunca treinado")
 		# Return client/config pairs
 		return [(client, evaluate_ins) for client in selected_clients]
@@ -390,8 +379,13 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			client_id       = response[1].metrics['cid']
 			client_accuracy = float(response[1].metrics['accuracy'])
 			accs.append(client_accuracy)
-
 			local_list_clients.append((client_id, client_accuracy))
+			self.fedpredict_clients_metrics[str(client_id)]['acc_of_last_evaluate'] = client_accuracy
+			self.fedpredict_clients_metrics[str(client_id)]['round_of_last_evaluate'] = server_round
+			if self.fedpredict_clients_metrics[str(client_id)]['round_of_last_fit'] == server_round:
+				self.fedpredict_clients_metrics[str(client_id)]['acc_of_last_fit'] = client_accuracy
+			# FedPredictSelection
+			self.server_nt_acc[server_round][self.fedpredict_clients_metrics[str(client_id)]['nt']].append(client_accuracy)
 
 		local_list_clients.sort(key=lambda x: x[1])
 
@@ -400,11 +394,16 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 		accs.sort()
 		self.average_accuracy   = np.mean(accs)
+		self._calculate_mean_of_server_nt_acc(server_round)
 
 		# Weigh accuracy of each client by number of examples used
 		accuracies = [r.metrics["accuracy"] * r.num_examples for _, r in results]
 		examples   = [r.num_examples for _, r in results]
-
+		# # For FedPredict
+		# for _, r in results:
+		# 	client_id = r['cid']
+		# 	acc = r['accuracy']
+		# 	self.fedpredict_clients_metrics[str(client_id)]['acc_of_last_evaluate'] = acc
 		# Aggregate and print custom metric
 		accuracy_aggregated = sum(accuracies) / sum(examples)
 		accuracy_std = np.std(accuracies)
@@ -431,8 +430,22 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 						   data=data
 						   )
 
+		if server_round == self.num_rounds:
+			assert self.server_nt_acc_filename is not None
+			data_list = []
+			for server_round in self.server_nt_acc:
+				for nt in self.server_nt_acc[server_round]:
+					acc = self.server_nt_acc[server_round][nt]
+					if type(acc) == list:
+						acc = 0
+					data_list.append([server_round, acc, nt])
+
+			self._write_outputs(filename=self.server_nt_acc_filename,
+							   data=data_list
+							   )
+
 		self.accuracy_history[server_round] = accuracy_aggregated
-		self._update_fedproposed_metrics(server_round)
+		self._update_fedpredict_metrics(server_round)
 
 		metrics_aggregated = {
 			"accuracy"  : accuracy_aggregated,
@@ -455,6 +468,19 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 		return selected_clients
 
+	def _calculate_mean_of_server_nt_acc(self, server_round):
+
+		for nt in range(self.num_rounds):
+
+			if len(self.server_nt_acc[server_round][nt]) > 0:
+				self.server_nt_acc[server_round][nt] = np.mean(self.server_nt_acc[server_round][nt])
+			else:
+				self.server_nt_acc[server_round][nt] = 0
+
+	def _get_metrics(self):
+
+		return {}
+
 	def _write_header(self, filename, header):
 
 		os.makedirs(os.path.dirname(filename), exist_ok=True)
@@ -467,21 +493,24 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.base = f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/{self.epochs}_local_epochs/"
 		self.server_filename = f"{self.base}server.csv"
 		self.train_filename = f"{self.base}train_client.csv"
-		self.evaluate_filename= f"{self.base}evaluate_client.csv"
+		self.evaluate_filename = f"{self.base}evaluate_client.csv"
+		self.server_nt_acc_filename = f"{self.base}server_nt_acc.csv"
 
 		server_header = ["Time", "Server round", "Accuracy aggregated", "Accuracy std", "Top5", "Top1"]
 		train_header = ["Round", "Cid", "Selected", "Total time", "Size of parameters", "Avg loss train", "Avg accuracy train"]
-		evaluate_header = ["Round", "Cid", "Size of parameters", "Loss", "Accuracy"]
+		evaluate_header = ["Round", "Cid", "Size of parameters", "Size of config", "Loss", "Accuracy"]
+		server_nt_acc_header = ["Round", "Accuracy (%)", "nt"]
 
 		# Remove previous files
 		if os.path.exists(self.server_filename): os.remove(self.server_filename)
 		if os.path.exists(self.train_filename): os.remove(self.train_filename)
 		if os.path.exists(self.evaluate_filename): os.remove(self.evaluate_filename)
+		if os.path.exists(self.server_nt_acc_filename): os.remove(self.server_nt_acc_filename)
 		# Create new files
 		self._write_header(self.server_filename, server_header)
 		self._write_header(self.train_filename, train_header)
 		self._write_header(self.evaluate_filename, evaluate_header)
-
+		self._write_header(self.server_nt_acc_filename, server_nt_acc_header)
 
 
 	def _write_output(self, filename, data):
@@ -489,3 +518,9 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		with open(filename, 'a') as server_log_file:
 			writer = csv.writer(server_log_file)
 			writer.writerow(data)
+
+	def _write_outputs(self, filename, data):
+
+		with open(filename, 'a') as server_log_file:
+			writer = csv.writer(server_log_file)
+			writer.writerows(data)

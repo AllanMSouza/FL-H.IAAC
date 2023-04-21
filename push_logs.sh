@@ -1,5 +1,5 @@
 #!/bin/bash
-git checkout FedPer2
+git checkout FedPredict-v2
 git fetch
 git pull
 
@@ -13,5 +13,5 @@ else
   git config user.email claudiogs.capanema@gmail.com
   git add ./logs
   git commit -m "Resultado de experimento"
-  git push origin FedPer2
+  git push origin FedPredict-v2
 fi

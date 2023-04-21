@@ -1,5 +1,6 @@
-from client.client_torch.client_base_torch import ClientBaseTorch
+from client.client_torch import FedAvgClientTorch
 from client.client_torch.fedper_client_torch import FedPerClientTorch
+from ..fedpredict_core import fedpredict_core
 from torch.nn.parameter import Parameter
 import torch
 import json
@@ -18,7 +19,7 @@ warnings.simplefilter("ignore")
 import logging
 # logging.getLogger("torch").setLevel(logging.ERROR)
 
-class FedPredictClientTorch(FedPerClientTorch):
+class FedPredictClientTorch(FedAvgClientTorch):
 
 	def __init__(self,
 				 cid,
@@ -32,8 +33,9 @@ class FedPredictClientTorch(FedPerClientTorch):
 				 dataset            = '',
 				 perc_of_clients    = 0,
 				 decay              = 0,
+				 fraction_fit		= 0,
 				 non_iid            = False,
-				 n_personalized_layers	= 1,
+				 m_combining_layers	= 1,
 				 new_clients			= False,
 				 new_clients_train	= False
 				 ):
@@ -49,290 +51,75 @@ class FedPredictClientTorch(FedPerClientTorch):
 						 dataset=dataset,
 						 perc_of_clients=perc_of_clients,
 						 decay=decay,
+						 fraction_fit=fraction_fit,
 						 non_iid=non_iid,
 						 new_clients=new_clients,
 						 new_clients_train=new_clients_train)
 
-		self.n_personalized_layers = n_personalized_layers * 2
+		self.m_combining_layers = [i for i in range(len([i for i in self.create_model().parameters()]))]
 		self.lr_loss = torch.nn.MSELoss()
 		self.clone_model = self.create_model().to(self.device)
 		self.round_of_last_fit = 0
 		self.rounds_of_fit = 0
 		self.accuracy_of_last_round_of_fit = 0
 		self.start_server = 0
-
-	def get_parameters_of_model(self):
-		try:
-			parameters = [i.detach().numpy() for i in self.model.parameters()]
-			return parameters
-		except Exception as e:
-			print("get parameters of model")
-			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
-
-	def save_round_of_last_fit(self, server_round):
-		try:
-			self.round_of_last_fit = server_round
-			print("teste4: ", server_round)
-			pd.DataFrame(
-				{'round_of_last_fit': [server_round], 'acc_of_last_fit': [self.accuracy_of_last_round_of_fit]}).to_csv(
-				"""fedpredict_saved_weights/{}/{}/{}.csv""".format(self.model_name, self.cid, self.cid), index=False)
-		except Exception as e:
-			print("save_round_of_last_fit")
-			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
-	def get_round_of_last_fit(self):
-		try:
-			row = pd.read_csv("""fedpredict_saved_weights/{}/{}/{}.csv""".format(self.model_name, self.cid, self.cid))
-			self.round_of_last_fit = int(row['round_of_last_fit'])
-			self.accuracy_of_last_round_of_fit = float(row['acc_of_last_fit'])
-		except Exception as e:
-			print("On get_round_of_last_fit", " user id: ", self.cid, " row: ", row)
-			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+		self.filename = """./{}_saved_weights/{}/{}/model.pth""".format(strategy_name.lower(), self.model_name, self.cid)
 
 	def save_parameters(self):
-		# usando 'torch.save'
+		# Using 'torch.save'
 		try:
-			filename = """./fedpredict_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid)
-			if Path(filename).exists():
-				os.remove(filename)
-			torch.save(self.model.state_dict(), filename)
+			# filename = """./fedpredict_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid)
+			if Path(self.filename).exists():
+				os.remove(self.filename)
+			torch.save(self.model.state_dict(), self.filename)
 		except Exception as e:
 			print("save parameters")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def _merge_models(self, global_parameters, metrics, filename, server_round, rounds_without_fit):
+	def _fedpredict_plugin(self, global_parameters, t, T, nt):
 
 		try:
-			#print("metrica: ", type(metrics), metrics)
-			if server_round > 1:
-				acc = metrics['acc'][server_round-1]
-				#print("acc: ", acc)
-			else:
-				acc = 0
 
-			# 9
-			if rounds_without_fit == 0:
-				global_model_weight = 0
-			else:
-				# evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
-				# normalizar dentro de 0 e 1
-				updated_level = 1/rounds_without_fit
-				evolutionary_level = (server_round / 100)
+			local_model_weights, global_model_weight = fedpredict_core(t, T, nt)
 
-				eq1 = (-updated_level - evolutionary_level)
-				eq2 = round(np.exp(eq1), 6)
-				global_model_weight = eq2
-
-			local_model_weights = 1 - global_model_weight
-
-			print("rodada: ", server_round, " rounds sem fit: ", rounds_without_fit, "\npeso global: ", global_model_weight, " peso local: ", local_model_weights)
-
+			# Load global parameters into 'self.clone_model' (global model)
 			global_parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
 			for new_param, old_param in zip(global_parameters, self.clone_model.parameters()):
 				old_param.data = new_param.data.clone()
 			# self.clone_model.load_state_dict(torch.load(filename))
-			i = 0
+			# Combine models
+			count = 0
 			for new_param, old_param in zip(self.clone_model.parameters(), self.model.parameters()):
-				old_param.data = (global_model_weight*new_param.data.clone() + local_model_weights*old_param.data.clone())
+				if count in self.m_combining_layers:
+					old_param.data = (global_model_weight*new_param.data.clone() + local_model_weights*old_param.data.clone())
+				count += 1
 		except Exception as e:
 			print("merge models")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def set_parameters_to_model(self, global_parameters, server_round, type, config):
-		# usando 'torch.load'
+	def set_parameters_to_model_evaluate(self, global_parameters, config={}):
+		# Using 'torch.load'
 		try:
-			filename = """./fedpredict_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
-			if type == 'fit':
-				self.save_round_of_last_fit(int(config['round']))
-				# todos os fit são com parâmetros novos (do servidor)
-				parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
-				for new_param, old_param in zip(parameters, self.model.parameters()):
-					old_param.data = new_param.data.clone()
-				# if os.path.exists(filename) and self.rounds_of_fit :
-				# 	# todos os evaluate em rodadas menores que 35 são com os parâmetros personalizados*
-				# 	self.clone_model.load_state_dict(torch.load(filename))
-				# 	i = 0
-				# 	for new_param, old_param in zip(self.clone_model.parameters(), self.model.parameters()):
-				# 		if i >= 2:
-				# 			old_param.data = torch.div(torch.sum(new_param.data.clone(), old_param.data.clone()), 2)
-			elif type == 'evaluate':
-				self.get_round_of_last_fit()
-				rounds_without_fit = server_round - self.round_of_last_fit
-				metric = config['metrics']
-				# self._process_metrics(metric, server_round, rounds_without_fit)
-				if self.rounds_of_fit <= 1:
-					parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
-					for new_param, old_param in zip(parameters, self.model.parameters()):
-						old_param.data = new_param.data.clone()
-				if os.path.exists(filename):
-					# todos os evaluate em rodadas menores que 35 são com os parâmetros personalizados*
-					self.model.load_state_dict(torch.load(filename))
-					self._merge_models(global_parameters, metric, filename, server_round, rounds_without_fit)
+			# filename = """./fedpredict_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
+			t = int(config['round'])
+			T = int(config['total_server_rounds'])
+			client_metrics = config['metrics']
+			# Client's metrics
+			nt = client_metrics['nt']
+			round_of_last_fit = client_metrics['round_of_last_fit']
+			round_of_last_evaluate = client_metrics['round_of_last_evaluate']
+			first_round = client_metrics['first_round']
+			acc_of_last_fit = client_metrics['acc_of_last_fit']
+			acc_of_last_evaluate = client_metrics['acc_of_last_evaluate']
+			# Server's metrics
+			last_global_accuracy = config['last_global_accuracy']
+			parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
+			for new_param, old_param in zip(parameters, self.model.parameters()):
+				old_param.data = new_param.data.clone()
+			if os.path.exists(self.filename):
+				# Load local parameters to 'self.model'
+				self.model.load_state_dict(torch.load(self.filename))
+				self._fedpredict_plugin(global_parameters, t, T, nt)
 		except Exception as e:
 			print("Set parameters to model")
-			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
-
-	def _process_metrics(self, metric, server_round, rounds_without_fit):
-
-		try:
-			# calcular o peso das rodadas sem treinamento dentre a quantidade total de rodadas
-			# rounds_without_fit = rounds_without_fit/server_round
-			accuracies = metric['acc']
-			coef = metric['coef']
-			global_acc_of_last_round_of_fit = 0
-			if self.round_of_last_fit > 0:
-				global_acc_of_last_round_of_fit = accuracies[self.round_of_last_fit]
-			mean_acc = global_acc_of_last_round_of_fit
-			std_acc = global_acc_of_last_round_of_fit
-			interval_acc = []
-			if self.round_of_last_fit < server_round:
-				for i in range(max([self.round_of_last_fit, server_round-3, 1]), server_round):
-					interval_acc.append(accuracies[i])
-				mean_acc = np.mean(interval_acc)
-				std_acc = np.std(interval_acc)
-
-			diff_mean_acc = mean_acc - self.accuracy_of_last_round_of_fit
-
-			if diff_mean_acc >= 0.01:
-				# A acurácia cresceu desde a última rodada de treinamento.
-				# Modelo global evoluiu
-				# Ângulo da reta que passa pela acurácia da última rodada treinada pelo cliente e o ponto médio atual da acurácia global
-				acc_growth_angle = diff_mean_acc/min(rounds_without_fit, 3)
-				# Valor próximo de 1 indica que o modelo global está com alta taxa de crescimento
-				# Valor próximo de 0 indica que o modelo global está convergindo
-				print("acuracia media: ", mean_acc)
-				print("Angulo0: ", coef)
-				acc_growth_angle = np.sin(math.radians(acc_growth_angle))
-				print("Angulo: ", acc_growth_angle, " rodada: ", server_round)
-		except Exception as e:
-			print("process metrics")
-			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
-
-
-	def fit(self, parameters, config):
-		try:
-			selected_clients   = []
-			trained_parameters = []
-			selected           = 0
-
-			if config['selected_clients'] != '':
-				selected_clients = [int (cid_selected) for cid_selected in config['selected_clients'].split(' ')]
-
-			start_time = time.process_time()
-			#print(config)
-			server_round = int(config['round'])
-			if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
-				self.set_parameters_to_model(parameters, server_round, 'fit', config)
-				self.round_of_last_fit = server_round
-				self.rounds_of_fit += 1
-
-				selected = 1
-				self.model.train()
-
-				start_time = time.time()
-
-				max_local_steps = self.local_epochs
-				train_acc = 0
-				train_loss = 0
-				train_num = 0
-				for step in range(max_local_steps):
-					for i, (x, y) in enumerate(self.trainloader):
-						if type(x) == type([]):
-							x[0] = x[0].to(self.device)
-						else:
-							x = x.to(self.device)
-						y = y.to(self.device)
-						train_num += y.shape[0]
-
-						self.optimizer.zero_grad()
-						output = self.model(x)
-						# print(output)
-						y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
-						loss = self.loss(output, y)
-						train_loss += loss.item() * y.shape[0]
-						loss.backward()
-						self.optimizer.step()
-
-						train_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
-
-				trained_parameters = self.get_parameters_of_model()
-				self.save_parameters()
-
-			total_time         = time.process_time() - start_time
-			size_of_parameters = sum([sum(map(sys.getsizeof, trained_parameters[i])) for i in range(len(trained_parameters))])
-			avg_loss_train     = train_loss/train_num
-			avg_acc_train      = train_acc/train_num
-
-			loss, accuracy, test_num = self.model_eval()
-			self.accuracy_of_last_round_of_fit = accuracy
-
-			data = [config['round'], self.cid, selected, total_time, size_of_parameters, avg_loss_train, avg_acc_train]
-
-			self._write_output(
-				filename=self.train_client_filename,
-				data=data)
-
-			fit_response = {
-				'cid' : self.cid
-			}
-
-			return trained_parameters, train_num, fit_response
-		except Exception as e:
-			print("fit")
-			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
-
-
-	def model_eval(self):
-		try:
-			self.model.eval()
-
-			test_acc = 0
-			test_loss = 0
-			test_num = 0
-
-			with torch.no_grad():
-				for x, y in self.testloader:
-					if type(x) == type([]):
-						x[0] = x[0].to(self.device)
-					else:
-						x = x.to(self.device)
-					self.optimizer.zero_grad()
-					y = y.to(self.device)
-					y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
-					output = self.model(x)
-					# print("saida: ", output.shape)
-					loss = self.loss(output, y)
-					test_loss += loss.item() * y.shape[0]
-					test_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
-					test_num += y.shape[0]
-
-			loss = test_loss / test_num
-			accuracy = test_acc / test_num
-
-			return loss, accuracy, test_num
-		except Exception as e:
-			print("model_eval")
-			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
-
-	def evaluate(self, parameters, config):
-		try:
-			server_round = int(config['round'])
-			self.set_parameters_to_model(parameters, server_round, 'evaluate', config)
-			# loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
-
-
-			size_of_parameters = sum([sum(map(sys.getsizeof, parameters[i])) for i in range(len(parameters))])
-			loss, accuracy, test_num = self.model_eval()
-			data = [config['round'], self.cid, size_of_parameters, loss, accuracy]
-
-			self._write_output(filename=self.evaluate_client_filename,
-							   data=data)
-
-			evaluation_response = {
-				"cid"      : self.cid,
-				"accuracy" : float(accuracy)
-			}
-
-			return loss, test_num, evaluation_response
-		except Exception as e:
-			print("evaluate")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)

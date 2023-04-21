@@ -21,6 +21,7 @@ class FedAvgClientTf(ClientBaseTf):
 				 dataset            = '',
 				 perc_of_clients    = 0,
 				 decay              = 0,
+				 fraction_fit		= 0,
 				 non_iid            = False):
 
 		super().__init__(cid=cid,
@@ -34,4 +35,5 @@ class FedAvgClientTf(ClientBaseTf):
 						 dataset=dataset,
 						 perc_of_clients=perc_of_clients,
 						 decay=decay,
+						 fraction_fit=fraction_fit,
 						 non_iid=non_iid)

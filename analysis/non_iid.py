@@ -10,10 +10,11 @@ import os
 import ast
 
 class NonIid:
-    def __init__(self, num_clients, aggregation_method, perc_of_clients, non_iid, model_name, strategy_name_list, dataset_name, new_clients,new_clients_train, experiment, comment, epochs, type):
+    def __init__(self, num_clients, aggregation_method, perc_of_clients, fraction_fit, non_iid, model_name, strategy_name_list, dataset_name, new_clients, new_clients_train, experiment, comment, epochs, type, decay):
         self.n_clients = num_clients
         self.aggregation_method = aggregation_method
         self.perc_of_clients = perc_of_clients
+        self.fraction_fit = fraction_fit
         self.non_iid = non_iid
         self.model_name = model_name
         self.strategy_name_list = strategy_name_list
@@ -23,24 +24,27 @@ class NonIid:
         self.experiment = experiment
         self.comment = comment
         self.epochs = epochs
+        self.decay = decay
         self.type = type
         self.base_files_names = {'evaluate_client': 'evaluate_client.csv',
                                  'server': 'server.csv',
-                                 'train_client': 'train_client.csv'}
+                                 'train_client': 'train_client.csv',
+                                 'server_nt_acc': 'server_nt_acc.csv'}
 
         self.df_files_names = {'evaluate_client': None,
                                'server': None,
-                               'train_client': None}
+                               'train_client': None,
+                               'server_nt_acc': None}
 
     def _get_strategy_config(self, strategy_name):
         if self.aggregation_method == 'POC':
             strategy_config = f"{strategy_name}-{self.aggregation_method}-{self.perc_of_clients}"
 
-        # elif self.aggregation_method == 'FedLTA':
-        #     strategy_config = f"{self.strategy_name}-{self.aggregation_method}-{self.decay_factor}"
+        elif self.aggregation_method == 'FedLTA':
+            strategy_config = f"{strategy_name}-{self.aggregation_method}-{self.decay}"
 
         elif self.aggregation_method == 'None':
-            strategy_config = f"{strategy_name}-{self.aggregation_method}"
+            strategy_config = f"{strategy_name}-{self.aggregation_method}-{self.fraction_fit}"
 
         print("antes: ", self.aggregation_method, strategy_config)
 
@@ -49,7 +53,7 @@ class NonIid:
     def start(self, title):
         self.base_dir = """analysis/output/{}/experiment_{}/{}/new_clients_{}_train_{}/{}_clients/{}/{}/{}_local_epochs/{}/""".format(self.type,
                                                                                                                                     self.experiment,
-                                                                                                                                    self.aggregation_method+str(self.perc_of_clients),
+                                                                                                                                    self.aggregation_method+str(self.fraction_fit),
                                                                                                                                     self.new_clients,
                                                                                                                                     self.new_clients_train,
                                                                                                                                     self.n_clients,
@@ -89,9 +93,39 @@ class NonIid:
                 else:
                     self.df_files_names[j] = pd.concat([self.df_files_names[j], df], ignore_index=True)
 
+        print("teste: ", self.df_files_names['server_nt_acc'])
+        self.server_nt_acc_analysis()
         self.server_analysis(title)
         self.evaluate_client_analysis()
 
+    def server_nt_acc_analysis(self):
+
+        strategies = self.df_files_names['server_nt_acc']['Strategy'].unique().tolist()
+
+        for strategy in strategies:
+            self.server_nt_acc_analyse(strategy)
+
+    def server_nt_acc_analyse(self, strategy):
+
+        df = self.df_files_names['server_nt_acc']
+        x_column = 'Round'
+        y_column = 'Accuracy (%)'
+        hue = 'nt'
+
+        nt_values = [0, 2, 4]
+        hue_order = nt_values
+        df = df.query("Strategy == '" + strategy + "' and nt in " + str(nt_values))
+        title = strategy
+        filename = "server_nt_acc_" + str(int(self.experiment) - 1) + "_" + strategy
+        line_plot(df=df,
+                  base_dir=self.base_dir,
+                  file_name=filename,
+                  x_column=x_column,
+                  y_column=y_column,
+                  title=title,
+                  type='1',
+                  hue=hue,
+                  hue_order=hue_order)
 
     def server_analysis(self, title):
 
@@ -155,16 +189,19 @@ class NonIid:
         # size of parameters
         print(df)
         def strategy(df):
-            parameters = int(df['Size of parameters'].mean())
+            parameters = float(df['Size of parameters'].mean())
+            config = float(df['Size of config'].mean())
+            total_size = parameters + config
 
-            return pd.DataFrame({'Size of parameters (bytes)': [parameters]})
-        df_test = df[['Round', 'Size of parameters', 'Strategy']].groupby('Strategy').apply(lambda e: strategy(e)).reset_index()[['Size of parameters (bytes)', 'Strategy']]
+            return pd.DataFrame({'Size of parameters (bytes)': [parameters], 'Communication cost (bytes)': [total_size]})
+        df_test = df[['Round', 'Size of parameters', 'Size of config', 'Strategy']].groupby('Strategy').apply(lambda e: strategy(e)).reset_index()[['Size of parameters (bytes)', 'Communication cost (bytes)', 'Strategy']]
         df_test.to_csv(self.base_dir+"csv/evaluate_client_size_of_parameters_round.csv", index=False)
         print(df_test)
+        print(self.base_dir)
         x_column = 'Strategy'
         y_column = 'Size of parameters (bytes)'
         hue = None
-        title = "Two layers"
+        title = "Size of parameters (bytes)"
         bar_plot(df=df_test,
                   base_dir=self.base_dir,
                   file_name="evaluate_client_size_of_parameters_round_barplot",
@@ -173,14 +210,17 @@ class NonIid:
                   title=title,
                   hue=hue,
                  sci=True)
+
+        y_column = 'Communication cost (bytes)'
+        hue = None
+        title = "Communication cost (bytes)"
         bar_plot(df=df_test,
                  base_dir=self.base_dir,
-                 file_name="evaluate_client_size_of_parameters_round_barplot",
+                 file_name="evaluate_client_communication_cost_round_barplot",
                  x_column=x_column,
                  y_column=y_column,
                  title=title,
                  hue=hue,
-                 log_scale=True,
                  sci=True)
 
 
@@ -257,8 +297,11 @@ if __name__ == '__main__':
                       help="")
     parser.add_option("--strategy", action='append', dest="strategies", default=[])
     parser.add_option("--experiment",  dest="experiment", default='')
+    parser.add_option("--decay", dest="decay", default=0)
     parser.add_option("--comment", dest="comment", default='')
     parser.add_option("--epochs", dest="epochs", default=1)
+    parser.add_option("", "--fraction_fit", dest="fraction_fit", default=0,
+                      help="fraction of selected clients to be trained", metavar="FLOAT")
 
     (opt, args) = parser.parse_args()
 
@@ -267,9 +310,9 @@ if __name__ == '__main__':
 
     # noniid = NonIID(int(opt.n_clients), opt.aggregation_method, opt.model_name, strategy_name_list, opt.dataset)
     # noniid.start()
-    c = NonIid(int(opt.n_clients), opt.aggregation_method, float(opt.poc), ast.literal_eval(opt.non_iid),
-               opt.model_name, strategy_name_list, opt.dataset, ast.literal_eval(opt.new_clients),
-               ast.literal_eval(opt.new_clients_train), opt.experiment, opt.comment, opt.epochs, opt.type)
+    c = NonIid(num_clients=int(opt.n_clients), aggregation_method=opt.aggregation_method, perc_of_clients=float(opt.poc), fraction_fit=float(opt.fraction_fit), non_iid=ast.literal_eval(opt.non_iid),
+               model_name=opt.model_name, strategy_name_list=strategy_name_list, dataset_name=opt.dataset, new_clients=ast.literal_eval(opt.new_clients),
+               new_clients_train=ast.literal_eval(opt.new_clients_train), experiment=opt.experiment, comment=opt.comment, epochs=opt.epochs, type=opt.type, decay=opt.decay)
 
     print(c.n_clients, " ", c.strategy_name_list)
     dataset = opt.dataset

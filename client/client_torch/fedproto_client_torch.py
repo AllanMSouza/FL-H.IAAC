@@ -43,6 +43,7 @@ class FedProtoClientTorch(ClientBaseTorch):
 				 dataset            = '',
 				 perc_of_clients    = 0,
 				 decay              = 0,
+				 fraction_fit		= 0,
 				 non_iid            = False,
 				 new_clients		= False,
 				 new_clients_train	= False
@@ -59,6 +60,7 @@ class FedProtoClientTorch(ClientBaseTorch):
 						 dataset=dataset,
 						 perc_of_clients=perc_of_clients,
 						 decay=decay,
+						 fraction_fit=fraction_fit,
 						 non_iid=non_iid,
 						 new_clients=new_clients,
 						 new_clients_train=new_clients_train)
@@ -73,7 +75,11 @@ class FedProtoClientTorch(ClientBaseTorch):
 	def create_model(self):
 
 		try:
-			# print("tamanho: ", self.input_shape)
+			input_shape = self.input_shape
+			if self.dataset in ['MNIST', 'CIFAR10']:
+				input_shape = self.input_shape[1] * self.input_shape[2]
+			elif self.dataset in ['MotionSense', 'UCIHAR']:
+				input_shape = self.input_shape[1]
 			if self.dataset in ['MNIST', 'CIFAR10']:
 				input_shape = self.input_shape[1] * self.input_shape[2]
 			if self.model_name == 'Logist Regression':
@@ -311,7 +317,8 @@ class FedProtoClientTorch(ClientBaseTorch):
 			# print("test loss: ", test_loss)
 			loss = np.mean(test_loss)
 			accuracy = test_acc/test_num
-			data = [config['round'], self.cid, size_of_parameters, loss, accuracy]
+			size_of_config = sys.getsizeof(config)
+			data = [config['round'], self.cid, size_of_parameters, size_of_config, loss, accuracy]
 
 			self._write_output(filename=self.evaluate_client_filename,
 							   data=data)

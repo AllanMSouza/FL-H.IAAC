@@ -6,6 +6,9 @@ from server.common_base_server.fedavgm_base_server_torch import FedAvgMBaseServe
 from server.common_base_server.fedper_base_server import FedPerBaseServer
 from server.common_base_server.fedclassavg_base_server import FedClassAvgBaseServer
 from server.common_base_server.fedpredict_base_server import FedPredictBaseServer
+from server.common_base_server.fedper_with_fedpredict_base_server import FedPer_with_FedPredictBaseServer
+from server.common_base_server.fedclassavg_with_fedpredict_base_server import FedClassAvg_with_FedPredictBaseServer
+from server.common_base_server.fedprox_base_server import FedProxBaseServer
 
 __all__ = [
     'FedAvgBaseServer',
@@ -15,5 +18,8 @@ __all__ = [
     "FedAvgMBaseServerTorch",
     "FedPerBaseServer",
     "FedClassAvgBaseServer",
-    "FedPredictBaseServer"
+    "FedPredictBaseServer",
+    "FedPer_with_FedPredictBaseServer",
+    "FedClassAvg_with_FedPredictBaseServer",
+    "FedProxBaseServer"
     ]
