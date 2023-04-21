@@ -65,10 +65,11 @@ class JointAnalysis():
         self.joint_plot_acc_four_plots(df=df_concat, experiment=4, fractions_fit=fractions_fit)
 
         # table
-        # self.joint_table(df_concat, pocs, strategies, experiment=1)
-        # self.joint_table(df_concat, pocs, strategies, experiment=2)
-        # self.joint_table(df_concat, pocs, strategies, experiment=3)
-        # self.joint_table(df_concat, pocs, strategies, experiment=4)
+        strategies = [i.replace("FedAVG", "FedAvg") for i in strategies]
+        self.joint_table(df_concat, fractions_fit, strategies, experiment=1)
+        self.joint_table(df_concat, fractions_fit, strategies, experiment=2)
+        self.joint_table(df_concat, fractions_fit, strategies, experiment=3)
+        self.joint_table(df_concat, fractions_fit, strategies, experiment=4)
 
 
 
@@ -194,8 +195,8 @@ class JointAnalysis():
         plt.ylabel(y_column)
         base_dir = """analysis/output/experiment_{}/""".format(str(experiment+1))
         # ====================================================================
-        fraction_fit = fractions_fit[1]
-        dataset = 'CIFAR10'
+        fraction_fit = fractions_fit[0]
+        dataset = 'MNIST'
         title = """{} (C={})""".format(dataset, int(float(fraction_fit)*50))
         filename = ''
         i = 0
@@ -220,7 +221,7 @@ class JointAnalysis():
         # plt.legend([handles[idx] for idx in order], [labels[idx] for idx in order])
         # ====================================================================
         fraction_fit = fractions_fit[1]
-        dataset = 'CIFAR10'
+        dataset = 'MNIST'
         title = """{} (C={})""".format(dataset, int(float(fraction_fit)*50))
         i = 0
         j = 1
@@ -231,7 +232,7 @@ class JointAnalysis():
         # axs[i].set_xlabel('')
         # axs[i].set_ylabel('')
         # ====================================================================
-        fraction_fit = fractions_fit[1]
+        fraction_fit = fractions_fit[0]
         dataset = 'CIFAR10'
         title = """CIFAR-10 (C={})""".format(int(float(fraction_fit)*50))
         i = 1
@@ -363,7 +364,7 @@ if __name__ == '__main__':
     # pocs = [0.1, 0.2, 0.3]
     fractions_fit = [0.3, 0.4]
     # datasets = ['MNIST', 'CIFAR10']
-    datasets = ['CIFAR10']
+    datasets = ['MNIST', 'CIFAR10']
     clients = '50'
     model = 'CNN'
     type = 'torch'
