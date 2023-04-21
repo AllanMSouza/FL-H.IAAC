@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 from pathlib import Path
+import pickle
 import torch
 
 from torch.utils.data import DataLoader, ConcatDataset, Subset, Dataset
@@ -26,7 +27,10 @@ def separate_data(targets, num_clients, num_classes, niid=False, balance=False, 
             dataidx_map: dict of client_id and the list of samples' indexes
     """
     least_samples = batch_size / (1 - train_size)
+    least_samples = train_size
     alpha = alpha  # for Dirichlet distribution
+
+    print("aq:", partition)
 
     statistic = [[] for _ in range(num_clients)]
 
@@ -115,8 +119,10 @@ def split_data(dataidx_map, num_clients, train_size):
         test_first_index = int(train_size * len(cli_idxs))
         train_idxs = cli_idxs[:test_first_index]
         test_idxs = cli_idxs[test_first_index:]
-        train_data.append(torch.tensor(train_idxs))
-        test_data.append(torch.tensor(test_idxs))
+        # train_data.append(torch.tensor(train_idxs))
+        # test_data.append(torch.tensor(test_idxs))
+        train_data.append(train_idxs)
+        test_data.append(test_idxs)
 
     return train_data, test_data
 
@@ -126,7 +132,6 @@ def save_dataloaders(dataset_name="CIFAR10", num_clients=10, num_classes=10, nii
 
     # transform = get_transform(dataset_name)
     x_train, y_train, x_test, y_test = ManageDatasets().select_dataset(dataset_name)
-    print("antes: ", y_train.shape, y_test.shape)
     target = np.concatenate((y_train, y_test), axis=0)
     # dataset = Dataset()
     masks, statistic = separate_data(target, num_clients, num_classes, niid, balance, partition, class_per_client,
@@ -134,18 +139,19 @@ def save_dataloaders(dataset_name="CIFAR10", num_clients=10, num_classes=10, nii
 
     train_data, test_data = split_data(masks, num_clients, train_size)
 
-    path = os.getcwd() + '/' + dataset_dir
-    train_path = path + f"{dataset_name}_train/"
-    val_path = path + f"{dataset_name}_val/"
-    stats_path = path + f"{dataset_name}_stats/"
+    for client_id in range(num_clients):
 
-    if not os.path.isdir(train_path):
-        Path(train_path).mkdir(parents=True, exist_ok=True)
-    if not os.path.isdir(val_path):
-        Path(val_path).mkdir(parents=True, exist_ok=True)
-    if not os.path.isdir(stats_path):
-        Path(stats_path).mkdir(parents=True, exist_ok=True)
+        index_train = train_data[client_id]
+        index_test = test_data[client_id]
 
-    torch.save(train_data, train_path + f"sim_{sim_id}.pt")
-    torch.save(test_data, val_path + f"sim_{sim_id}.pt")
-    torch.save(statistic, stats_path + f"sim_{sim_id}.pt")
+        filename_train = f"data/{dataset_name}/{client_id}/classes_per_client_{class_per_client}/alpha_{alpha}/idx_train_{client_id}.pickle"
+        filename_test = f"data/{dataset_name}/{client_id}/classes_per_client_{class_per_client}/alpha_{alpha}/idx_test_{client_id}.pickle"
+
+        os.makedirs(os.path.dirname(filename_train), exist_ok=True)
+        os.makedirs(os.path.dirname(filename_test), exist_ok=True)
+
+        with open(filename_train, 'wb') as handle:
+            pickle.dump(index_train, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+        with open(filename_test, 'wb') as handle:
+            pickle.dump(index_test, handle, protocol=pickle.HIGHEST_PROTOCOL)
