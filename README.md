@@ -1,6 +1,6 @@
-# FedLTA
+# FL-H.IAAC
 
-FedLTA is a project based on Flower that implements the traditional architecture `client|server` of Federated Learning (FL).
+FL-H.IAAC is a project based on Flower that implements the traditional architecture `client|server` of Federated Learning (FL).
 It has support for TensorFlow and PyTorch. 
 
 ## Current implemented strategies
