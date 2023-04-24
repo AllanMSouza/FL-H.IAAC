@@ -1,6 +1,7 @@
 import sys
 import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
+#from torch_cka import CKA
 
 def fedpredict_core(t, T, nt):
     try:
@@ -45,15 +46,26 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters):
     similarity_per_layer = [[]] * num_layers
 
     for i in range(num_layers):
+        if i % 2 != 0:
+            continue
 
         global_layer = global_parameter[i]
 
         for j in range(num_clients):
 
-            client = clients_parameters[i]
+            client = clients_parameters[j]
             client_layer = client[i]
-
-            similarity = cosine_similarity(global_layer, client_layer)
+            print("global: ", global_layer.shape)
+            print("cliente: ", client_layer.shape)
+            if np.ndim(global_layer) == 1:
+                global_layer = np.reshape(global_layer, (len(global_layer), 1))
+            if np.ndim(client_layer) == 1:
+                client_layer = np.reshape(client_layer, (len(client_layer), 1))
+                print("apos global: ", global_layer.shape)
+                print("apos cliente: ", client_layer.shape)
+            # for x, y in zip(global_layer, client_layer):
+            similarity = euclidean_distances(global_layer, client_layer)
+            similarity = np.mean(similarity.flatten())
             similarity_per_layer[i].append(similarity)
 
     for i in range(num_layers):

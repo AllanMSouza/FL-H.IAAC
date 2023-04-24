@@ -10,6 +10,7 @@ import random
 from logging import WARNING
 from flwr.common import FitIns
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
+from client.fedpredict_core import fedpredict_layerwise_similarity
 
 from flwr.common import (
     EvaluateIns,
@@ -271,10 +272,11 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 	def aggregate_fit(self, server_round, results, failures):
 		weights_results = []
+		clients_parameters = []
 
 		for _, fit_res in results:
 			client_id = str(fit_res.metrics['cid'])
-
+			clients_parameters.append(fl.common.parameters_to_ndarrays(fit_res.parameters))
 			if self.aggregation_method not in ['POC', 'FedLTA'] or int(server_round) <= 1:
 				weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples))
 
@@ -284,7 +286,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 		#print(f'LEN AGGREGATED PARAMETERS: {len(weights_results)}')
 		parameters_aggregated = fl.common.ndarrays_to_parameters(aggregate(weights_results))
-
+		fedpredict_layerwise_similarity(fl.common.parameters_to_ndarrays(parameters_aggregated), clients_parameters)
 		# Aggregate custom metrics if aggregation fn was provided
 		metrics_aggregated = {}
 		if server_round == 1:
