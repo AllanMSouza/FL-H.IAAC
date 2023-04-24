@@ -1,5 +1,6 @@
 import sys
 import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
 
 def fedpredict_core(t, T, nt):
     try:
@@ -36,3 +37,27 @@ def fedpredict_core(t, T, nt):
     except Exception as e:
         print("fedpredict core")
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+def fedpredict_layerwise_similarity(global_parameter, clients_parameters):
+
+    num_layers = len(global_parameter)
+    num_clients = len(clients_parameters)
+    similarity_per_layer = [[]] * num_layers
+
+    for i in range(num_layers):
+
+        global_layer = global_parameter[i]
+
+        for j in range(num_clients):
+
+            client = clients_parameters[i]
+            client_layer = client[i]
+
+            similarity = cosine_similarity(global_layer, client_layer)
+            similarity_per_layer[i].append(similarity)
+
+    for i in range(num_layers):
+
+        similarity_per_layer[i] = np.mean(similarity_per_layer[i])
+
+    print("similaridade: ", similarity_per_layer)
