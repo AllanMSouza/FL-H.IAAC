@@ -49,7 +49,7 @@ DATASETS = ['MNIST']
 # DATASETS      					= ['UCIHAR', 'MotionSense']
 MODELS = ['DNN']
 ALGORITHMS = ['None', 'POC', 'FedLTA']
-EPOCHS = {'1': [1], '2': [3], '3': [1], '4': [1], '5': [2], '6': [1]}
+EPOCHS = {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2], '6': [1]}
 # CLIENTS       				= {'MNIST': 50, 'CIFAR10': 50, 'CIFAR100': 50, 'MotionSense': 50, 'UCIHAR': 50}
 CLIENTS = {'MNIST': [25], 'CIFAR10': [50], 'CIFAR100': [50], 'MotionSense': [24], 'UCIHAR': [30]}
 FRACTION_FIT = {'None': [0.3], 'POC': [0], 'FedLTA': [0]}
@@ -58,7 +58,7 @@ DECAY = {'None': 0, 'POC': 0, 'FedLTA': 0.1}
 NEW_CLIENTS = {'None': ['FALSE'], 'POC': ['FALSE', 'TRUE']}
 NEW_CLIENTS_TRAIN = {'FALSE': ['FALSE'], 'TRUE': ['FALSE', 'TRUE']}
 # DECAY         				= (0.001, 0.005, 0.009)
-ROUNDS = 15
+ROUNDS = 4
 # STRATEGIES 					= ('FedPredict', 'FedPer', 'FedClassAvg', 'FedAVG', 'FedClassAvg_with_FedPredict', 'FedPer_with_FedPredict', 'FedProto', 'FedYogi', 'FedLocal',)
 STRATEGIES_FOR_ANALYSIS = ['FedPredict']
 STRATEGIES_TO_EXECUTE = ['FedPredict']
@@ -84,8 +84,9 @@ def execute_experiment(experiment, algorithm, new_client, new_client_train, comm
                     for clients in CLIENTS[dataset]:
                         for fraction_fit in FRACTION_FIT[algorithm]:
                             for poc in POC[algorithm]:
+                                decay = DECAY[algorithm]
                                 for strategy in STRATEGIES_TO_EXECUTE:
-                                    decay = DECAY[algorithm]
+
                                     print(
                                         f'Starting {strategy} fraction_fit-{fraction_fit} simulation for {dataset} clients with {model} model ...',
                                         os.getcwd())

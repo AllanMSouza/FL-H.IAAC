@@ -106,6 +106,8 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.clients_metrics = self._clients_metrics()
 		self.evaluate_config = {}
 		self._write_output_files_headers()
+		self.previous_global_parameters = None
+		self.similarity_between_layers_per_round = {}
 
 		super().__init__(fraction_fit=fraction_fit, min_available_clients=num_clients, min_fit_clients=num_clients, min_evaluate_clients=num_clients)
 
@@ -174,6 +176,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		"""Configure the next round of training."""
 
 		self.start_time = time.time()
+		self.previous_global_parameters = fl.common.parameters_to_ndarrays(parameters)
 		random.seed(server_round)
 
 		if self.aggregation_method == 'POC':
@@ -273,7 +276,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 	def aggregate_fit(self, server_round, results, failures):
 		weights_results = []
 		clients_parameters = []
-
+		print("previo: ", type(self.previous_global_parameters))
 		for _, fit_res in results:
 			client_id = str(fit_res.metrics['cid'])
 			clients_parameters.append(fl.common.parameters_to_ndarrays(fit_res.parameters))
@@ -285,14 +288,23 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 					weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples))
 
 		#print(f'LEN AGGREGATED PARAMETERS: {len(weights_results)}')
+		for i in range(1, len(weights_results)):
+			w = weights_results[i-1][0][0]
+			w1 = weights_results[i][0][0]
+			# print("igual: ", np.nonzero(np.subtract(w, w1)))
+			# print("um: ", w)
+			# print("dois: ", w1)
 		parameters_aggregated = fl.common.ndarrays_to_parameters(aggregate(weights_results))
-		fedpredict_layerwise_similarity(fl.common.parameters_to_ndarrays(parameters_aggregated), clients_parameters)
+		self.similarity_between_layers_per_round[server_round] = fedpredict_layerwise_similarity(self.previous_global_parameters, clients_parameters)
 		# Aggregate custom metrics if aggregation fn was provided
 		metrics_aggregated = {}
 		if server_round == 1:
 			print("treinados rodada 1: ", self.clients_metrics)
 
 		return parameters_aggregated, metrics_aggregated
+
+	def layerwise_similarity(self, global_parameter, clients_parameters):
+		pass
 
 	def configure_evaluate(self, server_round, parameters, client_manager):
 		"""Configure the next round of evaluation."""
@@ -456,9 +468,13 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			"top-1"     : top1
 		}
 
+		if server_round == self.num_rounds:
+			self.end_evaluate_function()
+
 		return loss_aggregated, metrics_aggregated
 
-
+	def end_evaluate_function(self):
+		pass
 	def select_clients_bellow_average(self):
 
 		selected_clients = []

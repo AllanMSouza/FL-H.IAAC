@@ -29,12 +29,14 @@ class NonIid:
         self.base_files_names = {'evaluate_client': 'evaluate_client.csv',
                                  'server': 'server.csv',
                                  'train_client': 'train_client.csv',
-                                 'server_nt_acc': 'server_nt_acc.csv'}
+                                 'server_nt_acc': 'server_nt_acc.csv',
+                                 'similarity': 'similarity_between_layers.csv'}
 
         self.df_files_names = {'evaluate_client': None,
                                'server': None,
                                'train_client': None,
-                               'server_nt_acc': None}
+                               'server_nt_acc': None,
+                               'similarity': None}
 
     def _get_strategy_config(self, strategy_name):
         if self.aggregation_method == 'POC':
@@ -86,6 +88,8 @@ class NonIid:
 
             for j in self.base_files_names:
                 file_name = self.base_files_names[j]
+                if file_name == 'similarity' and strategy_name != 'FedPredict':
+                    continue
                 df = pd.read_csv(models_directories[strategy_name]+file_name)
                 df['Strategy'] = np.array([strategy_name]*len(df))
                 if i == 0:
@@ -97,6 +101,7 @@ class NonIid:
         self.server_nt_acc_analysis()
         self.server_analysis(title)
         self.evaluate_client_analysis()
+        self.similarity_analysis()
 
     def server_nt_acc_analysis(self):
 
@@ -223,6 +228,25 @@ class NonIid:
                  hue=hue,
                  sci=True)
 
+    def similarity_analysis(self):
+
+        df = self.df_files_names['similarity'].drop_duplicates()
+        print("ddd: ", df)
+        x_column = 'Server round'
+        y_column = 'Similarity'
+        hue = 'Layer'
+        hue_order = np.sort(df[hue].tolist())
+        type = 1
+        title = ""
+        line_plot(df=df,
+                  base_dir=self.base_dir,
+                  file_name="similarity_between_layers_per_round_lineplot",
+                  x_column=x_column,
+                  y_column=y_column,
+                  title=title,
+                  hue=hue,
+                  hue_order=hue_order,
+                  type=type)
 
 
 

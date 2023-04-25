@@ -1,7 +1,55 @@
 import sys
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
-#from torch_cka import CKA
+# from torch_cka import CKA
+
+import math
+import torch
+import numpy as np
+
+
+class CKA(object):
+    def __init__(self):
+        pass
+
+    def centering(self, K):
+        n = K.shape[0]
+        unit = np.ones([n, n])
+        I = np.eye(n)
+        H = I - unit / n
+        return np.dot(np.dot(H, K), H)
+
+    def rbf(self, X, sigma=None):
+        GX = np.dot(X, X.T)
+        KX = np.diag(GX) - GX + (np.diag(GX) - GX).T
+        if sigma is None:
+            mdist = np.median(KX[KX != 0])
+            sigma = math.sqrt(mdist)
+        KX *= - 0.5 / (sigma * sigma)
+        KX = np.exp(KX)
+        return KX
+
+    def kernel_HSIC(self, X, Y, sigma):
+        return np.sum(self.centering(self.rbf(X, sigma)) * self.centering(self.rbf(Y, sigma)))
+
+    def linear_HSIC(self, X, Y):
+        L_X = X @ X.T
+        L_Y = Y @ Y.T
+        return np.sum(self.centering(L_X) * self.centering(L_Y))
+
+    def linear_CKA(self, X, Y):
+        hsic = self.linear_HSIC(X, Y)
+        var1 = np.sqrt(self.linear_HSIC(X, X))
+        var2 = np.sqrt(self.linear_HSIC(Y, Y))
+
+        return hsic / (var1 * var2)
+
+    def kernel_CKA(self, X, Y, sigma=None):
+        hsic = self.kernel_HSIC(X, Y, sigma)
+        var1 = np.sqrt(self.kernel_HSIC(X, X, sigma))
+        var2 = np.sqrt(self.kernel_HSIC(Y, Y, sigma))
+
+        return hsic / (var1 * var2)
 
 def fedpredict_core(t, T, nt):
     try:
@@ -39,37 +87,49 @@ def fedpredict_core(t, T, nt):
         print("fedpredict core")
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
+
+# def set_parameters_to_model(parameters, model_name):
+#     # print("tamanho: ", self.input_shape, " dispositivo: ", self.device)
+
+
 def fedpredict_layerwise_similarity(global_parameter, clients_parameters):
 
     num_layers = len(global_parameter)
     num_clients = len(clients_parameters)
-    similarity_per_layer = [[]] * num_layers
+    similarity_per_layer = {i: [] for i in range(num_layers)}
 
-    for i in range(num_layers):
-        if i % 2 != 0:
-            continue
+    for j in range(num_clients):
 
-        global_layer = global_parameter[i]
+        client = clients_parameters[j]
 
-        for j in range(num_clients):
-
-            client = clients_parameters[j]
+        for i in range(num_layers):
             client_layer = client[i]
-            print("global: ", global_layer.shape)
-            print("cliente: ", client_layer.shape)
+            global_layer = global_parameter[i]
             if np.ndim(global_layer) == 1:
                 global_layer = np.reshape(global_layer, (len(global_layer), 1))
             if np.ndim(client_layer) == 1:
                 client_layer = np.reshape(client_layer, (len(client_layer), 1))
-                print("apos global: ", global_layer.shape)
-                print("apos cliente: ", client_layer.shape)
+            print("apos global: ", global_layer.shape)
+            print("apos cliente: ", client_layer.shape)
+            if np.ndim(global_layer) == 4:
+                client_similarity = []
+                for k in range(len(global_layer)):
+                    global_layer_k = global_layer[k][0]
+                    client_layer_k = client_layer[k][0]
+                    cka = CKA()
+                    similarity = cka.linear_CKA(global_layer_k, client_layer_k)
+                    client_similarity.append(similarity)
+                similarity_per_layer[i].append(np.mean(client_similarity))
+            else:
             # for x, y in zip(global_layer, client_layer):
-            similarity = euclidean_distances(global_layer, client_layer)
-            similarity = np.mean(similarity.flatten())
-            similarity_per_layer[i].append(similarity)
+                cka = CKA()
+                similarity = cka.linear_CKA(global_layer, client_layer)
+                similarity_per_layer[i].append(similarity)
 
     for i in range(num_layers):
 
-        similarity_per_layer[i] = np.mean(similarity_per_layer[i])
+        similarity_per_layer[i] = np.median(similarity_per_layer[i])
 
-    print("similaridade: ", similarity_per_layer)
+        print("""similaridade (camada {}): {}""".format(i, similarity_per_layer[i]))
+
+    return similarity_per_layer

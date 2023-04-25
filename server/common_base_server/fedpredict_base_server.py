@@ -140,3 +140,22 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			client_evaluate_list_fedpredict.append((client, evaluate_ins))
 
 		return client_evaluate_list_fedpredict
+
+	def end_evaluate_function(self):
+		self._write_similarity()
+
+	def _write_similarity(self):
+
+		columns = ["Server round", "Layer", "Similarity"]
+		data = {column: [] for column in columns}
+		for round in self.similarity_between_layers_per_round:
+
+			for layer in self.similarity_between_layers_per_round[round]:
+
+				data['Server round'].append(round)
+				data['Layer'].append(layer)
+				data['Similarity'].append(self.similarity_between_layers_per_round[round][layer])
+
+		self.similarity_filename = f"{self.base}similarity_between_layers.csv"
+		df = pd.DataFrame(data)
+		df.to_csv(self.similarity_filename, index=False)
