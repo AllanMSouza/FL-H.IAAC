@@ -69,6 +69,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		self.perc_of_clients  = perc_of_clients
 		self.decay            = decay
 		self.fraction_fit	  = fraction_fit
+		self.class_per_client = 2
+		self.alpha				= 0.1
 
 		self.loss = nn.CrossEntropyLoss()
 		self.learning_rate = 0.01
@@ -100,7 +102,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 	def load_data(self, dataset_name, n_clients, batch_size=32):
 		try:
-			x_train, y_train, x_test, y_test = ManageDatasets(self.cid, self.model_name).select_dataset(dataset_name, n_clients, self.non_iid)
+			x_train, y_train, x_test, y_test = ManageDatasets(self.cid, self.model_name).select_dataset(dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid)
 			# print("y test")
 			# print(np.unique(y_test))
 			# exit()

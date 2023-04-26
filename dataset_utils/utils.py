@@ -144,8 +144,8 @@ def save_dataloaders(dataset_name="CIFAR10", num_clients=10, num_classes=10, nii
         index_train = train_data[client_id]
         index_test = test_data[client_id]
 
-        filename_train = f"data/{dataset_name}/{client_id}/classes_per_client_{class_per_client}/alpha_{alpha}/idx_train_{client_id}.pickle"
-        filename_test = f"data/{dataset_name}/{client_id}/classes_per_client_{class_per_client}/alpha_{alpha}/idx_test_{client_id}.pickle"
+        filename_train = f"data/{dataset_name}/{num_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{client_id}/idx_train_{client_id}.pickle"
+        filename_test = f"data/{dataset_name}/{num_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{client_id}/idx_test_{client_id}.pickle"
 
         os.makedirs(os.path.dirname(filename_train), exist_ok=True)
         os.makedirs(os.path.dirname(filename_test), exist_ok=True)

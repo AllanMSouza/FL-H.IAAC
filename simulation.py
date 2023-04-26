@@ -26,6 +26,7 @@ class SimulationFL():
 				 n_clients,
 				 aggregation_method,
 				 model_name,
+				 args,
 				 strategy_name,
 				 dataset,
 				 n_classes,
@@ -44,6 +45,7 @@ class SimulationFL():
 		self.n_clients        		= n_clients
 		self.aggregation_method     = aggregation_method
 		self.model_name       		= model_name # cnn, dnn, among others
+		self.args					= args
 		self.dataset          		= dataset
 		self.n_classes 				= n_classes
 		self.epochs           		= local_epochs
@@ -129,6 +131,7 @@ class SimulationFL():
 			if self.strategy_name == 'FedProto':
 				# print("foi cliente")
 				return FedProtoClientTorch(cid=cid,
+										   agrs=self.args,
 										   n_clients=self.n_clients,
 										   n_classes=self.n_classes,
 										   epochs=self.epochs,
@@ -146,6 +149,7 @@ class SimulationFL():
 			if self.strategy_name == 'FedPredict':
 				# print("foi cliente")
 				return FedPredictClientTorch(cid=cid,
+											agrs=self.args,
                                              n_clients=self.n_clients,
                                              n_classes=self.n_classes,
                                              epochs=self.epochs,
@@ -164,6 +168,7 @@ class SimulationFL():
 			if self.strategy_name == 'FedPer_with_FedPredict':
 				# print("foi cliente")
 				return FedPer_with_FedPredictClientTorch(cid=cid,
+										   agrs=self.args,
 											 n_clients=self.n_clients,
 											 n_classes=self.n_classes,
 											 epochs=self.epochs,
@@ -182,6 +187,7 @@ class SimulationFL():
 			if self.strategy_name == 'FedClassAvg_with_FedPredict':
 				# print("foi cliente")
 				return FedClassAvg_with_FedPredictClientTorch(cid=cid,
+										   agrs=self.args,
 											 n_clients=self.n_clients,
 											 n_classes=self.n_classes,
 											 epochs=self.epochs,
@@ -200,6 +206,7 @@ class SimulationFL():
 			elif self.strategy_name == 'FedPer':
 				return  FedPerClientTorch(cid=cid,
 										  n_clients=self.n_clients,
+										   agrs=self.args,
 										  n_classes=self.n_classes,
 										  epochs=self.epochs,
 										  model_name=self.model_name,
@@ -215,6 +222,7 @@ class SimulationFL():
 										  new_clients_train=self.new_clients_train)
 			elif self.strategy_name == 'FedClassAvg':
 				return  FedClassAvgClientTorch(cid=cid,
+										   agrs=self.args,
 											   n_clients=self.n_clients,
 											   n_classes=self.n_classes,
 											   epochs=self.epochs,
@@ -231,6 +239,7 @@ class SimulationFL():
 											   new_clients_train=self.new_clients_train)
 			elif self.strategy_name == 'FedProx':
 				return  FedProxClientTorch(cid=cid,
+										   agrs=self.args,
 											   n_clients=self.n_clients,
 											   n_classes=self.n_classes,
 											   epochs=self.epochs,
@@ -247,6 +256,7 @@ class SimulationFL():
 											   new_clients_train=self.new_clients_train)
 			elif self.strategy_name == 'FedLocal':
 				return  FedLocalClientTorch(cid=cid,
+										   agrs=self.args,
 											n_clients=self.n_clients,
 											n_classes=self.n_classes,
 											epochs=self.epochs,
@@ -263,6 +273,7 @@ class SimulationFL():
 											new_clients_train=self.new_clients_train)
 			elif self.strategy_name == 'FedAvgM':
 				return FedAvgMClientTorch(cid=cid,
+										   agrs=self.args,
 										  n_clients=self.n_clients,
 										  n_classes=self.n_classes,
 										  model_name=self.model_name,
@@ -279,6 +290,7 @@ class SimulationFL():
 										  new_clients_train=self.new_clients_train)
 			elif self.strategy_name == 'QFedAvg':
 				return QFedAvgClientTorch(cid=cid,
+										   agrs=self.args,
 										  n_clients=self.n_clients,
 										  n_classes=self.n_classes,
 										  model_name=self.model_name,
@@ -295,6 +307,7 @@ class SimulationFL():
 										  new_clients_train=self.new_clients_train)
 			elif self.strategy_name == "FedYogi":
 				return FedYogiClientTorch(cid=cid,
+										   agrs=self.args,
 										  n_clients=self.n_clients,
 										  n_classes=self.n_classes,
 										  model_name=self.model_name,
@@ -311,6 +324,7 @@ class SimulationFL():
 										  new_clients_train=self.new_clients_train)
 			else:
 				return FedAvgClientTorch(cid=cid,
+										   agrs=self.args,
 										 n_clients=self.n_clients,
 										 n_classes=self.n_classes,
 										 model_name=self.model_name,
