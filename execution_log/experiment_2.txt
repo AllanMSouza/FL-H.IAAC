@@ -1,0 +1,611 @@
+2023-04-25 19:10:57.731070: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2023-04-25 19:10:58.203113: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
+2023-04-25 19:10:58.203169: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
+2023-04-25 19:10:58.203179: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
+INFO flwr 2023-04-25 19:11:00,301 | app.py:142 | Starting Flower simulation, config: ServerConfig(num_rounds=4, round_timeout=None)
+2023-04-25 19:11:02,463	INFO worker.py:1529 -- Started a local Ray instance. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+INFO flwr 2023-04-25 19:11:03,707 | app.py:176 | Flower VCE: Ray initialized with resources: {'node:192.168.0.14': 1.0, 'CPU': 12.0, 'object_store_memory': 2526189158.0, 'memory': 5052378318.0}
+INFO flwr 2023-04-25 19:11:03,708 | server.py:86 | Initializing global parameters
+INFO flwr 2023-04-25 19:11:03,708 | server.py:270 | Requesting initial parameters from one random client
+INFO flwr 2023-04-25 19:11:06,457 | server.py:274 | Received initial parameters from one random client
+INFO flwr 2023-04-25 19:11:06,457 | server.py:88 | Evaluating initial parameters
+INFO flwr 2023-04-25 19:11:06,457 | server.py:101 | FL starting
+DEBUG flwr 2023-04-25 19:11:06,459 | server.py:215 | fit_round 1: strategy sampled 7 clients (out of 25)
+DEBUG flwr 2023-04-25 19:11:10,978 | server.py:229 | fit_round 1 received 7 results and 0 failures
+DEBUG flwr 2023-04-25 19:11:11,088 | server.py:165 | evaluate_round 1: strategy sampled 25 clients (out of 25)
+[2m[33m(raylet)[0m [2023-04-25 19:11:12,346 E 123970 124047] (raylet) file_system_monitor.cc:105: /tmp/ray/session_2023-04-25_19-11-00_333945_123768 is over 95% full, available space: 1217470464; capacity: 124896559104. Object creation will fail if spilling is required.
+[2m[36m(launch_and_evaluate pid=124124)[0m 2023-04-25 19:11:12.422758: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=124122)[0m 2023-04-25 19:11:12.335286: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=124123)[0m 2023-04-25 19:11:12.500830: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=124117)[0m 2023-04-25 19:11:12.469116: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=124114)[0m 2023-04-25 19:11:12.542704: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=124124)[0m 2023-04-25 19:11:14.920411: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=124124)[0m 2023-04-25 19:11:14.920740: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=124124)[0m 2023-04-25 19:11:14.920773: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
+[2m[36m(launch_and_evaluate pid=124122)[0m 2023-04-25 19:11:14.969361: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=124122)[0m 2023-04-25 19:11:14.969558: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=124122)[0m 2023-04-25 19:11:14.969581: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
+[2m[36m(launch_and_evaluate pid=124123)[0m 2023-04-25 19:11:15.080265: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=124123)[0m 2023-04-25 19:11:15.080394: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=124123)[0m 2023-04-25 19:11:15.080409: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
+[2m[36m(launch_and_evaluate pid=124114)[0m 2023-04-25 19:11:15.130078: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=124114)[0m 2023-04-25 19:11:15.130141: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=124114)[0m 2023-04-25 19:11:15.130150: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
+[2m[36m(launch_and_evaluate pid=124117)[0m 2023-04-25 19:11:15.120241: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=124117)[0m 2023-04-25 19:11:15.120446: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=124117)[0m 2023-04-25 19:11:15.120463: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
+DEBUG flwr 2023-04-25 19:11:18,335 | server.py:179 | evaluate_round 1 received 25 results and 0 failures
+DEBUG flwr 2023-04-25 19:11:18,337 | server.py:215 | fit_round 2: strategy sampled 7 clients (out of 25)
+DEBUG flwr 2023-04-25 19:11:20,151 | server.py:229 | fit_round 2 received 7 results and 0 failures
+Simulacao da estratégia:  FedPredict 0.3
+===================================================
+Starting training of FedPredict-None-0.3
+
+lista inicial de clientes:  []
+disponiveis:  ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24']
+Rodada inicial de novos clientes:  2
+clientes para selecionar (fit):  7  de  25
+selecionar (fit):  ['15', '3', '18', '4', '14', '8', '2']
+Clientes selecionados:  7
+previo:  <class 'list'>
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+similaridade (camada 0): 0.992594849860954
+similaridade (camada 1): 0.7724676486801053
+similaridade (camada 2): 0.9368142783922626
+similaridade (camada 3): 0.314012626100326
+treinados rodada 1:  {'0': {'count': 0, 'max_rounds': 4}, '1': {'count': 0, 'max_rounds': 4}, '2': {'count': 1, 'max_rounds': 4}, '3': {'count': 1, 'max_rounds': 4}, '4': {'count': 1, 'max_rounds': 4}, '5': {'count': 0, 'max_rounds': 4}, '6': {'count': 0, 'max_rounds': 4}, '7': {'count': 0, 'max_rounds': 4}, '8': {'count': 1, 'max_rounds': 4}, '9': {'count': 0, 'max_rounds': 4}, '10': {'count': 0, 'max_rounds': 4}, '11': {'count': 0, 'max_rounds': 4}, '12': {'count': 0, 'max_rounds': 4}, '13': {'count': 0, 'max_rounds': 4}, '14': {'count': 1, 'max_rounds': 4}, '15': {'count': 1, 'max_rounds': 4}, '16': {'count': 0, 'max_rounds': 4}, '17': {'count': 0, 'max_rounds': 4}, '18': {'count': 1, 'max_rounds': 4}, '19': {'count': 0, 'max_rounds': 4}, '20': {'count': 0, 'max_rounds': 4}, '21': {'count': 0, 'max_rounds': 4}, '22': {'count': 0, 'max_rounds': 4}, '23': {'count': 0, 'max_rounds': 4}, '24': {'count': 0, 'max_rounds': 4}}
+clientes para selecionar (evaluate):  0  de  25
+selecionar (evaluate):  ['23', '0', '16', '7', '14', '15', '17', '21', '11', '18', '10', '3', '12', '19', '4', '24', '6', '1', '22', '5', '2', '9', '20', '8', '13']
+Cliente:  23  nunca treinado
+Cliente:  0  nunca treinado
+Cliente:  16  nunca treinado
+Cliente:  7  nunca treinado
+Cliente:  17  nunca treinado
+Cliente:  21  nunca treinado
+Cliente:  11  nunca treinado
+Cliente:  10  nunca treinado
+Cliente:  12  nunca treinado
+Cliente:  19  nunca treinado
+Cliente:  24  nunca treinado
+Cliente:  6  nunca treinado
+Cliente:  1  nunca treinado
+Cliente:  22  nunca treinado
+Cliente:  5  nunca treinado
+Cliente:  9  nunca treinado
+Cliente:  20  nunca treinado
+Cliente:  13  nunca treinado
+[2m[36m(launch_and_evaluate pid=124118)[0m rodada:  1  rounds sem fit:  0 
+[2m[36m(launch_and_evaluate pid=124118)[0m peso global:  0  peso local:  1
+[2m[36m(launch_and_evaluate pid=124120)[0m rodada:  1  rounds sem fit:  0 
+[2m[36m(launch_and_evaluate pid=124120)[0m peso global:  0  peso local:  1
+[2m[36m(launch_and_evaluate pid=124113)[0m rodada:  1  rounds sem fit:  0 
+[2m[36m(launch_and_evaluate pid=124113)[0m peso global:  0  peso local:  1
+[2m[36m(launch_and_evaluate pid=124121)[0m rodada:  1  rounds sem fit:  0 
+[2m[36m(launch_and_evaluate pid=124121)[0m peso global:  0  peso local:  1
+[2m[36m(launch_and_evaluate pid=124119)[0m rodada:  1  rounds sem fit:  0 
+[2m[36m(launch_and_evaluate pid=124119)[0m peso global:  0  peso local:  1
+[2m[36m(launch_and_evaluate pid=124122)[0m rodada:  1  rounds sem fit:  0 
+[2m[36m(launch_and_evaluate pid=124122)[0m peso global:  0  peso local:  1
+[2m[36m(launch_and_evaluate pid=124123)[0m rodada:  1  rounds sem fit:  0 
+[2m[36m(launch_and_evaluate pid=124123)[0m peso global:  0  peso local:  1
+Round 1 accuracy aggregated from client results: 0.3845620842572062
+Metricas dos clientes:  {'0': {'count': 0, 'max_rounds': 4}, '1': {'count': 0, 'max_rounds': 4}, '2': {'count': 1, 'max_rounds': 4}, '3': {'count': 1, 'max_rounds': 4}, '4': {'count': 1, 'max_rounds': 4}, '5': {'count': 0, 'max_rounds': 4}, '6': {'count': 0, 'max_rounds': 4}, '7': {'count': 0, 'max_rounds': 4}, '8': {'count': 1, 'max_rounds': 4}, '9': {'count': 0, 'max_rounds': 4}, '10': {'count': 0, 'max_rounds': 4}, '11': {'count': 0, 'max_rounds': 4}, '12': {'count': 0, 'max_rounds': 4}, '13': {'count': 0, 'max_rounds': 4}, '14': {'count': 1, 'max_rounds': 4}, '15': {'count': 1, 'max_rounds': 4}, '16': {'count': 0, 'max_rounds': 4}, '17': {'count': 0, 'max_rounds': 4}, '18': {'count': 1, 'max_rounds': 4}, '19': {'count': 0, 'max_rounds': 4}, '20': {'count': 0, 'max_rounds': 4}, '21': {'count': 0, 'max_rounds': 4}, '22': {'count': 0, 'max_rounds': 4}, '23': {'count': 0, 'max_rounds': 4}, '24': {'count': 0, 'max_rounds': 4}}
+lista inicial de clientes:  ['22', '13', '12', '19', '17', '7', '9', '23', '24', '21', '11', '1', '6', '20', '4', '8', '16', '0', '10', '2', '14', '15', '3', '5', '18']
+disponiveis:  ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24']
+Rodada inicial de novos clientes:  2
+clientes para selecionar (fit):  7  de  25
+selecionar (fit):  ['1', '5', '11', '8', '2', '23', '9']
+Clientes selecionados:  7
+previo:  <class 'list'>
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+similaridade (camada 0): 0.9938416779402484
+similaridade (camada 1): 0.8920910838746343
+similaridade (camada 2): 0.9512054673390854
+similaridade (camada 3): 0.7265720747429542
+clientes para selecionar (evaluate):  0  de  25
+selecionar (evaluate):  ['7', '0', '5', '10', '22', '4', '16', '18', '11', '20', '14', '24', '12', '6', '8', '15', '9', '21', '17', '3', '1', '13', '2', '19', '23']
+Cliente:  7  nunca treinado
+Cliente:  0  nunca treinado
+Cliente:  10  nunca treinado
+Cliente:  22  nunca treinado
+Cliente:  16  nunca treinado
+Cliente:  DEBUG flwr 2023-04-25 19:11:20,199 | server.py:165 | evaluate_round 2: strategy sampled 25 clients (out of 25)
+[2m[33m(raylet)[0m [2023-04-25 19:11:22,361 E 123970 124047] (raylet) file_system_monitor.cc:105: /tmp/ray/session_2023-04-25_19-11-00_333945_123768 is over 95% full, available space: 1215827968; capacity: 124896559104. Object creation will fail if spilling is required.
+[2m[36m(launch_and_evaluate pid=124966)[0m 2023-04-25 19:11:31.967567: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=124951)[0m 2023-04-25 19:11:31.967578: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+[2m[33m(raylet)[0m [2023-04-25 19:11:32,384 E 123970 124047] (raylet) file_system_monitor.cc:105: /tmp/ray/session_2023-04-25_19-11-00_333945_123768 is over 95% full, available space: 1215692800; capacity: 124896559104. Object creation will fail if spilling is required.
+[2m[36m(launch_and_evaluate pid=124966)[0m 2023-04-25 19:11:33.304520: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=124966)[0m 2023-04-25 19:11:33.304599: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=124966)[0m 2023-04-25 19:11:33.304609: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
+[2m[36m(launch_and_evaluate pid=124951)[0m 2023-04-25 19:11:33.304518: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=124951)[0m 2023-04-25 19:11:33.304597: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=124951)[0m 2023-04-25 19:11:33.304607: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
+DEBUG flwr 2023-04-25 19:11:37,737 | server.py:179 | evaluate_round 2 received 25 results and 0 failures
+DEBUG flwr 2023-04-25 19:11:37,740 | server.py:215 | fit_round 3: strategy sampled 7 clients (out of 25)
+DEBUG flwr 2023-04-25 19:11:39,281 | server.py:229 | fit_round 3 received 7 results and 0 failures
+DEBUG flwr 2023-04-25 19:11:39,526 | server.py:165 | evaluate_round 3: strategy sampled 25 clients (out of 25)
+[2m[33m(raylet)[0m [2023-04-25 19:11:42,401 E 123970 124047] (raylet) file_system_monitor.cc:105: /tmp/ray/session_2023-04-25_19-11-00_333945_123768 is over 95% full, available space: 1214660608; capacity: 124896559104. Object creation will fail if spilling is required.
+[2m[36m(launch_and_evaluate pid=125108)[0m 2023-04-25 19:11:45.625149: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=125292)[0m 2023-04-25 19:11:45.827125: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=125108)[0m 2023-04-25 19:11:47.058817: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=125108)[0m 2023-04-25 19:11:47.059258: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=125108)[0m 2023-04-25 19:11:47.059274: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
+[2m[36m(launch_and_evaluate pid=125292)[0m 2023-04-25 19:11:47.058817: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=125292)[0m 2023-04-25 19:11:47.059259: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=125292)[0m 2023-04-25 19:11:47.059269: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
+DEBUG flwr 2023-04-25 19:11:51,981 | server.py:179 | evaluate_round 3 received 25 results and 0 failures
+20  nunca treinado
+Cliente:  24  nunca treinado
+Cliente:  12  nunca treinado
+Cliente:  6  nunca treinado
+Cliente:  21  nunca treinado
+Cliente:  17  nunca treinado
+Cliente:  13  nunca treinado
+Cliente:  19  nunca treinado
+[2m[36m(launch_and_evaluate pid=124118)[0m rodada:  2  rounds sem fit:  1 
+[2m[36m(launch_and_evaluate pid=124118)[0m peso global:  0.22313  peso local:  0.77687
+[2m[36m(launch_and_evaluate pid=124116)[0m rodada:  2  rounds sem fit:  0 
+[2m[36m(launch_and_evaluate pid=124116)[0m peso global:  0  peso local:  1
+[2m[36m(launch_and_evaluate pid=124113)[0m rodada:  2  rounds sem fit:  1 
+[2m[36m(launch_and_evaluate pid=124113)[0m peso global:  0.22313  peso local:  0.77687
+[2m[36m(launch_and_evaluate pid=124124)[0m rodada:  2  rounds sem fit:  0 
+[2m[36m(launch_and_evaluate pid=124124)[0m peso global:  0  peso local:  1
+[2m[36m(launch_and_evaluate pid=124114)[0m rodada:  2  rounds sem fit:  0 
+[2m[36m(launch_and_evaluate pid=124114)[0m peso global:  0  peso local:  1
+[2m[36m(launch_and_evaluate pid=124118)[0m rodada:  2  rounds sem fit:  0 
+[2m[36m(launch_and_evaluate pid=124118)[0m peso global:  0  peso local:  1
+[2m[36m(launch_and_evaluate pid=124113)[0m rodada:  2  rounds sem fit:  0 
+[2m[36m(launch_and_evaluate pid=124113)[0m peso global:  0  peso local:  1
+[2m[36m(launch_and_evaluate pid=124121)[0m rodada:  2  rounds sem fit:  1 
+[2m[36m(launch_and_evaluate pid=124121)[0m peso global:  0.22313  peso local:  0.77687
+[2m[36m(launch_and_evaluate pid=124123)[0m rodada:  2  rounds sem fit:  1 
+[2m[36m(launch_and_evaluate pid=124123)[0m peso global:  0.22313  peso local:  0.77687
+[2m[36m(launch_and_evaluate pid=124124)[0m rodada:  2  rounds sem fit:  0 
+[2m[36m(launch_and_evaluate pid=124124)[0m peso global:  0  peso local:  1
+[2m[36m(launch_and_evaluate pid=124117)[0m rodada:  2  rounds sem fit:  0 
+[2m[36m(launch_and_evaluate pid=124117)[0m peso global:  0  peso local:  1
+[2m[36m(launch_and_evaluate pid=124122)[0m rodada:  2  rounds sem fit:  1 
+[2m[36m(launch_and_evaluate pid=124122)[0m peso global:  0.22313  peso local:  0.77687
+Round 2 accuracy aggregated from client results: 0.4201080931263858
+Metricas dos clientes:  {'0': {'count': 0, 'max_rounds': 4}, '1': {'count': 1, 'max_rounds': 4}, '2': {'count': 2, 'max_rounds': 4}, '3': {'count': 1, 'max_rounds': 4}, '4': {'count': 1, 'max_rounds': 4}, '5': {'count': 1, 'max_rounds': 4}, '6': {'count': 0, 'max_rounds': 4}, '7': {'count': 0, 'max_rounds': 4}, '8': {'count': 2, 'max_rounds': 4}, '9': {'count': 1, 'max_rounds': 4}, '10': {'count': 0, 'max_rounds': 4}, '11': {'count': 1, 'max_rounds': 4}, '12': {'count': 0, 'max_rounds': 4}, '13': {'count': 0, 'max_rounds': 4}, '14': {'count': 1, 'max_rounds': 4}, '15': {'count': 1, 'max_rounds': 4}, '16': {'count': 0, 'max_rounds': 4}, '17': {'count': 0, 'max_rounds': 4}, '18': {'count': 1, 'max_rounds': 4}, '19': {'count': 0, 'max_rounds': 4}, '20': {'count': 0, 'max_rounds': 4}, '21': {'count': 0, 'max_rounds': 4}, '22': {'count': 0, 'max_rounds': 4}, '23': {'count': 1, 'max_rounds': 4}, '24': {'count': 0, 'max_rounds': 4}}
+lista inicial de clientes:  ['0', '22', '12', '7', '13', '19', '17', '6', '16', '24', '21', '11', '4', '20', '10', '2', '8', '9', '1', '14', '3', '18', '23', '15', '5']
+disponiveis:  ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24']
+Rodada inicial de novos clientes:  2
+clientes para selecionar (fit):  7  de  25
+selecionar (fit):  ['18', '19', '15', '17', '7', '11', '4']
+Clientes selecionados:  7
+previo:  <class 'list'>
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+similaridade (camada 0): 0.9898022828788193
+similaridade (camada 1): 0.8527565248865203
+similaridade (camada 2): 0.9539208973087973
+similaridade (camada 3): 0.7182753816978605
+clientes para selecionar (evaluate):  0  de  25
+selecionar (evaluate):  ['5', '18', '1', '9', '0', '8', '15', '12', '13', '17', '11', '23', '21', '7', '2', '24', '22', '20', '19', '3', '6', '10', '16', '4', '14']
+Cliente:  0  nunca treinado
+Cliente:  12  nunca treinado
+Cliente:  13  nunca treinado
+Cliente:  21  nunca treinado
+Cliente:  24  nunca treinado
+Cliente:  22  nunca treinado
+Cliente:  20  nunca treinado
+Cliente:  6  nunca treinado
+Cliente:  10  nunca treinado
+Cliente:  16  nunca treinado
+[2m[36m(launch_and_evaluate pid=124123)[0m rodada:  3  rounds sem fit:  0 
+[2m[36m(launch_and_evaluate pid=124123)[0m peso global:  0  peso local:  1
+[2m[36m(launch_and_evaluate pid=124119)[0m rodada:  3  rounds sem fit:  1 
+[2m[36m(launch_and_evaluate pid=124119)[0m peso global:  0.173774  peso local:  0.826226
+[2m[36m(launch_and_evaluate pid=124118)[0m rodada:  3  rounds sem fit:  1 
+[2m[36m(launch_and_evaluate pid=124118)[0m peso global:  0.173774  peso local:  0.826226
+[2m[36m(launch_and_evaluate pid=124122)[0m rodada:  3  rounds sem fit:  0 
+[2m[36m(launch_and_evaluate pid=124122)[0m peso global:  0  peso local:  1
+[2m[36m(launch_and_evaluate pid=124114)[0m rodada:  3  rounds sem fit:  1 
+[2m[36m(launch_and_evaluate pid=124114)[0m peso global:  0.173774  peso local:  0.826226
+[2m[36m(launch_and_evaluate pid=124117)[0m rodada:  3  rounds sem fit:  0 
+[2m[36m(launch_and_evaluate pid=124117)[0m peso global:  0  peso local:  1
+[2m[36m(launch_and_evaluate pid=124966)[0m rodada:  3  rounds sem fit:  1 
+[2m[36m(launch_and_evaluate pid=124966)[0m peso global:  0.173774  peso local:  0.826226
+[2m[36m(launch_and_evaluate pid=124951)[0m rodada:  3  rounds sem fit:  1 
+[2m[36m(launch_and_evaluate pid=124951)[0m peso global:  0.173774  peso local:  0.826226
+[2m[36m(launch_and_evaluate pid=124113)[0m rodada:  3  rounds sem fit:  0 
+[2m[36m(launch_and_evaluate pid=124113)[0m peso global:  0  peso local:  1
+[2m[36m(launch_and_evaluate pid=124114)[0m rodada:  3  rounds sem fit:  2 
+[2m[36m(launch_and_evaluate pid=124114)[0m peso global:  0.286505  peso local:  0.713495
+[2m[36m(launch_and_evaluate pid=124966)[0m rodada:  3  rounds sem fit:  0 
+[2m[36m(launch_and_evaluate pid=124966)[0m peso global:  0  peso local:  1
+[2m[36m(launch_and_evaluate pid=124118)[0m rodada:  3  rounds sem fit:  2 
+[2m[36m(launch_and_evaluate pid=124118)[0m peso global:  0.286505  peso local:  0.713495
+[2m[36m(launch_and_evaluate pid=124122)[0m rodada:  3  rounds sem fit:  0 
+[2m[36m(launch_and_evaluate pid=124122)[0m peso global:  0  peso local:  1
+[2m[36m(launch_and_evaluate pid=124122)[0m rodada:  3  rounds sem fit:  0 
+[2m[36m(launch_and_evaluate pid=124122)[0m peso global:  0  peso local:  1
+Round 3 accuracy aggregated from client results: 0.5392184035476718
+Metricas dos clientes:  DEBUG flwr 2023-04-25 19:11:51,983 | server.py:215 | fit_round 4: strategy sampled 7 clients (out of 25)
+[2m[33m(raylet)[0m [2023-04-25 19:11:52,417 E 123970 124047] (raylet) file_system_monitor.cc:105: /tmp/ray/session_2023-04-25_19-11-00_333945_123768 is over 95% full, available space: 1214582784; capacity: 124896559104. Object creation will fail if spilling is required.
+DEBUG flwr 2023-04-25 19:11:53,000 | server.py:229 | fit_round 4 received 7 results and 0 failures
+DEBUG flwr 2023-04-25 19:11:53,053 | server.py:165 | evaluate_round 4: strategy sampled 25 clients (out of 25)
+2023-04-25 19:12:01,507	WARNING worker.py:1851 -- A worker died or was killed while executing a task by an unexpected system error. To troubleshoot the problem, check the logs for the dead worker. RayTask ID: 2c5b0324d959636d2b579b7b31960ff8b5e3eec501000000 Worker ID: 7783591bc1c12ec9fe4c8afa6808b3e5018c7609d5dd664865d0d3ad Node ID: fa041a1e4f72962a65781b8bc467aa1364a76f2905fa5fddc22192d4 Worker IP address: 192.168.0.14 Worker port: 37181 Worker PID: 124119 Worker exit type: SYSTEM_ERROR Worker exit detail: The leased worker has unrecoverable failure. Worker is requested to be destroyed when it is returned.
+[2m[33m(raylet)[0m [2023-04-25 19:12:02,368 E 123970 123970] (raylet) node_manager.cc:3097: 8 Workers (tasks / actors) killed due to memory pressure (OOM), 0 Workers crashed due to other reasons at node (ID: fa041a1e4f72962a65781b8bc467aa1364a76f2905fa5fddc22192d4, IP: 192.168.0.14) over the last time period. To see more information about the Workers killed on this node, use `ray logs raylet.out -ip 192.168.0.14`
+[2m[33m(raylet)[0m 
+[2m[33m(raylet)[0m Refer to the documentation on how to address the out of memory issue: https://docs.ray.io/en/latest/ray-core/scheduling/ray-oom-prevention.html. Consider provisioning more memory on this node or reducing task parallelism by requesting more CPUs per task. To adjust the kill threshold, set the environment variable `RAY_memory_usage_threshold` when starting Ray. To disable worker killing, set the environment variable `RAY_memory_monitor_refresh_ms` to zero.
+[2m[33m(raylet)[0m [2023-04-25 19:12:02,485 E 123970 124047] (raylet) file_system_monitor.cc:105: /tmp/ray/session_2023-04-25_19-11-00_333945_123768 is over 95% full, available space: 1214476288; capacity: 124896559104. Object creation will fail if spilling is required.
+[2m[36m(launch_and_evaluate pid=125391)[0m 2023-04-25 19:12:04.690572: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=125383)[0m 2023-04-25 19:12:04.690590: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=125390)[0m 2023-04-25 19:12:04.690590: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=125391)[0m 2023-04-25 19:12:05.876099: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=125391)[0m 2023-04-25 19:12:05.876785: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=125391)[0m 2023-04-25 19:12:05.876796: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
+[2m[36m(launch_and_evaluate pid=125383)[0m 2023-04-25 19:12:05.876101: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=125383)[0m 2023-04-25 19:12:05.876781: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=125383)[0m 2023-04-25 19:12:05.876793: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
+[2m[36m(launch_and_evaluate pid=125390)[0m 2023-04-25 19:12:05.876098: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=125390)[0m 2023-04-25 19:12:05.876782: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
+[2m[36m(launch_and_evaluate pid=125390)[0m 2023-04-25 19:12:05.876794: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
+DEBUG flwr 2023-04-25 19:12:10,219 | server.py:179 | evaluate_round 4 received 25 results and 0 failures
+{'0': {'count': 0, 'max_rounds': 4}, '1': {'count': 1, 'max_rounds': 4}, '2': {'count': 2, 'max_rounds': 4}, '3': {'count': 1, 'max_rounds': 4}, '4': {'count': 2, 'max_rounds': 4}, '5': {'count': 1, 'max_rounds': 4}, '6': {'count': 0, 'max_rounds': 4}, '7': {'count': 1, 'max_rounds': 4}, '8': {'count': 2, 'max_rounds': 4}, '9': {'count': 1, 'max_rounds': 4}, '10': {'count': 0, 'max_rounds': 4}, '11': {'count': 2, 'max_rounds': 4}, '12': {'count': 0, 'max_rounds': 4}, '13': {'count': 0, 'max_rounds': 4}, '14': {'count': 1, 'max_rounds': 4}, '15': {'count': 2, 'max_rounds': 4}, '16': {'count': 0, 'max_rounds': 4}, '17': {'count': 1, 'max_rounds': 4}, '18': {'count': 2, 'max_rounds': 4}, '19': {'count': 1, 'max_rounds': 4}, '20': {'count': 0, 'max_rounds': 4}, '21': {'count': 0, 'max_rounds': 4}, '22': {'count': 0, 'max_rounds': 4}, '23': {'count': 1, 'max_rounds': 4}, '24': {'count': 0, 'max_rounds': 4}}
+lista inicial de clientes:  ['12', '21', '13', '24', '10', '20', '16', '6', '11', '22', '2', '4', '8', '0', '9', '1', '14', '3', '18', '23', '19', '15', '7', '17', '5']
+disponiveis:  ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24']
+Rodada inicial de novos clientes:  2
+clientes para selecionar (fit):  7  de  25
+=======
+FedPredict-None-0.3
+Max rounds per client:  {'0': {'count': 0, 'max_rounds': 4}, '1': {'count': 1, 'max_rounds': 4}, '2': {'count': 3, 'max_rounds': 4}, '3': {'count': 2, 'max_rounds': 4}, '4': {'count': 3, 'max_rounds': 4}, '5': {'count': 1, 'max_rounds': 4}, '6': {'count': 0, 'max_rounds': 4}, '7': {'count': 2, 'max_rounds': 4}, '8': {'count': 2, 'max_rounds': 4}, '9': {'count': 2, 'max_rounds': 4}, '10': {'count': 0, 'max_rounds': 4}, '11': {'count': 2, 'max_rounds': 4}, '12': {'count': 1, 'max_rounds': 4}, '13': {'count': 0, 'max_rounds': 4}, '14': {'count': 1, 'max_rounds': 4}, '15': {'count': 3, 'max_rounds': 4}, '16': {'count': 0, 'max_rounds': 4}, '17': {'count': 1, 'max_rounds': 4}, '18': {'count': 2, 'max_rounds': 4}, '19': {'count': 1, 'max_rounds': 4}, '20': {'count': 0, 'max_rounds': 4}, '21': {'count': 0, 'max_rounds': 4}, '22': {'count': 0, 'max_rounds': 4}, '23': {'count': 1, 'max_rounds': 4}, '24': {'count': 0, 'max_rounds': 4}}
+=======
+selecionar (fit):  ['2', '12', '9', '7', '4', '3', '15']
+Clientes selecionados:  7
+[2m[36m(launch_and_evaluate pid=125108)[0m rodada:  3  rounds sem fit:  1 
+[2m[36m(launch_and_evaluate pid=125108)[0m peso global:  0.173774  peso local:  0.826226
+previo:  <class 'list'>
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+apos global:  (100, 784)
+apos cliente:  (100, 784)
+apos global:  (100, 1)
+apos cliente:  (100, 1)
+apos global:  (10, 100)
+apos cliente:  (10, 100)
+apos global:  (10, 1)
+apos cliente:  (10, 1)
+similaridade (camada 0): 0.9877275643420824
+similaridade (camada 1): 0.9006794320504309
+similaridade (camada 2): 0.9646933711503215
+similaridade (camada 3): 0.8265138913755272
+clientes para selecionar (evaluate):  0  de  25
+selecionar (evaluate):  ['19', '10', '21', '12', '16', '7', '5', '24', '15', '8', '1', '13', '20', '4', '0', '11', '9', '3', '17', '6', '22', '2', '14', '18', '23']
+Cliente:  10  nunca treinado
+Cliente:  21  nunca treinado
+Cliente:  16  nunca treinado
+Cliente:  24  nunca treinado
+Cliente:  13  nunca treinado
+Cliente:  20  nunca treinado
+Cliente:  0  nunca treinado
+Cliente:  6  nunca treinado
+Cliente:  22  nunca treinado
+[2m[36m(launch_and_evaluate pid=124118)[0m rodada:  4  rounds sem fit:  0 
+[2m[36m(launch_and_evaluate pid=124118)[0m peso global:  0  peso local:  1
+[2m[36m(launch_and_evaluate pid=124122)[0m rodada:  4  rounds sem fit:  1 
+[2m[36m(launch_and_evaluate pid=124122)[0m peso global:  0.135335  peso local:  0.864665
+[2m[36m(launch_and_evaluate pid=124114)[0m rodada:  4  rounds sem fit:  2 
+[2m[36m(launch_and_evaluate pid=124114)[0m peso global:  0.22313  peso local:  0.77687
+[2m[36m(launch_and_evaluate pid=124117)[0m rodada:  4  rounds sem fit:  0 
+[2m[36m(launch_and_evaluate pid=124117)[0m peso global:  0  peso local:  1
+[2m[36m(launch_and_evaluate pid=124966)[0m rodada:  4  rounds sem fit:  0 
+[2m[36m(launch_and_evaluate pid=124966)[0m peso global:  0  peso local:  1
+[2m[36m(launch_and_evaluate pid=125108)[0m rodada:  4  rounds sem fit:  2 
+[2m[36m(launch_and_evaluate pid=125108)[0m peso global:  0.22313  peso local:  0.77687
+[2m[36m(launch_and_evaluate pid=124113)[0m rodada:  4  rounds sem fit:  0 
+[2m[36m(launch_and_evaluate pid=124113)[0m peso global:  0  peso local:  1
+[2m[36m(launch_and_evaluate pid=124114)[0m rodada:  4  rounds sem fit:  1 
+[2m[36m(launch_and_evaluate pid=124114)[0m peso global:  0.135335  peso local:  0.864665
+[2m[36m(launch_and_evaluate pid=124966)[0m rodada:  4  rounds sem fit:  1 
+[2m[36m(launch_and_evaluate pid=124966)[0m peso global:  0.135335  peso local:  0.864665
+[2m[36m(launch_and_evaluate pid=124124)[0m rodada:  4  rounds sem fit:  0 
+[2m[36m(launch_and_evaluate pid=124124)[0m peso global:  0  peso local:  1
+[2m[36m(launch_and_evaluate pid=125292)[0m rodada:  4  rounds sem fit:  0 
+[2m[36m(launch_and_evaluate pid=125292)[0m peso global:  0  peso local:  1
+[2m[36m(launch_and_evaluate pid=125108)[0m rodada:  4  rounds sem fit:  3 
+[2m[36m(launch_and_evaluate pid=125108)[0m peso global:  0.263597  peso local:  0.7364029999999999
+[2m[36m(launch_and_evaluate pid=124113)[0m rodada:  4  rounds sem fit:  2 
+[2m[36m(launch_and_evaluate pid=124113)[0m peso global:  0.22313  peso local:  0.77687
+[2m[36m(launch_and_evaluate pid=124966)[0m rodada:  4  rounds sem fit:  2 
+[2m[36m(launch_and_evaluate pid=124966)[0m peso global:  0.22313  peso local:  0.77687
+Round 4 accuracy aggregated from client results: 0.7045454545454546
+Metricas dos clientes:  {'0': {'count': 0, 'max_rounds': 4}, '1': {'count': 1, 'max_rounds': 4}, '2': {'count': 3, 'max_rounds': 4}, '3': {'count': 2, 'max_rounds': 4}, '4': {'count': 3, 'max_rounds': 4}, '5': {'count': 1, 'max_rounds': 4}, '6': {'count': 0, 'max_rounds': 4}, '7': {'count': 2, 'max_rounds': 4}, '8': {'count': 2, 'max_rounds': 4}, '9': {'count': 2, 'max_rounds': 4}, '10': {'count': 0, 'max_rounds': 4}, '11': {'count': 2, 'max_rounds': 4}, '12': {'count': 1, 'max_rounds': 4}, '13': {'count': 0, 'max_rounds': 4}, '14': {'count': 1, 'max_rounds': 4}, '15': {'count': 3, 'max_rounds': 4}, '16': {'count': 0, 'max_rounds': 4}, '17': {'count': 1, 'max_rounds': 4}, '18': {'count': 2, 'max_rounds': 4}, '19': {'count': 1, 'max_rounds': 4}, '20': {'count': 0, 'max_rounds': 4}, '21': {'count': 0, 'max_rounds': 4}, '22': {'count': 0, 'max_rounds': 4}, '23': {'count': 1, 'max_rounds': 4}, '24': {'count': 0, 'max_rounds': 4}}
+[2m[36m(launch_and_evaluate pid=125391)[0m rodada:  4  rounds sem fit:  1 
+[2m[36m(launch_and_evaluate pid=125391)[0m peso global:  0.135335  peso local:  0.864665
+[2m[36m(launch_and_evaluate pid=125390)[0m rodada:  4  rounds sem fit:  0 
+INFO flwr 2023-04-25 19:12:10,227 | server.py:144 | FL finished in 63.7701103540021
+INFO flwr 2023-04-25 19:12:10,228 | app.py:198 | app_fit: losses_distributed [(1, 1.9055878101061294), (2, 1.6932445188980145), (3, 1.3170193492242872), (4, 1.041929659939592)]
+INFO flwr 2023-04-25 19:12:10,228 | app.py:199 | app_fit: metrics_distributed {'accuracy': [(1, 0.3845620842572062), (2, 0.4201080931263858), (3, 0.5392184035476718), (4, 0.7045454545454546)], 'accuracy std': [(1, 152.83952368415703), (2, 200.05021769545766), (3, 223.16962517331967), (4, 236.76157120613976)], 'top-3': [(1, 0.8215277777777779), (2, 0.9322303921568628), (3, 0.981780303030303), (4, 0.973693181818182)], 'top-1': [(1, 0.9229166666666667), (2, 1.0), (3, 1.0), (4, 1.0)]}
+INFO flwr 2023-04-25 19:12:10,228 | app.py:200 | app_fit: losses_centralized []
+INFO flwr 2023-04-25 19:12:10,228 | app.py:201 | app_fit: metrics_centralized {}
+[2m[36m(launch_and_evaluate pid=125390)[0m peso global:  0  peso local:  1
+/home/claudio/Documentos/pycharm_projects/FedLTA/analysis/base_plots.py:45: UserWarning: The palette list has more values (10) than needed (3), which may not be intended.
+  figure = sns.lineplot(x=x_column, y=y_column, data=df, hue=hue, ax=ax, palette=palette, hue_order=hue_order, style=hue).set_title(title)
+/home/claudio/Documentos/pycharm_projects/FedLTA/analysis/base_plots.py:45: UserWarning: 
+The palette list has fewer values (10) than needed (16) and will cycle, which may produce an uninterpretable plot.
+  figure = sns.lineplot(x=x_column, y=y_column, data=df, hue=hue, ax=ax, palette=palette, hue_order=hue_order, style=hue).set_title(title)
+25   ['FedPredict']
+antes:  None FedPredict-None-0.3
+{'FedPredict': '/home/claudio/Documentos/pycharm_projects/FedLTA/logs/torch/FedPredict-None-0.3/new_clients_False_train_False/25/DNN/MNIST/1_local_epochs/'}
+teste:      Round  Accuracy (%)  nt    Strategy
+0       0      0.000000   0  FedPredict
+1       0      0.000000   1  FedPredict
+2       0      0.000000   2  FedPredict
+3       0      0.000000   3  FedPredict
+4       0      0.000000   4  FedPredict
+5       1      0.649472   0  FedPredict
+6       1      0.291611   1  FedPredict
+7       1      0.000000   2  FedPredict
+8       1      0.000000   3  FedPredict
+9       1      0.000000   4  FedPredict
+10      2      0.691103   0  FedPredict
+11      2      0.787088   1  FedPredict
+12      2      0.154259   2  FedPredict
+13      2      0.000000   3  FedPredict
+14      2      0.000000   4  FedPredict
+15      3      0.830826   0  FedPredict
+16      3      0.752574   1  FedPredict
+17      3      0.829861   2  FedPredict
+18      3      0.194400   3  FedPredict
+19      3      0.000000   4  FedPredict
+20      4      0.717940   0  FedPredict
+21      4      0.799392   1  FedPredict
+22      4      0.831065   2  FedPredict
+23      4      0.840278   3  FedPredict
+24      4      0.000000   4  FedPredict
+    Round  Cid  Size of parameters  ...  Accuracy    Strategy  Accuracy (%)
+0       1    0               15400  ...  0.476562  FedPredict       47.6562
+1       1   15               15400  ...  0.765625  FedPredict       76.5625
+2       1   16               15400  ...  0.463068  FedPredict       46.3068
+3       1    7               15400  ...  0.210227  FedPredict       21.0227
+4       1   14               15400  ...  0.597222  FedPredict       59.7222
+..    ...  ...                 ...  ...       ...         ...           ...
+95      4   21               15400  ...  0.890625  FedPredict       89.0625
+96      4    1               15400  ...  0.734954  FedPredict       73.4954
+97      4   20               15400  ...  0.669837  FedPredict       66.9837
+98      4   11               15400  ...  0.366319  FedPredict       36.6319
+99      4    4               15400  ...  0.677734  FedPredict       67.7734
+
+[100 rows x 8 columns]
+   Size of parameters (bytes)  Communication cost (bytes)    Strategy
+0                     15400.0                    15635.88  FedPredict
+analysis/output/torch/experiment_2/None0.3/new_clients_False_train_False/25_clients/MNIST/DNN/1_local_epochs//
+ddd:      Server round  Layer  Similarity    Strategy
+0              1      0    0.992595  FedPredict
+1              1      1    0.772468  FedPredict
+2              1      2    0.936814  FedPredict
+3              1      3    0.314013  FedPredict
+4              2      0    0.993842  FedPredict
+5              2      1    0.892091  FedPredict
+6              2      2    0.951205  FedPredict
+7              2      3    0.726572  FedPredict
+8              3      0    0.989802  FedPredict
+9              3      1    0.852757  FedPredict
+10             3      2    0.953921  FedPredict
+11             3      3    0.718275  FedPredict
+12             4      0    0.987728  FedPredict
+13             4      1    0.900679  FedPredict
+14             4      2    0.964693  FedPredict
+15             4      3    0.826514  FedPredict
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            Starting FedPredict fraction_fit-0.3 simulation for MNIST clients with DNN model ... /home/claudio/Documentos/pycharm_projects/FedLTA
+=====================================
+Executando... 
+ python /home/claudio/Documentos/pycharm_projects/FedLTA/simulation.py --dataset='MNIST' --model='DNN' --strategy='FedPredict' --epochs=1 --round=4 --client=25 --type='torch' --non-iid=True --aggregation_method='None' --fraction_fit=0.3 --poc=0 --new_clients=False --new_clients_train=False --decay=0 
+=====================================
+=====================================
+Executando analytics... 
+ python analysis/non_iid.py --dataset='MNIST' --model='DNN' --round=4 --client=25 --aggregation_method='None' --poc=0 --new_clients=False --new_clients_train=False --non-iid=True --comment='' --epochs=1 --decay=0 --fraction_fit=0.3 --experiment=2  --strategy='FedPredict' 
+=====================================

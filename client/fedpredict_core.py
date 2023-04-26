@@ -128,7 +128,7 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters):
 
     for i in range(num_layers):
 
-        similarity_per_layer[i] = np.median(similarity_per_layer[i])
+        similarity_per_layer[i] = np.mean(similarity_per_layer[i])
 
         print("""similaridade (camada {}): {}""".format(i, similarity_per_layer[i]))
 
