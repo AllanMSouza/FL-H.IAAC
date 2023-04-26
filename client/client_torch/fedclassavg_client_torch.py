@@ -199,8 +199,6 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 				selected = 1
 				self.model.train()
 
-				start_time = time.time()
-
 				max_local_steps = self.local_epochs
 				train_acc = 0
 				train_loss = 0
@@ -232,10 +230,11 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 				trained_parameters = self.get_parameters_of_model()
 				self.save_parameters()
 
-			total_time         = time.process_time() - start_time
+
 			size_of_parameters = sum([sum(map(sys.getsizeof, trained_parameters[i])) for i in range(len(trained_parameters))])
 			avg_loss_train     = train_loss/train_num
 			avg_acc_train      = train_acc/train_num
+			total_time = time.process_time() - start_time
 
 			data = [config['round'], self.cid, selected, total_time, size_of_parameters, avg_loss_train, avg_acc_train]
 

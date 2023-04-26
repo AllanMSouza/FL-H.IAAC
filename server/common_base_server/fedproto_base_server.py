@@ -284,7 +284,7 @@ class FedProtoBaseServer(FedAvgBaseServer):
         top5 = np.mean(accs[-5:])
         top1 = accs[-1]
 
-        data = [time.time()-self.start_time, server_round, accuracy_aggregated, top5, top1]
+        data = [time.process_time()-self.start_time, server_round, accuracy_aggregated, top5, top1]
 
         self._write_output(filename=self.server_filename,
                            data=data

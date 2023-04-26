@@ -91,17 +91,17 @@ class ClientBaseTf(fl.client.NumPyClient):
 	def load_data(self, dataset_name, n_clients):
 		return ManageDatasets(self.cid).select_dataset(dataset_name, n_clients, self.non_iid)
 
-	def create_model(self, use_proto=False):
+	def create_model(self):
 		input_shape = self.x_train.shape
 
 		if self.model_name == 'Logist Regression':
-			return ModelCreation().create_LogisticRegression(input_shape, self.num_classes, use_proto=use_proto)
+			return ModelCreation().create_LogisticRegression(input_shape, self.num_classes)
 
 		elif self.model_name == 'DNN':
-			return ModelCreation().create_DNN(input_shape, self.num_classes, use_proto=use_proto)
+			return ModelCreation().create_DNN(input_shape, self.num_classes)
 
 		elif self.model_name == 'CNN':
-			return ModelCreation().create_CNN(input_shape, self.num_classes, use_proto=use_proto)
+			return ModelCreation().create_CNN(input_shape, self.num_classes)
 
 		else:
 			raise Exception("Wrong model name")
@@ -126,7 +126,6 @@ class ClientBaseTf(fl.client.NumPyClient):
 				selected_clients = [int (cid_selected) for cid_selected in config['selected_clients'].split(' ')]
 
 			start_time = time.process_time()
-			#print(config)
 			if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
 				self.set_parameters_to_model(parameters)
 

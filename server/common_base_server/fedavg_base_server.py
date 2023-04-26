@@ -175,8 +175,10 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 	def configure_fit(self, server_round, parameters, client_manager):
 		"""Configure the next round of training."""
 
-		self.start_time = time.time()
+		self.start_time = time.process_time()
+		random.seed(server_round)
 		self.previous_global_parameters = fl.common.parameters_to_ndarrays(parameters)
+
 		random.seed(server_round)
 
 		if self.aggregation_method == 'POC':
@@ -344,7 +346,8 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		selected_clients_evaluate = list_of_valid_clients_for_evaluate
 		# Parameters and config
 		config = {
-			'round' : server_round
+			'round' : server_round,
+			'n_rounds': self.num_rounds
 		}
 
 		if self.on_evaluate_config_fn is not None:
@@ -438,7 +441,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		top1 = accs[-1]
 
 		assert self.server_filename is not None
-		data = [time.time()-self.start_time, server_round, accuracy_aggregated, accuracy_std, top5, top1]
+		data = [time.process_time()-self.start_time, server_round, accuracy_aggregated, accuracy_std, top5, top1]
 
 		self._write_output(filename=self.server_filename,
 						   data=data
@@ -513,32 +516,47 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.train_filename = f"{self.base}train_client.csv"
 		self.evaluate_filename = f"{self.base}evaluate_client.csv"
 		self.server_nt_acc_filename = f"{self.base}server_nt_acc.csv"
+		self.predictions_client_filename = f"{self.base}/predictions_client.csv"
 
 		server_header = ["Time", "Server round", "Accuracy aggregated", "Accuracy std", "Top5", "Top1"]
 		train_header = ["Round", "Cid", "Selected", "Total time", "Size of parameters", "Avg loss train", "Avg accuracy train"]
 		evaluate_header = ["Round", "Cid", "Size of parameters", "Size of config", "Loss", "Accuracy"]
 		server_nt_acc_header = ["Round", "Accuracy (%)", "nt"]
+		predictions_header = ["Cid", "Round", "Prediction", "Label"]
 
 		# Remove previous files
 		if os.path.exists(self.server_filename): os.remove(self.server_filename)
 		if os.path.exists(self.train_filename): os.remove(self.train_filename)
 		if os.path.exists(self.evaluate_filename): os.remove(self.evaluate_filename)
 		if os.path.exists(self.server_nt_acc_filename): os.remove(self.server_nt_acc_filename)
+		if os.path.exists(self.predictions_client_filename): os.remove(self.predictions_client_filename)
 		# Create new files
 		self._write_header(self.server_filename, server_header)
 		self._write_header(self.train_filename, train_header)
 		self._write_header(self.evaluate_filename, evaluate_header)
 		self._write_header(self.server_nt_acc_filename, server_nt_acc_header)
+		self._write_header(self.predictions_client_filename, predictions_header)
 
 
 	def _write_output(self, filename, data):
 
+		for i in range(len(data)):
+			element = data[i]
+			if type(element) == float:
+				element = round(element, 6)
+				data[i] = element
 		with open(filename, 'a') as server_log_file:
 			writer = csv.writer(server_log_file)
 			writer.writerow(data)
 
 	def _write_outputs(self, filename, data):
 
+		for i in range(len(data)):
+			for j in range(len(data[i])):
+				element = data[i][j]
+				if type(element) == float:
+					element = round(element, 6)
+					data[i][j] = element
 		with open(filename, 'a') as server_log_file:
 			writer = csv.writer(server_log_file)
 			writer.writerows(data)

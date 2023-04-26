@@ -5,7 +5,6 @@ import logging
 import os
 import sys
 
-
 def remove_lines(filename):
     with open(filename, 'r') as fp:
         # read an store all lines into list
@@ -75,7 +74,6 @@ EXPERIMENTS = {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train
                        int(ROUNDS * 0.7))},
                6: {'algorithm': 'FedLTA', 'new_client': 'False', 'new_client_train': 'False', 'comment': ''}}
 
-
 def execute_experiment(experiment, algorithm, new_client, new_client_train, comment, type):
     try:
         for dataset in DATASETS:
@@ -119,7 +117,6 @@ def execute_experiment(experiment, algorithm, new_client, new_client_train, comm
         print("Error on execution")
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-
 def main():
     parser = OptionParser()
 
@@ -133,6 +130,12 @@ def main():
     execute_experiment(opt.experiment_id, experiment['algorithm'], experiment['new_client'],
                        experiment['new_client_train'], experiment['comment'], opt.type)
     remove_lines("""execution_log/experiment_{}.txt""".format(opt.experiment_id))
+
+		
+		
+
+
+
 
 
 if __name__ == '__main__':

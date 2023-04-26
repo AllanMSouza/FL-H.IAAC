@@ -91,6 +91,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		self.base = f"logs/{self.type}/{self.solution_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.n_clients}/{self.model_name}/{self.dataset}/{self.local_epochs}_local_epochs"
 		self.evaluate_client_filename = f"{self.base}/evaluate_client.csv"
 		self.train_client_filename = f"{self.base}/train_client.csv"
+		self.predictions_client_filename = f"{self.base}/predictions_client.csv"
 
 		self.trainloader, self.testloader = self.load_data(self.dataset, n_clients=self.n_clients)
 		self.model                                           = self.create_model().to(self.device)
@@ -222,8 +223,6 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				selected = 1
 				self.model.train()
 
-				start_time = time.time()
-
 				max_local_steps = self.local_epochs
 				train_acc = 0
 				train_loss = 0
@@ -250,12 +249,12 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				trained_parameters = self.get_parameters_of_model()
 				self.save_parameters()
 
-			total_time = time.process_time() - start_time
+
 			size_of_parameters = sum(
 				[sum(map(sys.getsizeof, trained_parameters[i])) for i in range(len(trained_parameters))])
 			avg_loss_train = train_loss / train_num
 			avg_acc_train = train_acc / train_num
-
+			total_time = time.process_time() - start_time
 			# loss, accuracy, test_num = self.model_eval()
 
 			data = [config['round'], self.cid, selected, total_time, size_of_parameters, avg_loss_train, avg_acc_train]
@@ -281,6 +280,9 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			test_loss = 0
 			test_num = 0
 
+			predictions = np.array([])
+			labels = np.array([])
+
 			with torch.no_grad():
 				for x, y in self.testloader:
 					if type(x) == type([]):
@@ -293,13 +295,16 @@ class ClientBaseTorch(fl.client.NumPyClient):
 					output = self.model(x)
 					loss = self.loss(output, y)
 					test_loss += loss.item() * y.shape[0]
-					test_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
+					prediction = torch.argmax(output, dim=1)
+					predictions = np.append(predictions, prediction)
+					labels = np.append(labels, y)
+					test_acc += (torch.sum(prediction == y)).item()
 					test_num += y.shape[0]
 
 			loss = test_loss / test_num
 			accuracy = test_acc / test_num
 
-			return loss, accuracy, test_num
+			return loss, accuracy, test_num, predictions, labels
 		except Exception as e:
 			print("model_eval")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
@@ -307,16 +312,21 @@ class ClientBaseTorch(fl.client.NumPyClient):
 	def evaluate(self, parameters, config):
 		try:
 			server_round = int(config['round'])
+			n_rounds = int(config['n_rounds'])
 			self.set_parameters_to_model_evaluate(parameters, config)
 			# loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
 
 			size_of_parameters = sum([sum(map(sys.getsizeof, parameters[i])) for i in range(len(parameters))])
 			size_of_config = self._get_size_of_dict(config)
-			loss, accuracy, test_num = self.model_eval()
+			loss, accuracy, test_num, predictions, labels = self.model_eval()
 			data = [config['round'], self.cid, size_of_parameters, size_of_config, loss, accuracy]
 
 			self._write_output(filename=self.evaluate_client_filename,
 							   data=data)
+
+			if server_round == n_rounds:
+				data = [[self.cid, server_round, int(p), int(l)] for p, l in zip(predictions, labels)]
+				self._write_outputs(self.predictions_client_filename, data, 'a')
 
 			evaluation_response = {
 				"cid": self.cid,
@@ -330,9 +340,26 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 	def _write_output(self, filename, data):
 
+		for i in range(len(data)):
+			element = data[i]
+			if type(element) == float:
+				element = round(element, 6)
+				data[i] = element
 		with open(filename, 'a') as server_log_file:
 			writer = csv.writer(server_log_file)
 			writer.writerow(data)
+
+	def _write_outputs(self, filename, data, mode='a'):
+
+		for i in range(len(data)):
+			for j in range(len(data[i])):
+				element = data[i][j]
+				if type(element) == float:
+					element = round(element, 6)
+					data[i][j] = element
+		with open(filename, mode) as server_log_file:
+			writer = csv.writer(server_log_file)
+			writer.writerows(data)
 
 	def _get_size_of_dict(self, data):
 
