@@ -172,7 +172,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 	def configure_fit(self, server_round, parameters, client_manager):
 		"""Configure the next round of training."""
 
-		self.start_time = time.time()
+		self.start_time = time.process_time()
 		random.seed(server_round)
 
 		if self.aggregation_method == 'POC':
@@ -424,7 +424,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		top1 = accs[-1]
 
 		assert self.server_filename is not None
-		data = [time.time()-self.start_time, server_round, accuracy_aggregated, accuracy_std, top5, top1]
+		data = [time.process_time()-self.start_time, server_round, accuracy_aggregated, accuracy_std, top5, top1]
 
 		self._write_output(filename=self.server_filename,
 						   data=data
@@ -515,12 +515,23 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 	def _write_output(self, filename, data):
 
+		for i in range(len(data)):
+			element = data[i]
+			if type(element) == float:
+				element = round(element, 6)
+				data[i] = element
 		with open(filename, 'a') as server_log_file:
 			writer = csv.writer(server_log_file)
 			writer.writerow(data)
 
 	def _write_outputs(self, filename, data):
 
+		for i in range(len(data)):
+			for j in range(len(data[i])):
+				element = data[i][j]
+				if type(element) == float:
+					element = round(element, 6)
+					data[i][j] = element
 		with open(filename, 'a') as server_log_file:
 			writer = csv.writer(server_log_file)
 			writer.writerows(data)

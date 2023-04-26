@@ -145,6 +145,8 @@ class FedProtoClientTorch(ClientBaseTorch):
 			train_loss = 0
 			train_acc = 0
 			protos = defaultdict(list)
+
+			start_time = time.process_time()
 			if config['selected_clients'] != '':
 				selected_clients = [int (cid_selected) for cid_selected in config['selected_clients'].split(' ')]
 			if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
@@ -158,7 +160,7 @@ class FedProtoClientTorch(ClientBaseTorch):
 
 				selected = 1
 				self.model.train()
-				start_time = time.time()
+
 				max_local_steps = self.local_epochs
 				repeated_protos = 0
 
