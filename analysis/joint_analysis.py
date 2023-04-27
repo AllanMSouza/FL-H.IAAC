@@ -82,13 +82,16 @@ class JointAnalysis():
     def joint_table(self, df, pocs, strategies, experiment):
 
         model_report = {i: {} for i in strategies}
-        df_test = df[['Round (t)', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset']].groupby(
-            ['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset']).apply(
-            lambda e: self.groupb_by_table(e)).reset_index()[
-            ['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)']]
+        df = df[df['Round (t)'] == 100]
+        # df_test = df[['Round (t)', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset']].groupby(
+        #     ['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset']).apply(
+        #     lambda e: self.groupb_by_table(e)).reset_index()[
+        #     ['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)']]
+        df_test = df[
+            ['Round (t)', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset']]
 
         # df_test = df_test.query("""Round in [10, 100]""")
-        print("agropou")
+        print("agrupou table")
         print(df_test)
         convert_dict = {0.1: 5, 0.2: 10, 0.3: 15, 0.4: 20}
         df_test['Fraction fit'] = np.array([convert_dict[i] for i in df_test['Fraction fit'].tolist()])
@@ -183,7 +186,7 @@ class JointAnalysis():
         print("Joint plot exeprimento: ", experiment)
 
         df_test = df[['Round (t)', 'Loss', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset']].groupby(['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset']).apply(lambda e: self.groupb_by_plot(e)).reset_index()[['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)', 'Loss']]
-        print("agrupou")
+        print("agrupou plot")
         print(df_test)
         # figsize=(12, 9),
         sns.set(style='whitegrid')
