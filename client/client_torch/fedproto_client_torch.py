@@ -260,6 +260,8 @@ class FedProtoClientTorch(ClientBaseTorch):
 
 	def evaluate(self, parameters, config):
 		try:
+			server_round = int(config['round'])
+			n_rounds = int(config['n_rounds'])
 			self.set_proto(parameters)
 			# loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
 			self.set_parameters_to_model()
@@ -269,6 +271,9 @@ class FedProtoClientTorch(ClientBaseTorch):
 			test_loss = []
 			test_mse_loss = []
 			test_num = 0
+
+			predictions = np.array([])
+			labels = np.array([])
 
 			with torch.no_grad():
 				for x, y in self.testloader:
@@ -280,6 +285,10 @@ class FedProtoClientTorch(ClientBaseTorch):
 					y = y.to(self.device)
 					y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
 					output, rep = self.model(x)
+
+					prediction = torch.argmax(output, dim=1)
+					predictions = np.append(predictions, prediction)
+					labels = np.append(labels, y)
 
 					# prediciton based on similarity
 					# output = float('inf') * torch.ones(y.shape[0], self.num_classes).to(self.device)
@@ -324,6 +333,10 @@ class FedProtoClientTorch(ClientBaseTorch):
 
 			self._write_output(filename=self.evaluate_client_filename,
 							   data=data)
+
+			if server_round == n_rounds:
+				data = [[self.cid, server_round, int(p), int(l)] for p, l in zip(predictions, labels)]
+				self._write_outputs(self.predictions_client_filename, data, 'a')
 
 			evaluation_response = {
 				"cid"      : self.cid,
