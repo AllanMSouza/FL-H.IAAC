@@ -45,7 +45,7 @@ class ClientBaseTf(fl.client.NumPyClient):
 		self.model_name   = model_name
 		self.local_epochs = epochs
 		self.non_iid      = non_iid
-		self.n_rounds	  = int(args.round)
+		# self.n_rounds	  = int(args.round)
 
 		self.num_classes = n_classes
 

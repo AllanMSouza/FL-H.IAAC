@@ -46,6 +46,7 @@ class FedPredictServerTorch(FedPredictBaseServer):
                          num_clients=num_clients,
                          num_rounds=num_rounds,
                          num_epochs=num_epochs,
+                         args=args,
                          decay=decay,
                          model=model,
                          server_learning_rate=server_learning_rate,

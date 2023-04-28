@@ -354,6 +354,7 @@ class SimulationFL():
 										fraction_fit=self.fraction_fit,
 										num_clients=self.n_clients,
 										num_rounds=self.rounds,
+									  	args=self.args,
 										num_epochs=self.epochs,
 										decay=self.decay,
 										perc_of_clients=self.poc,
@@ -361,8 +362,8 @@ class SimulationFL():
 										dataset=self.dataset,
 										model_name=self.model_name,
 										new_clients=self.new_clients,
-										new_clients_train=self.new_clients_train,
-									  args=self.args)
+										new_clients_train=self.new_clients_train
+									  )
 
 			elif self.strategy_name == 'FedProto':
 				return FedProtoServerTf(aggregation_method=self.aggregation_method,
@@ -433,6 +434,7 @@ class SimulationFL():
 											 fraction_fit=self.fraction_fit,
 											 num_clients=self.n_clients,
 											 num_rounds=self.rounds,
+											 args=self.args,
 											 num_epochs=self.epochs,
 											 model=copy.deepcopy(self.create_client(0).create_model()),
 											 decay=self.decay,
@@ -441,8 +443,8 @@ class SimulationFL():
 											 dataset=self.dataset,
 											 model_name=self.model_name,
 											 new_clients=self.new_clients,
-											 new_clients_train=self.new_clients_train,
-									  args=self.args)
+											 new_clients_train=self.new_clients_train
+									  		)
 			if self.strategy_name == 'FedPer_with_FedPredict':
 				# print("foi servidor")
 				return FedPer_with_FedPredictServerTorch(aggregation_method=self.aggregation_method,
@@ -450,6 +452,7 @@ class SimulationFL():
 											 fraction_fit=self.fraction_fit,
 											 num_clients=self.n_clients,
 											 num_rounds=self.rounds,
+											args=self.args,
 											 num_epochs=self.epochs,
 											 model=copy.deepcopy(self.create_client(0).create_model()),
 											 decay=self.decay,
@@ -458,8 +461,8 @@ class SimulationFL():
 											 dataset=self.dataset,
 											 model_name=self.model_name,
 											 new_clients=self.new_clients,
-											 new_clients_train=self.new_clients_train,
-									  args=self.args)
+											 new_clients_train=self.new_clients_train
+									  		)
 			if self.strategy_name == 'FedClassAvg_with_FedPredict':
 				# print("foi servidor")
 				return FedClassAvg_with_FedPredictServerTorch(aggregation_method=self.aggregation_method,
@@ -467,6 +470,7 @@ class SimulationFL():
 											 fraction_fit=self.fraction_fit,
 											 num_clients=self.n_clients,
 											 num_rounds=self.rounds,
+											args=self.args,
 											 num_epochs=self.epochs,
 											 model=copy.deepcopy(self.create_client(0).create_model()),
 											 decay=self.decay,
@@ -475,8 +479,8 @@ class SimulationFL():
 											 dataset=self.dataset,
 											 model_name=self.model_name,
 											 new_clients=self.new_clients,
-											 new_clients_train=self.new_clients_train,
-									  args=self.args)
+											 new_clients_train=self.new_clients_train
+									  		)
 			elif self.strategy_name == 'FedPer':
 				return  FedPerServerTorch(aggregation_method=self.aggregation_method,
 										n_classes=self.n_classes,
@@ -645,17 +649,14 @@ def main():
 					  help="wheter to train or not new clients",
 					  metavar="STR")
 
-	(args, opt) = parser.parse_args()
-	print("aaa")
-	print(args)
-	exit()
+	(opt, args) = parser.parse_args()
 
-	print("Simulacao da estratégia: ", args.strategy_name, args.fraction_fit)
-	simulation = SimulationFL(n_clients=int(args.n_clients), aggregation_method=args.aggregation_method, model_name=args.model_name,
-							  strategy_name=args.strategy_name, dataset=args.dataset, n_classes=int(args.n_classes),
-							  local_epochs=int(args.local_epochs), rounds=int(args.rounds), poc=float(args.poc), fraction_fit=float(args.fraction_fit),
-							  decay=float(args.decay), non_iid=ast.literal_eval(args.non_iid), m_combining_layers=int(args.m_combining_layers), nn_type=args.type,
-							  new_clients=ast.literal_eval(args.new_clients), new_clients_train=ast.literal_eval(args.new_clients_train), args=args)
+	print("Simulacao da estratégia: ", opt.strategy_name, opt.fraction_fit)
+	simulation = SimulationFL(n_clients=int(opt.n_clients), aggregation_method=opt.aggregation_method, model_name=opt.model_name,
+							  strategy_name=opt.strategy_name, dataset=opt.dataset, n_classes=int(opt.n_classes),
+							  local_epochs=int(opt.local_epochs), rounds=int(opt.rounds), poc=float(opt.poc), fraction_fit=float(opt.fraction_fit),
+							  decay=float(opt.decay), non_iid=ast.literal_eval(opt.non_iid), m_combining_layers=int(opt.m_combining_layers), nn_type=opt.type,
+							  new_clients=ast.literal_eval(opt.new_clients), new_clients_train=ast.literal_eval(opt.new_clients_train), args=opt)
 
 	simulation.start_simulation()
 

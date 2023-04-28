@@ -46,9 +46,11 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 				 new_clients_train=False):
 
 		self.aggregation_method = aggregation_method
-		self.n_classes = n_classes
-		self.num_clients        = num_clients
-		self.epochs				= num_epochs
+		self.n_classes = int(args.n_classes)
+		self.num_clients        = int(args.n_clients)
+		print("oal: ", args)
+		self.num_rounds			= int(args.rounds)
+		self.epochs				= int(args.local_epochs)
 		self.list_of_clients    = []
 		self.list_of_accuracies = []
 		self.selected_clients   = []
@@ -61,9 +63,10 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.non_iid = non_iid
 
 		#logs
-		self.dataset    = dataset
+		self.dataset    = args.dataset
 		self.model_name = model_name
 		self.strategy_name = strategy_name
+		self.solution_name = strategy_name
 
 		#POC
 		self.perc_of_clients  = perc_of_clients
@@ -85,7 +88,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		# FedPredictSelection
 		self.server_nt_acc = {round: {nt: [] for nt in range(0, self.num_rounds + 1)} for round in range(self.num_rounds + 1)}
 
-		self.type = type
+		self.type = args.type
 
 		#params
 		if self.aggregation_method == 'POC':
@@ -110,7 +113,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.previous_global_parameters = None
 		self.similarity_between_layers_per_round = {}
 
-		super().__init__(fraction_fit=fraction_fit, min_available_clients=num_clients, min_fit_clients=num_clients, min_evaluate_clients=num_clients)
+		super().__init__(fraction_fit=float(args.fraction_fit), min_available_clients=num_clients, min_fit_clients=num_clients, min_evaluate_clients=num_clients)
 
 		print("""===================================================\nStarting training of {}\n""".format(self.strategy_name))
 
@@ -512,7 +515,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 	def _write_output_files_headers(self):
 
-		self.base = f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/{self.epochs}_local_epochs/"
+		self.base = f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/{self.num_rounds}_rounds/{self.epochs}_local_epochs"
 		self.server_filename = f"{self.base}server.csv"
 		self.train_filename = f"{self.base}train_client.csv"
 		self.evaluate_filename = f"{self.base}evaluate_client.csv"

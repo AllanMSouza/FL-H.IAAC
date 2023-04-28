@@ -4,6 +4,7 @@ import numpy as np
 import random
 import pickle
 import pandas as pd
+import os
 from torch.utils.data import TensorDataset, DataLoader
 from sklearn.model_selection import train_test_split
 import time
@@ -21,9 +22,7 @@ class ManageDatasets():
 		self.model_name = model_name
 		random.seed(self.cid)
 
-	def load_UCIHAR(self, n_clients, class_per_client, alpha, non_iid=False):
-		filename_train = f"data/UCI-HAR/{n_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{self.cid + 1}/idx_train_{self.cid + 1}.pickle"
-		filename_test = f"data/UCI-HAR/{n_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{self.cid + 1}/idx_test_{self.cid + 1}.pickle"
+	def load_UCIHAR(self, n_clients, filename_train, filename_test, non_iid=False):
 		with open(filename_train, 'rb') as handle:
 			train = pickle.load(handle)
 
@@ -45,9 +44,7 @@ class ManageDatasets():
 		return x_train, y_train, x_test, y_test
 
 
-	def load_MotionSense(self, n_clients, class_per_client, alpha, non_iid=False):
-		filename_train = f"data/MotionSense/{n_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{self.cid + 1}/idx_train_{self.cid + 1}.pickle"
-		filename_test = f"data/MotionSense/{n_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{self.cid + 1}/idx_test_{self.cid + 1}.pickle"
+	def load_MotionSense(self, n_clients, filename_train, filename_test, non_iid=False):
 		with open(filename_train, 'rb') as handle:
 			train = pickle.load(handle)
 
@@ -70,13 +67,11 @@ class ManageDatasets():
 		return x_train, y_train, x_test, y_test
 
 
-	def load_MNIST(self, n_clients, class_per_client, alpha, non_iid=False):
+	def load_MNIST(self, n_clients, filename_train, filename_test, non_iid=False):
 
 
 		if non_iid:
-
-			filename_train = f"data/MNIST/{n_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{self.cid + 1}/idx_train_{self.cid + 1}.pickle"
-			filename_test = f"data/MNIST/{n_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{self.cid + 1}/idx_test_{self.cid + 1}.pickle"
+			# print("atual: ", os.getcwd())
 			with open(filename_train, 'rb') as handle:
 				idx_train = pickle.load(handle)
 
@@ -85,16 +80,19 @@ class ManageDatasets():
 
 
 			(x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
+			y = np.concatenate((y_train, y_test), axis=0)
+			x = np.concatenate((x_train, x_test), axis=0)
 			if self.model_name == 'CNN':
-				x_train = np.expand_dims(x_train, axis=1)
-				x_test = np.expand_dims(x_test, axis=1)
-			x_train, x_test                      = x_train/255.0, x_test/255.0
+				x = np.expand_dims(x, axis=1)
+			x                     = x/255.0
 
-			x_train = x_train[idx_train]
-			x_test  = x_test[idx_test]
+			x_train = x[idx_train]
+			x_test  = x[idx_test]
 
-			y_train = y_train[idx_train]
-			y_test  = y_test[idx_test]
+			y_train = y[idx_train]
+			y_test  = y[idx_test]
+
+			print("treino: ", x_train.shape, y_train.shape, " teste: ", x_test.shape, y_test.shape)
 			
 
 		else:
@@ -105,14 +103,14 @@ class ManageDatasets():
 
 		return x_train, y_train, x_test, y_test
 
-	def load_CIFAR10(self, n_clients, class_per_client, alpha, non_iid=False):
+	def load_CIFAR10(self, n_clients, filename_train, filename_test, non_iid=False):
 		
 		if non_iid:
 			
-			with open(f'data/CIFAR10/{n_clients}/idx_train_{self.cid}.pickle', 'rb') as handle:
+			with open(filename_train, 'rb') as handle:
 				idx_train = pickle.load(handle)
 
-			with open(f'data/CIFAR10/{n_clients}/idx_test_{self.cid}.pickle', 'rb') as handle:
+			with open(filename_test, 'rb') as handle:
 				idx_test = pickle.load(handle)
 
 			# if self.cid >= 5:
@@ -144,7 +142,7 @@ class ManageDatasets():
 		return x_train, y_train, x_test, y_test
 
 
-	def load_CIFAR100(self, n_clients, class_per_client, alpha, non_iid=False):
+	def load_CIFAR100(self, n_clients, filename_train, filename_test, non_iid=False):
 		(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar100.load_data()
 		x_train, x_test                      = x_train/255.0, x_test/255.0
 		x_train, y_train, x_test, y_test     = self.slipt_dataset(x_train, y_train, x_test, y_test, n_clients)
@@ -174,21 +172,23 @@ class ManageDatasets():
 
 
 	def select_dataset(self, dataset_name, n_clients, class_per_client, alpha, non_iid):
-
+		print("recebeu: ", self.cid, dataset_name, n_clients, class_per_client, alpha, non_iid)
+		filename_train = f"dataset_utils/data/{dataset_name}/{n_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{self.cid}/idx_train_{self.cid}.pickle"
+		filename_test = f"dataset_utils/data/{dataset_name}/{n_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{self.cid}/idx_test_{self.cid}.pickle"
 		if dataset_name == 'MNIST':
-			return self.load_MNIST(n_clients, class_per_client, alpha, non_iid)
+			return self.load_MNIST(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
 
 		elif dataset_name == 'CIFAR100':
-			return self.load_CIFAR100(n_clients, class_per_client, alpha, non_iid)
+			return self.load_CIFAR100(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
 
 		elif dataset_name == 'CIFAR10':
-			return self.load_CIFAR10(n_clients, class_per_client, alpha, non_iid)
+			return self.load_CIFAR10(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
 
 		elif dataset_name == 'MotionSense':
-			return self.load_MotionSense(n_clients, class_per_client, alpha, non_iid)
+			return self.load_MotionSense(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
 
 		elif dataset_name == 'UCIHAR':
-			return self.load_UCIHAR(n_clients, class_per_client, alpha, non_iid)
+			return self.load_UCIHAR(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
 
 
 	def normalize_data(self, x_train, x_test):
