@@ -13,6 +13,7 @@ class FedYogiClientTorch(ClientBaseTorch):
                  cid,
                  n_clients,
                  n_classes,
+                 args,
                  epochs=1,
                  model_name         = 'DNN',
                  client_selection   = False,
@@ -24,7 +25,8 @@ class FedYogiClientTorch(ClientBaseTorch):
                  fraction_fit       = 0,
                  non_iid            = False,
                  new_clients		= False,
-                 new_clients_train	= False):
+                 new_clients_train	= False
+                 ):
 
 		super().__init__(cid=cid,
                          n_clients=n_clients,
@@ -40,4 +42,5 @@ class FedYogiClientTorch(ClientBaseTorch):
                          fraction_fit=fraction_fit,
                          non_iid=non_iid,
                          new_clients=new_clients,
-                         new_clients_train=new_clients_train)
+                         new_clients_train=new_clients_train,
+                         args=args)

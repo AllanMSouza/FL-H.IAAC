@@ -27,6 +27,7 @@ class FedPredictServerTorch(FedPredictBaseServer):
                  fraction_fit,
                  num_clients,
                  num_rounds,
+                 args,
                  num_epochs,
                  model,
                  server_learning_rate=1,

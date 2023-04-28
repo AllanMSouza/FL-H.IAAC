@@ -25,6 +25,7 @@ class ClientBaseTf(fl.client.NumPyClient):
 				 cid,
 				 n_clients,
 				 n_classes,
+				 args,
 				 epochs				= 1,
 				 model_name         = 'None',
 				 client_selection   = False,
@@ -44,6 +45,7 @@ class ClientBaseTf(fl.client.NumPyClient):
 		self.model_name   = model_name
 		self.local_epochs = epochs
 		self.non_iid      = non_iid
+		self.n_rounds	  = int(args.round)
 
 		self.num_classes = n_classes
 
@@ -81,7 +83,7 @@ class ClientBaseTf(fl.client.NumPyClient):
 		elif self.aggregation_method == 'None':
 			self.solution_name = f"{solution_name}-{aggregation_method}-{self.fraction_fit}"
 
-		self.base = f"logs/{self.type}/{self.solution_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.n_clients}/{self.model_name}/{self.dataset}/{self.local_epochs}_local_epochs"
+		self.base = f"logs/{self.type}/{self.solution_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.n_clients}/{self.model_name}/{self.dataset}/{self.n_rounds}_rounds/{self.local_epochs}_local_epochs"
 		self.evaluate_client_filename = f"{self.base}/evaluate_client.csv"
 		self.train_client_filename = f"{self.base}/train_client.csv"
 

@@ -18,6 +18,7 @@ class FedPerClientTorch(ClientBaseTorch):
 				 cid,
 				 n_clients,
 				 n_classes,
+				 args,
 				 epochs=1,
 				 model_name         = 'DNN',
 				 client_selection   = False,
@@ -30,7 +31,8 @@ class FedPerClientTorch(ClientBaseTorch):
 				 non_iid            = False,
 				 n_personalized_layers	= 1,
 				 new_clients			= False,
-				 new_clients_train	= False
+				 new_clients_train	= False,
+
 				 ):
 
 		super().__init__(cid=cid,
@@ -47,7 +49,8 @@ class FedPerClientTorch(ClientBaseTorch):
 						 fraction_fit=fraction_fit,
 						 non_iid=non_iid,
 						 new_clients=new_clients,
-						 new_clients_train=new_clients_train)
+						 new_clients_train=new_clients_train,
+						 args=args)
 
 		self.n_personalized_layers = n_personalized_layers * 2
 

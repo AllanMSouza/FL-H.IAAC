@@ -19,6 +19,7 @@ class FedLocalClientTorch(ClientBaseTorch):
                  cid,
                  n_clients,
                  n_classes,
+				 args,
                  epochs=1,
                  model_name         = 'DNN',
                  client_selection   = False,
@@ -48,7 +49,8 @@ class FedLocalClientTorch(ClientBaseTorch):
 						 fraction_fit=fraction_fit,
                          non_iid=non_iid,
                          new_clients=new_clients,
-                         new_clients_train=new_clients_train)
+                         new_clients_train=new_clients_train,
+						 args=args)
 
 		self.n_personalized_layers = n_personalized_layers * 2
 

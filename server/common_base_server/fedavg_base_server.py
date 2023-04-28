@@ -33,6 +33,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 				 fraction_fit,
 				 num_clients,
 				 num_rounds,
+				 args,
 				 num_epochs,
 				 type,
 				 decay=0,
