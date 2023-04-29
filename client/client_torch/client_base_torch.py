@@ -54,6 +54,9 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		self.n_rounds	  = int(args.rounds)
 
 		self.num_classes = n_classes
+		self.class_per_client = int(args.class_per_client)
+		self.train_perc = float(args.train_perc)
+		self.alpha = float(args.alpha)
 
 		self.model        = None
 		self.x_train      = None
@@ -72,8 +75,6 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		self.perc_of_clients  = perc_of_clients
 		self.decay            = decay
 		self.fraction_fit	  = fraction_fit
-		self.class_per_client = 2
-		self.alpha				= 0.1
 
 		self.loss = nn.CrossEntropyLoss()
 		self.learning_rate = 0.01
@@ -93,7 +94,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		elif self.aggregation_method == 'None':
 			self.solution_name = f"{solution_name}-{aggregation_method}-{self.fraction_fit}"
 
-		self.base = f"logs/{self.type}/{self.solution_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.n_clients}/{self.model_name}/{self.dataset}/{self.n_rounds}_rounds/{self.local_epochs}_local_epochs"
+		self.base = f"logs/{self.type}/{self.solution_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.n_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.n_rounds}_rounds/{self.local_epochs}_local_epochs"
 		self.evaluate_client_filename = f"{self.base}/evaluate_client.csv"
 		self.train_client_filename = f"{self.base}/train_client.csv"
 		self.predictions_client_filename = f"{self.base}/predictions_client.csv"

@@ -10,7 +10,7 @@ import os
 import ast
 
 class NonIid:
-    def __init__(self, num_clients, aggregation_method, perc_of_clients, fraction_fit, non_iid, model_name, strategy_name_list, dataset_name, new_clients, new_clients_train, experiment, comment, epochs, type, decay):
+    def __init__(self, num_clients, aggregation_method, perc_of_clients, fraction_fit, non_iid, model_name, strategy_name_list, dataset_name, new_clients, new_clients_train, experiment, comment, epochs, type, decay, args):
         self.n_clients = num_clients
         self.aggregation_method = aggregation_method
         self.perc_of_clients = perc_of_clients
@@ -23,6 +23,8 @@ class NonIid:
         self.new_clients_train = new_clients_train
         self.experiment = experiment
         self.comment = comment
+        self.class_per_client = int(args.class_per_client)
+        self.alpha = float(args.alpha)
         self.epochs = epochs
         self.decay = decay
         self.type = type
@@ -70,7 +72,7 @@ class NonIid:
             os.makedirs(self.base_dir + "svg/")
 
         models_directories = {self.strategy_name_list[i]:
-                              """{}/{}/{}/new_clients_{}_train_{}/{}/{}/{}/{}_local_epochs/""".
+                              """{}/{}/{}/new_clients_{}_train_{}/{}/{}/{}/classes_per_client_{}/alpha_{}/{}_local_epochs/""".
                               format(os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FedLTA/logs",
                                      self.type,
                                      self._get_strategy_config(self.strategy_name_list[i]),
@@ -79,6 +81,8 @@ class NonIid:
                                      self.n_clients,
                                      self.model_name,
                                      self.dataset_name,
+                                     self.class_per_client,
+                                     self.alpha,
                                      self.epochs) for i in range(len(self.strategy_name_list))}
 
         # read datasets
@@ -326,6 +330,8 @@ if __name__ == '__main__':
     parser.add_option("--epochs", dest="epochs", default=1)
     parser.add_option("", "--fraction_fit", dest="fraction_fit", default=0,
                       help="fraction of selected clients to be trained", metavar="FLOAT")
+    parser.add_option("--class_per_client", help="Number of classes per client", default=2)
+    parser.add_option("--alpha", help="Dirichlet alpha parameter", default=0.1)
 
     (opt, args) = parser.parse_args()
 
@@ -336,7 +342,7 @@ if __name__ == '__main__':
     # noniid.start()
     c = NonIid(num_clients=int(opt.n_clients), aggregation_method=opt.aggregation_method, perc_of_clients=float(opt.poc), fraction_fit=float(opt.fraction_fit), non_iid=ast.literal_eval(opt.non_iid),
                model_name=opt.model_name, strategy_name_list=strategy_name_list, dataset_name=opt.dataset, new_clients=ast.literal_eval(opt.new_clients),
-               new_clients_train=ast.literal_eval(opt.new_clients_train), experiment=opt.experiment, comment=opt.comment, epochs=opt.epochs, type=opt.type, decay=opt.decay)
+               new_clients_train=ast.literal_eval(opt.new_clients_train), experiment=opt.experiment, comment=opt.comment, epochs=opt.epochs, type=opt.type, decay=opt.decay, args=opt)
 
     print(c.n_clients, " ", c.strategy_name_list)
     dataset = opt.dataset

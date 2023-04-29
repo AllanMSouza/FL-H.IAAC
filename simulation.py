@@ -648,6 +648,9 @@ def main():
 	parser.add_option("", "--new_clients_train", dest="new_clients_train", default='False',
 					  help="wheter to train or not new clients",
 					  metavar="STR")
+	parser.add_option("--class_per_client", help="Number of classes per client", default=2)
+	parser.add_option("--train_perc", help="Dataset percentual for train", default=0.8)
+	parser.add_option("--alpha", help="Dirichlet alpha parameter", default=0.1)
 
 	(opt, args) = parser.parse_args()
 
