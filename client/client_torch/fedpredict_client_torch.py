@@ -63,6 +63,7 @@ class FedPredictClientTorch(FedAvgClientTorch):
 		self.clone_model = self.create_model().to(self.device)
 		self.round_of_last_fit = 0
 		self.rounds_of_fit = 0
+		self.T = int(args.T)
 		self.accuracy_of_last_round_of_fit = 0
 		self.start_server = 0
 		self.filename = """./{}_saved_weights/{}/{}/model.pth""".format(strategy_name.lower(), self.model_name, self.cid)
@@ -105,6 +106,8 @@ class FedPredictClientTorch(FedAvgClientTorch):
 			# filename = """./fedpredict_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
 			t = int(config['round'])
 			T = int(config['total_server_rounds'])
+			if self.T != 0:
+				T = self.T
 			client_metrics = config['metrics']
 			# Client's metrics
 			nt = client_metrics['nt']

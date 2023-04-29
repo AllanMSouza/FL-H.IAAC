@@ -59,6 +59,7 @@ class FedPer_with_FedPredictClientTorch(FedPredictClientTorch):
 						 new_clients_train=new_clients_train)
 
 		self.m_combining_layers = [i for i in range(len([i for i in self.create_model().parameters()]))][-2:]
+		self.T = int(args.T)
 		self.filename = """./{}_saved_weights/{}/{}/model.pth""".format(self.strategy_name.lower(), self.model_name, self.cid)
 
 	def _fedpredict_plugin(self, global_parameters, t, T, nt):
@@ -84,6 +85,8 @@ class FedPer_with_FedPredictClientTorch(FedPredictClientTorch):
 			# filename = """./fedpredict_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
 			t = int(config['round'])
 			T = int(config['total_server_rounds'])
+			if self.T != 0:
+				T = self.T
 			client_metrics = config['metrics']
 			# Client's metrics
 			nt = client_metrics['nt']
