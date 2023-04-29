@@ -158,6 +158,6 @@ class FedPredictBaseServer(FedAvgBaseServer):
 				data['Layer'].append(layer)
 				data['Similarity'].append(self.similarity_between_layers_per_round[round][layer])
 
-		self.similarity_filename = f"{self.base}similarity_between_layers.csv"
+		self.similarity_filename = f"{self.base}\similarity_between_layers.csv"
 		df = pd.DataFrame(data)
 		df.to_csv(self.similarity_filename, index=False)
