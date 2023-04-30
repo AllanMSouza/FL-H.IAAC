@@ -72,7 +72,7 @@ EXPERIMENTS = {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train
                5: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'True',
                    'class_per_client': 2, 'alpha': 0.1, 'comment': """apos a rodada {}, apenas novos clientes sao testados - novos clientes treinam apenas 1 vez (um round) com duas épocas locais """.format(
                        int(ROUNDS * 0.7))},
-               6: {'algorithm': 'FedLTA', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'alpha': 0.1, 'comment': ''}}
+               6: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'alpha': 0.1, 'comment': 'ultima_camada_exclusiva'}}
 
 def execute_experiment(experiment, algorithm, new_client, new_client_train, comment, type, class_per_client, alpha):
     try:

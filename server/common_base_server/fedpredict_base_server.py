@@ -133,15 +133,44 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			accuracy = self.accuracy_history[len(self.accuracy_history)]
 		for client_tuple in client_evaluate_list:
 			client = client_tuple[0]
+			client_id = str(client.cid)
 			config = copy.copy(self.evaluate_config)
 			client_config = self.fedpredict_clients_metrics[str(client.cid)]
 			config['metrics'] = client_config
 			config['last_global_accuracy'] = accuracy
 			config['total_server_rounds'] = self.num_rounds
-			evaluate_ins = fl.common.EvaluateIns(parameters, config)
+			client_similarity_per_layer = self.get_client_similarity_per_layer(client_id, server_round)
+			parameters_to_send, M = self._select_layers(client_similarity_per_layer, parameters, server_round, client_id)
+			config['M'] = M
+			print("enviar")
+			evaluate_ins = fl.common.EvaluateIns(parameters_to_send, config)
 			client_evaluate_list_fedpredict.append((client, evaluate_ins))
 
 		return client_evaluate_list_fedpredict
+
+	def _select_layers(self, client_similarity_per_layer, parameters, server_round, client_id):
+
+		parameters = fl.common.parameters_to_ndarrays(parameters)
+		M = [0, 1, 2, 3]
+		# parameters = np.take(parameters, [4, 5])
+
+		print("quantidade de camadas: ", len(parameters), [i.shape for i in parameters])
+		if self.fedpredict_clients_metrics[client_id]['first_round'] != -1:
+			parameters = np.take(parameters, M)
+			M = [2, 3]
+		# parameters = parameters[-2:]
+		print("quantidade de camadas retornadas: ", len(parameters), [i.shape for i in parameters])
+		parameters = fl.common.ndarrays_to_parameters(parameters)
+
+		return parameters, M
+
+	def get_client_similarity_per_layer(self, client_id, server_round):
+
+		round_similarity = self.similarity_between_layers_per_round_and_client[server_round]
+		if client_id in round_similarity:
+			return round_similarity[client_id]
+		else:
+			return 0
 
 	def end_evaluate_function(self):
 		self._write_similarity()

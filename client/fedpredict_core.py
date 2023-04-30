@@ -92,15 +92,17 @@ def fedpredict_core(t, T, nt):
 #     # print("tamanho: ", self.input_shape, " dispositivo: ", self.device)
 
 
-def fedpredict_layerwise_similarity(global_parameter, clients_parameters):
+def fedpredict_layerwise_similarity(global_parameter, clients_parameters, clients_ids):
 
     num_layers = len(global_parameter)
     num_clients = len(clients_parameters)
-    similarity_per_layer = {i: [] for i in range(num_layers)}
+    similarity_per_layer = {i: {} for i in clients_ids}
+    mean_similarity_per_layer = {i: 0 for i in clients_ids}
 
     for j in range(num_clients):
 
         client = clients_parameters[j]
+        client_id = clients_ids[j]
 
         for i in range(num_layers):
             client_layer = client[i]
@@ -111,6 +113,7 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters):
                 client_layer = np.reshape(client_layer, (len(client_layer), 1))
             print("apos global: ", global_layer.shape)
             print("apos cliente: ", client_layer.shape)
+            # CNN
             if np.ndim(global_layer) == 4:
                 client_similarity = []
                 for k in range(len(global_layer)):
@@ -119,17 +122,20 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters):
                     cka = CKA()
                     similarity = cka.linear_CKA(global_layer_k, client_layer_k)
                     client_similarity.append(similarity)
-                similarity_per_layer[i].append(np.mean(client_similarity))
+                similarity_per_layer[client_id][i].append(np.mean(client_similarity))
             else:
             # for x, y in zip(global_layer, client_layer):
                 cka = CKA()
                 similarity = cka.linear_CKA(global_layer, client_layer)
-                similarity_per_layer[i].append(similarity)
+                similarity_per_layer[client_id][i] = similarity
 
     for i in range(num_layers):
+        similarities = []
+        for client_id in clients_ids:
+            similarities.append(similarity_per_layer[client_id][i])
 
-        similarity_per_layer[i] = np.mean(similarity_per_layer[i])
+        mean_similarity_per_layer[i] = np.mean(similarities)
 
-        print("""similaridade (camada {}): {}""".format(i, similarity_per_layer[i]))
+    print("""similaridade (camada {}): {}""".format(i, mean_similarity_per_layer[i]))
 
-    return similarity_per_layer
+    return similarity_per_layer, mean_similarity_per_layer

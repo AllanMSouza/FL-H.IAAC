@@ -79,7 +79,7 @@ class FedPredictClientTorch(FedAvgClientTorch):
 			print("save parameters")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def _fedpredict_plugin(self, global_parameters, t, T, nt):
+	def _fedpredict_plugin(self, global_parameters, t, T, nt, M):
 
 		try:
 
@@ -87,8 +87,18 @@ class FedPredictClientTorch(FedAvgClientTorch):
 
 			# Load global parameters into 'self.clone_model' (global model)
 			global_parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
-			for new_param, old_param in zip(global_parameters, self.clone_model.parameters()):
-				old_param.data = new_param.data.clone()
+			local_layer_count = 0
+			global_layer_count = 0
+			parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
+			print("bolso")
+			for old_param in self.clone_model.parameters():
+				if local_layer_count in M:
+					new_param = parameters[global_layer_count]
+					print("bolso new param: ", new_param.shape, " old param: ", old_param.shape)
+					old_param.data = new_param.data.clone()
+					global_layer_count += 1
+				local_layer_count += 1
+			print("passou")
 			# self.clone_model.load_state_dict(torch.load(filename))
 			# Combine models
 			count = 0
@@ -96,6 +106,7 @@ class FedPredictClientTorch(FedAvgClientTorch):
 				if count in self.m_combining_layers:
 					old_param.data = (global_model_weight*new_param.data.clone() + local_model_weights*old_param.data.clone())
 				count += 1
+
 		except Exception as e:
 			print("merge models")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
@@ -118,13 +129,25 @@ class FedPredictClientTorch(FedAvgClientTorch):
 			acc_of_last_evaluate = client_metrics['acc_of_last_evaluate']
 			# Server's metrics
 			last_global_accuracy = config['last_global_accuracy']
+			print("chegou")
+			M = config['M']
+			local_layer_count = 0
+			global_layer_count = 0
 			parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
-			for new_param, old_param in zip(parameters, self.model.parameters()):
-				old_param.data = new_param.data.clone()
+			print("parametros locais: ", [i.shape for i in self.model.parameters()])
+			print("M:", M)
+			for old_param in self.model.parameters():
+				if local_layer_count in M:
+					new_param = parameters[global_layer_count]
+					print("chegou new param: ", new_param.shape, " old param: ", old_param.shape)
+					old_param.data = new_param.data.clone()
+					global_layer_count += 1
+				local_layer_count += 1
+			print("combinou: ", self.cid)
 			if os.path.exists(self.filename):
 				# Load local parameters to 'self.model'
 				self.model.load_state_dict(torch.load(self.filename))
-				self._fedpredict_plugin(global_parameters, t, T, nt)
+				self._fedpredict_plugin(global_parameters, t, T, nt, M)
 		except Exception as e:
 			print("Set parameters to model")
-			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+			print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, self.cid), type(e).__name__, e)
