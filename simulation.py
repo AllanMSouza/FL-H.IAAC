@@ -652,6 +652,7 @@ def main():
 	parser.add_option("--train_perc", help="Dataset percentual for train", default=0.8)
 	parser.add_option("--alpha", help="Dirichlet alpha parameter", default=0.1)
 	parser.add_option("--T", help="T parameter for FedPredict", default=0)
+	parser.add_option("--comment", help="comment for additional iformation of the experiment", default="")
 
 	(opt, args) = parser.parse_args()
 

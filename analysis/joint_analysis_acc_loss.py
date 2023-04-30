@@ -43,7 +43,7 @@ class JointAnalysis():
                         # else:
                         #     poc = 0.2
                         filename = """{}/{}/{}-POC-{}/{}/{}/{}/{}/{}/{}""".format(os.path.abspath(os.path.join(os.getcwd(),
-                                                                                                                os.pardir)) + "/FedLTA/logs",
+                                                                                                                os.pardir)) + "/FL-H.IAAC/logs",
                                                                                                                 type,
                                                                                                                 strategy,
                                                                                                                 poc,

@@ -51,6 +51,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		print("oal: ", args)
 		self.num_rounds			= int(args.rounds)
 		self.epochs				= int(args.local_epochs)
+		self.comment 			= args.comment
 		self.class_per_client = int(args.class_per_client)
 		self.train_perc = float(args.train_perc)
 		self.alpha = float(args.alpha)
@@ -518,7 +519,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 	def _write_output_files_headers(self):
 
-		self.base = f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds}_rounds/{self.epochs}_local_epochs"
+		self.base = f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment"
 		self.server_filename = f"{self.base}/server.csv"
 		self.train_filename = f"{self.base}/train_client.csv"
 		self.evaluate_filename = f"{self.base}/evaluate_client.csv"

@@ -57,6 +57,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		self.class_per_client = int(args.class_per_client)
 		self.train_perc = float(args.train_perc)
 		self.alpha = float(args.alpha)
+		self.comment = args.comment
 
 		self.model        = None
 		self.x_train      = None
@@ -94,7 +95,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		elif self.aggregation_method == 'None':
 			self.solution_name = f"{solution_name}-{aggregation_method}-{self.fraction_fit}"
 
-		self.base = f"logs/{self.type}/{self.solution_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.n_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.n_rounds}_rounds/{self.local_epochs}_local_epochs"
+		self.base = f"logs/{self.type}/{self.solution_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.n_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.n_rounds}_rounds/{self.local_epochs}_local_epochs/{self.comment}_comment"
 		self.evaluate_client_filename = f"{self.base}/evaluate_client.csv"
 		self.train_client_filename = f"{self.base}/train_client.csv"
 		self.predictions_client_filename = f"{self.base}/predictions_client.csv"

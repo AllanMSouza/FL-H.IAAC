@@ -26,7 +26,7 @@ class JointAnalysis():
                     for strategy in strategies:
 
                         filename = """{}/{}/{}-POC-{}/{}/{}/{}/{}/{}/{}""".format(os.path.abspath(os.path.join(os.getcwd(), 
-                                                                                                                os.pardir)) + "/FedLTA/logs",
+                                                                                                                os.pardir)) + "/FL-H.IAAC/logs",
                                                                                                                 type,
                                                                                                                 strategy,
                                                                                                                 poc,

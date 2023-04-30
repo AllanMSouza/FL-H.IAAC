@@ -23,6 +23,7 @@ class NonIid:
         self.new_clients_train = new_clients_train
         self.experiment = experiment
         self.comment = comment
+        self.rounds = args.rounds
         self.class_per_client = int(args.class_per_client)
         self.alpha = float(args.alpha)
         self.epochs = epochs
@@ -55,7 +56,7 @@ class NonIid:
         return strategy_config
 
     def start(self, title):
-        self.base_dir = """analysis/output/{}/experiment_{}/{}/new_clients_{}_train_{}/{}_clients/{}/{}/{}_local_epochs/{}/""".format(self.type,
+        self.base_dir = """analysis/output/{}/experiment_{}/{}/new_clients_{}_train_{}/{}_clients/{}/{}/{}_local_epochs/{}_comment/""".format(self.type,
                                                                                                                                     self.experiment,
                                                                                                                                     self.aggregation_method+str(self.fraction_fit),
                                                                                                                                     self.new_clients,
@@ -72,8 +73,8 @@ class NonIid:
             os.makedirs(self.base_dir + "svg/")
 
         models_directories = {self.strategy_name_list[i]:
-                              """{}/{}/{}/new_clients_{}_train_{}/{}/{}/{}/classes_per_client_{}/alpha_{}/{}_local_epochs/""".
-                              format(os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FedLTA/logs",
+                              """{}/{}/{}/new_clients_{}_train_{}/{}/{}/{}/classes_per_client_{}/alpha_{}/{}_rounds/{}_local_epochs/{}_comment/""".
+                              format(os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/logs",
                                      self.type,
                                      self._get_strategy_config(self.strategy_name_list[i]),
                                      self.new_clients,
@@ -83,7 +84,9 @@ class NonIid:
                                      self.dataset_name,
                                      self.class_per_client,
                                      self.alpha,
-                                     self.epochs) for i in range(len(self.strategy_name_list))}
+                                     self.rounds,
+                                     self.epochs,
+                                     self.comment) for i in range(len(self.strategy_name_list))}
 
         # read datasets
         print(models_directories)

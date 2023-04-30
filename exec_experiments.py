@@ -88,10 +88,10 @@ def execute_experiment(experiment, algorithm, new_client, new_client_train, comm
                                     print(
                                         f'Starting {strategy} fraction_fit-{fraction_fit} simulation for {dataset} clients with {model} model ...',
                                         os.getcwd())
-                                    test_config = """python {}/simulation.py --dataset='{}' --model='{}' --strategy='{}' --epochs={} --round={} --client={} --type='{}' --non-iid={} --aggregation_method='{}' --fraction_fit={} --poc={} --new_clients={} --new_clients_train={} --decay={} --class_per_client={} --alpha={}""".format(
+                                    test_config = """python {}/simulation.py --dataset='{}' --model='{}' --strategy='{}' --epochs={} --round={} --client={} --type='{}' --non-iid={} --aggregation_method='{}' --fraction_fit={} --poc={} --new_clients={} --new_clients_train={} --decay={} --comment={} --class_per_client={} --alpha={}""".format(
                                         os.getcwd(), dataset, model,
                                         strategy, epochs, ROUNDS, clients, TYPE, True, algorithm, fraction_fit, poc,
-                                        new_client, new_client_train, decay, class_per_client, alpha)
+                                        new_client, new_client_train, decay, comment, class_per_client, alpha)
                                     print("=====================================\nExecutando... \n", test_config,
                                           "\n=====================================")
                                     # exit()
