@@ -56,7 +56,7 @@ class NonIid:
         return strategy_config
 
     def start(self, title):
-        self.base_dir = """analysis/output/{}/experiment_{}/{}/new_clients_{}_train_{}/{}_clients/{}/{}/{}_local_epochs/{}_comment/""".format(self.type,
+        self.base_dir = """analysis/output/{}/experiment_{}/{}/new_clients_{}_train_{}/{}_clients/{}/{}/classes_per_client_{}/alpha_{}/{}_rounds/{}_local_epochs/{}_comment/""".format(self.type,
                                                                                                                                     self.experiment,
                                                                                                                                     self.aggregation_method+str(self.fraction_fit),
                                                                                                                                     self.new_clients,
@@ -64,6 +64,9 @@ class NonIid:
                                                                                                                                     self.n_clients,
                                                                                                                                     self.dataset_name,
                                                                                                                                     self.model_name,
+                                                                                                                                    self.class_per_client,
+                                                                                                                                    self.alpha,
+                                                                                                                                    self.rounds,
                                                                                                                                     self.epochs,
                                                                                                                                     self.comment)
 
