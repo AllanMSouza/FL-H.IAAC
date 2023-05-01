@@ -155,9 +155,11 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		# parameters = np.take(parameters, [4, 5])
 
 		print("quantidade de camadas: ", len(parameters), [i.shape for i in parameters])
-		if self.fedpredict_clients_metrics[client_id]['first_round'] != -1:
-			parameters = np.take(parameters, M)
+		print("testando: ", self.layer_selection_evaluate)
+		if self.fedpredict_clients_metrics[client_id]['first_round'] != -1 and self.layer_selection_evaluate:
 			M = [2, 3]
+			parameters = np.take(parameters, M)
+
 		# parameters = parameters[-2:]
 		print("quantidade de camadas retornadas: ", len(parameters), [i.shape for i in parameters])
 		parameters = fl.common.ndarrays_to_parameters(parameters)

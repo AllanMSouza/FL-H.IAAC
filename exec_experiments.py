@@ -62,19 +62,19 @@ ROUNDS = 2
 STRATEGIES_FOR_ANALYSIS = ['FedPredict']
 STRATEGIES_TO_EXECUTE = ['FedPredict']
 
-EXPERIMENTS = {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'alpha': 0.1, 'comment': ''},
-               2: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'alpha': 0.1, 'comment': ''},
+EXPERIMENTS = {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'alpha': 0.1, 'comment': '', 'layer_selection_evaluate': False},
+               2: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'alpha': 0.1, 'comment': '', 'layer_selection_evaluate': False},
                3: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'False',
-                   'class_per_client': 2, 'alpha': 0.1, 'comment': """apos a rodada {}, apenas novos clientes sao testados""".format(int(ROUNDS * 0.7))},
+                   'class_per_client': 2, 'alpha': 0.1, 'comment': """apos a rodada {}, apenas novos clientes sao testados""".format(int(ROUNDS * 0.7)), 'layer_selection_evaluate': False},
                4: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'True',
                    'class_per_client': 2, 'alpha': 0.1, 'comment': """apos a rodada {}, apenas novos clientes sao testados - novos clientes treinam apenas 1 vez (um round) - """.format(
-                       int(ROUNDS * 0.7))},
+                       int(ROUNDS * 0.7)), 'layer_selection_evaluate': False},
                5: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'True',
                    'class_per_client': 2, 'alpha': 0.1, 'comment': """apos a rodada {}, apenas novos clientes sao testados - novos clientes treinam apenas 1 vez (um round) com duas épocas locais """.format(
-                       int(ROUNDS * 0.7))},
-               6: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'alpha': 0.1, 'comment': 'ultima_camada_exclusiva'}}
+                       int(ROUNDS * 0.7)), 'layer_selection_evaluate': False},
+               6: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'alpha': 0.1, 'comment': 'ultima_camada_exclusiva', 'layer_selection_evaluate': True}}
 
-def execute_experiment(experiment, algorithm, new_client, new_client_train, comment, type, class_per_client, alpha):
+def execute_experiment(experiment, algorithm, new_client, new_client_train, comment, type, class_per_client, alpha, layer_selection_evaluate):
     try:
         for dataset in DATASETS:
             for model in MODELS:
@@ -88,10 +88,10 @@ def execute_experiment(experiment, algorithm, new_client, new_client_train, comm
                                     print(
                                         f'Starting {strategy} fraction_fit-{fraction_fit} simulation for {dataset} clients with {model} model ...',
                                         os.getcwd())
-                                    test_config = """python {}/simulation.py --dataset='{}' --model='{}' --strategy='{}' --epochs={} --round={} --client={} --type='{}' --non-iid={} --aggregation_method='{}' --fraction_fit={} --poc={} --new_clients={} --new_clients_train={} --decay={} --comment={} --class_per_client={} --alpha={}""".format(
+                                    test_config = """python {}/simulation.py --dataset='{}' --model='{}' --strategy='{}' --epochs={} --round={} --client={} --type='{}' --non-iid={} --aggregation_method='{}' --fraction_fit={} --poc={} --new_clients={} --new_clients_train={} --decay={} --comment={} --class_per_client={} --alpha={} --layer_selection_evaluate={}""".format(
                                         os.getcwd(), dataset, model,
                                         strategy, epochs, ROUNDS, clients, TYPE, True, algorithm, fraction_fit, poc,
-                                        new_client, new_client_train, decay, comment, class_per_client, alpha)
+                                        new_client, new_client_train, decay, comment, class_per_client, alpha, layer_selection_evaluate)
                                     print("=====================================\nExecutando... \n", test_config,
                                           "\n=====================================")
                                     # exit()
@@ -128,7 +128,7 @@ def main():
 
     experiment = EXPERIMENTS[int(opt.experiment_id)]
     execute_experiment(experiment=opt.experiment_id, algorithm=experiment['algorithm'], new_client=experiment['new_client'],
-                       new_client_train=experiment['new_client_train'], comment=experiment['comment'], type=opt.type, class_per_client=experiment['class_per_client'], alpha=experiment['alpha'])
+                       new_client_train=experiment['new_client_train'], comment=experiment['comment'], type=opt.type, class_per_client=experiment['class_per_client'], alpha=experiment['alpha'], layer_selection_evaluate=experiment['layer_selection_evaluate'])
     remove_lines("""execution_log/experiment_{}.txt""".format(opt.experiment_id))
 
 		

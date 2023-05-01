@@ -653,6 +653,7 @@ def main():
 	parser.add_option("--alpha", help="Dirichlet alpha parameter", default=0.1)
 	parser.add_option("--T", help="T parameter for FedPredict", default=0)
 	parser.add_option("--comment", help="comment for additional iformation of the experiment", default="")
+	parser.add_option("--layer_selection_evaluate", help="", default=False)
 
 	(opt, args) = parser.parse_args()
 

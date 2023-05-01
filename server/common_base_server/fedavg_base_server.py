@@ -55,6 +55,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.class_per_client = int(args.class_per_client)
 		self.train_perc = float(args.train_perc)
 		self.alpha = float(args.alpha)
+		self.layer_selection_evaluate = False if args.layer_selection_evaluate == 'False' else True
 		self.list_of_clients    = []
 		self.list_of_accuracies = []
 		self.selected_clients   = []
@@ -384,10 +385,11 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		else:
 			selected_clients = clients
 		print("selecionar (evaluate): ", [client.cid for client in selected_clients])
-		for client in selected_clients:
-			if self.clients_metrics[client.cid]['count'] == 0:
-				print("Cliente: ", client.cid, " nunca treinado")
-		# Return client/config pairs
+		if self.layer_selection_evaluate:
+			for client in selected_clients:
+				if self.clients_metrics[client.cid]['count'] == 0:
+					print("Cliente: ", client.cid, " nunca treinado")
+			# Return client/config pairs
 		return [(client, evaluate_ins) for client in selected_clients]
 
 	def aggregate_evaluate(

@@ -18,8 +18,8 @@ python3 exec_experiments.py --experiment_id=2 --type="torch" > execution_log/exp
 #echo "Executing experiment 5..."
 #python3 exec_experiments.py --experiment_id=5 --type="torch" > execution_log/experiment_5.txt 2>&1
 
-#echo "Executing experiment 6..."
-#python3 exec_experiments.py --experiment_id=6 --type="torch" > execution_log/experiment_6.txt 2>&1
+echo "Executing experiment 6..."
+python3 exec_experiments.py --experiment_id=6 --type="torch" > execution_log/experiment_6.txt 2>&1
 
 #hostname=$(hostname)
 #if [[ $hostname == "claudio-Predator-PH315-52" ]]

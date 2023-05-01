@@ -94,7 +94,7 @@ class FedPredictClientTorch(FedAvgClientTorch):
 			for old_param in self.clone_model.parameters():
 				if local_layer_count in M:
 					new_param = parameters[global_layer_count]
-					print("bolso new param: ", new_param.shape, " old param: ", old_param.shape)
+					print("bolso new param: ", new_param.shape, " count: ", global_layer_count, " old param: ", old_param.shape, " count: ", local_layer_count)
 					old_param.data = new_param.data.clone()
 					global_layer_count += 1
 				local_layer_count += 1
@@ -129,21 +129,23 @@ class FedPredictClientTorch(FedAvgClientTorch):
 			acc_of_last_evaluate = client_metrics['acc_of_last_evaluate']
 			# Server's metrics
 			last_global_accuracy = config['last_global_accuracy']
-			print("chegou")
+			# print("chegou")
 			M = config['M']
 			local_layer_count = 0
 			global_layer_count = 0
 			parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
-			print("parametros locais: ", [i.shape for i in self.model.parameters()])
-			print("M:", M)
+			# print("parametros locais: ", [i.shape for i in self.model.parameters()])
+			if len(parameters) != len(M):
+				print("diferente", len(parameters), len(M))
+			# print("M:", M)
 			for old_param in self.model.parameters():
 				if local_layer_count in M:
 					new_param = parameters[global_layer_count]
-					print("chegou new param: ", new_param.shape, " old param: ", old_param.shape)
+					# print("chegou new param: ", new_param.shape, " count: ", global_layer_count, " old param: ", old_param.shape, " count: ", local_layer_count)
 					old_param.data = new_param.data.clone()
 					global_layer_count += 1
 				local_layer_count += 1
-			print("combinou: ", self.cid)
+
 			if os.path.exists(self.filename):
 				# Load local parameters to 'self.model'
 				self.model.load_state_dict(torch.load(self.filename))
