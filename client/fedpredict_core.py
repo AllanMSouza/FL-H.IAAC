@@ -122,6 +122,8 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
                     cka = CKA()
                     similarity = cka.linear_CKA(global_layer_k, client_layer_k)
                     client_similarity.append(similarity)
+                if i not in similarity_per_layer[client_id]:
+                    similarity_per_layer[client_id][i] = []
                 similarity_per_layer[client_id][i].append(np.mean(client_similarity))
             else:
             # for x, y in zip(global_layer, client_layer):

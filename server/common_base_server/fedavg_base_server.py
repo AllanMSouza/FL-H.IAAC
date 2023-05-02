@@ -99,7 +99,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		if self.aggregation_method == 'POC':
 			self.strategy_name = f"{strategy_name}-{aggregation_method}-{self.perc_of_clients}"
 
-		elif self.aggregation_method == 'FedLTA':
+		elif self.aggregation_method == 'FL-H.IAAC':
 			self.strategy_name = f"{strategy_name}-{aggregation_method}-{self.decay_factor}"
 
 		elif self.aggregation_method == 'None':
@@ -195,7 +195,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			clients2select        = int(float(self.num_clients) * float(self.perc_of_clients))
 			self.selected_clients = self.list_of_clients[:clients2select]
 
-		elif self.aggregation_method == 'FedLTA':
+		elif self.aggregation_method == 'FL-H.IAAC':
 			self.selected_clients = self.select_clients_bellow_average()
 
 			if self.decay_factor > 0:
@@ -289,12 +289,11 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		weights_results = []
 		clients_parameters = []
 		clients_ids = []
-		print("previo: ", type(self.previous_global_parameters))
 		for _, fit_res in results:
 			client_id = str(fit_res.metrics['cid'])
 			clients_ids.append(client_id)
 			clients_parameters.append(fl.common.parameters_to_ndarrays(fit_res.parameters))
-			if self.aggregation_method not in ['POC', 'FedLTA'] or int(server_round) <= 1:
+			if self.aggregation_method not in ['POC', 'FL-H.IAAC'] or int(server_round) <= 1:
 				weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples))
 
 			else:

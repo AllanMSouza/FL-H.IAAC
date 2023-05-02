@@ -57,10 +57,10 @@ DECAY = {'None': 0, 'POC': 0, 'FedLTA': 0.1}
 NEW_CLIENTS = {'None': ['FALSE'], 'POC': ['FALSE', 'TRUE']}
 NEW_CLIENTS_TRAIN = {'FALSE': ['FALSE'], 'TRUE': ['FALSE', 'TRUE']}
 # DECAY         				= (0.001, 0.005, 0.009)
-ROUNDS = 50
+ROUNDS = 4
 # STRATEGIES 					= ('FedPredict', 'FedPer', 'FedClassAvg', 'FedAVG', 'FedClassAvg_with_FedPredict', 'FedPer_with_FedPredict', 'FedProto', 'FedYogi', 'FedLocal',)
-STRATEGIES_FOR_ANALYSIS = ['FedPredict', 'FedAVG', 'FedClassAvg']
-STRATEGIES_TO_EXECUTE = ['FedPredict', 'FedAVG', 'FedClassAvg']
+STRATEGIES_FOR_ANALYSIS = ['FedPredict']
+STRATEGIES_TO_EXECUTE = ['FedPredict']
 
 EXPERIMENTS = {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'alpha': 0.1, 'comment': '', 'layer_selection_evaluate': False},
                2: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'alpha': 0.1, 'comment': '', 'layer_selection_evaluate': False},

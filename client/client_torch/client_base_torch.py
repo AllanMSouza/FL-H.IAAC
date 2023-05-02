@@ -89,7 +89,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		if self.aggregation_method == 'POC':
 			self.solution_name = f"{solution_name}-{aggregation_method}-{self.perc_of_clients}"
 
-		elif self.aggregation_method == 'FedLTA': 
+		elif self.aggregation_method == 'FL-H.IAAC':
 			self.solution_name = f"{solution_name}-{aggregation_method}-{self.decay}"
 
 		elif self.aggregation_method == 'None':

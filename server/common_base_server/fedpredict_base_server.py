@@ -150,21 +150,29 @@ class FedPredictBaseServer(FedAvgBaseServer):
 
 	def _select_layers(self, client_similarity_per_layer, parameters, server_round, client_id):
 
-		parameters = fl.common.parameters_to_ndarrays(parameters)
-		M = [0, 1, 2, 3]
-		# parameters = np.take(parameters, [4, 5])
+		try:
+			parameters = fl.common.parameters_to_ndarrays(parameters)
+			M = [i for i in range(len(parameters))]
 
-		print("quantidade de camadas: ", len(parameters), [i.shape for i in parameters])
-		print("testando: ", self.layer_selection_evaluate)
-		if self.fedpredict_clients_metrics[client_id]['first_round'] != -1 and self.layer_selection_evaluate:
-			M = [2, 3]
-			parameters = np.take(parameters, M)
+			print("quantidade de camadas: ", len(parameters), [i.shape for i in parameters])
+			print("testando: ", self.layer_selection_evaluate, type(parameters))
+			if self.fedpredict_clients_metrics[client_id]['first_round'] != -1 and self.layer_selection_evaluate:
+				M = M[-2:]
+				new_parameters = []
+				for i in range(len(parameters)):
+					if i in M:
+						new_parameters.append(parameters[i])
+				parameters = new_parameters
 
-		# parameters = parameters[-2:]
-		print("quantidade de camadas retornadas: ", len(parameters), [i.shape for i in parameters])
-		parameters = fl.common.ndarrays_to_parameters(parameters)
+			# parameters = parameters[-2:]
+			print("quantidade de camadas retornadas: ", len(parameters), [i.shape for i in parameters])
+			parameters = fl.common.ndarrays_to_parameters(parameters)
 
-		return parameters, M
+			return parameters, M
+
+		except Exception as e:
+			print("_select_layers")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def get_client_similarity_per_layer(self, client_id, server_round):
 
