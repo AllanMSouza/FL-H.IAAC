@@ -118,14 +118,13 @@ class ManageDatasets():
 			(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
 			y_train = np.array([i[0] for i in y_train])
 			y_test = np.array([i[0] for i in y_test])
-			x_train, x_test                      = x_train/255.0, x_test/255.0
+			y = np.concatenate((y_train, y_test), axis=0)
+			x = np.concatenate((x_train, x_test), axis=0)
+			x_train = x[idx_train]
+			x_test = x[idx_test]
 
-
-			x_train = x_train[idx_train]
-			x_test  = x_test[idx_test]
-
-			y_train = y_train[idx_train]
-			y_test  = y_test[idx_test]
+			y_train = y[idx_train]
+			y_test = y[idx_test]
 
 			# print("ex antes: ", x_train.shape)
 			x_train = np.array([np.moveaxis(i, -1, 0) for i in x_train])
@@ -134,7 +133,7 @@ class ManageDatasets():
 
 		else:
 
-			(x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
+			(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
 			x_train, x_test                      = x_train/255.0, x_test/255.0
 			x_train, y_train, x_test, y_test     = self.slipt_dataset(x_train, y_train, x_test, y_test, n_clients)
 
