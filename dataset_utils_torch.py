@@ -175,6 +175,7 @@ class ManageDatasets():
 		print("recebeu: ", self.cid, dataset_name, n_clients, class_per_client, alpha, non_iid)
 		filename_train = f"dataset_utils/data/{dataset_name}/{n_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{self.cid}/idx_train_{self.cid}.pickle"
 		filename_test = f"dataset_utils/data/{dataset_name}/{n_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{self.cid}/idx_test_{self.cid}.pickle"
+		print("arquivo de leitura: ", filename_train)
 		if dataset_name == 'MNIST':
 			return self.load_MNIST(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
 
