@@ -68,10 +68,11 @@ class Varying_Shared_layers:
         x_column = 'Round'
         y_column = 'Accuracy (%)'
         hue = 'Shared layers'
-        title = ""
-        base_dir = "analysis/output/torch/varying_shared_layers/"
-        os.makedirs(base_dir + "png/")
-        os.makedirs(base_dir + "svg/")
+        title = """Alpha_{}""".format(alpha)
+        base_dir = """analysis/output/torch/varying_shared_layers/alpha_{}/""".format(alpha)
+        os.makedirs(base_dir + "png/", exist_ok=True)
+        os.makedirs(base_dir + "svg/", exist_ok=True)
+        os.makedirs(base_dir + "csv/", exist_ok=True)
         line_plot(df=df,
                   base_dir=base_dir,
                   file_name="evaluate_client_acc_round_varying_shared_layers_lineplot",
@@ -85,7 +86,6 @@ class Varying_Shared_layers:
         y_column = 'Communication cost (bytes)'
         hue = 'Shared layers'
         title = ""
-        base_dir = "analysis/output/torch/varying_shared_layers/"
         line_plot(df=df,
                   base_dir=base_dir,
                   file_name="evaluate_client_communication_cost_round_varying_shared_layers_lineplot",
@@ -95,6 +95,9 @@ class Varying_Shared_layers:
                   hue=hue,
                   hue_order=layer_selection_evaluate,
                   type=1)
+
+        filename = base_dir + "csv/comparison.csv"
+        df.to_csv(filename, index=False)
 
 
 if __name__ == '__main__':
