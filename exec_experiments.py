@@ -74,11 +74,11 @@ EXPERIMENTS = {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train
                5: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'True',
                    'class_per_client': 2, 'comment': """apos a rodada {}, apenas novos clientes sao testados - novos clientes treinam apenas 1 vez (um round) com duas épocas locais """.format(
                        int(ROUNDS * 0.7)), 'layer_selection_evaluate': 4},
-               6: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'alpha': 1, 'comment': '', 'layer_selection_evaluate': 1},
-               7: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'alpha': 1, 'comment': '', 'layer_selection_evaluate': 2},
-               8: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'alpha': 1, 'comment': '', 'layer_selection_evaluate': 3},
-               9: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'alpha': 1, 'comment': '', 'layer_selection_evaluate': 4},
-               10: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'alpha': 1, 'comment': '', 'layer_selection_evaluate': 4}}
+               6: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '', 'layer_selection_evaluate': 1},
+               7: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '', 'layer_selection_evaluate': 2},
+               8: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '', 'layer_selection_evaluate': 3},
+               9: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '', 'layer_selection_evaluate': 4},
+               10: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '', 'layer_selection_evaluate': 4}}
 
 def execute_experiment(experiment, algorithm, new_client, new_client_train, comment, type, class_per_client, layer_selection_evaluate):
 
