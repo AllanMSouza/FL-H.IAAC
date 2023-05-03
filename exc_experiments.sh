@@ -6,8 +6,8 @@
 #echo "Executing experiment 1..."
 #python3 exec_experiments.py --experiment_id=1 > execution_log/experiment_1.txt 2>&1
 
-echo "Executing experiment 2..."
-python3 exec_experiments.py --experiment_id=2 --type="torch" > execution_log/experiment_2.txt 2>&1
+#echo "Executing experiment 2..."
+#python3 exec_experiments.py --experiment_id=2 --type="torch" > execution_log/experiment_2.txt 2>&1
 
 #echo "Executing experiment 3..."
 #python3 exec_experiments.py --experiment_id=3 --type="torch" > execution_log/experiment_3.txt 2>&1
@@ -18,14 +18,14 @@ python3 exec_experiments.py --experiment_id=2 --type="torch" > execution_log/exp
 #echo "Executing experiment 5..."
 #python3 exec_experiments.py --experiment_id=5 --type="torch" > execution_log/experiment_5.txt 2>&1
 
-#echo "Executing experiment 6..."
-#python3 exec_experiments.py --experiment_id=6 --type="torch" > execution_log/experiment_6.txt 2>&1
-#
-#echo "Executing experiment 7..."
-#python3 exec_experiments.py --experiment_id=7 --type="torch" > execution_log/experiment_7.txt 2>&1
-#
-#echo "Executing experiment 8..."
-#python3 exec_experiments.py --experiment_id=8 --type="torch" > execution_log/experiment_8.txt 2>&1
+echo "Executing experiment 6..."
+python3 exec_experiments.py --experiment_id=6 --type="torch" > execution_log/experiment_6.txt 2>&1
+
+echo "Executing experiment 7..."
+python3 exec_experiments.py --experiment_id=7 --type="torch" > execution_log/experiment_7.txt 2>&1
+
+echo "Executing experiment 8..."
+python3 exec_experiments.py --experiment_id=8 --type="torch" > execution_log/experiment_8.txt 2>&1
 
 #hostname=$(hostname)
 #if [[ $hostname == "claudio-Predator-PH315-52" ]]
