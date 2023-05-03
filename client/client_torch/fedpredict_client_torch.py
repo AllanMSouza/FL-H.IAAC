@@ -90,15 +90,14 @@ class FedPredictClientTorch(FedAvgClientTorch):
 			local_layer_count = 0
 			global_layer_count = 0
 			parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
-			print("bolso")
+
 			for old_param in self.clone_model.parameters():
 				if local_layer_count in M:
 					new_param = parameters[global_layer_count]
-					print("bolso new param: ", new_param.shape, " count: ", global_layer_count, " old param: ", old_param.shape, " count: ", local_layer_count)
 					old_param.data = new_param.data.clone()
 					global_layer_count += 1
 				local_layer_count += 1
-			print("passou")
+
 			# self.clone_model.load_state_dict(torch.load(filename))
 			# Combine models
 			count = 0

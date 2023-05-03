@@ -48,33 +48,45 @@ DATASETS = ['CIFAR10']
 # DATASETS      					= ['UCIHAR', 'MotionSense']
 MODELS = ['CNN']
 ALGORITHMS = ['None', 'POC', 'FedLTA']
-EPOCHS = {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2], '6': [1]}
+EPOCHS = {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2], '6': [1], '7': [1], '8': [1]}
 # CLIENTS       				= {'MNIST': 50, 'CIFAR10': 50, 'CIFAR100': 50, 'MotionSense': 50, 'UCIHAR': 50}
-CLIENTS = {'MNIST': [10], 'CIFAR10': [50], 'CIFAR100': [50], 'MotionSense': [24], 'UCIHAR': [30]}
-FRACTION_FIT = {'None': [0.6], 'POC': [0], 'FedLTA': [0]}
+CLIENTS = {'MNIST': [10], 'CIFAR10': [10], 'CIFAR100': [50], 'MotionSense': [24], 'UCIHAR': [30]}
+ALPHA = [0.05, 0.1, 0.5, 1]
+# ALPHA = [1]
+FRACTION_FIT = {'None': [0.5], 'POC': [0], 'FedLTA': [0]}
 POC = {'None': [0], 'POC': [0.2], 'FedLTA': [0]}
 DECAY = {'None': 0, 'POC': 0, 'FedLTA': 0.1}
 NEW_CLIENTS = {'None': ['FALSE'], 'POC': ['FALSE', 'TRUE']}
 NEW_CLIENTS_TRAIN = {'FALSE': ['FALSE'], 'TRUE': ['FALSE', 'TRUE']}
 # DECAY         				= (0.001, 0.005, 0.009)
-ROUNDS = 50
+ROUNDS = 20
 # STRATEGIES 					= ('FedPredict', 'FedPer', 'FedClassAvg', 'FedAVG', 'FedClassAvg_with_FedPredict', 'FedPer_with_FedPredict', 'FedProto', 'FedYogi', 'FedLocal',)
-STRATEGIES_FOR_ANALYSIS = ['FedPredict']
-STRATEGIES_TO_EXECUTE = ['FedPredict']
+STRATEGIES_FOR_ANALYSIS = ['FedPredict', 'FedAVG']
+STRATEGIES_TO_EXECUTE = ['FedPredict', 'FedAVG']
 
-EXPERIMENTS = {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'alpha': 0.1, 'comment': '', 'layer_selection_evaluate': False},
-               2: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'alpha': 0.1, 'comment': '', 'layer_selection_evaluate': False},
+EXPERIMENTS = {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '', 'layer_selection_evaluate': 4},
+               2: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '', 'layer_selection_evaluate': 4},
                3: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'False',
-                   'class_per_client': 2, 'alpha': 0.1, 'comment': """apos a rodada {}, apenas novos clientes sao testados""".format(int(ROUNDS * 0.7)), 'layer_selection_evaluate': False},
+                   'class_per_client': 2, 'comment': """apos a rodada {}, apenas novos clientes sao testados""".format(int(ROUNDS * 0.7)), 'layer_selection_evaluate': 4},
                4: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'True',
-                   'class_per_client': 2, 'alpha': 0.1, 'comment': """apos a rodada {}, apenas novos clientes sao testados - novos clientes treinam apenas 1 vez (um round) - """.format(
-                       int(ROUNDS * 0.7)), 'layer_selection_evaluate': False},
+                   'class_per_client': 2, 'comment': """apos a rodada {}, apenas novos clientes sao testados - novos clientes treinam apenas 1 vez (um round) - """.format(
+                       int(ROUNDS * 0.7)), 'layer_selection_evaluate': 4},
                5: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'True',
-                   'class_per_client': 2, 'alpha': 0.1, 'comment': """apos a rodada {}, apenas novos clientes sao testados - novos clientes treinam apenas 1 vez (um round) com duas épocas locais """.format(
-                       int(ROUNDS * 0.7)), 'layer_selection_evaluate': False},
-               6: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'alpha': 0.1, 'comment': 'ultima_camada_exclusiva', 'layer_selection_evaluate': True}}
+                   'class_per_client': 2, 'comment': """apos a rodada {}, apenas novos clientes sao testados - novos clientes treinam apenas 1 vez (um round) com duas épocas locais """.format(
+                       int(ROUNDS * 0.7)), 'layer_selection_evaluate': 4},
+               6: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'alpha': 1, 'comment': '', 'layer_selection_evaluate': 1},
+               7: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'alpha': 1, 'comment': '', 'layer_selection_evaluate': 2},
+               8: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'alpha': 1, 'comment': '', 'layer_selection_evaluate': 3},
+               9: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'alpha': 1, 'comment': '', 'layer_selection_evaluate': 4},
+               10: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'alpha': 1, 'comment': '', 'layer_selection_evaluate': 4}}
 
-def execute_experiment(experiment, algorithm, new_client, new_client_train, comment, type, class_per_client, alpha, layer_selection_evaluate):
+def execute_experiment(experiment, algorithm, new_client, new_client_train, comment, type, class_per_client, layer_selection_evaluate):
+
+    if experiment == 9:
+        comment = ROUNDS - 10
+    elif experiment == 10:
+        comment = ROUNDS + 10
+    comment = str(comment)
     try:
         for dataset in DATASETS:
             for model in MODELS:
@@ -82,34 +94,35 @@ def execute_experiment(experiment, algorithm, new_client, new_client_train, comm
                     for clients in CLIENTS[dataset]:
                         for fraction_fit in FRACTION_FIT[algorithm]:
                             for poc in POC[algorithm]:
-                                decay = DECAY[algorithm]
-                                for strategy in STRATEGIES_TO_EXECUTE:
+                                for alpha in ALPHA:
+                                    decay = DECAY[algorithm]
+                                    for strategy in STRATEGIES_TO_EXECUTE:
 
-                                    print(
-                                        f'Starting {strategy} fraction_fit-{fraction_fit} simulation for {dataset} clients with {model} model ...',
-                                        os.getcwd())
-                                    test_config = """python {}/simulation.py --dataset='{}' --model='{}' --strategy='{}' --epochs={} --round={} --client={} --type='{}' --non-iid={} --aggregation_method='{}' --fraction_fit={} --poc={} --new_clients={} --new_clients_train={} --decay={} --comment={} --class_per_client={} --alpha={} --layer_selection_evaluate={}""".format(
-                                        os.getcwd(), dataset, model,
-                                        strategy, epochs, ROUNDS, clients, TYPE, True, algorithm, fraction_fit, poc,
-                                        new_client, new_client_train, decay, comment, class_per_client, alpha, layer_selection_evaluate)
-                                    print("=====================================\nExecutando... \n", test_config,
-                                          "\n=====================================")
-                                    # exit()
-                                    subprocess.Popen(test_config, shell=True).wait()
-                                    pass
-                                # subprocess.Popen(['rm', '-fr', '/tmp/ray/']).wait()
-                                # subprocess.Popen(['rm', '/tmp/*.py']).wait()
-                                strategies_arg = ""
-                                for i in STRATEGIES_FOR_ANALYSIS:
-                                    strategies_arg = strategies_arg + """ --strategy='{}'""".format(i)
-                                if len(STRATEGIES_FOR_ANALYSIS) > 0:
-                                    analytics_result_dir = """python analysis/non_iid.py --dataset='{}' --model='{}' --round={} --client={} --aggregation_method='{}' --poc={} --new_clients={} --new_clients_train={} --non-iid={} --comment='{}' --epochs={} --decay={} --fraction_fit={} --class_per_client={} --alpha={} --experiment={} {}""".format(
-                                        dataset, model, ROUNDS, clients, algorithm, poc, new_client, new_client_train,
-                                        True, comment, epochs, decay, fraction_fit, class_per_client, alpha, experiment, strategies_arg)
-                                    print("=====================================\nExecutando analytics... \n",
-                                          analytics_result_dir,
-                                          "\n=====================================")
-                                    subprocess.Popen(analytics_result_dir, shell=True).wait()
+                                        print(
+                                            f'Starting {strategy} fraction_fit-{fraction_fit} simulation for {dataset} clients with {model} model ...',
+                                            os.getcwd())
+                                        test_config = """python {}/simulation.py --dataset='{}' --model='{}' --strategy='{}' --epochs={} --round={} --client={} --type='{}' --non-iid={} --aggregation_method='{}' --fraction_fit={} --poc={} --new_clients={} --new_clients_train={} --decay={} --comment={} --class_per_client={} --alpha={} --layer_selection_evaluate={}""".format(
+                                            os.getcwd(), dataset, model,
+                                            strategy, epochs, ROUNDS, clients, TYPE, True, algorithm, fraction_fit, poc,
+                                            new_client, new_client_train, decay, comment, class_per_client, alpha, layer_selection_evaluate)
+                                        print("=====================================\nExecutando... \n", test_config,
+                                              "\n=====================================")
+                                        # exit()
+                                        subprocess.Popen(test_config, shell=True).wait()
+                                        pass
+                                    # subprocess.Popen(['rm', '-fr', '/tmp/ray/']).wait()
+                                    # subprocess.Popen(['rm', '/tmp/*.py']).wait()
+                                    strategies_arg = ""
+                                    for i in STRATEGIES_FOR_ANALYSIS:
+                                        strategies_arg = strategies_arg + """ --strategy='{}'""".format(i)
+                                    if len(STRATEGIES_FOR_ANALYSIS) > 0:
+                                        analytics_result_dir = """python analysis/non_iid.py --dataset='{}' --model='{}' --round={} --client={} --aggregation_method='{}' --poc={} --new_clients={} --new_clients_train={} --non-iid={} --comment='{}' --epochs={} --decay={} --fraction_fit={} --class_per_client={} --alpha={} --layer_selection_evaluate={} --experiment={} {}""".format(
+                                            dataset, model, ROUNDS, clients, algorithm, poc, new_client, new_client_train,
+                                            True, comment, epochs, decay, fraction_fit, class_per_client, alpha, layer_selection_evaluate, experiment, strategies_arg)
+                                        print("=====================================\nExecutando analytics... \n",
+                                              analytics_result_dir,
+                                              "\n=====================================")
+                                        subprocess.Popen(analytics_result_dir, shell=True).wait()
 
                         # subprocess.Popen(['rm', '-fr', '/tmp/ray/']).wait()
                         # subprocess.Popen(['rm', '/tmp/*.py']).wait()
@@ -128,7 +141,7 @@ def main():
 
     experiment = EXPERIMENTS[int(opt.experiment_id)]
     execute_experiment(experiment=opt.experiment_id, algorithm=experiment['algorithm'], new_client=experiment['new_client'],
-                       new_client_train=experiment['new_client_train'], comment=experiment['comment'], type=opt.type, class_per_client=experiment['class_per_client'], alpha=experiment['alpha'], layer_selection_evaluate=experiment['layer_selection_evaluate'])
+                       new_client_train=experiment['new_client_train'], comment=experiment['comment'], type=opt.type, class_per_client=experiment['class_per_client'], layer_selection_evaluate=experiment['layer_selection_evaluate'])
     remove_lines("""execution_log/experiment_{}.txt""".format(opt.experiment_id))
 
 		

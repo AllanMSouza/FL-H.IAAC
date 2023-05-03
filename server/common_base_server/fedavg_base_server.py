@@ -55,7 +55,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.class_per_client = int(args.class_per_client)
 		self.train_perc = float(args.train_perc)
 		self.alpha = float(args.alpha)
-		self.layer_selection_evaluate = False if args.layer_selection_evaluate == 'False' else True
+		self.layer_selection_evaluate = int(args.layer_selection_evaluate)
 		self.list_of_clients    = []
 		self.list_of_accuracies = []
 		self.selected_clients   = []
@@ -384,7 +384,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		else:
 			selected_clients = clients
 		print("selecionar (evaluate): ", [client.cid for client in selected_clients])
-		if self.layer_selection_evaluate:
+		if selected_clients:
 			for client in selected_clients:
 				if self.clients_metrics[client.cid]['count'] == 0:
 					print("Cliente: ", client.cid, " nunca treinado")
@@ -523,7 +523,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 	def _write_output_files_headers(self):
 
-		self.base = f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment"
+		self.base = f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(self.layer_selection_evaluate)}_layer_selection_evaluate"
 		self.server_filename = f"{self.base}/server.csv"
 		self.train_filename = f"{self.base}/train_client.csv"
 		self.evaluate_filename = f"{self.base}/evaluate_client.csv"

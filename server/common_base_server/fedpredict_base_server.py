@@ -139,10 +139,14 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			config['metrics'] = client_config
 			config['last_global_accuracy'] = accuracy
 			config['total_server_rounds'] = self.num_rounds
+			try:
+				config['total_server_rounds'] = int(self.comment)
+			except:
+				pass
+
 			client_similarity_per_layer = self.get_client_similarity_per_layer(client_id, server_round)
 			parameters_to_send, M = self._select_layers(client_similarity_per_layer, parameters, server_round, client_id)
 			config['M'] = M
-			print("enviar")
 			evaluate_ins = fl.common.EvaluateIns(parameters_to_send, config)
 			client_evaluate_list_fedpredict.append((client, evaluate_ins))
 
@@ -155,9 +159,8 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			M = [i for i in range(len(parameters))]
 
 			print("quantidade de camadas: ", len(parameters), [i.shape for i in parameters])
-			print("testando: ", self.layer_selection_evaluate, type(parameters))
-			if self.fedpredict_clients_metrics[client_id]['first_round'] != -1 and self.layer_selection_evaluate:
-				M = M[-2:]
+			if self.fedpredict_clients_metrics[client_id]['first_round'] != -1 and self.layer_selection_evaluate > 0:
+				M = M[-self.layer_selection_evaluate*2:]
 				new_parameters = []
 				for i in range(len(parameters)):
 					if i in M:
@@ -189,6 +192,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 
 		columns = ["Server round", "Layer", "Similarity"]
 		data = {column: [] for column in columns}
+
 		for round in self.similarity_between_layers_per_round:
 
 			for layer in self.similarity_between_layers_per_round[round]:

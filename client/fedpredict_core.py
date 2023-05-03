@@ -97,7 +97,7 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
     num_layers = len(global_parameter)
     num_clients = len(clients_parameters)
     similarity_per_layer = {i: {} for i in clients_ids}
-    mean_similarity_per_layer = {i: 0 for i in clients_ids}
+    mean_similarity_per_layer = {i: 0 for i in range(num_layers)}
 
     for j in range(num_clients):
 
@@ -111,8 +111,6 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
                 global_layer = np.reshape(global_layer, (len(global_layer), 1))
             if np.ndim(client_layer) == 1:
                 client_layer = np.reshape(client_layer, (len(client_layer), 1))
-            print("apos global: ", global_layer.shape)
-            print("apos cliente: ", client_layer.shape)
             # CNN
             if np.ndim(global_layer) == 4:
                 client_similarity = []

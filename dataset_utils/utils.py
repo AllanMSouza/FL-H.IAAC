@@ -80,6 +80,7 @@ def separate_data(targets, num_clients, num_classes, niid=False, balance=False, 
         min_size = 0
         K = num_classes
         N = len(targets)
+        print("ola: ", class_per_client)
 
         while min_size < least_samples:
             idx_batch = [[] for _ in range(num_clients)]
@@ -132,17 +133,24 @@ def save_dataloaders(dataset_name="CIFAR10", num_clients=10, num_classes=10, nii
 
     # transform = get_transform(dataset_name)
     x_train, y_train, x_test, y_test = ManageDatasets().select_dataset(dataset_name)
+
     target = np.concatenate((y_train, y_test), axis=0)
+    print("Quantidade de amostras do ", dataset_name, ": ", len(target))
     # dataset = Dataset()
     masks, statistic = separate_data(target, num_clients, num_classes, niid, balance, partition, class_per_client,
                                      batch_size, train_size, alpha)
 
     train_data, test_data = split_data(masks, num_clients, train_size)
 
+    count = 0
+
     for client_id in range(num_clients):
 
         index_train = train_data[client_id]
         index_test = test_data[client_id]
+        # print("""Quantidade de dados de treino para o cliente {}: {}, teste: {}""".format(client_id, len(index_train), len(index_test)))
+        print("Original: ", len(index_train), " Sem duplicadas: ", len(pd.Series(index_train).drop_duplicates()), " classes: ", len(pd.Series(target[index_train]).unique().tolist()))
+        count += len(index_train) + len(index_test)
 
         filename_train = f"data/{dataset_name}/{num_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{client_id}/idx_train_{client_id}.pickle"
         filename_test = f"data/{dataset_name}/{num_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{client_id}/idx_test_{client_id}.pickle"
@@ -155,3 +163,5 @@ def save_dataloaders(dataset_name="CIFAR10", num_clients=10, num_classes=10, nii
 
         with open(filename_test, 'wb') as handle:
             pickle.dump(index_test, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    print("total: ", count)

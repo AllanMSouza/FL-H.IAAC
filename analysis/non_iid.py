@@ -26,6 +26,7 @@ class NonIid:
         self.rounds = args.rounds
         self.class_per_client = int(args.class_per_client)
         self.alpha = float(args.alpha)
+        self.layer_selection_evaluate = int(args.layer_selection_evaluate)
         self.epochs = epochs
         self.decay = decay
         self.type = type
@@ -76,7 +77,7 @@ class NonIid:
             os.makedirs(self.base_dir + "svg/")
 
         models_directories = {self.strategy_name_list[i]:
-                              """{}/{}/{}/new_clients_{}_train_{}/{}/{}/{}/classes_per_client_{}/alpha_{}/{}_rounds/{}_local_epochs/{}_comment/""".
+                              """{}/{}/{}/new_clients_{}_train_{}/{}/{}/{}/classes_per_client_{}/alpha_{}/{}_rounds/{}_local_epochs/{}_comment/{}_layer_selection_evaluate/""".
                               format(os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/logs",
                                      self.type,
                                      self._get_strategy_config(self.strategy_name_list[i]),
@@ -89,7 +90,8 @@ class NonIid:
                                      self.alpha,
                                      self.rounds,
                                      self.epochs,
-                                     self.comment) for i in range(len(self.strategy_name_list))}
+                                     self.comment,
+                                     self.layer_selection_evaluate) for i in range(len(self.strategy_name_list))}
 
         # read datasets
         print(models_directories)
@@ -98,7 +100,7 @@ class NonIid:
 
             for j in self.base_files_names:
                 file_name = self.base_files_names[j]
-                if file_name == 'similarity' and strategy_name != 'FedPredict':
+                if 'similarity' in file_name and strategy_name != 'FedPredict':
                     continue
                 df = pd.read_csv(models_directories[strategy_name]+file_name)
                 df['Strategy'] = np.array([strategy_name]*len(df))
@@ -107,11 +109,11 @@ class NonIid:
                 else:
                     self.df_files_names[j] = pd.concat([self.df_files_names[j], df], ignore_index=True)
 
-        print("teste: ", self.df_files_names['server_nt_acc'])
+        print("teste: ", self.df_files_names['evaluate_client'])
         self.server_nt_acc_analysis()
         self.server_analysis(title)
         self.evaluate_client_analysis()
-        self.similarity_analysis()
+        self.similarity_analysis("Alpha=" + str(self.alpha))
 
     def server_nt_acc_analysis(self):
 
@@ -238,16 +240,18 @@ class NonIid:
                  hue=hue,
                  sci=True)
 
-    def similarity_analysis(self):
+    def similarity_analysis(self, title):
 
         df = self.df_files_names['similarity'].drop_duplicates()
-        print("ddd: ", df)
+        df['Similarity'] = df['Similarity'].round(4)
+        df['Layer'] = df['Layer'].astype(int)
+        print("ddd: \n", df)
         x_column = 'Server round'
         y_column = 'Similarity'
         hue = 'Layer'
-        hue_order = np.sort(df[hue].tolist())
+        hue_order = np.sort(df[hue].unique().tolist()).tolist()
+        print("ordem: ", hue_order)
         type = 1
-        title = ""
         line_plot(df=df,
                   base_dir=self.base_dir,
                   file_name="similarity_between_layers_per_round_lineplot",
@@ -338,6 +342,7 @@ if __name__ == '__main__':
                       help="fraction of selected clients to be trained", metavar="FLOAT")
     parser.add_option("--class_per_client", help="Number of classes per client", default=2)
     parser.add_option("--alpha", help="Dirichlet alpha parameter", default=0.1)
+    parser.add_option("--layer_selection_evaluate", help="", default=0)
 
     (opt, args) = parser.parse_args()
 
