@@ -70,6 +70,8 @@ class Varying_Shared_layers:
         hue = 'Shared layers'
         title = ""
         base_dir = "analysis/output/torch/varying_shared_layers/"
+        os.makedirs(base_dir + "png/")
+        os.makedirs(base_dir + "svg/")
         line_plot(df=df,
                   base_dir=base_dir,
                   file_name="evaluate_client_acc_round_varying_shared_layers_lineplot",
@@ -109,7 +111,7 @@ if __name__ == '__main__':
     model_name = "CNN"
     dataset = "CIFAR10"
     alpha = 1.0
-    num_rounds = 10
+    num_rounds = 20
     epochs = 1
     layer_selection_evaluate = [1, 2, 3, 4]
     comment = ""
