@@ -113,7 +113,7 @@ if __name__ == '__main__':
     num_clients = 10
     model_name = "CNN"
     dataset = "CIFAR10"
-    alpha = 1.0
+    alpha = 0.5
     num_rounds = 20
     epochs = 1
     layer_selection_evaluate = [1, 2, 3, 4]
