@@ -79,7 +79,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		self.fraction_fit	  = fraction_fit
 
 		self.loss = nn.CrossEntropyLoss()
-		self.learning_rate = 0.001
+		self.learning_rate = 0.01
 		self.new_clients = new_clients
 		self.new_clients_train = new_clients_train
 		# self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
