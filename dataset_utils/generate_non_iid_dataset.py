@@ -37,7 +37,7 @@ def parse_arguments():
 
 if __name__ == '__main__':
     # Random initializations
-    random.seed(time.time())
+    random.seed(0)
 
     args = parse_arguments()
 
