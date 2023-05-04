@@ -309,7 +309,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 					test_acc += (torch.sum(prediction == y)).item()
 					test_num += y.shape[0]
 
-			print("dados de treino: ", test_num, len(self.testloader[0]))
+			print("dados de treino: ", test_num)
 			loss = test_loss / test_num
 			accuracy = test_acc / test_num
 
