@@ -262,6 +262,16 @@ class NonIid:
                   hue_order=hue_order,
                   type=type)
 
+        x_column = 'Server round'
+        y_column = 'Similarity'
+        type = 1
+        line_plot(df=df,
+                  base_dir=self.base_dir,
+                  file_name="mean_similarity_between_layers_per_round_lineplot",
+                  x_column=x_column,
+                  y_column=y_column,
+                  title=title)
+
 
 
 

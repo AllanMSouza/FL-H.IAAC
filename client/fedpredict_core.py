@@ -91,6 +91,22 @@ def fedpredict_core(t, T, nt):
 # def set_parameters_to_model(parameters, model_name):
 #     # print("tamanho: ", self.input_shape, " dispositivo: ", self.device)
 
+def fedpredict_similarity_per_round_rate(similarities, num_layers, current_round, round_window):
+
+    similarities_list = {i: [] for i in range(num_layers)}
+    similarity_rate = {i: 0 for i in range(num_layers)}
+    initial_round = 1
+
+    for round in range(initial_round, current_round):
+
+        for layer in range(num_layers):
+
+            similarities_list[round].append(similarities[round])
+
+    for layer in range(num_layers):
+
+        similarity_rate[layer] = (similarities_list[current_round] - similarities_list[initial_round])/round_window
+
 
 def fedpredict_layerwise_similarity(global_parameter, clients_parameters, clients_ids):
 

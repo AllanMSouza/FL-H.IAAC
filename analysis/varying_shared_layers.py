@@ -58,18 +58,19 @@ class Varying_Shared_layers:
             parameters = float(df['Size of parameters'].mean())
             config = float(df['Size of config'].mean())
             acc = float(df['Accuracy'].mean())
+            acc_gain_per_byte = acc/parameters
             total_size = parameters + config
 
-            return pd.DataFrame({'Size of parameters (bytes)': [parameters], 'Communication cost (bytes)': [total_size], 'Accuracy': [acc]})
-        df = df[['Accuracy', 'Round', 'Size of parameters', 'Size of config', 'Strategy', 'Shared layers']].groupby(by=['Strategy', 'Shared layers', 'Round']).apply(lambda e: strategy(e)).reset_index()[['Accuracy', 'Size of parameters (bytes)', 'Communication cost (bytes)', 'Strategy', 'Shared layers', 'Round']]
-        print(df)
+            return pd.DataFrame({'Size of parameters (bytes)': [parameters], 'Communication cost (bytes)': [total_size], 'Accuracy': [acc], 'Accuracy gain per byte': [acc_gain_per_byte]})
+        df = df[['Accuracy', 'Round', 'Size of parameters', 'Size of config', 'Strategy', 'Shared layers']].groupby(by=['Strategy', 'Shared layers', 'Round']).apply(lambda e: strategy(e)).reset_index()[['Accuracy', 'Size of parameters (bytes)', 'Communication cost (bytes)', 'Strategy', 'Shared layers', 'Round', 'Accuracy gain per byte']]
+        # print("Com alpha: ", alpha, "\n", df)
         df['Accuracy (%)'] = df['Accuracy'] * 100
         df['Accuracy (%)'] = df['Accuracy (%)'].round(4)
         x_column = 'Round'
         y_column = 'Accuracy (%)'
         hue = 'Shared layers'
         title = """Alpha_{}""".format(alpha)
-        base_dir = """analysis/output/torch/varying_shared_layers/alpha_{}/""".format(alpha)
+        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}_clients/alpha_{}/""".format(self.dataset, self.num_clients, alpha)
         os.makedirs(base_dir + "png/", exist_ok=True)
         os.makedirs(base_dir + "svg/", exist_ok=True)
         os.makedirs(base_dir + "csv/", exist_ok=True)
@@ -85,10 +86,24 @@ class Varying_Shared_layers:
         x_column = 'Round'
         y_column = 'Communication cost (bytes)'
         hue = 'Shared layers'
-        title = ""
         line_plot(df=df,
                   base_dir=base_dir,
                   file_name="evaluate_client_communication_cost_round_varying_shared_layers_lineplot",
+                  x_column=x_column,
+                  y_column=y_column,
+                  title=title,
+                  hue=hue,
+                  hue_order=layer_selection_evaluate,
+                  type=1)
+
+        df = df[df["Shared layers"] > 1]
+        print("Com alpha: ", alpha, "\n", df[['Accuracy', 'Shared layers', 'Round', 'Accuracy gain per byte']])
+        x_column = 'Round'
+        y_column = 'Accuracy gain per byte'
+        hue = 'Shared layers'
+        line_plot(df=df,
+                  base_dir=base_dir,
+                  file_name="evaluate_client_accuracy_gain_per_byte_varying_shared_layers_lineplot",
                   x_column=x_column,
                   y_column=y_column,
                   title=title,
@@ -109,11 +124,11 @@ if __name__ == '__main__':
     strategy = "FedPredict"
     type = "torch"
     aggregation_method = "None"
-    fraction_fit = 0.5
-    num_clients = 10
+    fraction_fit = 0.3
+    num_clients = 20
     model_name = "CNN"
     dataset = "CIFAR10"
-    alpha = 0.5
+    alpha = float(1)
     num_rounds = 20
     epochs = 1
     layer_selection_evaluate = [1, 2, 3, 4]
