@@ -160,7 +160,9 @@ class FedPredictBaseServer(FedAvgBaseServer):
 
 			print("quantidade de camadas: ", len(parameters), [i.shape for i in parameters])
 			if self.fedpredict_clients_metrics[client_id]['first_round'] != -1 and self.layer_selection_evaluate > 0:
-				M = M[-self.layer_selection_evaluate*2:]
+				# baixo-cima
+				# M = M[-self.layer_selection_evaluate*2:]
+				M = M[:self.layer_selection_evaluate * 2]
 				new_parameters = []
 				for i in range(len(parameters)):
 					if i in M:
