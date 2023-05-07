@@ -145,14 +145,14 @@ class FedPredictBaseServer(FedAvgBaseServer):
 				pass
 
 			client_similarity_per_layer = self.get_client_similarity_per_layer(client_id, server_round)
-			parameters_to_send, M = self._select_layers(client_similarity_per_layer, parameters, server_round, client_id)
+			parameters_to_send, M = self._select_layers(client_similarity_per_layer, parameters, server_round, client_id, self.comment)
 			config['M'] = M
 			evaluate_ins = fl.common.EvaluateIns(parameters_to_send, config)
 			client_evaluate_list_fedpredict.append((client, evaluate_ins))
 
 		return client_evaluate_list_fedpredict
 
-	def _select_layers(self, client_similarity_per_layer, parameters, server_round, client_id):
+	def _select_layers(self, client_similarity_per_layer, parameters, server_round, client_id, comment):
 
 		try:
 			parameters = fl.common.parameters_to_ndarrays(parameters)
@@ -161,8 +161,10 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			print("quantidade de camadas: ", len(parameters), [i.shape for i in parameters])
 			if self.fedpredict_clients_metrics[client_id]['first_round'] != -1 and self.layer_selection_evaluate > 0:
 				# baixo-cima
-				# M = M[-self.layer_selection_evaluate*2:]
-				M = M[:self.layer_selection_evaluate * 2]
+				if comment == "":
+					M = M[-self.layer_selection_evaluate*2:]
+				else:
+					M = M[:self.layer_selection_evaluate * 2]
 				new_parameters = []
 				for i in range(len(parameters)):
 					if i in M:

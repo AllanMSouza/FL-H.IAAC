@@ -366,7 +366,11 @@ if __name__ == '__main__':
                new_clients_train=ast.literal_eval(opt.new_clients_train), experiment=opt.experiment, comment=opt.comment, epochs=opt.epochs, type=opt.type, decay=opt.decay, args=opt)
 
     print(c.n_clients, " ", c.strategy_name_list)
+    if opt.comment == '':
+        comment = 'bottom up'
+    else:
+        comment = 'top down'
     dataset = opt.dataset
     if dataset == 'CIFAR10':
         dataset = 'CIFAR-10'
-    c.start('Exp. ' + str(int(opt.experiment)-1) + " (" + dataset + ")")
+    c.start('Exp. ' + str(int(opt.experiment)-1) + " (" + dataset + ");" + "Alpha="+str(opt.alpha)+"; Layer order="+comment+"; Shared layers="+str(opt.layer_selection_evaluate))
