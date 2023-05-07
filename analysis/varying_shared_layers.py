@@ -75,7 +75,7 @@ class Varying_Shared_layers:
         else:
             comment = 'top down'
         title = """Alpha={}; Layer order={}""".format(alpha, comment)
-        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}_clients/alpha_{}/{}_comment/""".format(self.dataset, self.num_clients, alpha, self.comment)
+        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}_clients/{}_fraction_fit/alpha_{}/{}_comment/""".format(self.dataset, self.num_clients, self.fraction_fit, alpha, self.comment)
         os.makedirs(base_dir + "png/", exist_ok=True)
         os.makedirs(base_dir + "svg/", exist_ok=True)
         os.makedirs(base_dir + "csv/", exist_ok=True)
@@ -101,7 +101,9 @@ class Varying_Shared_layers:
                   hue_order=layer_selection_evaluate,
                   type=1)
 
-        df = df[df["Shared layers"] > 1]
+        if comment == "bottom up":
+            # df = df[df["Shared layers"] > 1]
+            pass
         print("Com alpha: ", alpha, "\n", df[['Accuracy', 'Shared layers', 'Round', 'Accuracy gain per byte']])
         x_column = 'Round'
         y_column = 'Accuracy gain per byte'
@@ -114,7 +116,8 @@ class Varying_Shared_layers:
                   title=title,
                   hue=hue,
                   hue_order=layer_selection_evaluate,
-                  type=1)
+                  type=1,
+                  log_scale=True)
 
         filename = base_dir + "csv/comparison.csv"
         df.to_csv(filename, index=False)
@@ -137,7 +140,7 @@ if __name__ == '__main__':
     num_rounds = 20
     epochs = 1
     layer_selection_evaluate = [1, 2, 3, 4]
-    comment = ""
+    comment = "inverted"
 
     Varying_Shared_layers(tp=type, strategy_name=strategy, fraction_fit=fraction_fit, aggregation_method=aggregation_method, new_clients=False, new_clients_train=False, num_clients=num_clients,
                           model_name=model_name, dataset=dataset, class_per_client=2, alpha=alpha, num_rounds=num_rounds, epochs=epochs,

@@ -48,7 +48,6 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.aggregation_method = aggregation_method
 		self.n_classes = int(args.n_classes)
 		self.num_clients        = int(args.n_clients)
-		print("oal: ", args)
 		self.num_rounds			= int(args.rounds)
 		self.epochs				= int(args.local_epochs)
 		self.comment 			= args.comment

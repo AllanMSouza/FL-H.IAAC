@@ -24,6 +24,27 @@ random.seed(0)
 np.random.seed(0)
 torch.manual_seed(0)
 
+
+def get_size(parameter):
+	try:
+		#print("recebeu: ", parameter.shape, parameter.ndim)
+		if type(parameter) == np.float32:
+			#print("caso 1: ", map(sys.getsizeof, parameter))
+			return map(sys.getsizeof, parameter)
+		if parameter.ndim <= 2:
+			#print("Caso 2: ", sum(map(sys.getsizeof, parameter)))
+			return sum(map(sys.getsizeof, parameter))
+
+		else:
+			tamanho = 0
+			#print("Caso 3")
+			for i in range(len(parameter)):
+				tamanho += get_size(parameter[i])
+
+			return tamanho
+	except Exception as e:
+		print("get_size")
+		print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 class ClientBaseTorch(fl.client.NumPyClient):
 
 	def __init__(self,
@@ -257,9 +278,15 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				trained_parameters = self.get_parameters_of_model()
 				self.save_parameters()
 
-
-			size_of_parameters = sum(
-				[sum(map(sys.getsizeof, trained_parameters[i])) for i in range(len(trained_parameters))])
+			size_list = []
+			for i in range(len(parameters)):
+				tamanho = get_size(parameters[i])
+				print("Client id: ", self.cid, " camada: ", i, " tamanho: ", tamanho, " shape: ", parameters[i].shape)
+				size_list.append(tamanho)
+			print("Tamanho total: ", sum(size_list))
+			size_of_parameters = sum(size_list)
+			# size_of_parameters = sum(
+			# 	[sum(map(sys.getsizeof, trained_parameters[i])) for i in range(len(trained_parameters))])
 			avg_loss_train = train_loss / train_num
 			avg_acc_train = train_acc / train_num
 			total_time = time.process_time() - start_time
@@ -325,7 +352,14 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			self.set_parameters_to_model_evaluate(parameters, config)
 			# loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
 
-			size_of_parameters = sum([sum(map(sys.getsizeof, parameters[i])) for i in range(len(parameters))])
+			size_list = []
+			for i in range(len(parameters)):
+				tamanho = get_size(parameters[i])
+				print("Client id: ", self.cid, " camada: ", i, " tamanho: ", tamanho, " shape: ", parameters[i].shape)
+				size_list.append(tamanho)
+			print("Tamanho total: ", sum(size_list))
+			size_of_parameters = sum(size_list)
+			# size_of_parameters = sum([sum(map(sys.getsizeof, parameters[i])) for i in range(len(parameters))])
 			size_of_config = self._get_size_of_dict(config)
 			loss, accuracy, test_num, predictions, labels = self.model_eval()
 			data = [config['round'], self.cid, size_of_parameters, size_of_config, loss, accuracy]

@@ -163,8 +163,10 @@ class FedPredictBaseServer(FedAvgBaseServer):
 				# baixo-cima
 				if comment == "":
 					M = M[-self.layer_selection_evaluate*2:]
-				else:
+				elif comment == "inverted":
 					M = M[:self.layer_selection_evaluate * 2]
+				else:
+					M = [M[self.layer_selection_evaluate-1], M[self.layer_selection_evaluate]]
 				new_parameters = []
 				for i in range(len(parameters)):
 					if i in M:

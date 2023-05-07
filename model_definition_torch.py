@@ -110,6 +110,33 @@ class CNN(nn.Module):
             print("CNN forward")
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
+# class CNN(nn.Module):
+#     def __init__(self, input_shape=1, mid_dim=256, num_classes=10):
+#         try:
+#             super().__init__()
+#             self.conv1 = nn.Conv2d(3, 6, 5)
+#             self.pool = nn.MaxPool2d(2, 2)
+#             self.conv2 = nn.Conv2d(6, 16, 5)
+#             self.fc1 = nn.Linear(16 * 5 * 5, 120)
+#             self.fc2 = nn.Linear(120, 84)
+#             self.fc3 = nn.Linear(84, num_classes)
+#         except Exception as e:
+#             print("CNN")
+#             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+#
+#     def forward(self, x):
+#         try:
+#             x = self.pool(F.relu(self.conv1(x)))
+#             x = self.pool(F.relu(self.conv2(x)))
+#             x = torch.flatten(x, 1) # flatten all dimensions except batch
+#             x = F.relu(self.fc1(x))
+#             x = F.relu(self.fc2(x))
+#             x = self.fc3(x)
+#             return x
+#         except Exception as e:
+#             print("CNN forward")
+#             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
 # ====================================================================================================================
 class CNN_proto(nn.Module):
     def __init__(self, input_shape=1, mid_dim=256, num_classes=10):
