@@ -69,8 +69,13 @@ class Varying_Shared_layers:
         x_column = 'Round'
         y_column = 'Accuracy (%)'
         hue = 'Shared layers'
-        title = """Alpha_{}""".format(alpha)
-        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}_clients/alpha_{}/""".format(self.dataset, self.num_clients, alpha)
+        comment = self.comment
+        if comment == '':
+            comment = 'bottom up'
+        else:
+            comment = 'top down'
+        title = """Alpha={}; Layer order={}""".format(alpha, comment)
+        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}_clients/alpha_{}/{}_comment/""".format(self.dataset, self.num_clients, alpha, self.comment)
         os.makedirs(base_dir + "png/", exist_ok=True)
         os.makedirs(base_dir + "svg/", exist_ok=True)
         os.makedirs(base_dir + "csv/", exist_ok=True)
