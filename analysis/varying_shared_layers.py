@@ -74,8 +74,10 @@ class Varying_Shared_layers:
             comment = 'bottom up'
         elif comment == 'inverted':
             comment = 'top down'
-        else:
+        elif comment == 'individual':
             comment = 'individual layer'
+        else:
+            comment = 'set'
 
         title = """Alpha={}; Layer order={}""".format(alpha, comment)
         base_dir = """analysis/output/torch/varying_shared_layers/{}/{}_clients/{}_fraction_fit/alpha_{}/{}_comment/""".format(self.dataset, self.num_clients, self.fraction_fit, alpha, self.comment)
@@ -139,11 +141,11 @@ if __name__ == '__main__':
     num_clients = 20
     model_name = "CNN"
     dataset = "CIFAR10"
-    alpha = float(0.5)
+    alpha = float(1)
     num_rounds = 20
     epochs = 1
-    layer_selection_evaluate = [1, 2, 3, 4]
-    comment = "individual"
+    layer_selection_evaluate = [14, 24, 34, 23]
+    comment = "set"
 
     Varying_Shared_layers(tp=type, strategy_name=strategy, fraction_fit=fraction_fit, aggregation_method=aggregation_method, new_clients=False, new_clients_train=False, num_clients=num_clients,
                           model_name=model_name, dataset=dataset, class_per_client=2, alpha=alpha, num_rounds=num_rounds, epochs=epochs,
