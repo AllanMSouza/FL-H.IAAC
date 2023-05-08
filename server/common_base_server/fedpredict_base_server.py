@@ -10,6 +10,7 @@ import pandas as pd
 import copy
 
 from server.common_base_server import FedAvgBaseServer
+from client.fedpredict_core import fedpredict_core_layer_selection
 
 from pathlib import Path
 import shutil
@@ -149,13 +150,18 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		client_evaluate_list = super().configure_evaluate(server_round, parameters, client_manager)
 		client_evaluate_list_fedpredict = []
 		accuracy = 0
+		mean_similarity = self.similarity_between_layers_per_round[server_round]
 		if len(self.accuracy_history) > 0:
 			accuracy = self.accuracy_history[len(self.accuracy_history)]
+		size_of_parameters = []
+		for i in range(1, len(parameters)):
+			size_of_parameters.append(get_size(parameters[i] + parameters[1]))
 		for client_tuple in client_evaluate_list:
 			client = client_tuple[0]
 			client_id = str(client.cid)
 			config = copy.copy(self.evaluate_config)
 			client_config = self.fedpredict_clients_metrics[str(client.cid)]
+			nt = client_config['nt']
 			config['metrics'] = client_config
 			config['last_global_accuracy'] = accuracy
 			config['total_server_rounds'] = self.num_rounds
@@ -165,22 +171,21 @@ class FedPredictBaseServer(FedAvgBaseServer):
 				pass
 
 			client_similarity_per_layer = self.get_client_similarity_per_layer(client_id, server_round)
-			parameters_to_send, M = self._select_layers(client_similarity_per_layer, parameters, server_round, client_id, self.comment)
-			size_of_parameters = 0
-			# for i in fl.common.parameters_to_ndarrays(parameters_to_send):
-			# 	size_of_parameters += get_size(i)
-			# self.fedpredict_clients_metrics[str(client.cid)]['acc_bytes_rate'] = size_of_parameters
+			parameters_to_send, M = self._select_layers(client_similarity_per_layer, mean_similarity, parameters, server_round, nt, size_of_parameters, client_id, self.comment)
+
+			self.fedpredict_clients_metrics[str(client.cid)]['acc_bytes_rate'] = size_of_parameters
 			config['M'] = M
 			evaluate_ins = fl.common.EvaluateIns(parameters_to_send, config)
 			client_evaluate_list_fedpredict.append((client, evaluate_ins))
 
 		return client_evaluate_list_fedpredict
 
-	def _select_layers(self, client_similarity_per_layer, parameters, server_round, client_id, comment):
+	def _select_layers(self, client_similarity_per_layer, mean_similarity, parameters, server_round, nt, size_of_layers, client_id, comment):
 
 		try:
 			parameters = fl.common.parameters_to_ndarrays(parameters)
 			M = [i for i in range(len(parameters))]
+			n_layers = len(parameters)
 
 			print("quantidade de camadas: ", len(parameters), [i.shape for i in parameters])
 			if self.fedpredict_clients_metrics[client_id]['first_round'] != -1 and self.layer_selection_evaluate > 0:
@@ -197,6 +202,8 @@ class FedPredictBaseServer(FedAvgBaseServer):
 					for i in layer:
 						M.append(int(i) - 1)
 						M.append(int(i))
+				elif comment == 'novo':
+					M = fedpredict_core_layer_selection(t=server_round, T=20, nt=nt, n_layers=n_layers, size_per_layer=size_of_layers, mean_similarity=mean_similarity)
 				new_parameters = []
 				for i in range(len(parameters)):
 					if i in M:

@@ -54,17 +54,17 @@
 #echo "Executing experiment 18..."
 #python3 exec_experiments.py --experiment_id=18 --type="torch" > execution_log/experiment_18.txt 2>&1
 #
-echo "Executing experiment 19..."
-python3 exec_experiments.py --experiment_id=19 --type="torch" > execution_log/experiment_19.txt 2>&1
-
-echo "Executing experiment 20..."
-python3 exec_experiments.py --experiment_id=20 --type="torch" > execution_log/experiment_20.txt 2>&1
-
-echo "Executing experiment 21..."
-python3 exec_experiments.py --experiment_id=21 --type="torch" > execution_log/experiment_21.txt 2>&1
-
-echo "Executing experiment 22..."
-python3 exec_experiments.py --experiment_id=22 --type="torch" > execution_log/experiment_22.txt 2>&1
+#echo "Executing experiment 19..."
+#python3 exec_experiments.py --experiment_id=19 --type="torch" > execution_log/experiment_19.txt 2>&1
+#
+#echo "Executing experiment 20..."
+#python3 exec_experiments.py --experiment_id=20 --type="torch" > execution_log/experiment_20.txt 2>&1
+#
+#echo "Executing experiment 21..."
+#python3 exec_experiments.py --experiment_id=21 --type="torch" > execution_log/experiment_21.txt 2>&1
+#
+#echo "Executing experiment 22..."
+#python3 exec_experiments.py --experiment_id=22 --type="torch" > execution_log/experiment_22.txt 2>&1
 
 echo "Executing experiment 23..."
 python3 exec_experiments.py --experiment_id=23 --type="torch" > execution_log/experiment_23.txt 2>&1

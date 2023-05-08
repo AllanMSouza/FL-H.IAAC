@@ -87,6 +87,41 @@ def fedpredict_core(t, T, nt):
         print("fedpredict core")
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
+def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_similarity):
+    try:
+
+        # 9
+        if nt == 0:
+            shared_layers = 0
+        else:
+            # evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
+            # normalizar dentro de 0 e 1
+            # updated_level = 1/rounds_without_fit
+            # updated_level = 1 - max(0, -acc_of_last_fit+self.accuracy_of_last_round_of_evalute)
+            # if acc_of_last_evaluate < last_global_accuracy:
+            # updated_level = max(-last_global_accuracy + acc_of_last_evaluate, 0)
+            # else:
+            update_level = 1 / nt
+            # evolutionary_level = (server_round / 50)
+            # print("client id: ", self.cid, " primeiro round", self.first_round)
+            evolution_level = t / T
+
+            # print("el servidor: ", el, " el local: ", evolutionary_level)
+
+            eq1 = (-update_level - mean_similarity)
+            eq2 = round(np.exp(eq1), 6)
+            shared_layers = eq2 * n_layers
+
+        shared_layers = [i for i in range(shared_layers)]
+
+        print("Shared layers: ", shared_layers)
+
+        return shared_layers
+
+    except Exception as e:
+        print("fedpredict core server")
+        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
 
 # def set_parameters_to_model(parameters, model_name):
 #     # print("tamanho: ", self.input_shape, " dispositivo: ", self.device)
