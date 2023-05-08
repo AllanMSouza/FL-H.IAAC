@@ -78,11 +78,11 @@ python3 exec_experiments.py --experiment_id=25 --type="torch" > execution_log/ex
 echo "Executing experiment 26..."
 python3 exec_experiments.py --experiment_id=26 --type="torch" > execution_log/experiment_26.txt 2>&1
 
-echo "Executing experiment 27..."
-python3 exec_experiments.py --experiment_id=27 --type="torch" > execution_log/experiment_27.txt 2>&1
-
-echo "Executing experiment 28..."
-python3 exec_experiments.py --experiment_id=28 --type="torch" > execution_log/experiment_28.txt 2>&1
+#echo "Executing experiment 27..."
+#python3 exec_experiments.py --experiment_id=27 --type="torch" > execution_log/experiment_27.txt 2>&1
+#
+#echo "Executing experiment 28..."
+#python3 exec_experiments.py --experiment_id=28 --type="torch" > execution_log/experiment_28.txt 2>&1
 
 #hostname=$(hostname)
 #if [[ $hostname == "claudio-Predator-PH315-52" ]]

@@ -1,6 +1,7 @@
 import sys
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
+import scipy.stats as st
 # from torch_cka import CKA
 
 import math
@@ -108,7 +109,7 @@ def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_sim
 
             # print("el servidor: ", el, " el local: ", evolutionary_level)
 
-            eq1 = (-update_level - mean_similarity)
+            eq1 = (-update_level - mean_similarity['mean'])
             eq2 = 1 - round(np.exp(eq1), 6)
             shared_layers = eq2 * n_layers
 
@@ -148,7 +149,7 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
     num_layers = len(global_parameter)
     num_clients = len(clients_parameters)
     similarity_per_layer = {i: {} for i in clients_ids}
-    mean_similarity_per_layer = {i: 0 for i in range(num_layers)}
+    mean_similarity_per_layer = {i: {'mean': 0, 'ci': 0} for i in range(num_layers)}
 
     for j in range(num_clients):
 
@@ -185,7 +186,9 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
         for client_id in clients_ids:
             similarities.append(similarity_per_layer[client_id][i])
 
-        mean_similarity_per_layer[i] = np.mean(similarities)
+
+        mean_similarity_per_layer[i]['mean'] = np.mean(similarities)
+        mean_similarity_per_layer[i]['ci'] = st.norm.interval(alpha=0.95, loc=np.mean(similarities), scale=st.sem(similarities))[1] - np.mean(similarities)
 
     print("""similaridade (camada {}): {}""".format(i, mean_similarity_per_layer[i]))
 
