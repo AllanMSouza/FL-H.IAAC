@@ -69,8 +69,8 @@
 #echo "Executing experiment 23..."
 #python3 exec_experiments.py --experiment_id=23 --type="torch" > execution_log/experiment_23.txt 2>&1
 #
-#echo "Executing experiment 24..."
-#python3 exec_experiments.py --experiment_id=24 --type="torch" > execution_log/experiment_24.txt 2>&1
+echo "Executing experiment 24..."
+python3 exec_experiments.py --experiment_id=24 --type="torch" > execution_log/experiment_24.txt 2>&1
 
 echo "Executing experiment 25..."
 python3 exec_experiments.py --experiment_id=25 --type="torch" > execution_log/experiment_25.txt 2>&1
