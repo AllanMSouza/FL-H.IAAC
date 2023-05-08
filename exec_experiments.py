@@ -53,7 +53,7 @@ EPOCHS = {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2], '6': [1], '7': [1], 
 CLIENTS = {'MNIST': [10], 'CIFAR10': [20], 'CIFAR100': [50], 'MotionSense': [24], 'UCIHAR': [30]}
 ALPHA = [0.1, 0.5, 1]
 # ALPHA = [1]
-FRACTION_FIT = {'None': [0.4], 'POC': [0], 'FedLTA': [0]}
+FRACTION_FIT = {'None': [0.3], 'POC': [0], 'FedLTA': [0]}
 POC = {'None': [0], 'POC': [0.2], 'FedLTA': [0]}
 DECAY = {'None': 0, 'POC': 0, 'FedLTA': 0.1}
 NEW_CLIENTS = {'None': ['FALSE'], 'POC': ['FALSE', 'TRUE']}
@@ -61,8 +61,8 @@ NEW_CLIENTS_TRAIN = {'FALSE': ['FALSE'], 'TRUE': ['FALSE', 'TRUE']}
 # DECAY         				= (0.001, 0.005, 0.009)
 ROUNDS = 20
 # STRATEGIES 					= ('FedPredict', 'FedPer', 'FedClassAvg', 'FedAVG', 'FedClassAvg_with_FedPredict', 'FedPer_with_FedPredict', 'FedProto', 'FedYogi', 'FedLocal',)
-STRATEGIES_FOR_ANALYSIS = ['FedPredict', 'FedClassAvg', 'FedAVG']
-STRATEGIES_TO_EXECUTE = ['FedPredict', 'FedClassAvg', 'FedAVG']
+STRATEGIES_FOR_ANALYSIS = ['FedPredict']
+STRATEGIES_TO_EXECUTE = ['FedPredict']
 
 EXPERIMENTS = {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '', 'layer_selection_evaluate': 4},
                2: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '', 'layer_selection_evaluate': 4},
@@ -92,16 +92,26 @@ EXPERIMENTS = {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train
                    'comment': 'individual', 'layer_selection_evaluate': 3},
                 17: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
                    'comment': 'individual', 'layer_selection_evaluate': 4},
-                18: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-                   'comment': 'set', 'layer_selection_evaluate': 14},
                 19: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-                   'comment': 'set', 'layer_selection_evaluate': 24},
+                   'comment': 'set', 'layer_selection_evaluate': 12},
                 20: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-                   'comment': 'set', 'layer_selection_evaluate': 34},
+                    'comment': 'set', 'layer_selection_evaluate': 13},
                 21: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-                   'comment': 'set', 'layer_selection_evaluate': 23},
+                    'comment': 'set', 'layer_selection_evaluate': 14},
                 22: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-                   'comment': 'set', 'layer_selection_evaluate': 13}
+                    'comment': 'set', 'layer_selection_evaluate': 23},
+                23: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
+                   'comment': 'set', 'layer_selection_evaluate': 24},
+                24: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
+                   'comment': 'set', 'layer_selection_evaluate': 123},
+                25: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
+                   'comment': 'set', 'layer_selection_evaluate': 124},
+                26: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
+                   'comment': 'set', 'layer_selection_evaluate': 1234},
+                27: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
+                   'comment': 'set', 'layer_selection_evaluate': 234},
+                28: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
+                   'comment': 'set', 'layer_selection_evaluate': 34}
                }
 
 def execute_experiment(experiment, algorithm, new_client, new_client_train, comment, type, class_per_client, layer_selection_evaluate):

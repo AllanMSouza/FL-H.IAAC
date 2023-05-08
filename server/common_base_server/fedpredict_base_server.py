@@ -14,6 +14,26 @@ from server.common_base_server import FedAvgBaseServer
 from pathlib import Path
 import shutil
 
+def get_size(parameter):
+	try:
+		#print("recebeu: ", parameter.shape, parameter.ndim)
+		if type(parameter) == np.float32:
+			#print("caso 1: ", map(sys.getsizeof, parameter))
+			return map(sys.getsizeof, parameter)
+		if parameter.ndim <= 2:
+			#print("Caso 2: ", sum(map(sys.getsizeof, parameter)))
+			return sum(map(sys.getsizeof, parameter))
+
+		else:
+			tamanho = 0
+			#print("Caso 3")
+			for i in range(len(parameter)):
+				tamanho += get_size(parameter[i])
+
+			return tamanho
+	except Exception as e:
+		print("get_size")
+		print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 class FedPredictBaseServer(FedAvgBaseServer):
 
 	def __init__(self,
@@ -146,6 +166,10 @@ class FedPredictBaseServer(FedAvgBaseServer):
 
 			client_similarity_per_layer = self.get_client_similarity_per_layer(client_id, server_round)
 			parameters_to_send, M = self._select_layers(client_similarity_per_layer, parameters, server_round, client_id, self.comment)
+			size_of_parameters = 0
+			# for i in fl.common.parameters_to_ndarrays(parameters_to_send):
+			# 	size_of_parameters += get_size(i)
+			# self.fedpredict_clients_metrics[str(client.cid)]['acc_bytes_rate'] = size_of_parameters
 			config['M'] = M
 			evaluate_ins = fl.common.EvaluateIns(parameters_to_send, config)
 			client_evaluate_list_fedpredict.append((client, evaluate_ins))

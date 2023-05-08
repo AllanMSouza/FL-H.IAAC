@@ -86,7 +86,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.regression_window = 5
 		self.fedpredict_metrics = {'el': 1/self.num_rounds, 'round_acc_el': {1: {'acc': 0, 'el': 0}}}
 		self.fedpredict_clients_metrics = {str(i): {'round_of_last_fit': 0, 'round_of_last_evaluate': 0, 'first_round': -1,
-											   'acc_of_last_fit': 0, 'acc_of_last_evaluate': 0, 'nt': 0}
+											   'acc_of_last_fit': 0, 'acc_of_last_evaluate': 0, 'nt': 0, 'acc_bytes_rate': 0}
 										   for i in range(0, self.num_clients + 1)}
 
 		# FedPredictSelection

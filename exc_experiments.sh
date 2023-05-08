@@ -6,8 +6,8 @@
 #echo "Executing experiment 1..."
 #python3 exec_experiments.py --experiment_id=1 > execution_log/experiment_1.txt 2>&1
 
-echo "Executing experiment 2..."
-python3 exec_experiments.py --experiment_id=2 --type="torch" > execution_log/experiment_2.txt 2>&1
+#echo "Executing experiment 2..."
+#python3 exec_experiments.py --experiment_id=2 --type="torch" > execution_log/experiment_2.txt 2>&1
 
 #echo "Executing experiment 3..."
 #python3 exec_experiments.py --experiment_id=3 --type="torch" > execution_log/experiment_3.txt 2>&1
@@ -39,8 +39,8 @@ python3 exec_experiments.py --experiment_id=2 --type="torch" > execution_log/exp
 #echo "Executing experiment 13..."
 #python3 exec_experiments.py --experiment_id=13 --type="torch" > execution_log/experiment_13.txt 2>&1
 
-echo "Executing experiment 14..."
-python3 exec_experiments.py --experiment_id=14 --type="torch" > execution_log/experiment_14.txt 2>&1
+#echo "Executing experiment 14..."
+#python3 exec_experiments.py --experiment_id=14 --type="torch" > execution_log/experiment_14.txt 2>&1
 
 #echo "Executing experiment 15..."
 #python3 exec_experiments.py --experiment_id=15 --type="torch" > execution_log/experiment_15.txt 2>&1
@@ -48,23 +48,41 @@ python3 exec_experiments.py --experiment_id=14 --type="torch" > execution_log/ex
 #echo "Executing experiment 16..."
 #python3 exec_experiments.py --experiment_id=16 --type="torch" > execution_log/experiment_16.txt 2>&1
 
-echo "Executing experiment 17..."
-python3 exec_experiments.py --experiment_id=17 --type="torch" > execution_log/experiment_17.txt 2>&1
+#echo "Executing experiment 17..."
+#python3 exec_experiments.py --experiment_id=17 --type="torch" > execution_log/experiment_17.txt 2>&1
 
 #echo "Executing experiment 18..."
 #python3 exec_experiments.py --experiment_id=18 --type="torch" > execution_log/experiment_18.txt 2>&1
 #
-#echo "Executing experiment 19..."
-#python3 exec_experiments.py --experiment_id=19 --type="torch" > execution_log/experiment_19.txt 2>&1
-#
-#echo "Executing experiment 20..."
-#python3 exec_experiments.py --experiment_id=20 --type="torch" > execution_log/experiment_20.txt 2>&1
-#
-#echo "Executing experiment 21..."
-#python3 exec_experiments.py --experiment_id=21 --type="torch" > execution_log/experiment_21.txt 2>&1
-#
-#echo "Executing experiment 22..."
-#python3 exec_experiments.py --experiment_id=22 --type="torch" > execution_log/experiment_22.txt 2>&1
+echo "Executing experiment 19..."
+python3 exec_experiments.py --experiment_id=19 --type="torch" > execution_log/experiment_19.txt 2>&1
+
+echo "Executing experiment 20..."
+python3 exec_experiments.py --experiment_id=20 --type="torch" > execution_log/experiment_20.txt 2>&1
+
+echo "Executing experiment 21..."
+python3 exec_experiments.py --experiment_id=21 --type="torch" > execution_log/experiment_21.txt 2>&1
+
+echo "Executing experiment 22..."
+python3 exec_experiments.py --experiment_id=22 --type="torch" > execution_log/experiment_22.txt 2>&1
+
+echo "Executing experiment 23..."
+python3 exec_experiments.py --experiment_id=23 --type="torch" > execution_log/experiment_23.txt 2>&1
+
+echo "Executing experiment 24..."
+python3 exec_experiments.py --experiment_id=24 --type="torch" > execution_log/experiment_24.txt 2>&1
+
+echo "Executing experiment 25..."
+python3 exec_experiments.py --experiment_id=25 --type="torch" > execution_log/experiment_25.txt 2>&1
+
+echo "Executing experiment 26..."
+python3 exec_experiments.py --experiment_id=26 --type="torch" > execution_log/experiment_26.txt 2>&1
+
+echo "Executing experiment 27..."
+python3 exec_experiments.py --experiment_id=27 --type="torch" > execution_log/experiment_27.txt 2>&1
+
+echo "Executing experiment 28..."
+python3 exec_experiments.py --experiment_id=28 --type="torch" > execution_log/experiment_28.txt 2>&1
 
 #hostname=$(hostname)
 #if [[ $hostname == "claudio-Predator-PH315-52" ]]
