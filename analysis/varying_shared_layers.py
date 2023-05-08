@@ -141,10 +141,10 @@ if __name__ == '__main__':
     num_clients = 20
     model_name = "CNN"
     dataset = "CIFAR10"
-    alpha = float(0.1)
+    alpha = float(1)
     num_rounds = 20
     epochs = 1
-    layer_selection_evaluate = [14, 13, 24, 34, 23]
+    layer_selection_evaluate = [12, 13, 14, 123, 124, 23, 24, 1234, 34]
     comment = "set"
 
     Varying_Shared_layers(tp=type, strategy_name=strategy, fraction_fit=fraction_fit, aggregation_method=aggregation_method, new_clients=False, new_clients_train=False, num_clients=num_clients,
