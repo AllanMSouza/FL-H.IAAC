@@ -165,8 +165,14 @@ class FedPredictBaseServer(FedAvgBaseServer):
 					M = M[-self.layer_selection_evaluate*2:]
 				elif comment == "inverted":
 					M = M[:self.layer_selection_evaluate * 2]
-				else:
+				elif comment == "individual":
 					M = [M[self.layer_selection_evaluate-1], M[self.layer_selection_evaluate]]
+				else:
+					layer = str(self.layer_selection_evaluate)
+					M = []
+					for i in layer:
+						M.append(int(i) - 1)
+						M.append(int(i))
 				new_parameters = []
 				for i in range(len(parameters)):
 					if i in M:

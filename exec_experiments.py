@@ -48,7 +48,7 @@ DATASETS = ['CIFAR10']
 # DATASETS      					= ['UCIHAR', 'MotionSense']
 MODELS = ['CNN']
 ALGORITHMS = ['None', 'POC', 'FedLTA']
-EPOCHS = {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2], '6': [1], '7': [1], '8': [1], '9': [1], '10': [1], '11': [1], '12': [1], '13': [1], '14': [1], '15': [1], '16': [1], '17': [1]}
+EPOCHS = {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2], '6': [1], '7': [1], '8': [1], '9': [1], '10': [1], '11': [1], '12': [1], '13': [1], '14': [1], '15': [1], '16': [1], '17': [1], '18': [1], '19': [1], '20': [1], '21': [1]}
 # CLIENTS       				= {'MNIST': 50, 'CIFAR10': 50, 'CIFAR100': 50, 'MotionSense': 50, 'UCIHAR': 50}
 CLIENTS = {'MNIST': [10], 'CIFAR10': [20], 'CIFAR100': [50], 'MotionSense': [24], 'UCIHAR': [30]}
 ALPHA = [0.1, 0.5, 1]
@@ -91,7 +91,15 @@ EXPERIMENTS = {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train
                16: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
                    'comment': 'individual', 'layer_selection_evaluate': 3},
                 17: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-                   'comment': 'individual', 'layer_selection_evaluate': 4}
+                   'comment': 'individual', 'layer_selection_evaluate': 4},
+                18: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
+                   'comment': 'set', 'layer_selection_evaluate': 14},
+                19: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
+                   'comment': 'set', 'layer_selection_evaluate': 24},
+                20: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
+                   'comment': 'set', 'layer_selection_evaluate': 34},
+                21: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
+                   'comment': 'set', 'layer_selection_evaluate': 23}
                }
 
 def execute_experiment(experiment, algorithm, new_client, new_client_train, comment, type, class_per_client, layer_selection_evaluate):
