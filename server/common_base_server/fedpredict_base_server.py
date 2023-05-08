@@ -156,7 +156,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		size_of_parameters = []
 		parameters = fl.common.parameters_to_ndarrays(parameters)
 		for i in range(1, len(parameters)):
-			size_of_parameters.append(get_size(parameters[i - 1] + parameters[i]))
+			size_of_parameters.append(get_size(parameters[i - 1]) + get_size(parameters[i]))
 		for client_tuple in client_evaluate_list:
 			client = client_tuple[0]
 			client_id = str(client.cid)
