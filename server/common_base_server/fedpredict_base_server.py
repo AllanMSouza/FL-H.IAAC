@@ -154,8 +154,9 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		if len(self.accuracy_history) > 0:
 			accuracy = self.accuracy_history[len(self.accuracy_history)]
 		size_of_parameters = []
+		parameters = fl.common.parameters_to_ndarrays(parameters)
 		for i in range(1, len(parameters)):
-			size_of_parameters.append(get_size(parameters[i] + parameters[1]))
+			size_of_parameters.append(get_size(parameters[i - 1] + parameters[i]))
 		for client_tuple in client_evaluate_list:
 			client = client_tuple[0]
 			client_id = str(client.cid)
@@ -183,7 +184,6 @@ class FedPredictBaseServer(FedAvgBaseServer):
 	def _select_layers(self, client_similarity_per_layer, mean_similarity, parameters, server_round, nt, size_of_layers, client_id, comment):
 
 		try:
-			parameters = fl.common.parameters_to_ndarrays(parameters)
 			M = [i for i in range(len(parameters))]
 			n_layers = len(parameters)
 
