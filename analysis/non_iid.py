@@ -206,19 +206,19 @@ class NonIid:
         # size of parameters
         print(df)
         def strategy(df):
-            parameters = float(df['Size of parameters'].mean())
-            config = float(df['Size of config'].mean())
+            parameters = float(df['Size of parameters'].mean())/1000000
+            config = float(df['Size of config'].mean())/1000000
             total_size = parameters + config
 
-            return pd.DataFrame({'Size of parameters (bytes)': [parameters], 'Communication cost (bytes)': [total_size]})
-        df_test = df[['Round', 'Size of parameters', 'Size of config', 'Strategy']].groupby('Strategy').apply(lambda e: strategy(e)).reset_index()[['Size of parameters (bytes)', 'Communication cost (bytes)', 'Strategy']]
+            return pd.DataFrame({'Size of parameters (MB)': [parameters], 'Communication cost (MB)': [total_size]})
+        df_test = df[['Round', 'Size of parameters', 'Size of config', 'Strategy']].groupby('Strategy').apply(lambda e: strategy(e)).reset_index()[['Size of parameters (MB)', 'Communication cost (MB)', 'Strategy']]
         df_test.to_csv(self.base_dir+"csv/evaluate_client_size_of_parameters_round.csv", index=False)
         print(df_test)
         print(self.base_dir)
         x_column = 'Strategy'
-        y_column = 'Size of parameters (bytes)'
+        y_column = 'Size of parameters (MB)'
         hue = None
-        title = "Size of parameters (bytes)"
+        title = "Size of parameters (MB)"
         bar_plot(df=df_test,
                   base_dir=self.base_dir,
                   file_name="evaluate_client_size_of_parameters_round_barplot",
@@ -226,11 +226,12 @@ class NonIid:
                   y_column=y_column,
                   title=title,
                   hue=hue,
+                 y_lim=True,
                  sci=True)
 
-        y_column = 'Communication cost (bytes)'
+        y_column = 'Communication cost (MB)'
         hue = None
-        title = "Communication cost (bytes)"
+        title = "Communication cost (MB)"
         bar_plot(df=df_test,
                  base_dir=self.base_dir,
                  file_name="evaluate_client_communication_cost_round_barplot",
@@ -238,6 +239,7 @@ class NonIid:
                  y_column=y_column,
                  title=title,
                  hue=hue,
+                 y_lim=True,
                  sci=True)
 
     def similarity_analysis(self, title):

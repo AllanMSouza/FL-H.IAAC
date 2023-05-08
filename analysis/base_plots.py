@@ -5,8 +5,7 @@ import seaborn as sns
 
 # sns.color_palette()
 
-def bar_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_scale=False, sci=False):
-    pass
+def bar_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, y_lim=False, log_scale=False, sci=False):
     Path(base_dir).mkdir(parents=True, exist_ok=True)
     max_value = df[y_column].max()
     fig, ax = plt.subplots()
@@ -22,6 +21,10 @@ def bar_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_s
         formatter.set_powerlimits((-1, 1))
         ax.yaxis.set_major_formatter(formatter)
         ax.set_ylim([0, 130000])
+    if y_lim:
+        print("entrou")
+        y_max = float(max_value*1.1)
+        plt.ylim([0, y_max])
 
     figure = sns.barplot(x=x_column, y=y_column, data=df).set_title(title)
     for bars in ax.containers:

@@ -167,7 +167,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 					M = M[:self.layer_selection_evaluate * 2]
 				elif comment == "individual":
 					M = [M[self.layer_selection_evaluate-1], M[self.layer_selection_evaluate]]
-				else:
+				elif comment == 'set':
 					layer = str(self.layer_selection_evaluate)
 					M = []
 					for i in layer:
