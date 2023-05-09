@@ -113,7 +113,9 @@ EXPERIMENTS = {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train
                 28: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
                    'comment': 'set', 'layer_selection_evaluate': 34},
                 29: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-                   'comment': 'set', 'layer_selection_evaluate': 134}
+                   'comment': 'set', 'layer_selection_evaluate': 134},
+                30: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
+                   'comment': 'set', 'layer_selection_evaluate': -1}
                }
 
 def execute_experiment(experiment, algorithm, new_client, new_client_train, comment, type, class_per_client, layer_selection_evaluate):

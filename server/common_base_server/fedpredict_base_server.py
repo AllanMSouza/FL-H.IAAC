@@ -185,7 +185,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 
 		try:
 			M = [i for i in range(len(parameters))]
-			n_layers = len(parameters)
+			n_layers = len(parameters)/2
 
 			print("quantidade de camadas: ", len(parameters), [i.shape for i in parameters])
 			if self.fedpredict_clients_metrics[client_id]['first_round'] != -1 and self.layer_selection_evaluate > 0:
@@ -197,13 +197,14 @@ class FedPredictBaseServer(FedAvgBaseServer):
 				elif comment == "individual":
 					M = [M[self.layer_selection_evaluate-1], M[self.layer_selection_evaluate]]
 				elif comment == 'set':
-					layer = str(self.layer_selection_evaluate)
-					M = []
-					for i in layer:
-						M.append(int(i) - 1)
-						M.append(int(i))
-				elif comment == 'novo':
-					M = fedpredict_core_layer_selection(t=server_round, T=20, nt=nt, n_layers=n_layers, size_per_layer=size_of_layers, mean_similarity=mean_similarity)
+					if self.layer_selection_evaluate > 0:
+						layer = str(self.layer_selection_evaluate)
+						M = []
+						for i in layer:
+							M.append(int(i) - 1)
+							M.append(int(i))
+					else:
+						M = fedpredict_core_layer_selection(t=server_round, T=20, nt=nt, n_layers=n_layers, size_per_layer=size_of_layers, mean_similarity=mean_similarity)
 				new_parameters = []
 				for i in range(len(parameters)):
 					if i in M:

@@ -144,7 +144,7 @@ if __name__ == '__main__':
     alpha = float(1)
     num_rounds = 20
     epochs = 1
-    layer_selection_evaluate = [12, 13, 14, 123, 124, 23, 24, 1234, 34]
+    layer_selection_evaluate = [1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
     comment = "set"
 
     Varying_Shared_layers(tp=type, strategy_name=strategy, fraction_fit=fraction_fit, aggregation_method=aggregation_method, new_clients=False, new_clients_train=False, num_clients=num_clients,
