@@ -88,7 +88,7 @@ def fedpredict_core(t, T, nt):
         print("fedpredict core")
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_similarity):
+def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_similarity_per_layer, mean_similarity):
     try:
 
         # 9
@@ -109,13 +109,13 @@ def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_sim
 
             # print("el servidor: ", el, " el local: ", evolutionary_level)
 
-            eq1 = (-update_level - (1 - mean_similarity['mean']))
+            eq1 = (-update_level - (1 - mean_similarity))
             eq2 = 1 - round(np.exp(eq1), 6)
-            shared_layers = round(eq2 * n_layers)
+            shared_layers = int(np.ceil(eq2 * n_layers))
 
         shared_layers = [i for i in range(shared_layers*2)]
 
-        print("Shared layers: ", shared_layers, " similaridade: ", mean_similarity)
+        print("Shared layers: ", shared_layers, " similaridade: ", mean_similarity, " rodada: ", t)
 
         return shared_layers
 
@@ -181,15 +181,17 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
                 similarity = cka.linear_CKA(global_layer, client_layer)
                 similarity_per_layer[client_id][i] = similarity
 
+    layers_mean_similarity = []
     for i in range(num_layers):
         similarities = []
         for client_id in clients_ids:
             similarities.append(similarity_per_layer[client_id][i])
 
-
-        mean_similarity_per_layer[i]['mean'] = np.mean(similarities)
+        mean = np.mean(similarities)
+        layers_mean_similarity.append(mean)
+        mean_similarity_per_layer[i]['mean'] = mean
         mean_similarity_per_layer[i]['ci'] = st.norm.interval(alpha=0.95, loc=np.mean(similarities), scale=st.sem(similarities))[1] - np.mean(similarities)
 
     print("""similaridade (camada {}): {}""".format(i, mean_similarity_per_layer[i]))
 
-    return similarity_per_layer, mean_similarity_per_layer
+    return similarity_per_layer, mean_similarity_per_layer, np.mean(layers_mean_similarity)

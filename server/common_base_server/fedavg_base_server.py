@@ -115,6 +115,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.evaluate_config = {}
 		self._write_output_files_headers()
 		self.previous_global_parameters = None
+		self.mean_similarity_per_round = {}
 		self.similarity_between_layers_per_round = {}
 		self.similarity_between_layers_per_round_and_client = {}
 
@@ -307,7 +308,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			# print("um: ", w)
 			# print("dois: ", w1)
 		parameters_aggregated = fl.common.ndarrays_to_parameters(aggregate(weights_results))
-		self.similarity_between_layers_per_round_and_client[server_round], self.similarity_between_layers_per_round[server_round] = fedpredict_layerwise_similarity(fl.common.parameters_to_ndarrays(parameters_aggregated), clients_parameters, clients_ids)
+		self.similarity_between_layers_per_round_and_client[server_round], self.similarity_between_layers_per_round[server_round], self.mean_similarity_per_round[server_round] = fedpredict_layerwise_similarity(fl.common.parameters_to_ndarrays(parameters_aggregated), clients_parameters, clients_ids)
 		# Aggregate custom metrics if aggregation fn was provided
 		metrics_aggregated = {}
 		if server_round == 1:

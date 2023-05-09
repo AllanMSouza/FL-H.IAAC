@@ -150,7 +150,8 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		client_evaluate_list = super().configure_evaluate(server_round, parameters, client_manager)
 		client_evaluate_list_fedpredict = []
 		accuracy = 0
-		mean_similarity = self.similarity_between_layers_per_round[server_round]
+		mean_similarity_per_layer = self.similarity_between_layers_per_round[server_round]
+		mean_similarity = self.mean_similarity_per_round[server_round]
 		if len(self.accuracy_history) > 0:
 			accuracy = self.accuracy_history[len(self.accuracy_history)]
 		size_of_parameters = []
@@ -172,7 +173,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 				pass
 
 			client_similarity_per_layer = self.get_client_similarity_per_layer(client_id, server_round)
-			parameters_to_send, M = self._select_layers(client_similarity_per_layer, mean_similarity, parameters, server_round, nt, size_of_parameters, client_id, self.comment)
+			parameters_to_send, M = self._select_layers(client_similarity_per_layer, mean_similarity_per_layer, mean_similarity, parameters, server_round, nt, size_of_parameters, client_id, self.comment)
 
 			self.fedpredict_clients_metrics[str(client.cid)]['acc_bytes_rate'] = size_of_parameters
 			config['M'] = M
@@ -181,14 +182,14 @@ class FedPredictBaseServer(FedAvgBaseServer):
 
 		return client_evaluate_list_fedpredict
 
-	def _select_layers(self, client_similarity_per_layer, mean_similarity, parameters, server_round, nt, size_of_layers, client_id, comment):
+	def _select_layers(self, client_similarity_per_layer, mean_similarity_per_layer, mean_similarity, parameters, server_round, nt, size_of_layers, client_id, comment):
 
 		try:
 			M = [i for i in range(len(parameters))]
 			n_layers = len(parameters)/2
 
-			print("quantidade de camadas: ", len(parameters), [i.shape for i in parameters])
-			if self.fedpredict_clients_metrics[client_id]['first_round'] != -1 and self.layer_selection_evaluate > 0:
+			print("quantidade de camadas: ", len(parameters), [i.shape for i in parameters], " comment: ", comment)
+			if self.fedpredict_clients_metrics[client_id]['first_round'] != -1:
 				# baixo-cima
 				if comment == "":
 					M = M[-self.layer_selection_evaluate*2:]
@@ -204,7 +205,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 							M.append(int(i) - 1)
 							M.append(int(i))
 					else:
-						M = fedpredict_core_layer_selection(t=server_round, T=20, nt=nt, n_layers=n_layers, size_per_layer=size_of_layers, mean_similarity=mean_similarity)
+						M = fedpredict_core_layer_selection(t=server_round, T=20, nt=nt, n_layers=n_layers, size_per_layer=size_of_layers, mean_similarity_per_layer=mean_similarity_per_layer, mean_similarity=mean_similarity)
 				new_parameters = []
 				for i in range(len(parameters)):
 					if i in M:
