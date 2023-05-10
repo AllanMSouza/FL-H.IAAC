@@ -92,7 +92,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		# FedPredictSelection
 		self.server_nt_acc = {round: {nt: [] for nt in range(0, self.num_rounds + 1)} for round in range(self.num_rounds + 1)}
 
-		self.type = args.type_model
+		self.type = args.type
 
 		#params
 		if self.aggregation_method == 'POC':

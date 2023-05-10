@@ -661,7 +661,7 @@ def main():
 	simulation = SimulationFL(n_clients=int(opt.n_clients), aggregation_method=opt.aggregation_method, model_name=opt.model_name,
                               strategy_name=opt.strategy_name, dataset=opt.dataset, n_classes=int(opt.n_classes),
                               local_epochs=int(opt.local_epochs), rounds=int(opt.rounds), poc=float(opt.poc), fraction_fit=float(opt.fraction_fit),
-                              decay=float(opt.decay), non_iid=ast.literal_eval(opt.non_iid), m_combining_layers=int(opt.m_combining_layers), nn_type=opt.type_model,
+                              decay=float(opt.decay), non_iid=ast.literal_eval(opt.non_iid), m_combining_layers=int(opt.m_combining_layers), nn_type=opt.type,
                               new_clients=ast.literal_eval(opt.new_clients), new_clients_train=ast.literal_eval(opt.new_clients_train), args=opt)
 
 	simulation.start_simulation()
