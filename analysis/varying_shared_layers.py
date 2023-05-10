@@ -79,6 +79,34 @@ class Varying_Shared_layers:
         else:
             comment = 'set'
 
+        sort = {i: "" for i in df['Shared layers'].sort_values().unique().tolist()}
+        shared_layers_list = df['Shared layers'].tolist()
+        for i in range(len(shared_layers_list)):
+            shared_layer = str(shared_layers_list[i])
+            if shared_layer == "-1":
+                shared_layers_list[i] = "FedPredict-v2"
+                sort[shared_layer] = shared_layers_list[i]
+                continue
+            new_shared_layer = "{"
+            for layer in shared_layer:
+                if len(new_shared_layer) == 1:
+                    new_shared_layer += layer
+                else:
+                    new_shared_layer += ", " + layer
+            new_shared_layer += "}"
+
+            shared_layers_list[i] = new_shared_layer
+            sort[shared_layer] = shared_layers_list[i]
+
+        df['Shared layers'] = np.array(shared_layers_list)
+        layer_selection_evaluate = list(sort.values())
+        sort = []
+        for i in layer_selection_evaluate:
+            if len(i) > 0:
+                sort.append(i)
+        layer_selection_evaluate = sort
+        print("ord: ", layer_selection_evaluate)
+
         title = """Alpha={}; Layer order={}""".format(alpha, comment)
         base_dir = """analysis/output/torch/varying_shared_layers/{}/{}_clients/{}_fraction_fit/alpha_{}/{}_comment/""".format(self.dataset, self.num_clients, self.fraction_fit, alpha, self.comment)
         os.makedirs(base_dir + "png/", exist_ok=True)
@@ -127,6 +155,62 @@ class Varying_Shared_layers:
         filename = base_dir + "csv/comparison.csv"
         df.to_csv(filename, index=False)
 
+        def comparison_with_shared_layers(df, df_aux):
+
+            round = df['Round'].tolist()[0]
+            df_aux = df_aux[df_aux['Round'] == round]
+            target = df_aux[df_aux['Shared layers'] == "{1, 2, 3, 4}"]
+            target_acc = target['Accuracy (%)'].tolist()[0]
+            target_size = target['Communication cost (bytes)'].tolist()[0]
+            acc = df['Accuracy (%)'].tolist()[0]
+            size = df['Communication cost (bytes)'].tolist()[0]
+            acc_reduction = target_acc - acc
+            size_reduction = target_size - size
+            # acc_weight = 1
+            # size_weight = 1
+            # acc_score = acc_score *acc_weight
+            # size_reduction = size_reduction * size_weight
+            # score = 2*(acc_score * size_reduction)/(acc_score + size_reduction)
+            if df['Shared layers'].tolist()[0] == "{1, 2, 3, 4}":
+                score = 0.00001
+
+            return pd.DataFrame({'Accuracy reduction (%)': [acc_reduction], 'Communication reduction (bytes)': [size_reduction]})
+
+        df = df[['Accuracy (%)', 'Size of parameters (bytes)', 'Communication cost (bytes)', 'Strategy', 'Shared layers',
+             'Round', 'Accuracy gain per byte']].groupby(
+            by=['Strategy', 'Round', 'Shared layers']).apply(lambda e: comparison_with_shared_layers(e, df)).reset_index()[
+            ['Strategy', 'Round', 'Shared layers', 'Accuracy reduction (%)', 'Communication reduction (bytes)']]
+
+        print("Final: ", df)
+
+        x_column = 'Round'
+        y_column = 'Accuracy reduction (%)'
+        hue = 'Shared layers'
+        line_plot(df=df,
+                  base_dir=base_dir,
+                  file_name="evaluate_client_accuracy_reduction_varying_shared_layers_lineplot",
+                  x_column=x_column,
+                  y_column=y_column,
+                  title=title,
+                  hue=hue,
+                  hue_order=layer_selection_evaluate,
+                  type=1,
+                  log_scale=True)
+
+        x_column = 'Round'
+        y_column = 'Communication reduction (bytes)'
+        hue = 'Shared layers'
+        line_plot(df=df,
+                  base_dir=base_dir,
+                  file_name="evaluate_client_communication_reduction_varying_shared_layers_lineplot",
+                  x_column=x_column,
+                  y_column=y_column,
+                  title=title,
+                  hue=hue,
+                  hue_order=layer_selection_evaluate,
+                  type=1,
+                  log_scale=True)
+
 
 if __name__ == '__main__':
     """
@@ -135,7 +219,7 @@ if __name__ == '__main__':
     """
 
     strategy = "FedPredict"
-    type = "torch"
+    type_model = "torch"
     aggregation_method = "None"
     fraction_fit = 0.3
     num_clients = 20
@@ -144,9 +228,12 @@ if __name__ == '__main__':
     alpha = float(1)
     num_rounds = 20
     epochs = 1
-    layer_selection_evaluate = [1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
+    # layer_selection_evaluate = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
+    # layer_selection_evaluate = [1, 12, 123, 1234]
+    # layer_selection_evaluate = [4, 34, 234, 1234]
+    layer_selection_evaluate = [-1, 1, 12, 4, 1234]
     comment = "set"
 
-    Varying_Shared_layers(tp=type, strategy_name=strategy, fraction_fit=fraction_fit, aggregation_method=aggregation_method, new_clients=False, new_clients_train=False, num_clients=num_clients,
+    Varying_Shared_layers(tp=type_model, strategy_name=strategy, fraction_fit=fraction_fit, aggregation_method=aggregation_method, new_clients=False, new_clients_train=False, num_clients=num_clients,
                           model_name=model_name, dataset=dataset, class_per_client=2, alpha=alpha, num_rounds=num_rounds, epochs=epochs,
                           comment=comment, layer_selection_evaluate=layer_selection_evaluate).start()

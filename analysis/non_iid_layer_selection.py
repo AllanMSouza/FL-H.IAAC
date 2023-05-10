@@ -348,7 +348,7 @@ if __name__ == '__main__':
     # noniid.start()
     c = NonIid(num_clients=int(opt.n_clients), aggregation_method=opt.aggregation_method, perc_of_clients=float(opt.poc), fraction_fit=float(opt.fraction_fit), non_iid=ast.literal_eval(opt.non_iid),
                model_name=opt.model_name, strategy_name_list=strategy_name_list, dataset_name=opt.dataset, new_clients=ast.literal_eval(opt.new_clients),
-               new_clients_train=ast.literal_eval(opt.new_clients_train), experiment=opt.experiment, comment=opt.comment, epochs=opt.epochs, type=opt.type, decay=opt.decay, args=opt)
+               new_clients_train=ast.literal_eval(opt.new_clients_train), experiment=opt.experiment, comment=opt.comment, epochs=opt.epochs, type=opt.type_model, decay=opt.decay, args=opt)
 
     print(c.n_clients, " ", c.strategy_name_list)
     dataset = opt.dataset
