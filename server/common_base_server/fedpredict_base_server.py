@@ -244,7 +244,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 
 				data['Server round'].append(round)
 				data['Layer'].append(layer)
-				data['Similarity'].append(self.similarity_between_layers_per_round[round][layer])
+				data['Similarity'].append(self.similarity_between_layers_per_round[round][layer]['mean'])
 
 		self.similarity_filename = f"{self.base}/similarity_between_layers.csv"
 		df = pd.DataFrame(data)

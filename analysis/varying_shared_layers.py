@@ -225,7 +225,7 @@ if __name__ == '__main__':
     num_clients = 20
     model_name = "CNN"
     dataset = "CIFAR10"
-    alpha = float(1)
+    alpha = float(2)
     num_rounds = 20
     epochs = 1
     # layer_selection_evaluate = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
