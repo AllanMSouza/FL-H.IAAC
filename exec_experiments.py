@@ -180,7 +180,7 @@ def main():
 
     experiment = EXPERIMENTS[int(opt.experiment_id)]
     execute_experiment(experiment=opt.experiment_id, algorithm=experiment['algorithm'], new_client=experiment['new_client'],
-                       new_client_train=experiment['new_client_train'], comment=experiment['comment'], type=opt.type_model, class_per_client=experiment['class_per_client'], layer_selection_evaluate=experiment['layer_selection_evaluate'])
+                       new_client_train=experiment['new_client_train'], comment=experiment['comment'], type=opt.type, class_per_client=experiment['class_per_client'], layer_selection_evaluate=experiment['layer_selection_evaluate'])
     remove_lines("""execution_log/experiment_{}.txt""".format(opt.experiment_id))
 
 		
