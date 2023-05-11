@@ -2,6 +2,7 @@ from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import numpy as np
 
 # sns.color_palette()
 
@@ -33,7 +34,7 @@ def bar_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, y_lim
     figure.savefig(base_dir + "png/" + file_name + log + ".png", bbox_inches='tight', dpi=400)
     figure.savefig(base_dir + "svg/" + file_name + log + ".svg", bbox_inches='tight', dpi=400)
 
-def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_scale=False, ax=None, type=None, hue_order=None):
+def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_scale=False, ax=None, type=None, hue_order=None, y_lim=False, y_min=0, y_max=1, n=None):
     Path(base_dir).mkdir(parents=True, exist_ok=True)
 
     if ax is None:
@@ -43,6 +44,12 @@ def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_
     if log_scale:
         plt.yscale('log')
         log = "_log_"
+    if y_lim:
+        plt.ylim([y_min, y_max])
+
+    x = df[x_column].tolist()
+    plt.xticks(np.arange(0, max(x) + 1, 2.0))
+
     if type is not None:
         palette = sns.color_palette()
         figure = sns.lineplot(x=x_column, y=y_column, data=df, hue=hue, ax=ax, palette=palette, hue_order=hue_order, style=hue).set_title(title)

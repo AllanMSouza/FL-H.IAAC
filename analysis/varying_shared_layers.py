@@ -120,7 +120,10 @@ class Varying_Shared_layers:
                   title=title,
                   hue=hue,
                   hue_order=layer_selection_evaluate,
-                  type=1)
+                  type=1,
+                  y_lim=True,
+                  y_min=10,
+                  y_max=80)
         x_column = 'Round'
         y_column = 'Communication cost (bytes)'
         hue = 'Shared layers'
@@ -171,8 +174,9 @@ class Varying_Shared_layers:
             # acc_score = acc_score *acc_weight
             # size_reduction = size_reduction * size_weight
             # score = 2*(acc_score * size_reduction)/(acc_score + size_reduction)
-            if df['Shared layers'].tolist()[0] == "{1, 2, 3, 4}":
-                score = 0.00001
+            # if df['Shared layers'].tolist()[0] == "{1, 2, 3, 4}":
+            #     acc_reduction = 0.0001
+            #     size_reduction = 0.0001
 
             return pd.DataFrame({'Accuracy reduction (%)': [acc_reduction], 'Communication reduction (bytes)': [size_reduction]})
 
@@ -182,6 +186,10 @@ class Varying_Shared_layers:
             ['Strategy', 'Round', 'Shared layers', 'Accuracy reduction (%)', 'Communication reduction (bytes)']]
 
         print("Final: ", df)
+        df = df[df['Shared layers'] != "{1, 2, 3, 4}"]
+        layer_selection_evaluate =  ['FedPredict-v2', '{1}', '{4}', '{1, 2}']
+        print("menor: ", df['Accuracy reduction (%)'].min())
+        print("Fed", df[df['Shared layers'] == 'FedPredict-v2'][['Accuracy reduction (%)', 'Round']])
 
         x_column = 'Round'
         y_column = 'Accuracy reduction (%)'
@@ -195,7 +203,10 @@ class Varying_Shared_layers:
                   hue=hue,
                   hue_order=layer_selection_evaluate,
                   type=1,
-                  log_scale=True)
+                  log_scale=False,
+                  y_lim=True,
+                  y_max=10,
+                  y_min=-3)
 
         x_column = 'Round'
         y_column = 'Communication reduction (bytes)'
@@ -209,7 +220,11 @@ class Varying_Shared_layers:
                   hue=hue,
                   hue_order=layer_selection_evaluate,
                   type=1,
-                  log_scale=True)
+                  log_scale=False,
+                  y_lim=True,
+                  y_max=1500000,
+                  y_min=0,
+                  n=1)
 
 
 if __name__ == '__main__':
@@ -225,11 +240,11 @@ if __name__ == '__main__':
     num_clients = 20
     model_name = "CNN"
     dataset = "CIFAR10"
-    alpha = float(2)
+    alpha = float(0.1)
     num_rounds = 20
     epochs = 1
     # layer_selection_evaluate = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
-    # layer_selection_evaluate = [1, 12, 123, 1234]
+    #layer_selection_evaluate = [1, 12, 123, 1234]
     # layer_selection_evaluate = [4, 34, 234, 1234]
     layer_selection_evaluate = [-1, 1, 12, 4, 1234]
     comment = "set"
