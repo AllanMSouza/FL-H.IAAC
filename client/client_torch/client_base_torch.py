@@ -129,22 +129,29 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 	def load_data(self, dataset_name, n_clients, batch_size=32):
 		try:
-			x_train, y_train, x_test, y_test = ManageDatasets(self.cid, self.model_name).select_dataset(dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid)
 			# print("y test")
 			# print(np.unique(y_test))
 			# exit()
-			self.input_shape = x_train.shape
-			tensor_x_train = torch.Tensor(x_train)  # transform to torch tensor
-			tensor_y_train = torch.Tensor(y_train)
+			if dataset_name in ['MNIST', 'CIFAR10', 'CIFAR100']:
+				x_train, y_train, x_test, y_test = ManageDatasets(self.cid, self.model_name).select_dataset(
+					dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid)
+				self.input_shape = x_train.shape
+				tensor_x_train = torch.Tensor(x_train)  # transform to torch tensor
+				tensor_y_train = torch.Tensor(y_train)
 
-			train_dataset = TensorDataset(tensor_x_train, tensor_y_train)
-			trainLoader = DataLoader(train_dataset, batch_size, drop_last=True, shuffle=True)
+				train_dataset = TensorDataset(tensor_x_train, tensor_y_train)
+				trainLoader = DataLoader(train_dataset, batch_size, drop_last=True, shuffle=True)
 
-			tensor_x_test = torch.Tensor(x_test)  # transform to torch tensor
-			tensor_y_test = torch.Tensor(y_test)
+				tensor_x_test = torch.Tensor(x_test)  # transform to torch tensor
+				tensor_y_test = torch.Tensor(y_test)
 
-			test_dataset = TensorDataset(tensor_x_test, tensor_y_test)
-			testLoader = DataLoader(test_dataset, batch_size, drop_last=True, shuffle=True)
+				test_dataset = TensorDataset(tensor_x_test, tensor_y_test)
+				testLoader = DataLoader(test_dataset, batch_size, drop_last=True, shuffle=True)
+			else:
+				trainset, valset = ManageDatasets(self.cid, self.model_name).select_dataset(
+					dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid)
+				trainLoader = DataLoader(trainset, batch_size, drop_last=True, shuffle=True)
+				testLoader = DataLoader(valset, batch_size, drop_last=True, shuffle=True)
 
 			return trainLoader, testLoader
 		except Exception as e:

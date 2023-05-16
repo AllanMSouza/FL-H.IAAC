@@ -7,6 +7,10 @@ import pandas as pd
 import os
 from torch.utils.data import TensorDataset, DataLoader
 from sklearn.model_selection import train_test_split
+import torchvision.transforms as transforms
+import subprocess
+from torchvision.datasets import ImageFolder, DatasetFolder, ImageNet
+import torchvision.datasets as datasets
 import time
 import sys
 
@@ -14,6 +18,43 @@ import sys
 
 import logging
 logging.getLogger("tensorflow").setLevel(logging.ERROR)
+
+def load_data(data_path):
+    """Load ImageNet (training and val set)."""
+
+    # Load ImageNet and normalize
+    traindir = os.path.join(data_path, "train")
+    valdir = os.path.join(data_path, "val")
+
+    normalize = transforms.Normalize(
+        mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]
+    )
+
+    trainset = datasets.ImageFolder(
+        traindir,
+        transforms.Compose(
+            [
+                transforms.RandomResizedCrop(224),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                normalize,
+            ]
+        ),
+    )
+
+    valset = datasets.ImageFolder(
+        valdir,
+        transforms.Compose(
+            [
+                transforms.Resize(256),
+                transforms.CenterCrop(224),
+                transforms.ToTensor(),
+                normalize,
+            ]
+        ),
+    )
+
+    return trainset, valset
 
 class ManageDatasets():
 
@@ -140,6 +181,40 @@ class ManageDatasets():
 		
 		return x_train, y_train, x_test, y_test
 
+	def load_tiny_imagenet(self, n_clients, filename_train, filename_test, non_iid=False):
+
+		dir_path = "dataset_utils/data/Tiny-ImageNet/raw_data/"
+
+		with open(filename_train, 'rb') as handle:
+			idx_train = pickle.load(handle)
+
+		with open(filename_test, 'rb') as handle:
+			idx_test = pickle.load(handle)
+
+		# if self.cid >= 5:
+		# 	time.sleep(4)
+		trainset, valset = load_data(dir_path + "tiny-imagenet-200/")
+		dataset_image = []
+		dataset_label = []
+		dataset_image.extend(trainset.imgs)
+		dataset_image.extend(valset.imgs)
+		dataset_label.extend(trainset.targets)
+		dataset_label.extend(valset.targets)
+		x = np.array(dataset_image)
+		y = np.array(dataset_label)
+		x_train = x[idx_train]
+		x_test = x[idx_test]
+
+		y_train = y[idx_train]
+		y_test = y[idx_test]
+
+		trainset.imgs = x_train
+		trainset.targets = y_train
+		valset.imgs = x_test
+		valset.targets = y_test
+
+		return trainset, valset
+
 
 	def load_CIFAR100(self, n_clients, filename_train, filename_test, non_iid=False):
 		(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar100.load_data()
@@ -183,6 +258,10 @@ class ManageDatasets():
 
 		elif dataset_name == 'CIFAR10':
 			return self.load_CIFAR10(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
+
+		elif dataset_name == 'Tiny-ImageNet':
+			return self.load_tiny_imagenet(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test,
+									 non_iid=non_iid)
 
 		elif dataset_name == 'MotionSense':
 			return self.load_MotionSense(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
