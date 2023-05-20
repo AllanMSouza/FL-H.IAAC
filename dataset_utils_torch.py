@@ -183,37 +183,45 @@ class ManageDatasets():
 
 	def load_tiny_imagenet(self, n_clients, filename_train, filename_test, non_iid=False):
 
-		dir_path = "dataset_utils/data/Tiny-ImageNet/raw_data/"
+		try:
 
-		with open(filename_train, 'rb') as handle:
-			idx_train = pickle.load(handle)
+			dir_path = "dataset_utils/data/Tiny-ImageNet/raw_data/"
 
-		with open(filename_test, 'rb') as handle:
-			idx_test = pickle.load(handle)
+			with open(filename_train, 'rb') as handle:
+				idx_train = pickle.load(handle)
 
-		# if self.cid >= 5:
-		# 	time.sleep(4)
-		trainset, valset = load_data(dir_path + "tiny-imagenet-200/")
-		dataset_image = []
-		dataset_label = []
-		dataset_image.extend(trainset.imgs)
-		dataset_image.extend(valset.imgs)
-		dataset_label.extend(trainset.targets)
-		dataset_label.extend(valset.targets)
-		x = np.array(dataset_image)
-		y = np.array(dataset_label)
-		x_train = x[idx_train]
-		x_test = x[idx_test]
+			with open(filename_test, 'rb') as handle:
+				idx_test = pickle.load(handle)
 
-		y_train = y[idx_train]
-		y_test = y[idx_test]
+			# if self.cid >= 5:
+			# 	time.sleep(4)
+			# idx_train = idx_train[:100]
+			# idx_test = idx_test[:100]
+			trainset, valset = load_data(dir_path + "tiny-imagenet-200/")
+			dataset_image = []
+			dataset_label = []
+			dataset_image.extend(trainset.imgs)
+			dataset_image.extend(valset.imgs)
+			dataset_label.extend(trainset.targets)
+			dataset_label.extend(valset.targets)
+			x = np.array(dataset_image)
+			y = np.array(dataset_label)
+			x_train = x[idx_train]
+			x_test = x[idx_test]
 
-		trainset.imgs = x_train
-		trainset.targets = y_train
-		valset.imgs = x_test
-		valset.targets = y_test
+			y_train = y[idx_train]
+			y_test = y[idx_test]
 
-		return trainset, valset
+			trainset.imgs = x_train
+			trainset.targets = y_train
+			valset.imgs = x_test
+			valset.targets = y_test
+
+			return trainset, valset
+
+		except Exception as e:
+			print("load tinyimagenet")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 
 	def load_CIFAR100(self, n_clients, filename_train, filename_test, non_iid=False):

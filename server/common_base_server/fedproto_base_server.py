@@ -148,7 +148,7 @@ class FedProtoBaseServer(FedAvgBaseServer):
                 if num_examples[key] > 0:
                     num_examples_total_clients[key] += 1
                     if np.sum(p[key]) == 0:
-                        print("opaopa")
+                        print("Erro")
                         exit()
 
         print("Quantidade por classe")

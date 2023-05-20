@@ -79,6 +79,7 @@ def separate_data(targets, num_clients, num_classes, niid=False, balance=False, 
         # https://github.com/IBM/probabilistic-federated-neural-matching/blob/master/experiment.py
         min_size = 0
         K = num_classes
+        max_class = 0
         N = len(targets)
         print("ola: ", class_per_client)
 
@@ -96,6 +97,10 @@ def separate_data(targets, num_clients, num_classes, niid=False, balance=False, 
 
         for j in range(num_clients):
             dataidx_map[j] = idx_batch[j]
+            m = np.take(np.array(targets), idx_batch[j]).max()
+            if m > max_class:
+                max_class = m
+            print("max ", max_class)
     else:
         raise NotImplementedError
 

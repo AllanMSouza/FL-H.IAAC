@@ -43,17 +43,18 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 # ======================================================================
 # Configurations
 TYPE = 'torch'
-# DATASETS      				= ['MNIST', 'CIFAR10']
+# DATASETS      				= ['MNIST', 'CIFAR10', 'Tiny-ImageNet']
 DATASETS = ['Tiny-ImageNet']
 # DATASETS      					= ['UCIHAR', 'MotionSense']
 MODELS = ['CNN']
 ALGORITHMS = ['None', 'POC', 'FedLTA']
 EPOCHS = {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2], '6': [1], '7': [1], '8': [1], '9': [1], '10': [1], '11': [1], '12': [1], '13': [1], '14': [1], '15': [1], '16': [1], '17': [1], '18': [1], '19': [1], '20': [1], '21': [1], '22': [1], '23': [1], '24': [1], '25': [1], '26': [1], '27': [1], '28': [1], '29': [1], '30': [1]}
 # CLIENTS       				= {'MNIST': 50, 'CIFAR10': 50, 'CIFAR100': 50, 'MotionSense': 50, 'UCIHAR': 50}
-CLIENTS = {'MNIST': [10], 'CIFAR10': [20], 'CIFAR100': [50], 'MotionSense': [24], 'UCIHAR': [30], 'Tiny-ImageNet': [4]}
-ALPHA = [0.1]
+CLASSES = {'MNIST': 10, 'CIFAR10': 10, 'Tiny-ImageNet': 5}
+CLIENTS = {'MNIST': [5], 'CIFAR10': [3], 'CIFAR100': [50], 'MotionSense': [24], 'UCIHAR': [30], 'Tiny-ImageNet': [4]}
+ALPHA = [1]
 # ALPHA = [1]
-FRACTION_FIT = {'None': [1], 'POC': [0], 'FedLTA': [0]}
+FRACTION_FIT = {'None': [0.66], 'POC': [0], 'FedLTA': [0]}
 POC = {'None': [0], 'POC': [0.2], 'FedLTA': [0]}
 DECAY = {'None': 0, 'POC': 0, 'FedLTA': 0.1}
 NEW_CLIENTS = {'None': ['FALSE'], 'POC': ['FALSE', 'TRUE']}
@@ -61,8 +62,8 @@ NEW_CLIENTS_TRAIN = {'FALSE': ['FALSE'], 'TRUE': ['FALSE', 'TRUE']}
 # DECAY         				= (0.001, 0.005, 0.009)
 ROUNDS = 2
 # STRATEGIES 					= ('FedPredict', 'FedPer', 'FedClassAvg', 'FedAVG', 'FedClassAvg_with_FedPredict', 'FedPer_with_FedPredict', 'FedProto', 'FedYogi', 'FedLocal',)
-STRATEGIES_FOR_ANALYSIS = ['FedPredict']
-STRATEGIES_TO_EXECUTE = ['FedPredict']
+STRATEGIES_FOR_ANALYSIS = ['FedAVG']
+STRATEGIES_TO_EXECUTE = ['FedAVG']
 
 EXPERIMENTS = {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '', 'layer_selection_evaluate': 4},
                2: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '', 'layer_selection_evaluate': 4},
@@ -128,6 +129,7 @@ def execute_experiment(experiment, algorithm, new_client, new_client_train, comm
     comment = str(comment)
     try:
         for dataset in DATASETS:
+            classes = CLASSES[dataset]
             for model in MODELS:
                 for epochs in EPOCHS[experiment]:
                     for clients in CLIENTS[dataset]:
@@ -140,10 +142,10 @@ def execute_experiment(experiment, algorithm, new_client, new_client_train, comm
                                         print(
                                             f'Starting {strategy} fraction_fit-{fraction_fit} simulation for {dataset} clients with {model} model ...',
                                             os.getcwd())
-                                        test_config = """python {}/simulation.py --dataset='{}' --model='{}' --strategy='{}' --epochs={} --round={} --client={} --type='{}' --non-iid={} --aggregation_method='{}' --fraction_fit={} --poc={} --new_clients={} --new_clients_train={} --decay={} --comment={} --class_per_client={} --alpha={} --layer_selection_evaluate={}""".format(
+                                        test_config = """python {}/simulation.py --dataset='{}' --model='{}' --strategy='{}' --epochs={} --round={} --client={} --type='{}' --non-iid={} --aggregation_method='{}' --fraction_fit={} --poc={} --new_clients={} --new_clients_train={} --decay={} --comment={} --class_per_client={} --alpha={} --layer_selection_evaluate={} --classes={}""".format(
                                             os.getcwd(), dataset, model,
                                             strategy, epochs, ROUNDS, clients, TYPE, True, algorithm, fraction_fit, poc,
-                                            new_client, new_client_train, decay, comment, class_per_client, alpha, layer_selection_evaluate)
+                                            new_client, new_client_train, decay, comment, class_per_client, alpha, layer_selection_evaluate, classes)
                                         print("=====================================\nExecutando... \n", test_config,
                                               "\n=====================================")
                                         # exit()

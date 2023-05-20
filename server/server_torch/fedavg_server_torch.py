@@ -46,17 +46,9 @@ class FedAvgServerTorch(FedAvgBaseServer):
             y_test = []
             x_train = np.array([])
             y_train = np.array([])
-            for i in range(10):
-                x_train_, y_train_, x_test_, y_test_ = ManageDatasets(i, self.model_name).select_dataset(dataset_name, n_clients,
-                                                                                       self.non_iid)
-                print("unitario: ", x_train_.shape, y_train_.shape)
-                if i > 0:
-                    x_train = np.concatenate((x_train, x_train_))
-                    y_train = np.concatenate((y_train, y_train_))
-                else:
-                    x_train = x_train_
-                    y_train = y_train_
-                break
+            i = 1
+            x_trai, y_train_, x_test, y_test = ManageDatasets(i, self.model_name).select_dataset(dataset_name, n_clients,
+                                                                                   self.non_iid)
 
             tensor_x_train = torch.Tensor(x_train)  # transform to torch tenso)r
             tensor_y_train = torch.Tensor(y_train.astype(int))

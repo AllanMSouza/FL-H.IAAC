@@ -8,7 +8,7 @@ import time
 import sys
 
 from dataset_utils_torch import ManageDatasets
-from model_definition_torch import DNN, Logistic, CNN
+from model_definition_torch import DNN, Logistic, CNN, AlexNet
 import csv
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -66,66 +66,70 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				 new_clients_train	= False,
 
 				 ):
+		try:
+			self.cid          = int(cid)
+			self.n_clients    = n_clients
+			self.model_name   = model_name
+			self.local_epochs = epochs
+			self.non_iid      = non_iid
+			self.n_rounds	  = int(args.rounds)
 
-		self.cid          = int(cid)
-		self.n_clients    = n_clients
-		self.model_name   = model_name
-		self.local_epochs = epochs
-		self.non_iid      = non_iid
-		self.n_rounds	  = int(args.rounds)
+			self.num_classes = n_classes
+			self.class_per_client = int(args.class_per_client)
+			self.train_perc = float(args.train_perc)
+			self.alpha = float(args.alpha)
+			self.comment = args.comment
+			self.layer_selection_evaluate = int(args.layer_selection_evaluate)
 
-		self.num_classes = n_classes
-		self.class_per_client = int(args.class_per_client)
-		self.train_perc = float(args.train_perc)
-		self.alpha = float(args.alpha)
-		self.comment = args.comment
-		self.layer_selection_evaluate = int(args.layer_selection_evaluate)
+			self.model        = None
+			self.x_train      = None
+			self.x_test       = None
+			self.y_train      = None
+			self.y_test       = None
 
-		self.model        = None
-		self.x_train      = None
-		self.x_test       = None
-		self.y_train      = None
-		self.y_test       = None
+			#logs
+			self.strategy_name = solution_name
+			# "solution_name" is will be further modified
+			self.solution_name      = solution_name
+			self.aggregation_method = aggregation_method
+			self.dataset            = dataset
 
-		#logs
-		self.strategy_name = solution_name
-		# "solution_name" is will be further modified
-		self.solution_name      = solution_name
-		self.aggregation_method = aggregation_method
-		self.dataset            = dataset
+			self.client_selection = client_selection
+			self.perc_of_clients  = perc_of_clients
+			self.decay            = decay
+			self.fraction_fit	  = fraction_fit
 
-		self.client_selection = client_selection
-		self.perc_of_clients  = perc_of_clients
-		self.decay            = decay
-		self.fraction_fit	  = fraction_fit
+			self.loss = nn.CrossEntropyLoss()
+			self.learning_rate = 0.01
+			self.new_clients = new_clients
+			self.new_clients_train = new_clients_train
+			# self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+			self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+			self.type = 'torch'
 
-		self.loss = nn.CrossEntropyLoss()
-		self.learning_rate = 0.01
-		self.new_clients = new_clients
-		self.new_clients_train = new_clients_train
-		# self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-		self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-		self.type = 'torch'
+			#params
+			if self.aggregation_method == 'POC':
+				self.solution_name = f"{solution_name}-{aggregation_method}-{self.perc_of_clients}"
 
-		#params
-		if self.aggregation_method == 'POC':
-			self.solution_name = f"{solution_name}-{aggregation_method}-{self.perc_of_clients}"
+			elif self.aggregation_method == 'FL-H.IAAC':
+				self.solution_name = f"{solution_name}-{aggregation_method}-{self.decay}"
 
-		elif self.aggregation_method == 'FL-H.IAAC':
-			self.solution_name = f"{solution_name}-{aggregation_method}-{self.decay}"
+			elif self.aggregation_method == 'None':
+				self.solution_name = f"{solution_name}-{aggregation_method}-{self.fraction_fit}"
 
-		elif self.aggregation_method == 'None':
-			self.solution_name = f"{solution_name}-{aggregation_method}-{self.fraction_fit}"
+			self.base = f"logs/{self.type}/{self.solution_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.n_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.n_rounds}_rounds/{self.local_epochs}_local_epochs/{self.comment}_comment/{str(self.layer_selection_evaluate)}_layer_selection_evaluate"
+			self.evaluate_client_filename = f"{self.base}/evaluate_client.csv"
+			self.train_client_filename = f"{self.base}/train_client.csv"
+			self.predictions_client_filename = f"{self.base}/predictions_client.csv"
 
-		self.base = f"logs/{self.type}/{self.solution_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.n_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.n_rounds}_rounds/{self.local_epochs}_local_epochs/{self.comment}_comment/{str(self.layer_selection_evaluate)}_layer_selection_evaluate"
-		self.evaluate_client_filename = f"{self.base}/evaluate_client.csv"
-		self.train_client_filename = f"{self.base}/train_client.csv"
-		self.predictions_client_filename = f"{self.base}/predictions_client.csv"
+			self.trainloader, self.testloader = self.load_data(self.dataset, n_clients=self.n_clients)
+			self.model                                           = self.create_model().to(self.device)
+			# self.device = 'cpu'
+			self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate, momentum=0.9)
 
-		self.trainloader, self.testloader = self.load_data(self.dataset, n_clients=self.n_clients)
-		self.model                                           = self.create_model().to(self.device)
-		# self.device = 'cpu'
-		self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate, momentum=0.9)
+		except Exception as e:
+			print("init client")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def load_data(self, dataset_name, n_clients, batch_size=32):
 		try:
@@ -148,10 +152,15 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				test_dataset = TensorDataset(tensor_x_test, tensor_y_test)
 				testLoader = DataLoader(test_dataset, batch_size, drop_last=True, shuffle=True)
 			else:
+				print("gerar")
 				trainset, valset = ManageDatasets(self.cid, self.model_name).select_dataset(
 					dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid)
+				print("leu dataset")
+				self.input_shape = (32, 0)
 				trainLoader = DataLoader(trainset, batch_size, drop_last=True, shuffle=True)
 				testLoader = DataLoader(valset, batch_size, drop_last=True, shuffle=True)
+				print("leu loader: ")
+				# exit()
 
 			return trainLoader, testLoader
 		except Exception as e:
@@ -171,7 +180,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				return Logistic(input_shape=input_shape, num_classes=self.num_classes)
 			elif self.model_name == 'DNN':
 				return DNN(input_shape=input_shape, num_classes=self.num_classes)
-			elif self.model_name == 'CNN':
+			elif self.model_name == 'CNN'  and self.dataset in ['MNIST', 'CIFAR10']:
 				if self.dataset in ['MNIST']:
 					input_shape = 1
 					mid_dim = 256
@@ -179,6 +188,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 					input_shape = 3
 					mid_dim = 400
 				return CNN(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim)
+			elif self.dataset in ['Tiny-ImageNet']:
+				return AlexNet(num_classes=self.num_classes)
 			else:
 				raise Exception("Wrong model name")
 		except Exception as e:
@@ -252,8 +263,10 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 			start_time = time.process_time()
 			server_round = int(config['round'])
+			print("instanciou: ")
 			if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
-				self.set_parameters_to_model_fit(parameters)
+				if len(parameters) > 0:
+					self.set_parameters_to_model_fit(parameters)
 				self.round_of_last_fit = server_round
 
 				selected = 1
@@ -263,6 +276,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				train_acc = 0
 				train_loss = 0
 				train_num = 0
+				max = 0
+				print("dados: ", self.trainloader)
 				for step in range(max_local_steps):
 					for i, (x, y) in enumerate(self.trainloader):
 						if type(x) == type([]):
@@ -271,10 +286,17 @@ class ClientBaseTorch(fl.client.NumPyClient):
 							x = x.to(self.device)
 						y = y.to(self.device)
 						train_num += y.shape[0]
+						# print("x: ", x.shape)
 
 						self.optimizer.zero_grad()
 						output = self.model(x)
 						y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
+						# fo = max(y.int().detach().numpy().astype(int).tolist())
+						# if fo > max:
+						# 	max = fo
+						# print("max: ", max)
+						# print("saida: ", output.shape)
+						# print("rotulo: ", y.shape)
 						loss = self.loss(output, y)
 						train_loss += loss.item() * y.shape[0]
 						loss.backward()
@@ -290,7 +312,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				tamanho = get_size(parameters[i])
 				print("Client id: ", self.cid, " camada: ", i, " tamanho: ", tamanho, " shape: ", parameters[i].shape)
 				size_list.append(tamanho)
-			print("Tamanho total: ", sum(size_list))
+			print("Tamanho total parametros fit: ", sum(size_list))
 			size_of_parameters = sum(size_list)
 			# size_of_parameters = sum(
 			# 	[sum(map(sys.getsizeof, trained_parameters[i])) for i in range(len(trained_parameters))])
@@ -364,7 +386,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				tamanho = get_size(parameters[i])
 				print("Client id: ", self.cid, " camada: ", i, " tamanho: ", tamanho, " shape: ", parameters[i].shape)
 				size_list.append(tamanho)
-			print("Tamanho total: ", sum(size_list))
+			print("Tamanho total parametros evaluate: ", sum(size_list))
 			size_of_parameters = sum(size_list)
 			# size_of_parameters = sum([sum(map(sys.getsizeof, parameters[i])) for i in range(len(parameters))])
 			size_of_config = self._get_size_of_dict(config)

@@ -192,6 +192,6 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
         mean_similarity_per_layer[i]['mean'] = mean
         mean_similarity_per_layer[i]['ci'] = st.norm.interval(alpha=0.95, loc=np.mean(similarities), scale=st.sem(similarities))[1] - np.mean(similarities)
 
-    print("""similaridade (camada {}): {}""".format(i, mean_similarity_per_layer[i]))
+        print("""similaridade (camada {}): {}""".format(i, mean_similarity_per_layer[i]))
 
     return similarity_per_layer, mean_similarity_per_layer, np.mean(layers_mean_similarity)

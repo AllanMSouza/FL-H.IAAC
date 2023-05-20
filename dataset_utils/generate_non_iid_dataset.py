@@ -21,7 +21,7 @@ def parse_arguments():
     argParser.add_argument("--num_classes", help="Number of dataset classes to use", default=10)
     argParser.add_argument("--balance", help="User dataset balanced", default=False)
     argParser.add_argument("--partition", help="Dataset partition: dir or pat", default="dir")
-    argParser.add_argument("--class_per_client", help="Number of classes per client", default=10)
+    argParser.add_argument("--class_per_client", help="Number of classes per client", default=2)
     argParser.add_argument("--train_perc", help="Dataset percentual for train", default=0.8)
     argParser.add_argument("--alpha", help="Dirichlet alpha parameter", default=0.1)
     argParser.add_argument("--niid", help="If niid", default=True)
