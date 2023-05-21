@@ -68,6 +68,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 				 ):
 		try:
+
+			print("criar cliente")
 			self.cid          = int(cid)
 			self.n_clients    = n_clients
 			self.model_name   = model_name
@@ -152,6 +154,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 				test_dataset = TensorDataset(tensor_x_test, tensor_y_test)
 				testLoader = DataLoader(test_dataset, batch_size, drop_last=True, shuffle=True)
+				print("Carregou dados de ", self.dataset, len(x_train))
 			else:
 				print("gerar")
 				trainset, valset = ManageDatasets(self.cid, self.model_name).select_dataset(
@@ -262,6 +265,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			selected_clients = []
 			trained_parameters = []
 			selected = 0
+
+			print("parametros recebidos treinamento: ", len(parameters), config['round'])
 
 			if config['selected_clients'] != '':
 				selected_clients = [int(cid_selected) for cid_selected in config['selected_clients'].split(' ')]
@@ -386,6 +391,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 	def evaluate(self, parameters, config):
 		try:
+			print("parametros recebidos evaluate: ", len(parameters))
 			server_round = int(config['round'])
 			n_rounds = int(config['n_rounds'])
 			self.set_parameters_to_model_evaluate(parameters, config)

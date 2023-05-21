@@ -189,6 +189,8 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		random.seed(server_round)
 		self.previous_global_parameters = fl.common.parameters_to_ndarrays(parameters)
 
+		print("começo configure fit: ", len(fl.common.parameters_to_ndarrays(parameters)), server_round)
+
 		random.seed(server_round)
 
 		if self.aggregation_method == 'POC':
@@ -289,9 +291,11 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		weights_results = []
 		clients_parameters = []
 		clients_ids = []
+		print("Rodada: ", server_round, len(results))
 		for _, fit_res in results:
 			client_id = str(fit_res.metrics['cid'])
 			clients_ids.append(client_id)
+			print("Parametros aggregate fit: ", len(fl.common.parameters_to_ndarrays(fit_res.parameters)))
 			clients_parameters.append(fl.common.parameters_to_ndarrays(fit_res.parameters))
 			if self.aggregation_method not in ['POC', 'FL-H.IAAC'] or int(server_round) <= 1:
 				weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples))
@@ -322,6 +326,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 	def configure_evaluate(self, server_round, parameters, client_manager):
 		"""Configure the next round of evaluation."""
 		# Do not configure federated evaluation if fraction eval is 0.
+		print("Iniciar configure evaluate")
 		if self.fraction_evaluate == 0.0:
 			return []
 		# ====================================================================================
@@ -384,6 +389,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		else:
 			selected_clients = clients
 		print("selecionar (evaluate): ", [client.cid for client in selected_clients])
+		print("Parametros para enviar evaluate: ", len(fl.common.parameters_to_ndarrays(parameters)))
 		if selected_clients:
 			for client in selected_clients:
 				if self.clients_metrics[client.cid]['count'] == 0:
