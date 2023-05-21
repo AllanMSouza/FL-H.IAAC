@@ -192,7 +192,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			elif self.dataset in ['Tiny-ImageNet']:
 				# return AlexNet(num_classes=self.num_classes)
 				model = models.resnet18(pretrained=True)
-				model = torch.nn.DataParallel(model).cuda()
+				# model = torch.nn.DataParallel(model).cuda()
 				return model
 			else:
 				raise Exception("Wrong model name")
