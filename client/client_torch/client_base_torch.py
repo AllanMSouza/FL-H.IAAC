@@ -159,7 +159,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				print("gerar")
 				trainset, valset = ManageDatasets(self.cid, self.model_name).select_dataset(
 					dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid)
-				print("leu dataset")
+				print("leu dataset", len(trainset))
 				self.input_shape = (32, 0)
 				trainLoader = DataLoader(dataset=trainset, batch_size=256, pin_memory=True, shuffle=True)
 				testLoader = DataLoader(dataset=valset, batch_size=256, pin_memory=True, shuffle=False)
@@ -266,17 +266,13 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			trained_parameters = []
 			selected = 0
 
-			print("parametros recebidos treinamento: ", len(parameters), config['round'])
-
 			if config['selected_clients'] != '':
 				selected_clients = [int(cid_selected) for cid_selected in config['selected_clients'].split(' ')]
 
 			start_time = time.process_time()
 			server_round = int(config['round'])
-			print("instanciou: ")
 			if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
-				if len(parameters) > 0:
-					self.set_parameters_to_model_fit(parameters)
+				self.set_parameters_to_model_fit(parameters)
 				self.round_of_last_fit = server_round
 
 				selected = 1
@@ -286,29 +282,18 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				train_acc = 0
 				train_loss = 0
 				train_num = 0
-				max = 0
-				print("dados: ", self.trainloader)
 				for step in range(max_local_steps):
 					for i, (x, y) in enumerate(self.trainloader):
-						if i == 2:
-							break
 						if type(x) == type([]):
 							x[0] = x[0].to(self.device)
 						else:
 							x = x.to(self.device)
 						y = y.to(self.device)
 						train_num += y.shape[0]
-						# print("x: ", x.shape)
 
 						self.optimizer.zero_grad()
 						output = self.model(x)
-						#y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
-						# fo = max(y.int().detach().numpy().astype(int).tolist())
-						# if fo > max:
-						# 	max = fo
-						# print("max: ", max)
-						# print("saida: ", output.shape)
-						# print("rotulo: ", y.shape)
+						y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
 						loss = self.loss(output, y)
 						train_loss += loss.item() * y.shape[0]
 						loss.backward()
@@ -316,10 +301,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 						train_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
 
-						print("iteracao concluida", loss.item(), self.cid, i)
-
 				trained_parameters = self.get_parameters_of_model()
-				print("parametros retornados: ", len(trained_parameters))
 				self.save_parameters()
 
 			size_list = []
@@ -380,7 +362,6 @@ class ClientBaseTorch(fl.client.NumPyClient):
 					test_acc += (torch.sum(prediction == y)).item()
 					test_num += y.shape[0]
 
-			print("dados de treino: ", test_num)
 			loss = test_loss / test_num
 			accuracy = test_acc / test_num
 
@@ -391,7 +372,6 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 	def evaluate(self, parameters, config):
 		try:
-			print("parametros recebidos evaluate: ", len(parameters))
 			server_round = int(config['round'])
 			n_rounds = int(config['n_rounds'])
 			self.set_parameters_to_model_evaluate(parameters, config)
