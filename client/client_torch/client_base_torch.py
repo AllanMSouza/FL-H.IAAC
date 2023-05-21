@@ -158,8 +158,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 					dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid)
 				print("leu dataset")
 				self.input_shape = (32, 0)
-				trainLoader = DataLoader(dataset=trainset, batch_size=batch_size, pin_memory=True, shuffle=True)
-				testLoader = DataLoader(dataset=valset, batch_size=batch_size, pin_memory=True, shuffle=False)
+				trainLoader = DataLoader(dataset=trainset, batch_size=256, pin_memory=True, shuffle=True)
+				testLoader = DataLoader(dataset=valset, batch_size=256, pin_memory=True, shuffle=False)
 				print("leu loader: ")
 				# exit()
 
@@ -309,7 +309,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 						train_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
 
-						print("epoca concluida")
+						print("iteracao concluida", loss)
 
 				trained_parameters = self.get_parameters_of_model()
 				print("parametros retornados: ", len(trained_parameters))
