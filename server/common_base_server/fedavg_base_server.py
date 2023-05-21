@@ -184,7 +184,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 	def configure_fit(self, server_round, parameters, client_manager):
 		"""Configure the next round of training."""
-
+		print("Iniciar configure fit")
 		self.start_time = time.process_time()
 		random.seed(server_round)
 		self.previous_global_parameters = fl.common.parameters_to_ndarrays(parameters)
@@ -195,7 +195,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			clients2select        = int(float(self.num_clients) * float(self.perc_of_clients))
 			self.selected_clients = self.list_of_clients[:clients2select]
 
-		elif self.aggregation_method == 'FL-H.IAAC':
+		elif self.aggregation_method == 'FedLTA':
 			self.selected_clients = self.select_clients_bellow_average()
 
 			if self.decay_factor > 0:
