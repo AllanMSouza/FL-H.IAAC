@@ -247,29 +247,33 @@ class ManageDatasets():
 
 
     def select_dataset(self, dataset_name, n_clients, class_per_client, alpha, non_iid):
-        print("recebeu: ", self.cid, dataset_name, n_clients, class_per_client, alpha, non_iid)
-        filename_train = f"dataset_utils/data/{dataset_name}/{n_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{self.cid}/idx_train_{self.cid}.pickle"
-        filename_test = f"dataset_utils/data/{dataset_name}/{n_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{self.cid}/idx_test_{self.cid}.pickle"
+        try:
+            print("recebeu: ", self.cid, dataset_name, n_clients, class_per_client, alpha, non_iid)
+            filename_train = f"dataset_utils/data/{dataset_name}/{n_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{self.cid}/idx_train_{self.cid}.pickle"
+            filename_test = f"dataset_utils/data/{dataset_name}/{n_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{self.cid}/idx_test_{self.cid}.pickle"
 
-        if dataset_name == 'MNIST':
-            return self.load_MNIST(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
+            if dataset_name == 'MNIST':
+                return self.load_MNIST(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
 
-        elif dataset_name == 'CIFAR100':
-            return self.load_CIFAR100(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
+            elif dataset_name == 'CIFAR100':
+                return self.load_CIFAR100(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
 
-        elif dataset_name == 'CIFAR10':
-            return self.load_CIFAR10(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
+            elif dataset_name == 'CIFAR10':
+                return self.load_CIFAR10(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
 
-        elif dataset_name == 'Tiny-ImageNet':
-            return self.load_tiny_imagenet(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test,
-                                     non_iid=non_iid)
+            elif dataset_name == 'Tiny-ImageNet':
+                return self.load_tiny_imagenet(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test,
+                                         non_iid=non_iid)
 
-        elif dataset_name == 'MotionSense':
-            return self.load_MotionSense(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
+            elif dataset_name == 'MotionSense':
+                return self.load_MotionSense(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
 
-        elif dataset_name == 'UCIHAR':
-            return self.load_UCIHAR(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
+            elif dataset_name == 'UCIHAR':
+                return self.load_UCIHAR(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
 
+        except Exception as e:
+            print("select_dataset")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
     def normalize_data(self, x_train, x_test):
         x_train = Normalizer().fit_transform(np.array(x_train))
