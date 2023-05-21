@@ -309,7 +309,10 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 						train_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
 
+						print("rodada concluida")
+
 				trained_parameters = self.get_parameters_of_model()
+				print("parametros retornados: ", len(trained_parameters))
 				self.save_parameters()
 
 			size_list = []
