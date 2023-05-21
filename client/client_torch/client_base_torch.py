@@ -295,7 +295,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 						self.optimizer.zero_grad()
 						output = self.model(x)
-						y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
+						#y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
 						# fo = max(y.int().detach().numpy().astype(int).tolist())
 						# if fo > max:
 						# 	max = fo
@@ -309,7 +309,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 						train_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
 
-						print("iteracao concluida", loss)
+						print("iteracao concluida", loss.item(), self.cid, i)
 
 				trained_parameters = self.get_parameters_of_model()
 				print("parametros retornados: ", len(trained_parameters))
