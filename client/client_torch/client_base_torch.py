@@ -158,8 +158,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 					dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid)
 				print("leu dataset")
 				self.input_shape = (32, 0)
-				trainLoader = DataLoader(dataset=trainset, batch_size=256000, pin_memory=True, shuffle=True)
-				testLoader = DataLoader(dataset=valset, batch_size=256000, pin_memory=True, shuffle=False)
+				trainLoader = DataLoader(dataset=trainset, batch_size=256, pin_memory=True, shuffle=True)
+				testLoader = DataLoader(dataset=valset, batch_size=256, pin_memory=True, shuffle=False)
 				print("leu loader: ")
 				# exit()
 
@@ -285,6 +285,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				print("dados: ", self.trainloader)
 				for step in range(max_local_steps):
 					for i, (x, y) in enumerate(self.trainloader):
+						if i == 2:
+							break
 						if type(x) == type([]):
 							x[0] = x[0].to(self.device)
 						else:
