@@ -191,7 +191,9 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				return CNN(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim)
 			elif self.dataset in ['Tiny-ImageNet']:
 				# return AlexNet(num_classes=self.num_classes)
-				return models.alexnet(pretrained=True)
+				model = models.resnet18(pretrained=True)
+				model = torch.nn.DataParallel(model).cuda()
+				return model
 			else:
 				raise Exception("Wrong model name")
 		except Exception as e:
