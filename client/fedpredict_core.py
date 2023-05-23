@@ -3,10 +3,12 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
 import scipy.stats as st
 # from torch_cka import CKA
+import pandas as pd
 
 import math
 import torch
 import numpy as np
+from analysis.base_plots import line_plot
 
 
 class CKA(object):
@@ -144,12 +146,15 @@ def fedpredict_similarity_per_round_rate(similarities, num_layers, current_round
         similarity_rate[layer] = (similarities_list[current_round] - similarities_list[initial_round])/round_window
 
 
-def fedpredict_layerwise_similarity(global_parameter, clients_parameters, clients_ids):
+def fedpredict_layerwise_similarity(global_parameter, clients_parameters, clients_ids, server_round):
 
     num_layers = len(global_parameter)
     num_clients = len(clients_parameters)
     similarity_per_layer = {i: {} for i in clients_ids}
+    difference_per_layer = {i: {j: {'min': [], 'max': []} for j in range(num_layers)} for i in clients_ids}
+    difference_per_layer_vector = {j: [] for j in range(num_layers)}
     mean_similarity_per_layer = {i: {'mean': 0, 'ci': 0} for i in range(num_layers)}
+    mean_difference_per_layer = {i: {'min': 0, 'max': 0} for i in range(num_layers)}
 
     for j in range(num_clients):
 
@@ -166,15 +171,27 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
             # CNN
             if np.ndim(global_layer) == 4:
                 client_similarity = []
+                client_difference = {'min': [], 'max': []}
                 for k in range(len(global_layer)):
                     global_layer_k = global_layer[k][0]
                     client_layer_k = client_layer[k][0]
                     cka = CKA()
                     similarity = cka.linear_CKA(global_layer_k, client_layer_k)
+                    difference = global_layer_k - client_layer_k
+
                     client_similarity.append(similarity)
+                    client_difference['min'].append(difference.min())
+                    client_difference['max'].append(difference.max())
+                    difference_per_layer_vector[i] += np.absolute(difference).flatten().tolist()
+                print("Diferença min: ", i, k, j, difference[0][0])
+                # print("Diferença max: ", i, k, j, client_difference['max'])
                 if i not in similarity_per_layer[client_id]:
                     similarity_per_layer[client_id][i] = []
+                    difference_per_layer[client_id][i]['min'] = []
+                    difference_per_layer[client_id][i]['max'] = []
                 similarity_per_layer[client_id][i].append(np.mean(client_similarity))
+                difference_per_layer[client_id][i]['min'].append(abs(np.mean(client_difference['min'])))
+                difference_per_layer[client_id][i]['max'].append(abs(np.mean(client_difference['max'])))
             else:
             # for x, y in zip(global_layer, client_layer):
                 cka = CKA()
@@ -184,14 +201,58 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
     layers_mean_similarity = []
     for i in range(num_layers):
         similarities = []
+        min_difference = []
+        max_difference = []
         for client_id in clients_ids:
             similarities.append(similarity_per_layer[client_id][i])
+            min_difference += difference_per_layer[client_id][i]['min']
+            max_difference += difference_per_layer[client_id][i]['max']
 
         mean = np.mean(similarities)
         layers_mean_similarity.append(mean)
         mean_similarity_per_layer[i]['mean'] = mean
         mean_similarity_per_layer[i]['ci'] = st.norm.interval(alpha=0.95, loc=np.mean(similarities), scale=st.sem(similarities))[1] - np.mean(similarities)
+        mean_difference_per_layer[i]['min'] = np.mean(min_difference)
+        mean_difference_per_layer[i]['max'] = np.mean(max_difference)
+    for layer in difference_per_layer_vector:
+        if layer in [0, 2]:
+            df = pd.DataFrame({'y': difference_per_layer_vector[layer], 'x': [i for i in range(len(difference_per_layer_vector[layer]))]})
+            line_plot(df=df, base_dir='', file_name="""difference_{}_layer_{}_round""".format(str(layer), str(server_round)), x_column='x', y_column='y', title='difference', y_lim=True, y_max=0.07)
+        print("Camada: ", layer, " y: ", pd.Series(difference_per_layer_vector[layer]).describe())
 
-        print("""similaridade (camada {}): {}""".format(i, mean_similarity_per_layer[i]))
+    print("""similaridade (camada {}): {}""".format(i, mean_similarity_per_layer[i]))
 
-    return similarity_per_layer, mean_similarity_per_layer, np.mean(layers_mean_similarity)
+    decimals_layer = decimals_per_layer(mean_difference_per_layer)
+    print("Diferença por camada: ", mean_difference_per_layer)
+    print("Decimals layer: ", decimals_layer)
+
+    return similarity_per_layer, mean_similarity_per_layer, np.mean(layers_mean_similarity), decimals_layer
+
+def decimals_per_layer(mean_difference_per_layer):
+
+    window = 1
+    precisions = {}
+    for layer in mean_difference_per_layer:
+
+        n1 = mean_difference_per_layer[layer]['min']
+        n2 = mean_difference_per_layer[layer]['max']
+        n = min([n1, n2])
+        zeros = 0
+
+        if not np.isnan(n):
+            n = str(n)
+            n = n.split(".")[1]
+
+            for digit in n:
+
+                if digit == "0":
+                    zeros += 1
+                else:
+                    break
+
+            precisions[layer] = zeros + window
+
+        else:
+            precisions[layer] = 9
+
+    return precisions

@@ -118,6 +118,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.mean_similarity_per_round = {}
 		self.similarity_between_layers_per_round = {}
 		self.similarity_between_layers_per_round_and_client = {}
+		self.decimals_per_layer = {}
 
 		super().__init__(fraction_fit=float(args.fraction_fit), min_available_clients=num_clients, min_fit_clients=num_clients, min_evaluate_clients=num_clients)
 
@@ -312,7 +313,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			# print("um: ", w)
 			# print("dois: ", w1)
 		parameters_aggregated = fl.common.ndarrays_to_parameters(aggregate(weights_results))
-		self.similarity_between_layers_per_round_and_client[server_round], self.similarity_between_layers_per_round[server_round], self.mean_similarity_per_round[server_round] = fedpredict_layerwise_similarity(fl.common.parameters_to_ndarrays(parameters_aggregated), clients_parameters, clients_ids)
+		self.similarity_between_layers_per_round_and_client[server_round], self.similarity_between_layers_per_round[server_round], self.mean_similarity_per_round[server_round], self.decimals_per_layer[server_round] = fedpredict_layerwise_similarity(fl.common.parameters_to_ndarrays(parameters_aggregated), clients_parameters, clients_ids, server_round)
 		# Aggregate custom metrics if aggregation fn was provided
 		metrics_aggregated = {}
 		if server_round == 1:

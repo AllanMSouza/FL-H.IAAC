@@ -188,6 +188,13 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			M = [i for i in range(len(parameters))]
 			n_layers = len(parameters)/2
 
+			size_list = []
+			for i in range(len(parameters)):
+				tamanho = get_size(parameters[i])
+				print("inicio camada: ", i, " tamanho: ", tamanho, " shape: ", parameters[i].shape)
+				size_list.append(tamanho)
+			print("Tamanho total parametros original: ", sum(size_list), sys.getsizeof(fl.common.ndarrays_to_parameters(parameters)))
+
 			print("quantidade de camadas: ", len(parameters), [i.shape for i in parameters], " comment: ", comment)
 			if self.fedpredict_clients_metrics[client_id]['first_round'] != -1:
 				# baixo-cima
@@ -209,12 +216,25 @@ class FedPredictBaseServer(FedAvgBaseServer):
 				new_parameters = []
 				for i in range(len(parameters)):
 					if i in M:
-						new_parameters.append(parameters[i])
+						decimals = self.decimals_per_layer[server_round][i]
+						print("decimais: ", decimals)
+						if decimals != 9:
+							print("parametros originais: ", get_size(parameters[i][0][0]))
+						new_parameters.append(np.round(parameters[i], decimals))
+						if decimals != 9:
+							print("parametros reduzidos: ", get_size(new_parameters[-1][0][0]))
 				parameters = new_parameters
 
 			# parameters = parameters[-2:]
-			print("quantidade de camadas retornadas: ", len(parameters), [i.shape for i in parameters])
+			print("quantidade de camadas retornadas: ", len(parameters), " nt: ", nt)
+			size_list = []
+			for i in range(len(parameters)):
+				tamanho = get_size(parameters[i])
+				print("final camada: ", i, " tamanho: ", tamanho, " shape: ", parameters[i].shape)
+				size_list.append(tamanho)
+
 			parameters = fl.common.ndarrays_to_parameters(parameters)
+			print("Tamanho total parametros depois: ", sum(size_list), sys.getsizeof(parameters))
 
 			return parameters, M
 

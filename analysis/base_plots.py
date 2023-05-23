@@ -71,6 +71,8 @@ def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_
 
     if ax is None:
         figure = figure.get_figure()
+        Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
+        Path(base_dir + "svg/").mkdir(parents=True, exist_ok=True)
         figure.savefig(base_dir + "png/" + file_name + log + ".png", bbox_inches='tight', dpi=400)
         figure.savefig(base_dir + "svg/" + file_name + log + ".svg", bbox_inches='tight', dpi=400)
 
