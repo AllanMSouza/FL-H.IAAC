@@ -8,7 +8,7 @@ import pandas as pd
 import math
 import torch
 import numpy as np
-from analysis.base_plots import line_plot
+from analysis.base_plots import line_plot, box_plot, ecdf_plot
 
 
 class CKA(object):
@@ -180,8 +180,8 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
                     difference = global_layer_k - client_layer_k
 
                     client_similarity.append(similarity)
-                    client_difference['min'].append(difference.min())
-                    client_difference['max'].append(difference.max())
+                    client_difference['min'].append(abs(difference.min()))
+                    client_difference['max'].append(abs(difference.max()))
                     difference_per_layer_vector[i] += np.absolute(difference).flatten().tolist()
                 print("Diferença min: ", i, k, j, difference[0][0])
                 # print("Diferença max: ", i, k, j, client_difference['max'])
@@ -216,8 +216,10 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
         mean_difference_per_layer[i]['max'] = np.mean(max_difference)
     for layer in difference_per_layer_vector:
         if layer in [0, 2]:
-            df = pd.DataFrame({'y': difference_per_layer_vector[layer], 'x': [i for i in range(len(difference_per_layer_vector[layer]))]})
-            line_plot(df=df, base_dir='', file_name="""difference_{}_layer_{}_round""".format(str(layer), str(server_round)), x_column='x', y_column='y', title='difference', y_lim=True, y_max=0.07)
+            df = pd.DataFrame({'Difference': difference_per_layer_vector[layer], 'x': [i for i in range(len(difference_per_layer_vector[layer]))]})
+            line_plot(df=df, base_dir='', file_name="""lineplot_difference_{}_layer_{}_round""".format(str(layer), str(server_round)), x_column='x', y_column='Difference', title='Difference between global and local parameters', y_lim=True, y_max=0.065)
+            box_plot(df=df, base_dir='', file_name="""boxplot_difference_{}_layer_{}_round""".format(str(layer), str(server_round)), x_column=None, y_column='Difference', title='Difference between global and local parameters', y_lim=True, y_max=0.065)
+            ecdf_plot(df=df, base_dir='', file_name="""ecdf_difference_{}_layer_{}_round""".format(str(layer), str(server_round)), x_column='Difference', y_column=None, title='Difference between global and local parameters', y_lim=True, y_max=0.065)
         print("Camada: ", layer, " y: ", pd.Series(difference_per_layer_vector[layer]).describe())
 
     print("""similaridade (camada {}): {}""".format(i, mean_similarity_per_layer[i]))

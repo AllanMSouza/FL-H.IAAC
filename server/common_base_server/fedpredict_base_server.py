@@ -17,21 +17,22 @@ import shutil
 
 def get_size(parameter):
 	try:
-		#print("recebeu: ", parameter.shape, parameter.ndim)
-		if type(parameter) == np.float32:
-			#print("caso 1: ", map(sys.getsizeof, parameter))
-			return map(sys.getsizeof, parameter)
-		if parameter.ndim <= 2:
-			#print("Caso 2: ", sum(map(sys.getsizeof, parameter)))
-			return sum(map(sys.getsizeof, parameter))
-
-		else:
-			tamanho = 0
-			#print("Caso 3")
-			for i in range(len(parameter)):
-				tamanho += get_size(parameter[i])
-
-			return tamanho
+		# #print("recebeu: ", parameter.shape, parameter.ndim)
+		# if type(parameter) == np.float32:
+		# 	#print("caso 1: ", map(sys.getsizeof, parameter))
+		# 	return map(sys.getsizeof, parameter)
+		# if parameter.ndim <= 2:
+		# 	#print("Caso 2: ", sum(map(sys.getsizeof, parameter)))
+		# 	return sum(map(sys.getsizeof, parameter))
+		#
+		# else:
+		# 	tamanho = 0
+		# 	#print("Caso 3")
+		# 	for i in range(len(parameter)):
+		# 		tamanho += get_size(parameter[i])
+		#
+		# 	return tamanho
+		return parameter.nbytes
 	except Exception as e:
 		print("get_size")
 		print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
@@ -157,7 +158,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		size_of_parameters = []
 		parameters = fl.common.parameters_to_ndarrays(parameters)
 		for i in range(1, len(parameters)):
-			size_of_parameters.append(get_size(parameters[i - 1]) + get_size(parameters[i]))
+			size_of_parameters.append(get_size(parameters[i]))
 		for client_tuple in client_evaluate_list:
 			client = client_tuple[0]
 			client_id = str(client.cid)
@@ -218,18 +219,21 @@ class FedPredictBaseServer(FedAvgBaseServer):
 					if i in M:
 						decimals = self.decimals_per_layer[server_round][i]
 						print("decimais: ", decimals)
-						if decimals != 9:
-							print("parametros originais: ", get_size(parameters[i][0][0]))
-						new_parameters.append(np.round(parameters[i], decimals))
-						if decimals != 9:
-							print("parametros reduzidos: ", get_size(new_parameters[-1][0][0]))
+						print("parametros originais: ", parameters[i].nbytes, parameters[i].dtype)
+						if decimals <= 4:
+							data_type = np.half
+						else:
+							data_type = np.float32
+						new_parameters.append(parameters[i].astype(data_type))
+						print("parametros reduzidos: ", new_parameters[i].nbytes)
 				parameters = new_parameters
 
 			# parameters = parameters[-2:]
 			print("quantidade de camadas retornadas: ", len(parameters), " nt: ", nt)
 			size_list = []
 			for i in range(len(parameters)):
-				tamanho = get_size(parameters[i])
+				# tamanho = get_size(parameters[i])
+				tamanho = parameters[i].nbytes
 				print("final camada: ", i, " tamanho: ", tamanho, " shape: ", parameters[i].shape)
 				size_list.append(tamanho)
 

@@ -28,21 +28,22 @@ torch.manual_seed(0)
 
 def get_size(parameter):
 	try:
-		#print("recebeu: ", parameter.shape, parameter.ndim)
-		if type(parameter) == np.float32:
-			#print("caso 1: ", map(sys.getsizeof, parameter))
-			return map(sys.getsizeof, parameter)
-		if parameter.ndim <= 2:
-			#print("Caso 2: ", sum(map(sys.getsizeof, parameter)))
-			return sum(map(sys.getsizeof, parameter))
-
-		else:
-			tamanho = 0
-			#print("Caso 3")
-			for i in range(len(parameter)):
-				tamanho += get_size(parameter[i])
-
-			return tamanho
+		# #print("recebeu: ", parameter.shape, parameter.ndim)
+		# if type(parameter) == np.float32:
+		# 	#print("caso 1: ", map(sys.getsizeof, parameter))
+		# 	return map(sys.getsizeof, parameter)
+		# if parameter.ndim <= 2:
+		# 	#print("Caso 2: ", sum(map(sys.getsizeof, parameter)))
+		# 	return sum(map(sys.getsizeof, parameter))
+		#
+		# else:
+		# 	tamanho = 0
+		# 	#print("Caso 3")
+		# 	for i in range(len(parameter)):
+		# 		tamanho += get_size(parameter[i])
+		#
+		# 	return tamanho
+		return parameter.nbytes
 	except Exception as e:
 		print("get_size")
 		print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
