@@ -215,18 +215,19 @@ class FedPredictBaseServer(FedAvgBaseServer):
 					else:
 						M = fedpredict_core_layer_selection(t=server_round, T=20, nt=nt, n_layers=n_layers, size_per_layer=size_of_layers, mean_similarity_per_layer=mean_similarity_per_layer, mean_similarity=mean_similarity)
 				new_parameters = []
-				for i in range(len(parameters)):
-					if i in M:
-						decimals = self.decimals_per_layer[server_round][i]
-						print("decimais: ", decimals)
-						print("parametros originais: ", parameters[i].nbytes, parameters[i].dtype)
-						if decimals <= 4:
-							data_type = np.half
-						else:
-							data_type = np.float32
-						new_parameters.append(parameters[i].astype(data_type))
-						print("parametros reduzidos: ", new_parameters[i].nbytes)
-				parameters = new_parameters
+				if self.layer_selection_evaluate < 0:
+					for i in range(len(parameters)):
+						if i in M:
+							decimals = self.decimals_per_layer[server_round][i]
+							print("decimais: ", decimals)
+							print("parametros originais: ", parameters[i].nbytes, parameters[i].dtype)
+							if decimals <= 4:
+								data_type = np.half
+							else:
+								data_type = np.float32
+							new_parameters.append(parameters[i].astype(data_type))
+							print("parametros reduzidos: ", new_parameters[i].nbytes)
+					parameters = new_parameters
 
 			# parameters = parameters[-2:]
 			print("quantidade de camadas retornadas: ", len(parameters), " nt: ", nt)

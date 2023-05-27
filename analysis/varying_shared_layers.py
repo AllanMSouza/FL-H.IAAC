@@ -79,11 +79,13 @@ class Varying_Shared_layers:
         else:
             comment = 'set'
 
+        df['Shared layers'] = df['Shared layers'].astype(int)
         sort = {i: "" for i in df['Shared layers'].sort_values().unique().tolist()}
         shared_layers_list = df['Shared layers'].tolist()
+        print("Lista: ", shared_layers_list)
         for i in range(len(shared_layers_list)):
             shared_layer = str(shared_layers_list[i])
-            if shared_layer == "-1":
+            if "-1" in shared_layer:
                 shared_layers_list[i] = "FedPredict-v2"
                 sort[shared_layer] = shared_layers_list[i]
                 continue
@@ -222,7 +224,7 @@ class Varying_Shared_layers:
                   type=1,
                   log_scale=False,
                   y_lim=True,
-                  y_max=1500000,
+                  y_max=5000000,
                   y_min=0,
                   n=1)
 
