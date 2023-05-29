@@ -156,14 +156,15 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
     mean_similarity_per_layer = {i: {'mean': 0, 'ci': 0} for i in range(num_layers)}
     mean_difference_per_layer = {i: {'min': 0, 'max': 0} for i in range(num_layers)}
 
-    for j in range(num_clients):
+    for client_id in range(num_clients):
 
-        client = clients_parameters[j]
-        client_id = clients_ids[j]
+        client = clients_parameters[client_id]
+        client_id = clients_ids[client_id]
 
-        for i in range(num_layers):
-            client_layer = client[i]
-            global_layer = global_parameter[i]
+        for layer_index in range(num_layers):
+            print("Indice da camada: ", layer_index)
+            client_layer = client[layer_index]
+            global_layer = global_parameter[layer_index]
             if np.ndim(global_layer) == 1:
                 global_layer = np.reshape(global_layer, (len(global_layer), 1))
             if np.ndim(client_layer) == 1:
@@ -182,38 +183,52 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
                     client_similarity.append(similarity)
                     client_difference['min'].append(abs(difference.min()))
                     client_difference['max'].append(abs(difference.max()))
-                    difference_per_layer_vector[i] += np.absolute(difference).flatten().tolist()
-                print("Diferença min: ", i, k, j, difference[0][0])
+                    difference_per_layer_vector[layer_index] += np.absolute(difference).flatten().tolist()
+                print("Diferença min: ", layer_index, k, client_id, difference[0][0])
                 # print("Diferença max: ", i, k, j, client_difference['max'])
-                if i not in similarity_per_layer[client_id]:
-                    similarity_per_layer[client_id][i] = []
-                    difference_per_layer[client_id][i]['min'] = []
-                    difference_per_layer[client_id][i]['max'] = []
-                similarity_per_layer[client_id][i].append(np.mean(client_similarity))
-                difference_per_layer[client_id][i]['min'].append(abs(np.mean(client_difference['min'])))
-                difference_per_layer[client_id][i]['max'].append(abs(np.mean(client_difference['max'])))
+                if layer_index not in similarity_per_layer[client_id]:
+                    similarity_per_layer[client_id][layer_index] = []
+                    difference_per_layer[client_id][layer_index]['min'] = []
+                    difference_per_layer[client_id][layer_index]['max'] = []
+                similarity_per_layer[client_id][layer_index].append(np.mean(client_similarity))
+                difference_per_layer[client_id][layer_index]['min'].append(abs(np.mean(client_difference['min'])))
+                difference_per_layer[client_id][layer_index]['max'].append(abs(np.mean(client_difference['max'])))
             else:
             # for x, y in zip(global_layer, client_layer):
                 cka = CKA()
                 similarity = cka.linear_CKA(global_layer, client_layer)
-                similarity_per_layer[client_id][i] = similarity
+                similarity_per_layer[client_id][layer_index] = similarity
+                difference = global_layer[layer_index] - client_layer[layer_index]
+
+                client_difference = {'min': [], 'max': []}
+                client_difference['min'].append(abs(difference.min()))
+                client_difference['max'].append(abs(difference.max()))
+                difference_per_layer_vector[layer_index] += np.absolute(difference).flatten().tolist()
+                print("Diferença min: ", layer_index, client_id, difference[0])
+                # print("Diferença max: ", i, k, j, client_difference['max'])
+                if layer_index not in similarity_per_layer[client_id]:
+                    similarity_per_layer[client_id][layer_index] = []
+                    difference_per_layer[client_id][layer_index]['min'] = []
+                    difference_per_layer[client_id][layer_index]['max'] = []
+                difference_per_layer[client_id][layer_index]['min'].append(abs(np.mean(client_difference['min'])))
+                difference_per_layer[client_id][layer_index]['max'].append(abs(np.mean(client_difference['max'])))
 
     layers_mean_similarity = []
-    for i in range(num_layers):
+    for layer_index in range(num_layers):
         similarities = []
         min_difference = []
         max_difference = []
         for client_id in clients_ids:
-            similarities.append(similarity_per_layer[client_id][i])
-            min_difference += difference_per_layer[client_id][i]['min']
-            max_difference += difference_per_layer[client_id][i]['max']
+            similarities.append(similarity_per_layer[client_id][layer_index])
+            min_difference += difference_per_layer[client_id][layer_index]['min']
+            max_difference += difference_per_layer[client_id][layer_index]['max']
 
         mean = np.mean(similarities)
         layers_mean_similarity.append(mean)
-        mean_similarity_per_layer[i]['mean'] = mean
-        mean_similarity_per_layer[i]['ci'] = st.norm.interval(alpha=0.95, loc=np.mean(similarities), scale=st.sem(similarities))[1] - np.mean(similarities)
-        mean_difference_per_layer[i]['min'] = np.mean(min_difference)
-        mean_difference_per_layer[i]['max'] = np.mean(max_difference)
+        mean_similarity_per_layer[layer_index]['mean'] = mean
+        mean_similarity_per_layer[layer_index]['ci'] = st.norm.interval(alpha=0.95, loc=np.mean(similarities), scale=st.sem(similarities))[1] - np.mean(similarities)
+        mean_difference_per_layer[layer_index]['min'] = np.mean(min_difference)
+        mean_difference_per_layer[layer_index]['max'] = np.mean(max_difference)
     for layer in difference_per_layer_vector:
         if layer in [0, 2]:
             df = pd.DataFrame({'Difference': difference_per_layer_vector[layer], 'x': [i for i in range(len(difference_per_layer_vector[layer]))]})
@@ -222,7 +237,7 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
             ecdf_plot(df=df, base_dir='', file_name="""ecdf_difference_{}_layer_{}_round""".format(str(layer), str(server_round)), x_column='Difference', y_column=None, title='Difference between global and local parameters', y_lim=True, y_max=0.065)
         print("Camada: ", layer, " y: ", pd.Series(difference_per_layer_vector[layer]).describe())
 
-    print("""similaridade (camada {}): {}""".format(i, mean_similarity_per_layer[i]))
+    print("""similaridade (camada {}): {}""".format(layer_index, mean_similarity_per_layer[layer_index]))
 
     decimals_layer = decimals_per_layer(mean_difference_per_layer)
     print("Diferença por camada: ", mean_difference_per_layer)
