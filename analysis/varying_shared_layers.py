@@ -170,7 +170,7 @@ class Varying_Shared_layers:
             acc = df['Accuracy (%)'].tolist()[0]
             size = df['Communication cost (bytes)'].tolist()[0]
             acc_reduction = target_acc - acc
-            size_reduction = target_size - size
+            size_reduction = (target_size - size)/1000000
             # acc_weight = 1
             # size_weight = 1
             # acc_score = acc_score *acc_weight
@@ -180,12 +180,12 @@ class Varying_Shared_layers:
             #     acc_reduction = 0.0001
             #     size_reduction = 0.0001
 
-            return pd.DataFrame({'Accuracy reduction (%)': [acc_reduction], 'Communication reduction (bytes)': [size_reduction]})
+            return pd.DataFrame({'Accuracy reduction (%)': [acc_reduction], 'Communication reduction (MB)': [size_reduction]})
 
         df = df[['Accuracy (%)', 'Size of parameters (bytes)', 'Communication cost (bytes)', 'Strategy', 'Shared layers',
              'Round', 'Accuracy gain per byte']].groupby(
             by=['Strategy', 'Round', 'Shared layers']).apply(lambda e: comparison_with_shared_layers(e, df)).reset_index()[
-            ['Strategy', 'Round', 'Shared layers', 'Accuracy reduction (%)', 'Communication reduction (bytes)']]
+            ['Strategy', 'Round', 'Shared layers', 'Accuracy reduction (%)', 'Communication reduction (MB)']]
 
         print("Final: ", df)
         df = df[df['Shared layers'] != "{1, 2, 3, 4}"]
@@ -211,7 +211,7 @@ class Varying_Shared_layers:
                   y_min=-3)
 
         x_column = 'Round'
-        y_column = 'Communication reduction (bytes)'
+        y_column = 'Communication reduction (MB)'
         hue = 'Shared layers'
         line_plot(df=df,
                   base_dir=base_dir,
@@ -222,9 +222,9 @@ class Varying_Shared_layers:
                   hue=hue,
                   hue_order=layer_selection_evaluate,
                   type=1,
-                  log_scale=False,
-                  y_lim=True,
-                  y_max=5000000,
+                  log_scale=True,
+                  y_lim=False,
+                  y_max=4,
                   y_min=0,
                   n=1)
 
@@ -242,7 +242,7 @@ if __name__ == '__main__':
     num_clients = 20
     model_name = "CNN"
     dataset = "CIFAR10"
-    alpha = float(0.1)
+    alpha = float(2)
     num_rounds = 20
     epochs = 1
     # layer_selection_evaluate = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]

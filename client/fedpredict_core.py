@@ -230,11 +230,10 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
         mean_difference_per_layer[layer_index]['min'] = np.mean(min_difference)
         mean_difference_per_layer[layer_index]['max'] = np.mean(max_difference)
     for layer in difference_per_layer_vector:
-        if layer in [0, 2]:
-            df = pd.DataFrame({'Difference': difference_per_layer_vector[layer], 'x': [i for i in range(len(difference_per_layer_vector[layer]))]})
-            line_plot(df=df, base_dir='', file_name="""lineplot_difference_{}_layer_{}_round""".format(str(layer), str(server_round)), x_column='x', y_column='Difference', title='Difference between global and local parameters', y_lim=True, y_max=0.065)
-            box_plot(df=df, base_dir='', file_name="""boxplot_difference_{}_layer_{}_round""".format(str(layer), str(server_round)), x_column=None, y_column='Difference', title='Difference between global and local parameters', y_lim=True, y_max=0.065)
-            ecdf_plot(df=df, base_dir='', file_name="""ecdf_difference_{}_layer_{}_round""".format(str(layer), str(server_round)), x_column='Difference', y_column=None, title='Difference between global and local parameters', y_lim=True, y_max=0.065)
+        df = pd.DataFrame({'Difference': difference_per_layer_vector[layer], 'x': [i for i in range(len(difference_per_layer_vector[layer]))]})
+        line_plot(df=df, base_dir='', file_name="""lineplot_difference_{}_layer_{}_round""".format(str(layer), str(server_round)), x_column='x', y_column='Difference', title='Difference between global and local parameters', y_lim=True, y_max=0.065)
+        box_plot(df=df, base_dir='', file_name="""boxplot_difference_{}_layer_{}_round""".format(str(layer), str(server_round)), x_column=None, y_column='Difference', title='Difference between global and local parameters', y_lim=True, y_max=0.065)
+        ecdf_plot(df=df, base_dir='', file_name="""ecdf_difference_{}_layer_{}_round""".format(str(layer), str(server_round)), x_column='Difference', y_column=None, title='Difference between global and local parameters', y_lim=True, y_max=0.065)
         print("Camada: ", layer, " y: ", pd.Series(difference_per_layer_vector[layer]).describe())
 
     print("""similaridade (camada {}): {}""".format(layer_index, mean_similarity_per_layer[layer_index]))
