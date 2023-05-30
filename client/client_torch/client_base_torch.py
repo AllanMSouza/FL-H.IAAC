@@ -383,7 +383,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				tamanho = get_size(parameters[i])
 				print("Client id: ", self.cid, " camada: ", i, " tamanho: ", tamanho, " shape: ", parameters[i].shape)
 				size_list.append(tamanho)
-			print("Tamanho total parametros evaluate: ", sum(size_list))
+			print("Tamanho total parametros evaluate: ", sum(size_list), " quantidade de camadas recebidas: ", len(parameters))
 			size_of_parameters = sum(size_list)
 			# size_of_parameters = sum([sum(map(sys.getsizeof, parameters[i])) for i in range(len(parameters))])
 			size_of_config = self._get_size_of_dict(config)
