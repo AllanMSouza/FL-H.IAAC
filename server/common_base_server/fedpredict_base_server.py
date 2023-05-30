@@ -197,6 +197,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			print("Tamanho total parametros original: ", sum(size_list), sys.getsizeof(fl.common.ndarrays_to_parameters(parameters)))
 
 			print("quantidade de camadas: ", len(parameters), [i.shape for i in parameters], " comment: ", comment)
+			print("layer selection evaluate: ", self.layer_selection_evaluate, self.comment)
 			if self.fedpredict_clients_metrics[client_id]['first_round'] != -1:
 				# baixo-cima
 				if comment == "":
@@ -225,7 +226,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 						else:
 							data_type = np.float32
 						new_parameters.append(parameters[i].astype(data_type))
-						print("parametros reduzidos: ", new_parameters[i].nbytes)
+						print("parametros reduzidos: ", parameters[i].nbytes)
 				parameters = new_parameters
 
 			# parameters = parameters[-2:]
