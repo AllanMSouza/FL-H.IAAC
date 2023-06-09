@@ -229,6 +229,7 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
         mean_similarity_per_layer[layer_index]['ci'] = st.norm.interval(alpha=0.95, loc=np.mean(similarities), scale=st.sem(similarities))[1] - np.mean(similarities)
         mean_difference_per_layer[layer_index]['min'] = np.mean(min_difference)
         mean_difference_per_layer[layer_index]['max'] = np.mean(max_difference)
+        print("""similaridade (camada {}): {}""".format(layer_index, mean_similarity_per_layer[layer_index]))
     for layer in difference_per_layer_vector:
         df = pd.DataFrame({'Difference': difference_per_layer_vector[layer], 'x': [i for i in range(len(difference_per_layer_vector[layer]))]})
         line_plot(df=df, base_dir='', file_name="""lineplot_difference_{}_layer_{}_round""".format(str(layer), str(server_round)), x_column='x', y_column='Difference', title='Difference between global and local parameters', y_lim=True, y_max=0.065)
@@ -236,7 +237,7 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
         ecdf_plot(df=df, base_dir='', file_name="""ecdf_difference_{}_layer_{}_round""".format(str(layer), str(server_round)), x_column='Difference', y_column=None, title='Difference between global and local parameters', y_lim=True, y_max=0.065)
         print("Camada: ", layer, " y: ", pd.Series(difference_per_layer_vector[layer]).describe())
 
-    print("""similaridade (camada {}): {}""".format(layer_index, mean_similarity_per_layer[layer_index]))
+
 
     decimals_layer = decimals_per_layer(mean_difference_per_layer)
     print("Diferença por camada: ", mean_difference_per_layer)

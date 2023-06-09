@@ -55,6 +55,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.train_perc = float(args.train_perc)
 		self.alpha = float(args.alpha)
 		self.layer_selection_evaluate = int(args.layer_selection_evaluate)
+		self.use_gradient = args.use_gradient
 		self.list_of_clients    = []
 		self.list_of_accuracies = []
 		self.selected_clients   = []
@@ -114,10 +115,11 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.clients_metrics = self._clients_metrics()
 		self.evaluate_config = {}
 		self._write_output_files_headers()
-		self.previous_global_parameters = None
+		self.previous_global_parameters = [[]]
 		self.mean_similarity_per_round = {}
 		self.similarity_between_layers_per_round = {}
 		self.similarity_between_layers_per_round_and_client = {}
+		self.model_shape = []
 		self.decimals_per_layer = {}
 
 		super().__init__(fraction_fit=float(args.fraction_fit), min_available_clients=num_clients, min_fit_clients=num_clients, min_evaluate_clients=num_clients)
@@ -188,7 +190,11 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		print("Iniciar configure fit")
 		self.start_time = time.process_time()
 		random.seed(server_round)
-		self.previous_global_parameters = fl.common.parameters_to_ndarrays(parameters)
+		self.previous_global_parameters.append(fl.common.parameters_to_ndarrays(parameters))
+		# if server_round == 2:
+		# 	for layer in self.previous_global_parameters:
+		# 		print("lat", layer)
+		# 		self.model_shape.append(layer.shape)
 
 		print("começo configure fit: ", len(fl.common.parameters_to_ndarrays(parameters)), server_round)
 
@@ -297,6 +303,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			client_id = str(fit_res.metrics['cid'])
 			clients_ids.append(client_id)
 			print("Parametros aggregate fit: ", len(fl.common.parameters_to_ndarrays(fit_res.parameters)))
+			print("Fit respons", fit_res.metrics)
 			clients_parameters.append(fl.common.parameters_to_ndarrays(fit_res.parameters))
 			if self.aggregation_method not in ['POC', 'FL-H.IAAC'] or int(server_round) <= 1:
 				weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples))
@@ -306,13 +313,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 					weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples))
 
 		#print(f'LEN AGGREGATED PARAMETERS: {len(weights_results)}')
-		for i in range(1, len(weights_results)):
-			w = weights_results[i-1][0][0]
-			w1 = weights_results[i][0][0]
-			# print("igual: ", np.nonzero(np.subtract(w, w1)))
-			# print("um: ", w)
-			# print("dois: ", w1)
-		parameters_aggregated = fl.common.ndarrays_to_parameters(aggregate(weights_results))
+		parameters_aggregated = fl.common.ndarrays_to_parameters(self._aggregate(weights_results))
 		self.similarity_between_layers_per_round_and_client[server_round], self.similarity_between_layers_per_round[server_round], self.mean_similarity_per_round[server_round], self.decimals_per_layer[server_round] = fedpredict_layerwise_similarity(fl.common.parameters_to_ndarrays(parameters_aggregated), clients_parameters, clients_ids, server_round)
 		# Aggregate custom metrics if aggregation fn was provided
 		metrics_aggregated = {}
@@ -507,6 +508,21 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 				selected_clients.append(self.list_of_clients[idx_accuracy])
 
 		return selected_clients
+
+	def _aggregate(self, parameters):
+
+		updated_global_parameters = aggregate(parameters)
+		if self.use_gradient:
+			last_global_model = self.previous_global_parameters[-1]
+			updated_global_parameters_layers = []
+			for global_layer, gradient_layer in zip(last_global_model, updated_global_parameters):
+				print("gggf", gradient_layer[0])
+				print("shapes: ", global_layer.shape, gradient_layer.shape)
+				updated_global_parameters_layers.append(global_layer + gradient_layer)
+			updated_global_parameters = updated_global_parameters_layers
+
+
+		return updated_global_parameters
 
 	def _calculate_mean_of_server_nt_acc(self, server_round):
 

@@ -213,6 +213,17 @@ class NonIid:
             return pd.DataFrame({'Size of parameters (MB)': [parameters], 'Communication cost (MB)': [total_size]})
         df_test = df[['Round', 'Size of parameters', 'Size of config', 'Strategy']].groupby('Strategy').apply(lambda e: strategy(e)).reset_index()[['Size of parameters (MB)', 'Communication cost (MB)', 'Strategy']]
         df_test.to_csv(self.base_dir+"csv/evaluate_client_size_of_parameters_round.csv", index=False)
+        strategies = df_test['Strategy'].unique().tolist()
+        hue_order = []
+        reference = []
+        for i in range(len(strategies)):
+            if "FedPredict" in strategies[i]:
+                reference = [strategies[i]]
+            else:
+                hue_order.append(strategies[i])
+        hue_order = reference + hue_order
+        print("ordem: ", hue_order)
+        df_test = df_test.sort_values('Size of parameters (MB)')
         print(df_test)
         print(self.base_dir)
         x_column = 'Strategy'
@@ -226,6 +237,7 @@ class NonIid:
                   y_column=y_column,
                   title=title,
                   hue=hue,
+                 hue_order=hue_order,
                  y_lim=True,
                  sci=True)
 
@@ -239,6 +251,7 @@ class NonIid:
                  y_column=y_column,
                  title=title,
                  hue=hue,
+                 hue_order=hue_order,
                  y_lim=True,
                  sci=True)
 

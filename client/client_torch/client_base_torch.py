@@ -1,6 +1,7 @@
 import flwr as fl
 import random
 import time
+import copy
 import numpy as np
 import torch
 import os
@@ -12,6 +13,7 @@ from model_definition_torch import DNN, Logistic, CNN, AlexNet
 from torchvision import models
 import csv
 import torch.nn as nn
+from utils.quantization.quantization import quantize_linear_symmetric
 from torch.utils.data import DataLoader
 from torch.utils.data import TensorDataset, DataLoader
 import warnings
@@ -84,6 +86,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			self.alpha = float(args.alpha)
 			self.comment = args.comment
 			self.layer_selection_evaluate = int(args.layer_selection_evaluate)
+			self.use_gradient = args.use_gradient
 
 			self.model        = None
 			self.x_train      = None
@@ -115,7 +118,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			if self.aggregation_method == 'POC':
 				self.solution_name = f"{solution_name}-{aggregation_method}-{self.perc_of_clients}"
 
-			elif self.aggregation_method == 'FL-H.IAAC':
+			elif self.aggregation_method == 'FedLTA':
 				self.solution_name = f"{solution_name}-{aggregation_method}-{self.decay}"
 
 			elif self.aggregation_method == 'None':
@@ -272,6 +275,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 			start_time = time.process_time()
 			server_round = int(config['round'])
+			if self.use_gradient:
+				original_parameters = copy.deepcopy(parameters)
 			if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
 				self.set_parameters_to_model_fit(parameters)
 				self.round_of_last_fit = server_round
@@ -326,8 +331,12 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				data=data)
 
 			fit_response = {
-				'cid': self.cid
+				'cid': self.cid,
+				'quantize': quantize_linear_symmetric(np.array([10, 2]), 3)
 			}
+
+			if self.use_gradient:
+				trained_parameters = [trained - original for trained, original in zip(trained_parameters, original_parameters)]
 
 			return trained_parameters, train_num, fit_response
 		except Exception as e:

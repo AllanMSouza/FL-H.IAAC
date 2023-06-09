@@ -1,6 +1,6 @@
 import flwr as fl
-from client import FedAvgClientTf, FedPerClientTf, FedProtoClientTf, FedLocalClientTf, FedAvgClientTorch, FedProtoClientTorch, FedPerClientTorch, FedLocalClientTorch, FedAvgMClientTorch, QFedAvgClientTorch, FedYogiClientTorch, FedClassAvgClientTorch, FedPredictClientTorch, FedPer_with_FedPredictClientTorch, FedClassAvg_with_FedPredictClientTorch, FedProxClientTorch
-from server import FedPerServerTf, FedProtoServerTf, FedAvgServerTf, FedLocalServerTf, FedAvgServerTorch, FedProtoServerTorch, FedPerServerTorch, FedLocalServerTorch, FedAvgMServerTorch, QFedAvgServerTorch, FedYogiServerTorch, FedClassAvgServerTorch, FedPredictServerTorch, FedPer_with_FedPredictServerTorch, FedClassAvg_with_FedPredictServerTorch, FedProxServerTorch
+from client import FedAvgClientTf, FedPerClientTf, FedProtoClientTf, FedLocalClientTf, FedAvgClientTorch, FedProtoClientTorch, FedPerClientTorch, FedLocalClientTorch, FedAvgMClientTorch, QFedAvgClientTorch, FedYogiClientTorch, FedClassAvgClientTorch, FedPredictClientTorch, FedPer_with_FedPredictClientTorch, FedClassAvg_with_FedPredictClientTorch, FedProxClientTorch, FedPAQClientTorch, FetSGDClientTorch
+from server import FedPerServerTf, FedProtoServerTf, FedAvgServerTf, FedLocalServerTf, FedAvgServerTorch, FedProtoServerTorch, FedPerServerTorch, FedLocalServerTorch, FedAvgMServerTorch, QFedAvgServerTorch, FedYogiServerTorch, FedClassAvgServerTorch, FedPredictServerTorch, FedPer_with_FedPredictServerTorch, FedClassAvg_with_FedPredictServerTorch, FedProxServerTorch, FedPAQServerTorch, FetSGDServerTorch
 
 from optparse import OptionParser
 import tensorflow as tf
@@ -326,6 +326,40 @@ class SimulationFL():
 										  non_iid=self.non_iid,
 										  new_clients=self.new_clients,
 										  new_clients_train=self.new_clients_train)
+			elif self.strategy_name == "FedPAQ":
+				return FedPAQClientTorch(cid=cid,
+										 args=self.args,
+										 n_clients=self.n_clients,
+										 n_classes=self.n_classes,
+										 model_name=self.model_name,
+										 client_selection=self.client_selection,
+										 epochs=self.epochs,
+										 strategy_name=self.strategy_name,
+										 aggregation_method=self.aggregation_method,
+										 dataset=self.dataset,
+										 perc_of_clients=self.poc,
+										 fraction_fit=self.fraction_fit,
+										 decay=self.decay,
+										 non_iid=self.non_iid,
+										 new_clients=self.new_clients,
+										 new_clients_train=self.new_clients_train)
+			elif self.strategy_name == "FetchSGD":
+				return FetSGDClientTorch(cid=cid,
+										 args=self.args,
+										 n_clients=self.n_clients,
+										 n_classes=self.n_classes,
+										 model_name=self.model_name,
+										 client_selection=self.client_selection,
+										 epochs=self.epochs,
+										 strategy_name=self.strategy_name,
+										 aggregation_method=self.aggregation_method,
+										 dataset=self.dataset,
+										 perc_of_clients=self.poc,
+										 fraction_fit=self.fraction_fit,
+										 decay=self.decay,
+										 non_iid=self.non_iid,
+										 new_clients=self.new_clients,
+										 new_clients_train=self.new_clients_train)
 			else:
 				return FedAvgClientTorch(cid=cid,
 										   args=self.args,
@@ -592,6 +626,36 @@ class SimulationFL():
 										new_clients=self.new_clients,
 										new_clients_train=self.new_clients_train,
 									  args=self.args)
+			elif self.strategy_name == "FedPAQ":
+				return FedPAQServerTorch(aggregation_method=self.aggregation_method,
+										 n_classes=self.n_classes,
+										 fraction_fit=self.fraction_fit,
+										 num_clients=self.n_clients,
+										 num_rounds=self.rounds,
+										 num_epochs=self.epochs,
+										 decay=self.decay,
+										 perc_of_clients=self.poc,
+										 strategy_name=self.strategy_name,
+										 dataset=self.dataset,
+										 model_name=self.model_name,
+										 new_clients=self.new_clients,
+										 new_clients_train=self.new_clients_train,
+										 args=self.args)
+			elif self.strategy_name == "FetchSGD":
+				return FetSGDServerTorch(aggregation_method=self.aggregation_method,
+										 n_classes=self.n_classes,
+										 fraction_fit=self.fraction_fit,
+										 num_clients=self.n_clients,
+										 num_rounds=self.rounds,
+										 num_epochs=self.epochs,
+										 decay=self.decay,
+										 perc_of_clients=self.poc,
+										 strategy_name=self.strategy_name,
+										 dataset=self.dataset,
+										 model_name=self.model_name,
+										 new_clients=self.new_clients,
+										 new_clients_train=self.new_clients_train,
+										 args=self.args)
 			else:
 				return FedAvgServerTorch(aggregation_method=self.aggregation_method,
 										n_classes=self.n_classes,
@@ -639,6 +703,7 @@ def main():
 	parser.add_option("",   "--poc",         		dest="poc",                default=0,         help="Percentage clients to be selected",      metavar="FLOAT")
 	parser.add_option("",   "--decay",       		dest="decay",              default=0,         help="Decay factor for FL-H.IAAC",                metavar="FLOAT")
 	parser.add_option("",   "--non-iid",     		dest="non_iid",            default=False,     help="Non IID distribution",                   metavar="BOOLEAN")
+	parser.add_option("", "--use_gradient", dest="use_gradient", default=False, help="Whether to send gradient", metavar="BOOLEAN")
 	parser.add_option("", "--m_combining_layers", dest="m_combining_layers", default=1, help="Number of layers to combine from the last/prediction layer to the top", metavar="INT")
 	parser.add_option("", "--fraction_fit", dest="fraction_fit", default=0, help="fraction of selected clients to be trained", metavar="FLOAT")
 	parser.add_option("-y", "--classes",     		dest="n_classes",          default=10,        help="Number of classes",                      metavar="INT")

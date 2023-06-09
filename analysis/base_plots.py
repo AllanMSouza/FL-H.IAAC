@@ -6,7 +6,7 @@ import numpy as np
 
 # sns.color_palette()
 
-def bar_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, y_lim=False, log_scale=False, sci=False):
+def bar_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, hue_order=None, y_lim=False, log_scale=False, sci=False):
     Path(base_dir).mkdir(parents=True, exist_ok=True)
     max_value = df[y_column].max()
     fig, ax = plt.subplots()
@@ -27,7 +27,7 @@ def bar_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, y_lim
         y_max = float(max_value*1.1)
         plt.ylim([0, y_max])
 
-    figure = sns.barplot(x=x_column, y=y_column, data=df).set_title(title)
+    figure = sns.barplot(x=x_column, y=y_column, data=df, hue_order=hue_order).set_title(title)
     for bars in ax.containers:
         ax.bar_label(bars)
     figure = figure.get_figure()
