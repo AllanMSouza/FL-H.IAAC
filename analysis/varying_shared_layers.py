@@ -189,7 +189,7 @@ class Varying_Shared_layers:
 
         print("Final: ", df)
         df = df[df['Shared layers'] != "{1, 2, 3, 4}"]
-        layer_selection_evaluate =  ['FedPredict-v2', '{1}', '{4}', '{1, 2}']
+        layer_selection_evaluate =  ['FedPredict-v2', '{1}', '{1, 2}']
         print("menor: ", df['Accuracy reduction (%)'].min())
         print("Fed", df[df['Shared layers'] == 'FedPredict-v2'][['Accuracy reduction (%)', 'Round']])
 
@@ -223,7 +223,7 @@ class Varying_Shared_layers:
                   hue_order=layer_selection_evaluate,
                   type=1,
                   log_scale=True,
-                  y_lim=False,
+                  y_lim=True,
                   y_max=4,
                   y_min=0,
                   n=1)
@@ -248,7 +248,7 @@ if __name__ == '__main__':
     # layer_selection_evaluate = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
     #layer_selection_evaluate = [1, 12, 123, 1234]
     # layer_selection_evaluate = [4, 34, 234, 1234]
-    layer_selection_evaluate = [-1, 1, 12, 4, 1234]
+    layer_selection_evaluate = [-1, 1, 12, 1234]
     comment = "set"
 
     Varying_Shared_layers(tp=type_model, strategy_name=strategy, fraction_fit=fraction_fit, aggregation_method=aggregation_method, new_clients=False, new_clients_train=False, num_clients=num_clients,

@@ -11,6 +11,7 @@ from server.common_base_server.fedclassavg_with_fedpredict_base_server import Fe
 from server.common_base_server.fedprox_base_server import FedProxBaseServer
 from server.common_base_server.fedpaq_base_server import FedPAQBaseServer
 from server.common_base_server.fetsgd_base_server import FetchSGDBaseServer
+from server.common_base_server.fedkd_base_server import FedKDBaseServer
 
 __all__ = [
     'FedAvgBaseServer',
@@ -25,5 +26,6 @@ __all__ = [
     "FedClassAvg_with_FedPredictBaseServer",
     "FedProxBaseServer",
     "FedPAQBaseServer",
-    "FetchSGDBaseServer"
+    "FetchSGDBaseServer",
+    "FedKDBaseServer"
     ]

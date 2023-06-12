@@ -6,7 +6,7 @@ import time
 import csv
 import random
 import copy
-from utils.quantization.fetsgd import layers_sketching
+from utils.quantization.parameters_svd import paramete_svd
 from logging import WARNING
 from flwr.common import FitIns
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
@@ -25,12 +25,12 @@ from flwr.common import (
     parameters_to_ndarrays,
 )
 
-from server.common_base_server.fedper_base_server import FedPerBaseServer
+from server.common_base_server import FedAvgBaseServer
 
 from pathlib import Path
 import shutil
 
-class FetchSGDBaseServer(FedPerBaseServer):
+class FedKDBaseServer(FedAvgBaseServer):
 
 	def __init__(self,
 				 aggregation_method,
@@ -44,7 +44,7 @@ class FetchSGDBaseServer(FedPerBaseServer):
 				 decay=0,
 				 perc_of_clients=0,
 				 dataset='',
-				 strategy_name='FedPAQ',
+				 strategy_name='FedKD',
 				 non_iid=False,
 				 model_name='',
 				 new_clients=False,
@@ -86,7 +86,7 @@ class FetchSGDBaseServer(FedPerBaseServer):
 
 			parameters_to_send = ndarrays_to_parameters(parameters)
 			if server_round >= 1:
-				parameters_to_send = ndarrays_to_parameters(layers_sketching(parameters, 0.8))
+				parameters_to_send = ndarrays_to_parameters(paramete_svd(parameters, 0.5))
 			evaluate_ins = fl.common.EvaluateIns(parameters_to_send, config)
 			client_evaluate_list_fedpredict.append((client, evaluate_ins))
 
