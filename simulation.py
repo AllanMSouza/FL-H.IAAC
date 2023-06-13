@@ -750,9 +750,11 @@ def main():
 	parser.add_option("--alpha", help="Dirichlet alpha parameter", default=0.1)
 	parser.add_option("--T", help="T parameter for FedPredict", default=0)
 	parser.add_option("--comment", help="comment for additional iformation of the experiment", default="")
+	parser.add_option("--n_rate", help="n components rate", default=0)
 	parser.add_option("--layer_selection_evaluate", help="", default=0)
 
 	(opt, args) = parser.parse_args()
+	opt.n_rate = float(opt.comment)
 
 	print("Simulacao da estratégia: ", opt.strategy_name, opt.fraction_fit)
 	simulation = SimulationFL(n_clients=int(opt.n_clients), aggregation_method=opt.aggregation_method, model_name=opt.model_name,

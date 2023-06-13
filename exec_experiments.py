@@ -48,13 +48,13 @@ DATASETS = ['CIFAR10']
 # DATASETS      					= ['UCIHAR', 'MotionSense']
 MODELS = ['CNN']
 ALGORITHMS = ['None', 'POC', 'FedLTA']
-EPOCHS = {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2], '6': [1], '7': [1], '8': [1], '9': [1], '10': [1], '11': [1], '12': [1], '13': [1], '14': [1], '15': [1], '16': [1], '17': [1], '18': [1], '19': [1], '20': [1], '21': [1], '22': [1], '23': [1], '24': [1], '25': [1], '26': [1], '27': [1], '28': [1], '29': [1], '30': [1]}
+EPOCHS = {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2], '6': [1], '7': [1], '8': [1], '9': [1], '10': [1], '11': [1], '12': [1], '13': [1], '14': [1], '15': [1], '16': [1], '17': [1], '18': [1], '19': [1], '20': [1], '21': [1], '22': [1], '23': [1], '24': [1], '25': [1], '26': [1], '27': [1], '28': [1], '29': [1], '30': [1], '31': [1], '32': [1]}
 # CLIENTS       				= {'MNIST': 50, 'CIFAR10': 50, 'CIFAR100': 50, 'MotionSense': 50, 'UCIHAR': 50}
 CLASSES = {'MNIST': 10, 'CIFAR10': 10, 'Tiny-ImageNet': 100}
 CLIENTS = {'MNIST': [10], 'CIFAR10': [20], 'CIFAR100': [50], 'MotionSense': [24], 'UCIHAR': [30], 'Tiny-ImageNet': [2]}
-ALPHA = [0.1, 2]
+ALPHA = [0.1]
 # ALPHA = [1]
-FRACTION_FIT = {'None': [0.3], 'POC': [0], 'FedLTA': [0]}
+FRACTION_FIT = {'None': [0.4], 'POC': [0], 'FedLTA': [0]}
 POC = {'None': [0], 'POC': [0.2], 'FedLTA': [0]}
 DECAY = {'None': 0, 'POC': 0, 'FedLTA': 0.1}
 NEW_CLIENTS = {'None': ['FALSE'], 'POC': ['FALSE', 'TRUE']}
@@ -62,8 +62,8 @@ NEW_CLIENTS_TRAIN = {'FALSE': ['FALSE'], 'TRUE': ['FALSE', 'TRUE']}
 # DECAY         				= (0.001, 0.005, 0.009)
 ROUNDS = 20
 # STRATEGIES 					= ('FedPredict', 'FedPer', 'FedClassAvg', 'FedAVG', 'FedClassAvg_with_FedPredict', 'FedPer_with_FedPredict', 'FedProto', 'FedYogi', 'FedLocal',)
-STRATEGIES_FOR_ANALYSIS = ['FedPredict']
-STRATEGIES_TO_EXECUTE = ['FedPredict']
+STRATEGIES_FOR_ANALYSIS = ['FedKD', 'FedAVG']
+STRATEGIES_TO_EXECUTE = ['FedKD', 'FedAVG']
 
 EXPERIMENTS = {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '', 'layer_selection_evaluate': 4},
                2: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '', 'layer_selection_evaluate': 4},
@@ -117,7 +117,11 @@ EXPERIMENTS = {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train
                 29: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
                    'comment': 'set', 'layer_selection_evaluate': 134},
                 30: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-                   'comment': 'set', 'layer_selection_evaluate': -1}
+                   'comment': '0.3', 'layer_selection_evaluate': -1},
+                31: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
+                   'comment': '0.5', 'layer_selection_evaluate': -1},
+                32: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
+                   'comment': '0.7', 'layer_selection_evaluate': -1}
                }
 
 def execute_experiment(experiment, algorithm, new_client, new_client_train, comment, type, class_per_client, layer_selection_evaluate):

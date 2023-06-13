@@ -66,6 +66,8 @@ class FedKDBaseServer(FedAvgBaseServer):
 						 new_clients_train=new_clients_train,
 						 type=type)
 
+		self.n_rate = float(args.n_rate)
+
 	def configure_evaluate(self, server_round, parameters, client_manager):
 		client_evaluate_list = super().configure_evaluate(server_round, parameters, client_manager)
 		client_evaluate_list_fedpredict = []
@@ -86,7 +88,7 @@ class FedKDBaseServer(FedAvgBaseServer):
 
 			parameters_to_send = ndarrays_to_parameters(parameters)
 			if server_round >= 1:
-				parameters_to_send = ndarrays_to_parameters(paramete_svd(parameters, 0.5))
+				parameters_to_send = ndarrays_to_parameters(paramete_svd(parameters, self.n_rate))
 			evaluate_ins = fl.common.EvaluateIns(parameters_to_send, config)
 			client_evaluate_list_fedpredict.append((client, evaluate_ins))
 
