@@ -1,9 +1,10 @@
 import sys
 
+import numpy as np
 import torch
 
 from client.client_torch.client_base_torch import ClientBaseTorch
-from utils.quantization import QSGDCompressor
+from utils.quantization import min_max_quantization, min_max_dequantization
 
 
 import warnings
@@ -50,19 +51,38 @@ class FedPAQClientTorch(ClientBaseTorch):
                          new_clients_train=new_clients_train,
                          args=args)
 
+                self.bits = args.bits
+
 
         def fit(self, parameters, config):
             try:
                 results = []
                 trained_parameters, train_num, fit_response = super().fit(parameters, config)
-                for layer in trained_parameters:
+                for original_layer, layer_updated in zip(parameters, trained_parameters):
                 #     results.append(QSGDCompressor(5).compress(torch.from_numpy(layer)))
                 # print("com ", trained_parameters[0].shape, results[0])
-                    results.append(quantization(layer))
-                print("com ", trained_parameters[0].shape, results)
+                    if np.ndim(original_layer) >= 2:
+                        results.append(min_max_quantization(original_layer-layer_updated, self.bits))
+                    else:
+                        results.append(layer_updated)
 
                 return  trained_parameters, train_num, fit_response
 
             except Exception as e:
                 print("fit")
+                print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+        def evaluate(self, parameters, config):
+            try:
+
+                for i in range(len(parameters)):
+
+                    layer = parameters[i]
+                    if np.ndim(layer) >= 2:
+                        parameters[i] = min_max_dequantization(parameters[i])
+
+                return super().evaluate(parameters, config)
+
+            except Exception as e:
+                print("evaluate fedpaq")
                 print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)

@@ -11,20 +11,8 @@ def quantize_linear_symmetric(value, bits):
     value = np.round(value * scale)
     value = np.clip(value, qmin, qmax).astype(int)
     print("final: ", value)
-    novo = []
-    for e in value:
-        e = int(e)
-        print("Valor quantizado: ", e)
 
-        bits_resulted = BitArray(int=e, length=bits)
-        novo.append(bits_resulted)
-        print("bits resulted: ", bits_resulted, type(bits_resulted), sys.getsizeof(bits_resulted))
-        # Convertendo para um inteiro
-        number = bits_resulted.int
-        size = bits_resulted.length
-
-        print("Covertido de volta: ", number, " tamanho: ", size)  # Saída: 21
-    return bits_resulted
+    return value
 
 def quantize_linear_asymmetric(value, bits):
     qmin = -2**(bits - 1)
@@ -37,28 +25,28 @@ def quantize_linear_asymmetric(value, bits):
 
 def min_max_quantization(w, b):
 
-    print("or: ", w)
+    # print("or: ", w)
     mini = np.minimum(w.min(), 0)
     maxim = np.maximum(w.max(), 0)
     w = np.clip(w, mini, maxim)
-    print("de: ", w)
+    # print("de: ", w)
     s = (maxim - mini)/(2**b - 1)
     qmin = 0
     z = int(qmin + mini/s)
-    print("z: ", z)
+    # print("z: ", z)
 
     wq = (w/s + z).astype(int)
     # Criando um número de 5 bits
-    print("wq: ", wq)
-    for e in wq:
-        print("ola: ", e)
-        bits = BitArray(int=int(e), length=b)
-
-        # Convertendo para um inteiro
-        number = bits.int
-        size = bits.length
-
-        print(number, size)  # Saída: 21
+    # print("wq: ", wq)
+    # for e in wq:
+    #     print("ola: ", e)
+    #     bits = BitArray(int=int(e), length=b)
+    #
+    #     # Convertendo para um inteiro
+    #     number = bits.int
+    #     size = bits.length
+    #
+    #     print(number, size)  # Saída: 21
     return wq, s, z
 
 def min_max_dequantization(wq, s, z):
@@ -82,3 +70,8 @@ def min_max_dequantization(wq, s, z):
 # num_bytes = quantized_number.element_size() * quantized_number.numel()
 #
 # print(num_bytes)
+
+# a, s, z = min_max_quantization(np.array([5,10]),4)
+# b = min_max_dequantization(a, s, z)
+# print(a)
+# print(b)
