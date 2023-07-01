@@ -1,3 +1,4 @@
+from client.client_torch.client_base_torch import ClientBaseTorch
 from client.client_torch.fedproto_client_torch import FedProtoClientTorch
 from client.client_torch.fedavg_client_torch import FedAvgClientTorch
 from client.client_torch.fedper_client_torch import FedPerClientTorch
@@ -12,9 +13,10 @@ from client.client_torch.fedclassavg_with_fedpredict_client_torch import FedClas
 from client.client_torch.fedprox_client_torch import FedProxClientTorch
 from client.client_torch.fedpaq_client_torch import FedPAQClientTorch
 from client.client_torch.fetSGD_client_torch import FetSGDClientTorch
-from client.client_torch.fedkd_client_torch import FedKDlientTorch
+from client.client_torch.fedkd_client_torch import FedKDClientTorch
 
 __all__ = [
+    "ClientBaseTorch",
     "FedProtoClientTorch",
     "FedAvgClientTorch",
     "FedPerClientTorch",
@@ -29,5 +31,5 @@ __all__ = [
     "FedProxClientTorch",
     "FedPAQClientTorch",
     "FetSGDClientTorch",
-    "FedKDlientTorch"
+    "FedKDClientTorch"
 ]

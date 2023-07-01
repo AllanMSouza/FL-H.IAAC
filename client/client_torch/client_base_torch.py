@@ -71,8 +71,6 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 				 ):
 		try:
-
-			print("criar cliente")
 			self.cid          = int(cid)
 			self.n_clients    = n_clients
 			self.model_name   = model_name
@@ -140,9 +138,6 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 	def load_data(self, dataset_name, n_clients, batch_size=32):
 		try:
-			# print("y test")
-			# print(np.unique(y_test))
-			# exit()
 			if dataset_name in ['MNIST', 'CIFAR10', 'CIFAR100']:
 				x_train, y_train, x_test, y_test = ManageDatasets(self.cid, self.model_name).select_dataset(
 					dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid)

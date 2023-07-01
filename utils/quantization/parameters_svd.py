@@ -2,7 +2,7 @@ import  sys
 import numpy as np
 from sklearn.utils.extmath import randomized_svd
 
-def paramete_svd(arrays, n_components):
+def parameter_svd_write(arrays, n_components):
 
     try:
 
@@ -48,21 +48,21 @@ def svd(layer, n_components):
 
     try:
         np.random.seed(0)
-        print("ola: ", int(len(layer) * n_components), layer.shape, layer)
+        # print("ola: ", int(len(layer) * n_components), layer.shape, layer)
         U, Sigma, VT = randomized_svd(layer,
                                       n_components=int(len(layer) * n_components),
                                       n_iter=5,
                                       random_state=0)
 
-        print(U.shape, Sigma.shape, VT.T.shape)
-        return U, VT, Sigma
+        # print(U.shape, Sigma.shape, VT.T.shape)
+        return [U, VT, Sigma]
 
     except Exception as e:
         print("svd")
         print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, 0), type(e).__name__, e)
 
 
-def inverse_paramete_svd(arrays, model_shape):
+def inverse_parameter_svd_reading(arrays, model_shape):
     try:
 
         sketched_paramters = []

@@ -1,12 +1,12 @@
 import numpy as np
 import sys
-from server.common_base_server import FedAvgBaseServer
+from server.common_base_server import FedPAQBaseServer
 
 import torch
 from dataset_utils_torch import ManageDatasets
 from torch.utils.data import TensorDataset, DataLoader
 
-class FedPAQServerTorch(FedAvgBaseServer):
+class FedPAQServerTorch(FedPAQBaseServer):
 
     def __init__(self,
                  aggregation_method,

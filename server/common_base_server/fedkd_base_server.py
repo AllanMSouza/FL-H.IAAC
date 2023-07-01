@@ -6,7 +6,7 @@ import time
 import csv
 import random
 import copy
-from utils.quantization.parameters_svd import paramete_svd
+from utils.quantization.parameters_svd import parameter_svd_write
 from logging import WARNING
 from flwr.common import FitIns
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
@@ -88,7 +88,7 @@ class FedKDBaseServer(FedAvgBaseServer):
 
 			parameters_to_send = ndarrays_to_parameters(parameters)
 			if server_round >= 1:
-				parameters_to_send = ndarrays_to_parameters(paramete_svd(parameters, self.n_rate))
+				parameters_to_send = ndarrays_to_parameters(parameter_svd_write(parameters, self.n_rate))
 			evaluate_ins = fl.common.EvaluateIns(parameters_to_send, config)
 			client_evaluate_list_fedpredict.append((client, evaluate_ins))
 

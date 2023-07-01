@@ -2,9 +2,9 @@ import sys
 
 import numpy as np
 import torch
-
-from client.client_torch.client_base_torch import ClientBaseTorch
-from utils.quantization import min_max_quantization, min_max_dequantization
+from torch.nn.parameter import Parameter
+from client.client_torch import FedAvgClientTorch, ClientBaseTorch, FedPerClientTorch
+from utils.quantization import inverse_parameter_quantization_reading
 
 
 import warnings
@@ -13,7 +13,7 @@ warnings.simplefilter("ignore")
 import logging
 # logging.getLogger("torch").setLevel(logging.ERROR)
 
-class FedPAQClientTorch(ClientBaseTorch):
+class FedPAQClientTorch(FedAvgClientTorch):
 
         def __init__(self,
                  cid,
@@ -40,8 +40,8 @@ class FedPAQClientTorch(ClientBaseTorch):
                          epochs=epochs,
                          model_name=model_name,
                          client_selection=client_selection,
-                         solution_name=strategy_name,
                          aggregation_method=aggregation_method,
+                         strategy_name=strategy_name,
                          dataset=dataset,
                          perc_of_clients=perc_of_clients,
                          decay=decay,
@@ -53,36 +53,17 @@ class FedPAQClientTorch(ClientBaseTorch):
 
                 self.bits = args.bits
 
-
-        def fit(self, parameters, config):
+        def set_parameters_to_model_evaluate(self, global_parameters, config={}):
+            # Using 'torch.load'
             try:
-                results = []
-                trained_parameters, train_num, fit_response = super().fit(parameters, config)
-                for original_layer, layer_updated in zip(parameters, trained_parameters):
-                #     results.append(QSGDCompressor(5).compress(torch.from_numpy(layer)))
-                # print("com ", trained_parameters[0].shape, results[0])
-                    if np.ndim(original_layer) >= 2:
-                        results.append(min_max_quantization(original_layer-layer_updated, self.bits))
-                    else:
-                        results.append(layer_updated)
-
-                return  trained_parameters, train_num, fit_response
-
+                print("Dimensões: ", [i.detach().numpy().shape for i in self.model.parameters()])
+                print("Dimensões recebidas: ", [i.shape for i in global_parameters])
+                global_parameters = inverse_parameter_quantization_reading(global_parameters,
+                                                         [i.detach().numpy().shape for i in self.model.parameters()])
+                parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
+                for new_param, old_param in zip(parameters, self.model.parameters()):
+                    old_param.data = new_param.data.clone()
             except Exception as e:
-                print("fit")
-                print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
-
-        def evaluate(self, parameters, config):
-            try:
-
-                for i in range(len(parameters)):
-
-                    layer = parameters[i]
-                    if np.ndim(layer) >= 2:
-                        parameters[i] = min_max_dequantization(parameters[i])
-
-                return super().evaluate(parameters, config)
-
-            except Exception as e:
-                print("evaluate fedpaq")
-                print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+                print("Set parameters to model")
+                print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, self.cid), type(e).__name__,
+                      e)

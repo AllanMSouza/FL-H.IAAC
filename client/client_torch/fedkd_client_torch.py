@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import flwr
 import json
-from utils.quantization.parameters_svd import inverse_paramete_svd
+from utils.quantization.parameters_svd import inverse_parameter_svd_reading
 import os
 import sys
 import time
@@ -19,7 +19,7 @@ warnings.simplefilter("ignore")
 import logging
 # logging.getLogger("torch").setLevel(logging.ERROR)
 
-class FedKDlientTorch(FedAvgClientTorch):
+class FedKDClientTorch(FedAvgClientTorch):
 
 	def __init__(self,
 				 cid,
@@ -73,7 +73,7 @@ class FedKDlientTorch(FedAvgClientTorch):
 		try:
 			print("Dimensões: ", [i.detach().numpy().shape for i in self.model.parameters()])
 			print("Dimensões recebidas: ", [i.shape for i in global_parameters])
-			global_parameters = inverse_paramete_svd(global_parameters, [i.detach().numpy().shape for i in self.model.parameters()])
+			global_parameters = inverse_parameter_svd_reading(global_parameters, [i.detach().numpy().shape for i in self.model.parameters()])
 			parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
 			for new_param, old_param in zip(parameters, self.model.parameters()):
 				old_param.data = new_param.data.clone()

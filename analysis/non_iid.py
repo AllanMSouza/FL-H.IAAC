@@ -113,7 +113,8 @@ class NonIid:
         self.server_nt_acc_analysis()
         self.server_analysis(title)
         self.evaluate_client_analysis()
-        self.similarity_analysis("Alpha=" + str(self.alpha))
+        if "FedPredict" in self.strategy_name_list:
+            self.similarity_analysis("Alpha=" + str(self.alpha))
 
     def server_nt_acc_analysis(self):
 

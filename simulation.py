@@ -1,5 +1,5 @@
 import flwr as fl
-from client import FedAvgClientTf, FedPerClientTf, FedProtoClientTf, FedLocalClientTf, FedAvgClientTorch, FedProtoClientTorch, FedPerClientTorch, FedLocalClientTorch, FedAvgMClientTorch, QFedAvgClientTorch, FedYogiClientTorch, FedClassAvgClientTorch, FedPredictClientTorch, FedPer_with_FedPredictClientTorch, FedClassAvg_with_FedPredictClientTorch, FedProxClientTorch, FedPAQClientTorch, FetSGDClientTorch, FedKDlientTorch
+from client import FedAvgClientTf, FedPerClientTf, FedProtoClientTf, FedLocalClientTf, FedAvgClientTorch, FedProtoClientTorch, FedPerClientTorch, FedLocalClientTorch, FedAvgMClientTorch, QFedAvgClientTorch, FedYogiClientTorch, FedClassAvgClientTorch, FedPredictClientTorch, FedPer_with_FedPredictClientTorch, FedClassAvg_with_FedPredictClientTorch, FedProxClientTorch, FedPAQClientTorch, FetSGDClientTorch, FedKDClientTorch
 from server import FedPerServerTf, FedProtoServerTf, FedAvgServerTf, FedLocalServerTf, FedAvgServerTorch, FedProtoServerTorch, FedPerServerTorch, FedLocalServerTorch, FedAvgMServerTorch, QFedAvgServerTorch, FedYogiServerTorch, FedClassAvgServerTorch, FedPredictServerTorch, FedPer_with_FedPredictServerTorch, FedClassAvg_with_FedPredictServerTorch, FedProxServerTorch, FedPAQServerTorch, FetSGDServerTorch, FedKDServerTorch
 
 from optparse import OptionParser
@@ -361,22 +361,22 @@ class SimulationFL():
 										 new_clients=self.new_clients,
 										 new_clients_train=self.new_clients_train)
 			elif self.strategy_name == "FedKD":
-				return FedKDlientTorch(cid=cid,
-										 args=self.args,
-										 n_clients=self.n_clients,
-										 n_classes=self.n_classes,
-										 model_name=self.model_name,
-										 client_selection=self.client_selection,
-										 epochs=self.epochs,
-										 strategy_name=self.strategy_name,
-										 aggregation_method=self.aggregation_method,
-										 dataset=self.dataset,
-										 perc_of_clients=self.poc,
-										 fraction_fit=self.fraction_fit,
-										 decay=self.decay,
-										 non_iid=self.non_iid,
-										 new_clients=self.new_clients,
-										 new_clients_train=self.new_clients_train)
+				return FedKDClientTorch(cid=cid,
+										args=self.args,
+										n_clients=self.n_clients,
+										n_classes=self.n_classes,
+										model_name=self.model_name,
+										client_selection=self.client_selection,
+										epochs=self.epochs,
+										strategy_name=self.strategy_name,
+										aggregation_method=self.aggregation_method,
+										dataset=self.dataset,
+										perc_of_clients=self.poc,
+										fraction_fit=self.fraction_fit,
+										decay=self.decay,
+										non_iid=self.non_iid,
+										new_clients=self.new_clients,
+										new_clients_train=self.new_clients_train)
 			else:
 				return FedAvgClientTorch(cid=cid,
 										   args=self.args,
@@ -750,11 +750,12 @@ def main():
 	parser.add_option("--alpha", help="Dirichlet alpha parameter", default=0.1)
 	parser.add_option("--T", help="T parameter for FedPredict", default=0)
 	parser.add_option("--comment", help="comment for additional iformation of the experiment", default="")
-	parser.add_option("--n_rate", help="n components rate", default=0)
+	parser.add_option("--n_rate", help="n components rate", default=0.5)
+	parser.add_option("--bits", help="bits for quantization", default=8)
 	parser.add_option("--layer_selection_evaluate", help="", default=0)
 
 	(opt, args) = parser.parse_args()
-	opt.n_rate = float(opt.comment)
+	# opt.n_rate = float(opt.comment)
 
 	print("Simulacao da estratégia: ", opt.strategy_name, opt.fraction_fit)
 	simulation = SimulationFL(n_clients=int(opt.n_clients), aggregation_method=opt.aggregation_method, model_name=opt.model_name,
