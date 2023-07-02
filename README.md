@@ -80,7 +80,7 @@ model "DNN", 1 local epoch, 10 rounds, 50 clients, tf (TensorFlow) framework.
 
 ```python
 python simulation.py --strategy='FedPredict' --dataset='MNIST' --non-iid=True --model='DNN' 
- --epochs=1 --round=10 --client=50 --type='tf'
+ --epochs=1 --round=10 --client=10 --type='torch'
 ```
 
 
