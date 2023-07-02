@@ -310,6 +310,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 			else:
 				if client_id in self.selected_clients:
+					print("parametro recebido cliente: ", client_id, " parametro: ", len(fl.common.parameters_to_ndarrays(fit_res.parameters)))
 					weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples))
 
 		#print(f'LEN AGGREGATED PARAMETERS: {len(weights_results)}')
@@ -516,8 +517,8 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			last_global_model = self.previous_global_parameters[-1]
 			updated_global_parameters_layers = []
 			for global_layer, gradient_layer in zip(last_global_model, updated_global_parameters):
-				print("gggf", gradient_layer[0])
-				print("shapes: ", global_layer.shape, gradient_layer.shape)
+				# print("gggf", gradient_layer[0])
+				# print("shapes: ", global_layer.shape, gradient_layer.shape)
 				updated_global_parameters_layers.append(global_layer + gradient_layer)
 			updated_global_parameters = updated_global_parameters_layers
 

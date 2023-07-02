@@ -1,10 +1,11 @@
 import sys
+import time
 
 import numpy as np
 import torch
 from torch.nn.parameter import Parameter
 from client.client_torch import FedAvgClientTorch, ClientBaseTorch, FedPerClientTorch
-from utils.quantization import inverse_parameter_quantization_reading
+from utils.quantization import inverse_parameter_quantization_reading, parameters_quantization_write
 
 
 import warnings
@@ -53,17 +54,30 @@ class FedPAQClientTorch(FedAvgClientTorch):
 
                 self.bits = args.bits
 
-        def set_parameters_to_model_evaluate(self, global_parameters, config={}):
-            # Using 'torch.load'
-            try:
-                print("Dimensões: ", [i.detach().numpy().shape for i in self.model.parameters()])
-                print("Dimensões recebidas: ", [i.shape for i in global_parameters])
-                global_parameters = inverse_parameter_quantization_reading(global_parameters,
-                                                         [i.detach().numpy().shape for i in self.model.parameters()])
-                parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
-                for new_param, old_param in zip(parameters, self.model.parameters()):
-                    old_param.data = new_param.data.clone()
-            except Exception as e:
-                print("Set parameters to model")
-                print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, self.cid), type(e).__name__,
-                      e)
+        # def fit(self, parameters, config):
+        #     try:
+        #         print("fit do fedpaq")
+        #         trained_parameters, train_num, fit_response = super().fit(parameters, config)
+        #         # print("trained parameters: ", type(trained_parameters[0]))
+        #         # # trained_parameters = parameters_quantization_write(trained_parameters, self.bits)
+        #         # print("retornando: ", len(trained_parameters))
+        #         #
+        #         return trained_parameters, train_num, fit_response
+        #     except Exception as e:
+        #         print("fit fedpaq")
+        #         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+        # def set_parameters_to_model_evaluate(self, global_parameters, config={}):
+        #     # Using 'torch.load'
+        #     try:
+        #         print("Dimensões: ", [i.detach().numpy().shape for i in self.model.parameters()])
+        #         print("Dimensões recebidas: ", [i.shape for i in global_parameters])
+        #         global_parameters = inverse_parameter_quantization_reading(global_parameters,
+        #                                                  [i.detach().numpy().shape for i in self.model.parameters()])
+        #         parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
+        #         for new_param, old_param in zip(parameters, self.model.parameters()):
+        #             old_param.data = new_param.data.clone()
+        #     except Exception as e:
+        #         print("Set parameters to model")
+        #         print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, self.cid), type(e).__name__,
+        #               e)

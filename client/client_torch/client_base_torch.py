@@ -16,6 +16,7 @@ import torch.nn as nn
 from utils.quantization.quantization import quantize_linear_symmetric
 from torch.utils.data import DataLoader
 from torch.utils.data import TensorDataset, DataLoader
+from utils.quantization import inverse_parameter_quantization_reading, parameters_quantization_write
 import warnings
 warnings.simplefilter("ignore")
 
@@ -84,7 +85,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			self.alpha = float(args.alpha)
 			self.comment = args.comment
 			self.layer_selection_evaluate = int(args.layer_selection_evaluate)
-			self.use_gradient = args.use_gradient
+			self.use_gradient = bool(args.use_gradient)
 
 			self.model        = None
 			self.x_train      = None
@@ -261,6 +262,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 	def fit(self, parameters, config):
 		try:
+			print("começar")
 			selected_clients = []
 			trained_parameters = []
 			selected = 0
@@ -270,8 +272,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 			start_time = time.process_time()
 			server_round = int(config['round'])
-			if self.use_gradient:
-				original_parameters = copy.deepcopy(parameters)
+			original_parameters = copy.deepcopy(parameters)
 			if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
 				self.set_parameters_to_model_fit(parameters)
 				self.round_of_last_fit = server_round
@@ -326,12 +327,12 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				data=data)
 
 			fit_response = {
-				'cid': self.cid,
-				'quantize': quantize_linear_symmetric(np.array([10, 2]), 3)
+				'cid': self.cid
 			}
 
 			if self.use_gradient:
 				trained_parameters = [trained - original for trained, original in zip(trained_parameters, original_parameters)]
+				# trained_parameters = parameters_quantization_write(trained_parameters, 8)
 
 			return trained_parameters, train_num, fit_response
 		except Exception as e:
@@ -379,13 +380,14 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		try:
 			server_round = int(config['round'])
 			n_rounds = int(config['n_rounds'])
+			print("p recebidos: ", len(parameters))
 			self.set_parameters_to_model_evaluate(parameters, config)
 			# loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
 
 			size_list = []
 			for i in range(len(parameters)):
 				tamanho = get_size(parameters[i])
-				print("Client id: ", self.cid, " camada: ", i, " tamanho: ", tamanho, " shape: ", parameters[i].shape)
+				# print("Client id: ", self.cid, " camada: ", i, " tamanho: ", tamanho, " shape: ", parameters[i].shape)
 				size_list.append(tamanho)
 			print("Tamanho total parametros evaluate: ", sum(size_list), " quantidade de camadas recebidas: ", len(parameters))
 			size_of_parameters = sum(size_list)

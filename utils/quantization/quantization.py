@@ -10,7 +10,7 @@ def quantize_linear_symmetric(value, bits):
     scale = max(abs(qmin), abs(qmax)) / max(abs(np.min(value)), abs(np.max(value)))
     value = np.round(value * scale)
     value = np.clip(value, qmin, qmax).astype(int)
-    print("final: ", value)
+    print("Parameters after quantization: ", value)
 
     return value
 
@@ -86,7 +86,7 @@ def parameters_quantization_write(parameters, bits):
 
         for parameter in parameters:
             quantized_parameters_list += quantization(parameter, bits)
-
+        # print("quantizado: ", quantized_parameters_list[0])
         return quantized_parameters_list
 
     except Exception as e:
@@ -95,7 +95,7 @@ def parameters_quantization_write(parameters, bits):
 
 def inverse_parameter_quantization_reading(arrays, model_shape):
     try:
-
+        # print("Recebidos: ", model_shape, arrays[0])
         sketched_paramters = []
         reconstructed_model = []
         parameter_index = 0
@@ -108,7 +108,7 @@ def inverse_parameter_quantization_reading(arrays, model_shape):
             s = arrays[i*3 + 1]
 
             z = arrays[i*3 + 2]
-            print("teste", parameter.shape, s.shape, z.shape, layer_shape)
+            print("teste", parameter.shape, s.shape, z.shape, layer_shape, len(layer_shape))
             print("maior: ", i*3 + 2, len(arrays))
             parameter_layer = inverse_parameter_quantization(parameter, s, layer_shape, z)
             if parameter_layer is None:

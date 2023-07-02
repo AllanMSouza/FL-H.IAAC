@@ -285,7 +285,6 @@ class JointAnalysis():
 
         pocs = df['POC'].unique().tolist()
         accuracies_differences = []
-        print("entrou: ", df)
         accuracies_dict = {}
 
         for poc in pocs:

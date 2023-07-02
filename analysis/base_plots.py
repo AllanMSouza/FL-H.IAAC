@@ -23,7 +23,6 @@ def bar_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, hue_o
         ax.yaxis.set_major_formatter(formatter)
         ax.set_ylim([0, 130000])
     if y_lim:
-        print("entrou")
         y_max = float(max_value*1.1)
         plt.ylim([0, y_max])
 

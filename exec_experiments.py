@@ -44,7 +44,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 # Configurations
 TYPE = 'torch'
 # DATASETS      				= ['MNIST', 'CIFAR10', 'Tiny-ImageNet']
-DATASETS = ['CIFAR10']
+DATASETS = ['MNIST']
 # DATASETS      					= ['UCIHAR', 'MotionSense']
 MODELS = ['CNN']
 ALGORITHMS = ['None', 'POC', 'FedLTA']
@@ -55,15 +55,18 @@ CLIENTS = {'MNIST': [10], 'CIFAR10': [20], 'CIFAR100': [50], 'MotionSense': [24]
 ALPHA = [0.1]
 # ALPHA = [1]
 FRACTION_FIT = {'None': [0.4], 'POC': [0], 'FedLTA': [0]}
+SPECIFIC_PARAMETERS = {'FedAVG': {'use_gradient': '', 'bits': 8}, 'FedKD': {'use_gradient': '', 'bits': 8}, 'FedPAQ': {'use_gradient': 'True', 'bits': 8}}
 POC = {'None': [0], 'POC': [0.2], 'FedLTA': [0]}
 DECAY = {'None': 0, 'POC': 0, 'FedLTA': 0.1}
 NEW_CLIENTS = {'None': ['FALSE'], 'POC': ['FALSE', 'TRUE']}
 NEW_CLIENTS_TRAIN = {'FALSE': ['FALSE'], 'TRUE': ['FALSE', 'TRUE']}
 # DECAY         				= (0.001, 0.005, 0.009)
-ROUNDS = 20
+ROUNDS = 2
 # STRATEGIES 					= ('FedPredict', 'FedPer', 'FedClassAvg', 'FedAVG', 'FedClassAvg_with_FedPredict', 'FedPer_with_FedPredict', 'FedProto', 'FedYogi', 'FedLocal',)
-STRATEGIES_FOR_ANALYSIS = ['FedKD', 'FedAVG']
-STRATEGIES_TO_EXECUTE = ['FedKD', 'FedAVG']
+# STRATEGIES_FOR_ANALYSIS = ['FedKD', 'FedAVG', 'FedPAQ']
+# STRATEGIES_TO_EXECUTE = ['FedKD', 'FedAVG']
+STRATEGIES_FOR_ANALYSIS = ['FedAVG']
+STRATEGIES_TO_EXECUTE = ['FedAVG']
 
 EXPERIMENTS = {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '', 'layer_selection_evaluate': 4},
                2: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '', 'layer_selection_evaluate': 4},
@@ -117,7 +120,7 @@ EXPERIMENTS = {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train
                 29: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
                    'comment': 'set', 'layer_selection_evaluate': 134},
                 30: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-                   'comment': '0.3', 'layer_selection_evaluate': -1},
+                   'comment': 'set', 'layer_selection_evaluate': -1},
                 31: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
                    'comment': '0.5', 'layer_selection_evaluate': -1},
                 32: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
@@ -142,14 +145,15 @@ def execute_experiment(experiment, algorithm, new_client, new_client_train, comm
                                 for alpha in ALPHA:
                                     decay = DECAY[algorithm]
                                     for strategy in STRATEGIES_TO_EXECUTE:
+                                        use_gradient = SPECIFIC_PARAMETERS[strategy]['use_gradient']
 
                                         print(
                                             f'Starting {strategy} fraction_fit-{fraction_fit} simulation for {dataset} clients with {model} model ...',
                                             os.getcwd())
-                                        test_config = """python {}/simulation.py --dataset='{}' --model='{}' --strategy='{}' --epochs={} --round={} --client={} --type='{}' --non-iid={} --aggregation_method='{}' --fraction_fit={} --poc={} --new_clients={} --new_clients_train={} --decay={} --comment={} --class_per_client={} --alpha={} --layer_selection_evaluate={} --classes={}""".format(
+                                        test_config = """python {}/simulation.py --dataset='{}' --model='{}' --strategy='{}' --epochs={} --round={} --client={} --type='{}' --non-iid={} --aggregation_method='{}' --fraction_fit={} --poc={} --new_clients={} --new_clients_train={} --decay={} --comment={} --class_per_client={} --alpha={} --layer_selection_evaluate={} --classes={} --use_gradient={}""".format(
                                             os.getcwd(), dataset, model,
                                             strategy, epochs, ROUNDS, clients, TYPE, True, algorithm, fraction_fit, poc,
-                                            new_client, new_client_train, decay, comment, class_per_client, alpha, layer_selection_evaluate, classes)
+                                            new_client, new_client_train, decay, comment, class_per_client, alpha, layer_selection_evaluate, classes, use_gradient)
                                         print("=====================================\nExecutando... \n", test_config,
                                               "\n=====================================")
                                         # exit()
