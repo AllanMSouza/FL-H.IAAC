@@ -67,17 +67,17 @@ class FedPAQClientTorch(FedAvgClientTorch):
         #         print("fit fedpaq")
         #         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-        # def set_parameters_to_model_evaluate(self, global_parameters, config={}):
-        #     # Using 'torch.load'
-        #     try:
-        #         print("Dimensões: ", [i.detach().numpy().shape for i in self.model.parameters()])
-        #         print("Dimensões recebidas: ", [i.shape for i in global_parameters])
-        #         global_parameters = inverse_parameter_quantization_reading(global_parameters,
-        #                                                  [i.detach().numpy().shape for i in self.model.parameters()])
-        #         parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
-        #         for new_param, old_param in zip(parameters, self.model.parameters()):
-        #             old_param.data = new_param.data.clone()
-        #     except Exception as e:
-        #         print("Set parameters to model")
-        #         print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, self.cid), type(e).__name__,
-        #               e)
+        def set_parameters_to_model_evaluate(self, global_parameters, config={}):
+            # Using 'torch.load'
+            try:
+                print("Dimensões: ", [i.detach().numpy().shape for i in self.model.parameters()])
+                print("Dimensões recebidas: ", [i.shape for i in global_parameters])
+                global_parameters = inverse_parameter_quantization_reading(global_parameters,
+                                                         [i.detach().numpy().shape for i in self.model.parameters()])
+                parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
+                for new_param, old_param in zip(parameters, self.model.parameters()):
+                    old_param.data = new_param.data.clone()
+            except Exception as e:
+                print("Set parameters to model")
+                print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, self.cid), type(e).__name__,
+                      e)

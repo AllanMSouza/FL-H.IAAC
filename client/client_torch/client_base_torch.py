@@ -262,7 +262,6 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 	def fit(self, parameters, config):
 		try:
-			print("começar")
 			selected_clients = []
 			trained_parameters = []
 			selected = 0
@@ -309,9 +308,9 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			size_list = []
 			for i in range(len(parameters)):
 				tamanho = get_size(parameters[i])
-				print("Client id: ", self.cid, " camada: ", i, " tamanho: ", tamanho, " shape: ", parameters[i].shape)
+				# print("Client id: ", self.cid, " camada: ", i, " tamanho: ", tamanho, " shape: ", parameters[i].shape)
 				size_list.append(tamanho)
-			print("Tamanho total parametros fit: ", sum(size_list))
+			# print("Tamanho total parametros fit: ", sum(size_list))
 			size_of_parameters = sum(size_list)
 			# size_of_parameters = sum(
 			# 	[sum(map(sys.getsizeof, trained_parameters[i])) for i in range(len(trained_parameters))])
@@ -329,11 +328,11 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			fit_response = {
 				'cid': self.cid
 			}
-
+			print("use gradient: ", self.use_gradient)
 			if self.use_gradient:
 				trained_parameters = [trained - original for trained, original in zip(trained_parameters, original_parameters)]
 				# trained_parameters = parameters_quantization_write(trained_parameters, 8)
-
+				# print("quantizou: ", trained_parameters[0])
 			return trained_parameters, train_num, fit_response
 		except Exception as e:
 			print("fit")

@@ -27,7 +27,9 @@ def min_max_quantization(w, b):
 
     try:
 
-        # print("or: ", w)
+        print("or: ", w[0])
+        if np.sum(w) == 0:
+            return [w.astype(np.int8), 0, 0]
         mini = np.minimum(w.min(), 0)
         maxim = np.maximum(w.max(), 0)
         w = np.clip(w, mini, maxim)
@@ -37,7 +39,7 @@ def min_max_quantization(w, b):
         z = int(qmin + mini/s)
         # print("z: ", z)
 
-        wq = (w/s + z).astype(int)
+        wq = (w/s + z).astype(np.int8)
         # Criando um número de 5 bits
         # print("wq: ", wq)
         # for e in wq:
@@ -49,6 +51,7 @@ def min_max_quantization(w, b):
         #     size = bits.length
         #
         #     print(number, size)  # Saída: 21
+        print("or f: ", wq[0])
         return [wq, s, z]
 
     except Exception as e:
