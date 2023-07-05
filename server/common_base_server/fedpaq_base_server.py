@@ -101,33 +101,33 @@ class FedPAQBaseServer(FedAvgBaseServer):
 	#
 	# 	return parameters_aggregated, metrics_aggregated
 
-	def configure_evaluate(self, server_round, parameters, client_manager):
-
-		client_evaluate_list = super().configure_evaluate(server_round, parameters, client_manager)
-		client_evaluate_list_fedpredict = []
-		accuracy = 0
-		size_of_parameters = []
-		parameters = fl.common.parameters_to_ndarrays(parameters)
-
-		for i in range(1, len(parameters)):
-			size_of_parameters.append(parameters[i].nbytes)
-		for client_tuple in client_evaluate_list:
-			client = client_tuple[0]
-			client_id = str(client.cid)
-			config = copy.copy(self.evaluate_config)
-			config['total_server_rounds'] = self.num_rounds
-			try:
-				config['total_server_rounds'] = int(self.comment)
-			except:
-				pass
-
-			parameters_to_send = ndarrays_to_parameters(parameters)
-			if server_round >= 1:
-				parameters_to_send = ndarrays_to_parameters(parameters_quantization_write(parameters, self.n_bits))
-			evaluate_ins = fl.common.EvaluateIns(parameters_to_send, config)
-			client_evaluate_list_fedpredict.append((client, evaluate_ins))
-
-		return client_evaluate_list_fedpredict
-
-
-
+	# def configure_evaluate(self, server_round, parameters, client_manager):
+	#
+	# 	client_evaluate_list = super().configure_evaluate(server_round, parameters, client_manager)
+	# 	client_evaluate_list_fedpredict = []
+	# 	accuracy = 0
+	# 	size_of_parameters = []
+	# 	parameters = fl.common.parameters_to_ndarrays(parameters)
+	#
+	# 	for i in range(1, len(parameters)):
+	# 		size_of_parameters.append(parameters[i].nbytes)
+	# 	for client_tuple in client_evaluate_list:
+	# 		client = client_tuple[0]
+	# 		client_id = str(client.cid)
+	# 		config = copy.copy(self.evaluate_config)
+	# 		config['total_server_rounds'] = self.num_rounds
+	# 		try:
+	# 			config['total_server_rounds'] = int(self.comment)
+	# 		except:
+	# 			pass
+	#
+	# 		parameters_to_send = ndarrays_to_parameters(parameters)
+	# 		if server_round >= 1:
+	# 			parameters_to_send = ndarrays_to_parameters(parameters_quantization_write(parameters, self.n_bits))
+	# 		evaluate_ins = fl.common.EvaluateIns(parameters_to_send, config)
+	# 		client_evaluate_list_fedpredict.append((client, evaluate_ins))
+	#
+	# 	return client_evaluate_list_fedpredict
+	#
+	#
+	#

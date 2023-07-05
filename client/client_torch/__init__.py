@@ -14,6 +14,7 @@ from client.client_torch.fedprox_client_torch import FedProxClientTorch
 from client.client_torch.fedpaq_client_torch import FedPAQClientTorch
 from client.client_torch.fetSGD_client_torch import FetSGDClientTorch
 from client.client_torch.fedkd_client_torch import FedKDClientTorch
+from client.client_torch.feddistill_client_torch import FedDistillClientTorch
 
 __all__ = [
     "ClientBaseTorch",
@@ -31,5 +32,6 @@ __all__ = [
     "FedProxClientTorch",
     "FedPAQClientTorch",
     "FetSGDClientTorch",
-    "FedKDClientTorch"
+    "FedKDClientTorch",
+    "FedDistillClientTorch"
 ]

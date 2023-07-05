@@ -44,7 +44,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 # Configurations
 TYPE = 'torch'
 # DATASETS      				= ['MNIST', 'CIFAR10', 'Tiny-ImageNet']
-DATASETS = ['MNIST']
+DATASETS = ['CIFAR10']
 # DATASETS      					= ['UCIHAR', 'MotionSense']
 MODELS = ['CNN']
 ALGORITHMS = ['None', 'POC', 'FedLTA']
@@ -52,21 +52,21 @@ EPOCHS = {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2], '6': [1], '7': [1], 
 # CLIENTS       				= {'MNIST': 50, 'CIFAR10': 50, 'CIFAR100': 50, 'MotionSense': 50, 'UCIHAR': 50}
 CLASSES = {'MNIST': 10, 'CIFAR10': 10, 'Tiny-ImageNet': 100}
 CLIENTS = {'MNIST': [10], 'CIFAR10': [20], 'CIFAR100': [50], 'MotionSense': [24], 'UCIHAR': [30], 'Tiny-ImageNet': [2]}
-ALPHA = [0.1]
+ALPHA = [0.1, 2.0]
 # ALPHA = [1]
 FRACTION_FIT = {'None': [0.4], 'POC': [0], 'FedLTA': [0]}
-SPECIFIC_PARAMETERS = {'FedAVG': {'use_gradient': '', 'bits': 8}, 'FedKD': {'use_gradient': '', 'bits': 8}, 'FedPAQ': {'use_gradient': 'True', 'bits': 8}}
+SPECIFIC_PARAMETERS = {'FedAVG': {'use_gradient': '', 'bits': 8}, 'FedKD': {'use_gradient': '', 'bits': 8}, 'FedPAQ': {'use_gradient': 'True', 'bits': 8}, 'FedDistill': {'use_gradient': '', 'bits': 8}}
 POC = {'None': [0], 'POC': [0.2], 'FedLTA': [0]}
 DECAY = {'None': 0, 'POC': 0, 'FedLTA': 0.1}
 NEW_CLIENTS = {'None': ['FALSE'], 'POC': ['FALSE', 'TRUE']}
 NEW_CLIENTS_TRAIN = {'FALSE': ['FALSE'], 'TRUE': ['FALSE', 'TRUE']}
 # DECAY         				= (0.001, 0.005, 0.009)
-ROUNDS = 2
+ROUNDS = 20
 # STRATEGIES 					= ('FedPredict', 'FedPer', 'FedClassAvg', 'FedAVG', 'FedClassAvg_with_FedPredict', 'FedPer_with_FedPredict', 'FedProto', 'FedYogi', 'FedLocal',)
 # STRATEGIES_FOR_ANALYSIS = ['FedKD', 'FedAVG', 'FedPAQ']
 # STRATEGIES_TO_EXECUTE = ['FedKD', 'FedAVG']
-STRATEGIES_FOR_ANALYSIS = ['FedAVG']
-STRATEGIES_TO_EXECUTE = ['FedAVG']
+STRATEGIES_FOR_ANALYSIS = ['FedKD', 'FedAVG']
+STRATEGIES_TO_EXECUTE = ['FedKD', 'FedAVG']
 
 EXPERIMENTS = {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '', 'layer_selection_evaluate': 4},
                2: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '', 'layer_selection_evaluate': 4},
@@ -191,7 +191,7 @@ def main():
     experiment = EXPERIMENTS[int(opt.experiment_id)]
     execute_experiment(experiment=opt.experiment_id, algorithm=experiment['algorithm'], new_client=experiment['new_client'],
                        new_client_train=experiment['new_client_train'], comment=experiment['comment'], type=opt.type, class_per_client=experiment['class_per_client'], layer_selection_evaluate=experiment['layer_selection_evaluate'])
-    remove_lines("""execution_log/experiment_{}.txt""".format(opt.experiment_id))
+    # remove_lines("""execution_log/experiment_{}.txt""".format(opt.experiment_id))
 
 		
 		

@@ -13,6 +13,7 @@ from server.server_torch.fedprox_server_torch import FedProxServerTorch
 from server.server_torch.fedpaq_server_torch import FedPAQServerTorch
 from server.server_torch.fetSGD_server_torch import FetSGDServerTorch
 from server.server_torch.fedkd_server_torch import FedKDServerTorch
+from server.server_torch.feddistill_server_torch import FedDistillServerTorch
 
 __all__ = [
     "FedProtoServerTorch",
@@ -29,5 +30,6 @@ __all__ = [
     "FedProxServerTorch",
     "FedPAQServerTorch",
     "FetSGDServerTorch",
-    "FedKDServerTorch"
+    "FedKDServerTorch",
+    "FedDistillServerTorch"
 ]

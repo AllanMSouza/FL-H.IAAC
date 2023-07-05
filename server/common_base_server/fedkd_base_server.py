@@ -68,9 +68,21 @@ class FedKDBaseServer(FedAvgBaseServer):
 
 		self.n_rate = float(args.n_rate)
 
+		self.student_filename = """{}_student_saved_weights/{}/""".format(strategy_name.lower(), self.model_name)
+		self.teacher_filename = """{}_teacher_saved_weights/{}/""".format(strategy_name.lower(), self.model_name)
+		self.create_folder(self.student_filename)
+		self.create_folder(self.teacher_filename)
+
+
+	def create_folder(self, filename):
+		if Path(filename).exists():
+			shutil.rmtree(filename)
+		for i in range(self.num_clients):
+			Path("""{}{}/""".format(filename, i)).mkdir(parents=True, exist_ok=True)
+
 	def configure_evaluate(self, server_round, parameters, client_manager):
 		client_evaluate_list = super().configure_evaluate(server_round, parameters, client_manager)
-		client_evaluate_list_fedpredict = []
+		client_evaluate_list_fedkd = []
 		accuracy = 0
 		size_of_parameters = []
 		parameters = fl.common.parameters_to_ndarrays(parameters)
@@ -90,7 +102,7 @@ class FedKDBaseServer(FedAvgBaseServer):
 			if server_round >= 1:
 				parameters_to_send = ndarrays_to_parameters(parameter_svd_write(parameters, self.n_rate))
 			evaluate_ins = fl.common.EvaluateIns(parameters_to_send, config)
-			client_evaluate_list_fedpredict.append((client, evaluate_ins))
+			client_evaluate_list_fedkd.append((client, evaluate_ins))
 
-		return client_evaluate_list_fedpredict
+		return client_evaluate_list_fedkd
 

@@ -514,6 +514,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 		updated_global_parameters = aggregate(parameters)
 		if self.use_gradient:
+			print("usou o gradiente")
 			last_global_model = self.previous_global_parameters[-1]
 			updated_global_parameters_layers = []
 			for global_layer, gradient_layer in zip(last_global_model, updated_global_parameters):
