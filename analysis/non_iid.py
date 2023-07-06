@@ -160,7 +160,9 @@ class NonIid:
                   x_column=x_column,
                   y_column=y_column,
                   title=title,
-                  hue=hue)
+                  hue=hue,
+                  y_lim=True,
+                  y_max=60)
 
         x_column = 'Server round'
         y_column = 'Time (seconds)'

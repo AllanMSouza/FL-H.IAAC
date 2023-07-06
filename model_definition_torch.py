@@ -49,8 +49,6 @@ class DNN_proto(nn.Module):
 #         x = self.fc(x)
 #         x = F.log_softmax(x, dim=1)
 #         return x
-
-# ====================================================================================================================
 class DNN(nn.Module):
     def __init__(self, input_shape=1*28*28, mid_dim=100, num_classes=10):
         super(DNN, self).__init__()
@@ -60,6 +58,36 @@ class DNN(nn.Module):
     def forward(self, x):
         x = torch.flatten(x, 1)
         x = F.relu(self.fc1(x))
+        x = self.fc(x)
+        x = F.log_softmax(x, dim=1)
+        return x
+# ====================================================================================================================
+# ====================================================================================================================
+class DNN_student(nn.Module):
+    def __init__(self, input_shape=1*28*28, mid_dim=100, num_classes=10):
+        super(DNN_student, self).__init__()
+
+        self.fc1 = nn.Linear(input_shape, mid_dim)
+        self.fc = nn.Linear(mid_dim, num_classes)
+    def forward(self, x):
+        x = torch.flatten(x, 1)
+        x = F.relu(self.fc1(x))
+        x = self.fc(x)
+        x = F.log_softmax(x, dim=1)
+        return x
+# ====================================================================================================================
+
+class DNN_teacher(nn.Module):
+    def __init__(self, input_shape=1*28*28, mid_dim=100, num_classes=10):
+        super(DNN_teacher, self).__init__()
+
+        self.fc1 = nn.Linear(input_shape, mid_dim)
+        self.fc2 = nn.Linear(mid_dim, 50)
+        self.fc = nn.Linear(50, num_classes)
+    def forward(self, x):
+        x = torch.flatten(x, 1)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
         x = self.fc(x)
         x = F.log_softmax(x, dim=1)
         return x
