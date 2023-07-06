@@ -72,19 +72,20 @@ def inverse_parameter_svd_reading(arrays, model_shape):
         j = 0
         for i in range(len(model_shape)):
             layer_shape = model_shape[i]
-            print("i32: ", i*3+2)
+            # print("i32: ", i*3+2)
             u = arrays[i*3]
             v = arrays[i*3 + 1]
 
             si = arrays[i*3 + 2]
-            print("teste", u.shape, v.shape, si.shape, layer_shape)
-            print("maior: ", i*3 + 2, len(arrays))
+            # print("teste", u.shape, v.shape, si.shape, layer_shape)
+            # print("maior: ", i*3 + 2, len(arrays))
             if len(layer_shape) == 1:
                 parameter_layer = inverse_parameter_svd(u, v, layer_shape)
             else:
                 parameter_layer = inverse_parameter_svd(u, v, layer_shape, si)
             if parameter_layer is None:
-                print("Pos ", i, i*3)
+                # print("Pos ", i, i*3)
+                pass
             reconstructed_model.append(parameter_layer)
 
         return reconstructed_model
