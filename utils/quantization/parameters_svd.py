@@ -11,7 +11,7 @@ def parameter_svd_write(arrays, n_components):
         sigma_parameters = []
         arrays_compre = []
         for i in range(len(arrays)):
-            print("Indice da camada: ", i)
+            # print("Indice da camada: ", i)
             arrays_compre += parameter_svd(arrays[i], n_components)
 
         return arrays_compre
