@@ -144,8 +144,6 @@ class FedKDClientTorch(FedAvgClientTorch):
 
 	def set_parameters_to_model_fit(self, parameters):
 		try:
-			parameters = inverse_parameter_svd_reading(parameters, [i.detach().numpy().shape for i in
-																				  self.student_model.parameters()])
 			# 		parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
 			self.set_parameters_to_model(parameters)
 		except Exception as e:
@@ -297,8 +295,9 @@ class FedKDClientTorch(FedAvgClientTorch):
 
 			start_time = time.process_time()
 			server_round = int(config['round'])
-			original_parameters = copy.deepcopy(inverse_parameter_svd_reading(parameters, [i.detach().numpy().shape for i in
-																				  self.student_model.parameters()]))
+			parameters = inverse_parameter_svd_reading(parameters, [i.detach().numpy().shape for i in
+																				  self.student_model.parameters()])
+			original_parameters = copy.deepcopy(parameters)
 
 			if self.cid in selected_clients or self.client_selection == False or server_round == 1:
 				self.set_parameters_to_model_fit(parameters)
