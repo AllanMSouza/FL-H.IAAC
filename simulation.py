@@ -717,6 +717,7 @@ class SimulationFL():
 										 num_epochs=self.epochs,
 										 decay=self.decay,
 										 perc_of_clients=self.poc,
+										model=copy.deepcopy(self.create_client(0).create_model()),
 										 strategy_name=self.strategy_name,
 										 dataset=self.dataset,
 										 model_name=self.model_name,

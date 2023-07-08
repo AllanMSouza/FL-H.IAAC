@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import flwr
 import json
-from utils.quantization.parameters_svd import inverse_parameter_svd_reading
+from utils.quantization.parameters_svd import inverse_parameter_svd_reading, parameter_svd_write
 import os
 import sys
 import time
@@ -90,6 +90,7 @@ class FedKDClientTorch(FedAvgClientTorch):
 		self.T = int(args.T)
 		self.accuracy_of_last_round_of_fit = 0
 		self.start_server = 0
+		self.n_rate = float(args.n_rate)
 
 		self.teacher_model, self.student_model = self.create_model_distillation()
 		self.optimizer_student = torch.optim.SGD(self.student_model.parameters(), lr=self.learning_rate, momentum=0.9)
@@ -338,8 +339,7 @@ class FedKDClientTorch(FedAvgClientTorch):
 			print("use gradient: ", self.use_gradient)
 			if self.use_gradient:
 				trained_parameters = [trained - original for trained, original in zip(trained_parameters, original_parameters)]
-				# trained_parameters = parameters_quantization_write(trained_parameters, 8)
-				# print("quantizou: ", trained_parameters[0])
+			trained_parameters = parameter_svd_write(trained_parameters, self.n_rate)
 			return trained_parameters, train_num, fit_response
 		except Exception as e:
 			print("fit fedkd")

@@ -6,7 +6,7 @@ import time
 import csv
 import random
 import copy
-from utils.quantization.parameters_svd import parameter_svd_write
+from utils.quantization.parameters_svd import parameter_svd_write, inverse_parameter_svd_reading
 from logging import WARNING
 from flwr.common import FitIns
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
@@ -43,6 +43,7 @@ class FedKDBaseServer(FedAvgBaseServer):
 				 type,
 				 decay=0,
 				 perc_of_clients=0,
+				 model=None,
 				 dataset='',
 				 strategy_name='FedKD',
 				 non_iid=False,
@@ -72,6 +73,8 @@ class FedKDBaseServer(FedAvgBaseServer):
 		self.teacher_filename = """{}_teacher_saved_weights/{}/""".format(strategy_name.lower(), self.model_name)
 		self.create_folder(self.student_filename)
 		self.create_folder(self.teacher_filename)
+		self.model_shape = [i.detach().numpy().shape for i in model.parameters()]
+
 
 
 	def create_folder(self, filename):
@@ -106,6 +109,35 @@ class FedKDBaseServer(FedAvgBaseServer):
 			client_fit_list_fedkd.append((client, fit_ins))
 
 		return client_fit_list_fedkd
+
+	def aggregate_fit(self, server_round, results, failures):
+		weights_results = []
+		clients_parameters = []
+		clients_ids = []
+		print("Rodada: ", server_round, len(results))
+		for _, fit_res in results:
+			client_id = str(fit_res.metrics['cid'])
+			clients_ids.append(client_id)
+			print("Parametros aggregate fit: ", len(fl.common.parameters_to_ndarrays(fit_res.parameters)))
+			print("Fit respons", fit_res.metrics)
+			clients_parameters.append(inverse_parameter_svd_reading(fl.common.parameters_to_ndarrays(fit_res.parameters), self.model_shape))
+			if self.aggregation_method not in ['POC', 'FL-H.IAAC'] or int(server_round) <= 1:
+				weights_results.append((inverse_parameter_svd_reading(fl.common.parameters_to_ndarrays(fit_res.parameters), self.model_shape), fit_res.num_examples))
+
+			else:
+				if client_id in self.selected_clients:
+					print("parametro recebido cliente: ", client_id, " parametro: ", len(fl.common.parameters_to_ndarrays(fit_res.parameters)))
+					weights_results.append((inverse_parameter_svd_reading(fl.common.parameters_to_ndarrays(fit_res.parameters), self.model_shape), fit_res.num_examples))
+
+		#print(f'LEN AGGREGATED PARAMETERS: {len(weights_results)}')
+		parameters_aggregated = fl.common.ndarrays_to_parameters(self._aggregate(weights_results))
+		# self.similarity_between_layers_per_round_and_client[server_round], self.similarity_between_layers_per_round[server_round], self.mean_similarity_per_round[server_round], self.decimals_per_layer[server_round] = fedpredict_layerwise_similarity(fl.common.parameters_to_ndarrays(parameters_aggregated), clients_parameters, clients_ids, server_round)
+		# Aggregate custom metrics if aggregation fn was provided
+		metrics_aggregated = {}
+		if server_round == 1:
+			print("treinados rodada 1: ", self.clients_metrics)
+
+		return parameters_aggregated, metrics_aggregated
 
 	# def configure_evaluate(self, server_round, parameters, client_manager):
 	# 	client_evaluate_list = super().configure_evaluate(server_round, parameters, client_manager)

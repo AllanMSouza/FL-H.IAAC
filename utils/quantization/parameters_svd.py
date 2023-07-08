@@ -98,20 +98,20 @@ def inverse_parameter_svd_reading(arrays, model_shape):
 def inverse_parameter_svd(u, v, layer_index, sigma=None, sig_ind=None):
     try:
         if len(layer_index) == 1:
-            print("u1")
+            # print("u1")
             return u
         elif len(layer_index) == 2:
-            print("u2")
+            # print("u2")
             return np.matmul(u * sigma, v)
         elif len(layer_index) == 3:
-            print("u3")
+            # print("u3")
             layers_l = []
             for i in range(len(u)):
                 layers_l.append(np.matmul(u[i] * sigma[i], v[i]))
             return np.array(layers_l)
         elif len(layer_index) == 4:
             layers_l = []
-            print("u4")
+            # print("u4")
             for i in range(len(u)):
                 layers_j = []
                 for j in range(len(u[i])):
