@@ -91,7 +91,29 @@ class DNN_teacher(nn.Module):
         x = self.fc(x)
         x = F.log_softmax(x, dim=1)
         return x
-# ====================================================================================================================
+
+    # ====================================================================================================================
+
+class CNNDistillation(nn.Module):
+    def __init__(self, input_shape=1, mid_dim=256, num_classes=10):
+        try:
+            super(CNNDistillation, self).__init__()
+            self.student = CNN(input_shape=input_shape, mid_dim=mid_dim, num_classes=num_classes)
+            self.teacher = CNN(input_shape=input_shape, mid_dim=mid_dim, num_classes=num_classes)
+        except Exception as e:
+            print("CNNDistillation")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+    def forward(self, x):
+        try:
+            out_student = self.student(x)
+            out_teacher = self.teacher(x)
+            return out_student, out_teacher
+        except Exception as e:
+            print("CNNDistillation forward")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+        # ====================================================================================================================
 # melhor 3
 class CNN(nn.Module):
     def __init__(self, input_shape=1, mid_dim=256, num_classes=10):

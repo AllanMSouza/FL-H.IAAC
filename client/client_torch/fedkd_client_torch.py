@@ -13,7 +13,7 @@ import sys
 import time
 import copy
 import pandas as pd
-from model_definition_torch import DNN, Logistic, CNN, CNN_student, DNN_student, DNN_teacher, AlexNet
+from model_definition_torch import DNN, Logistic, CNN, CNN_student, DNN_student, DNN_teacher, AlexNet, CNNDistillation
 from torchvision import models
 import torch.nn.functional as F
 
@@ -92,13 +92,13 @@ class FedKDClientTorch(FedAvgClientTorch):
 		self.start_server = 0
 		self.n_rate = float(args.n_rate)
 
-		self.teacher_model, self.student_model = self.create_model_distillation()
-		self.optimizer_student = torch.optim.SGD(self.student_model.parameters(), lr=self.learning_rate, momentum=0.9)
-		self.optimizer_teacher = torch.optim.SGD(self.teacher_model.parameters(), lr=self.learning_rate, momentum=0.9)
+		self.model = self.create_model_distillation()
+		self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate, momentum=0.9)
+		# self.optimizer_teacher = torch.optim.SGD(self.teacher_model.parameters(), lr=self.learning_rate, momentum=0.9)
 
 	def get_parameters(self, config):
 		try:
-			parameters = [i.detach().cpu().numpy() for i in self.student_model.parameters()]
+			parameters = [i.detach().cpu().numpy() for i in self.model.parameters()]
 			return parameters
 		except Exception as e:
 			print("get parameters")
@@ -115,19 +115,19 @@ class FedKDClientTorch(FedAvgClientTorch):
 	def set_parameters_to_model(self, parameters):
 		try:
 			parameters = [Parameter(torch.Tensor(i.tolist())) for i in parameters]
-			for new_param, old_param in zip(parameters, self.student_model.parameters()):
+			for new_param, old_param in zip(parameters, self.model.student.parameters()):
 				old_param.data = new_param.data.clone()
 		except Exception as e:
 			print("set parameters to model")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def save_parameters_student(self):
+	def save_parameters(self):
 		# usando 'torch.save'
 		try:
-			filename = """./{}_student_saved_weights/{}/{}/model.pth""".format(self.strategy_name.lower(), self.model_name, self.cid)
+			filename = """./{}_saved_weights/{}/{}/model.pth""".format(self.strategy_name.lower(), self.model_name, self.cid)
 			if Path(filename).exists():
 				os.remove(filename)
-			torch.save(self.student_model.state_dict(), filename)
+			torch.save(self.model.state_dict(), filename)
 		except Exception as e:
 			print("save parameters student")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
@@ -135,10 +135,10 @@ class FedKDClientTorch(FedAvgClientTorch):
 	def save_parameters_teacher(self):
 		# usando 'torch.save'
 		try:
-			filename = """./{}_teacher_saved_weights/{}/{}/model.pth""".format(self.strategy_name.lower(), self.model_name, self.cid)
+			filename = """./{}_saved_weights/{}/{}/model.pth""".format(self.strategy_name.lower(), self.model_name, self.cid)
 			if Path(filename).exists():
 				os.remove(filename)
-			torch.save(self.teacher_model.state_dict(), filename)
+			torch.save(self.model.state_dict(), filename)
 		except Exception as e:
 			print("save parameters student")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
@@ -153,7 +153,7 @@ class FedKDClientTorch(FedAvgClientTorch):
 
 	def get_parameters_of_model(self):
 		try:
-			parameters = [i.detach().numpy() for i in self.student_model.parameters()]
+			parameters = [i.detach().numpy() for i in self.model.student.parameters()]
 			return parameters
 		except Exception as e:
 			print("get parameters of model")
@@ -181,7 +181,7 @@ class FedKDClientTorch(FedAvgClientTorch):
 					input_shape = 3
 					mid_dim_teacher = 400
 					mid_dim_student = 100
-				return CNN(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim_teacher), CNN(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim_teacher)
+				return CNNDistillation(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim_teacher)
 			elif self.dataset in ['Tiny-ImageNet']:
 				# return AlexNet(num_classes=self.num_classes)
 				model = models.resnet18(pretrained=True)
@@ -198,7 +198,7 @@ class FedKDClientTorch(FedAvgClientTorch):
 
 		try:
 			self.teacher_model.train()
-			self.student_model.eval()
+			self.model.eval()
 
 			max_local_steps = self.local_epochs
 			train_acc_teacher = 0
@@ -217,7 +217,7 @@ class FedKDClientTorch(FedAvgClientTorch):
 
 					self.optimizer_teacher.zero_grad()
 					output_teacher = self.teacher_model(x)
-					output_student = self.student_model(x)
+					output_student = self.model(x)
 					loss_teacher = self.loss(output_teacher, y)
 					loss_student = self.loss(output_student, y)
 					# print("valor da loss teacher: ",
@@ -239,14 +239,14 @@ class FedKDClientTorch(FedAvgClientTorch):
 			print("train teacher")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def train_student(self):
+	def train_student(self, server_round):
 
 		try:
-			self.student_model.train()
-			self.teacher_model.eval()
+			self.model.train()
 
 			max_local_steps = self.local_epochs
 			train_acc_student = 0
+			train_acc_teacher = 0
 			train_loss_student = 0
 			train_num = 0
 			kl_loss = torch.nn.KLDivLoss(reduction="batchmean")
@@ -260,25 +260,37 @@ class FedKDClientTorch(FedAvgClientTorch):
 					y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
 					train_num += y.shape[0]
 
-					self.optimizer_student.zero_grad()
-					output_student = self.student_model(x)
-					output_teacher = self.teacher_model(x)
-					loss_teacher = self.loss(output_teacher, y)
+					self.optimizer.zero_grad()
+					output_student, output_teacher = self.model(x)
+					outputs_S1 = F.log_softmax(output_student, dim=1)
+					outputs_S2 = F.log_softmax(output_teacher, dim=1)
+					outputs_T1 = F.softmax(output_student, dim=1)
+					outputs_T2 = F.softmax(output_teacher, dim=1)
+
 					loss_student = self.loss(output_student, y)
+					loss_teacher = self.loss(output_teacher, y)
+					loss = torch.nn.KLDivLoss()(outputs_S1, outputs_T2) / (loss_student + loss_teacher)
+					loss += torch.nn.KLDivLoss()(outputs_S2, outputs_T1) / (loss_student + loss_teacher)
+					loss += loss_student + loss_teacher
+					# loss_student = self.loss(output_student, y)
 					# print("exemplo: ", output_teacher.shape, output_student.shape)
 					# print("professor: ", output_teacher[0])
 					# print("estudante: ", output_student[0])
 					# print("valor da loss student: ", kl_loss(output_student, F.softmax(output_teacher))/(loss_teacher + loss_student))
-					print("valor da loss normal student: ", loss_student)
+					print("valor da loss normal student: ", loss)
 					# loss_student += kl_loss(output_student, F.softmax(output_teacher))/(loss_teacher + loss_student)
-					train_loss_student += loss_student.item() * y.shape[0]
+					train_loss_student += loss.item() * y.shape[0]
 
 					# print("saida: ", output_student.shape, " alvo: ", y.shape, output_student[0])
-					loss_student.backward()
-					self.optimizer_student.step()
+					loss.backward()
+					self.optimizer.step()
 
 					train_acc_student += (torch.sum(torch.argmax(output_student, dim=1) == y)).item()
-			print("acc teacher: ", train_acc_student / train_num)
+					train_acc_teacher += (torch.sum(torch.argmax(output_teacher, dim=1) == y)).item()
+
+			print("rodada: ", server_round)
+			print("acc student: ", train_acc_student / train_num)
+			print("acc teacher: ", train_acc_teacher / train_num)
 			return train_loss_student, train_acc_student, train_num
 
 		except Exception as e:
@@ -297,25 +309,25 @@ class FedKDClientTorch(FedAvgClientTorch):
 			start_time = time.process_time()
 			server_round = int(config['round'])
 			parameters = inverse_parameter_svd_reading(parameters, [i.detach().numpy().shape for i in
-																				  self.student_model.parameters()])
+																	self.model.student.parameters()])
 			original_parameters = copy.deepcopy(parameters)
 
 			if self.cid in selected_clients or self.client_selection == False or server_round == 1:
 				self.set_parameters_to_model_fit(parameters)
-				self.load_parameters_to_model_teacher()
+				self.load_parameters_to_model()
 				self.round_of_last_fit = server_round
 
 				selected = 1
 
-				train_loss_teacher, train_acc_teacher, train_num = self.train_teacher()
-				train_loss_student, train_acc_student, train_num = self.train_student()
+				# train_loss_teacher, train_acc_teacher, train_num = self.train_teacher()
+				train_loss_student, train_acc_student, train_num = self.train_student(server_round)
 
 				trained_parameters = self.get_parameters_of_model()
-				self.save_parameters_student()
+				self.save_parameters()
 
 			size_list = []
-			for i in range(len(parameters)):
-				tamanho = get_size(parameters[i])
+			for i in range(len(trained_parameters)):
+				tamanho = get_size(trained_parameters[i])
 				# print("Client id: ", self.cid, " camada: ", i, " tamanho: ", tamanho, " shape: ", parameters[i].shape)
 				size_list.append(tamanho)
 			# print("Tamanho total parametros fit: ", sum(size_list))
@@ -358,14 +370,14 @@ class FedKDClientTorch(FedAvgClientTorch):
 	# 		print("Set parameters to model")
 	# 		print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, self.cid), type(e).__name__, e)
 
-	def load_parameters_to_model_teacher(self):
+	def load_parameters_to_model(self):
 		# ======================================================================================
 		# usando 'torch.load'
 		try:
-			filename = """./{}_teacher_saved_weights/{}/{}/model.pth""".format(self.strategy_name.lower(), self.model_name,
+			filename = """./{}_saved_weights/{}/{}/model.pth""".format(self.strategy_name.lower(), self.model_name,
 																	   self.cid, self.cid)
 			if os.path.exists(filename):
-				self.teacher_model.load_state_dict(torch.load(filename))
+				self.model.load_state_dict(torch.load(filename))
 		# size = len(parameters)
 		# updating only the personalized layers, which were previously saved in a file
 		# parameters = [Parameter(torch.Tensor(i.tolist())) for i in parameters]
@@ -380,7 +392,7 @@ class FedKDClientTorch(FedAvgClientTorch):
 
 	def model_eval(self):
 		try:
-			self.student_model.eval()
+			self.model.eval()
 
 			test_acc = 0
 			test_loss = 0
@@ -395,10 +407,10 @@ class FedKDClientTorch(FedAvgClientTorch):
 						x[0] = x[0].to(self.device)
 					else:
 						x = x.to(self.device)
-					self.optimizer_student.zero_grad()
+					self.optimizer.zero_grad()
 					y = y.to(self.device)
 					y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
-					output = self.student_model(x)
+					output, output_teacher = self.model(x)
 					loss = self.loss(output, y)
 					test_loss += loss.item() * y.shape[0]
 					prediction = torch.argmax(output, dim=1)
@@ -419,7 +431,7 @@ class FedKDClientTorch(FedAvgClientTorch):
 	def set_parameters_to_student_model(self, parameters):
 		try:
 			parameters = [Parameter(torch.Tensor(i.tolist())) for i in parameters]
-			for new_param, old_param in zip(parameters, self.student_model.parameters()):
+			for new_param, old_param in zip(parameters, self.model.parameters()):
 				old_param.data = new_param.data.clone()
 		except Exception as e:
 			print("set parameters to model")

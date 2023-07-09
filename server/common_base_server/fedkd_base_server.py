@@ -70,7 +70,7 @@ class FedKDBaseServer(FedAvgBaseServer):
 		self.n_rate = float(args.n_rate)
 
 		self.student_filename = """{}_student_saved_weights/{}/""".format(strategy_name.lower(), self.model_name)
-		self.teacher_filename = """{}_teacher_saved_weights/{}/""".format(strategy_name.lower(), self.model_name)
+		self.teacher_filename = """{}_saved_weights/{}/""".format(strategy_name.lower(), self.model_name)
 		self.create_folder(self.student_filename)
 		self.create_folder(self.teacher_filename)
 		self.model_shape = [i.detach().numpy().shape for i in model.parameters()]

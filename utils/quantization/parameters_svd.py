@@ -53,6 +53,10 @@ def svd(layer, n_components):
                                       n_components=int(len(layer) * n_components),
                                       n_iter=5,
                                       random_state=0)
+        # U, Sigma, VT = np.linalg.svd(layer, full_matrices=True)
+        # u = u[:, :n_components]
+        # sigma = sigma[:n_components]
+        # v = v[:threshold, :]
 
         # print(U.shape, Sigma.shape, VT.T.shape)
         return [U, VT, Sigma]
@@ -122,3 +126,26 @@ def inverse_parameter_svd(u, v, layer_index, sigma=None, sig_ind=None):
     except Exception as e:
         print("inverse_parameter_svd")
         print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, 0), type(e).__name__, e)
+
+def test():
+    original = [np.random.random((4, 4, 4)) for i in range(1)]
+
+    U, Sigma, VT = np.linalg.svd(original[0], full_matrices=True)
+    U = U[:, :, :2]
+    Sigma = np.expand_dims(Sigma[ :, 2], 1)
+    VT = VT[:, :2, :].T
+
+    print("compactado shapes: ", [i.shape for i in [U, Sigma, VT]])
+
+    svd = parameter_svd_write(original, 0.5)
+    original_ = inverse_parameter_svd_reading(svd, [i.shape for i in original])
+    o = [U[0], Sigma.T, VT[0]]
+    print("numpy shape: ", [i.shape for i in o])
+
+    print("Original: \n", original, [i.shape for i in original])
+    print("Np recontruido: \n", np.matmul(U*Sigma.T, VT.T))
+    print("Reconstruído: \n", original_)
+
+
+if __name__ == "__main__":
+    test()
