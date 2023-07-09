@@ -296,8 +296,8 @@ class FedKDClientTorch(FedAvgClientTorch):
 
 			start_time = time.process_time()
 			server_round = int(config['round'])
-			# parameters = inverse_parameter_svd_reading(parameters, [i.detach().numpy().shape for i in
-			# 																	  self.student_model.parameters()])
+			parameters = inverse_parameter_svd_reading(parameters, [i.detach().numpy().shape for i in
+																				  self.student_model.parameters()])
 			original_parameters = copy.deepcopy(parameters)
 
 			if self.cid in selected_clients or self.client_selection == False or server_round == 1:
@@ -339,7 +339,7 @@ class FedKDClientTorch(FedAvgClientTorch):
 			print("use gradient: ", self.use_gradient)
 			if self.use_gradient:
 				trained_parameters = [trained - original for trained, original in zip(trained_parameters, original_parameters)]
-			# trained_parameters = parameter_svd_write(trained_parameters, self.n_rate)
+			trained_parameters = parameter_svd_write(trained_parameters, self.n_rate)
 			return trained_parameters, train_num, fit_response
 		except Exception as e:
 			print("fit fedkd")
