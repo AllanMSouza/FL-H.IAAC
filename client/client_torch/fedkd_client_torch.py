@@ -181,7 +181,7 @@ class FedKDClientTorch(FedAvgClientTorch):
 					input_shape = 3
 					mid_dim_teacher = 400
 					mid_dim_student = 100
-				return CNN(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim_teacher), CNN_student(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim_student)
+				return CNN(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim_teacher), CNN(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim)
 			elif self.dataset in ['Tiny-ImageNet']:
 				# return AlexNet(num_classes=self.num_classes)
 				model = models.resnet18(pretrained=True)
