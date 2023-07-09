@@ -220,8 +220,8 @@ class FedKDClientTorch(FedAvgClientTorch):
 					output_student = self.student_model(x)
 					loss_teacher = self.loss(output_teacher, y)
 					loss_student = self.loss(output_student, y)
-					print("valor da loss teacher: ",
-						  kl_loss(output_student, F.softmax(output_teacher)) / (loss_teacher + loss_student))
+					# print("valor da loss teacher: ",
+					# 	  kl_loss(output_student, F.softmax(output_teacher)) / (loss_teacher + loss_student))
 					print("valor da loss normal teacher: ", loss_student)
 					# loss_teacher += kl_loss(output_student, F.softmax(output_teacher)) / (loss_teacher + loss_student)
 					# loss_teacher += torch.nn.functional.kl_div(output_teacher, output_student) / (loss_teacher + loss_student)
@@ -265,10 +265,10 @@ class FedKDClientTorch(FedAvgClientTorch):
 					output_teacher = self.teacher_model(x)
 					loss_teacher = self.loss(output_teacher, y)
 					loss_student = self.loss(output_student, y)
-					print("exemplo: ", output_teacher.shape, output_student.shape)
+					# print("exemplo: ", output_teacher.shape, output_student.shape)
 					# print("professor: ", output_teacher[0])
 					# print("estudante: ", output_student[0])
-					print("valor da loss student: ", kl_loss(output_student, F.softmax(output_teacher))/(loss_teacher + loss_student))
+					# print("valor da loss student: ", kl_loss(output_student, F.softmax(output_teacher))/(loss_teacher + loss_student))
 					print("valor da loss normal student: ", loss_student)
 					# loss_student += kl_loss(output_student, F.softmax(output_teacher))/(loss_teacher + loss_student)
 					train_loss_student += loss_student.item() * y.shape[0]
