@@ -370,6 +370,14 @@ class FedKDClientTorch(FedAvgClientTorch):
 	# 		print("Set parameters to model")
 	# 		print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, self.cid), type(e).__name__, e)
 
+	def set_parameters_to_model_evaluate(self, global_parameters, config={}):
+		# Using 'torch.load'
+		try:
+			self.load_parameters_to_model()
+		except Exception as e:
+			print("Set parameters to model")
+			print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, self.cid), type(e).__name__, e)
+
 	def load_parameters_to_model(self):
 		# ======================================================================================
 		# usando 'torch.load'
@@ -411,9 +419,9 @@ class FedKDClientTorch(FedAvgClientTorch):
 					y = y.to(self.device)
 					y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
 					output, output_teacher = self.model(x)
-					loss = self.loss(output, y)
+					loss = self.loss(output_teacher, y)
 					test_loss += loss.item() * y.shape[0]
-					prediction = torch.argmax(output, dim=1)
+					prediction = torch.argmax(output_teacher, dim=1)
 					predictions = np.append(predictions, prediction)
 					labels = np.append(labels, y)
 					test_acc += (torch.sum(prediction == y)).item()
