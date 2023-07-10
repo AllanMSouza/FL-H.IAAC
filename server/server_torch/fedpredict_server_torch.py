@@ -59,6 +59,9 @@ class FedPredictServerTorch(FedPredictBaseServer):
                          new_clients_train=new_clients_train,
                          type='torch')
 
+        self.model_shape = [i.shape for i in self.model.parameters()]
+        print("formato: ", self.model_shape)
+
 
     def set_initial_parameters(
             self

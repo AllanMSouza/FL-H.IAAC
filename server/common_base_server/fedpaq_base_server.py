@@ -8,7 +8,6 @@ import random
 
 from logging import WARNING
 from flwr.common import FitIns
-from client.fedpredict_core import fedpredict_layerwise_similarity
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
 from flwr.common.logger import log
 import copy

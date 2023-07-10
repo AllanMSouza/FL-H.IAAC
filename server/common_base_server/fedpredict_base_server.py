@@ -10,7 +10,7 @@ import pandas as pd
 import copy
 
 from server.common_base_server import FedAvgBaseServer
-from client.fedpredict_core import fedpredict_core_layer_selection
+from client.fedpredict_core import fedpredict_core_layer_selection, fedpredict_layerwise_similarity
 
 from pathlib import Path
 import shutil
@@ -85,6 +85,9 @@ class FedPredictBaseServer(FedAvgBaseServer):
 
 		self.set_initial_parameters()
 		self.create_folder(strategy_name)
+		self.similarity_between_layers_per_round = {}
+		self.similarity_between_layers_per_round_and_client = {}
+		self.T = float(args.T)
 
 	def create_folder(self, strategy_name):
 
@@ -147,14 +150,30 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			print("update fedpredict metrics")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
+	def aggregate_fit(self, server_round, results, failures):
+
+		parameters_aggregated, metrics_aggregated = super().aggregate_fit(server_round, results, failures)
+		weights_results = []
+		clients_parameters = []
+		clients_ids = []
+		for _, fit_res in results:
+			client_id = str(fit_res.metrics['cid'])
+			clients_ids.append(client_id)
+			clients_parameters.append(fl.common.parameters_to_ndarrays(fit_res.parameters))
+
+		self.similarity_between_layers_per_round_and_client[server_round], self.similarity_between_layers_per_round[server_round], self.mean_similarity_per_round[server_round] = fedpredict_layerwise_similarity(fl.common.parameters_to_ndarrays(parameters_aggregated), clients_parameters, clients_ids, server_round)
+
+
+		return parameters_aggregated, metrics_aggregated
+
 	def configure_evaluate(self, server_round, parameters, client_manager):
 		client_evaluate_list = super().configure_evaluate(server_round, parameters, client_manager)
 		client_evaluate_list_fedpredict = []
 		accuracy = 0
 		mean_similarity_per_layer = self.similarity_between_layers_per_round[server_round]
 		mean_similarity = self.mean_similarity_per_round[server_round]
-		if len(self.accuracy_history) > 0:
-			accuracy = self.accuracy_history[len(self.accuracy_history)]
+		# if len(self.accuracy_history) > 0:
+		# 	accuracy = self.accuracy_history[len(self.accuracy_history)]
 		size_of_parameters = []
 		parameters = fl.common.parameters_to_ndarrays(parameters)
 		for i in range(1, len(parameters)):
@@ -173,8 +192,11 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			except:
 				pass
 
+			print("olha: ", self.similarity_between_layers_per_round[server_round])
 			client_similarity_per_layer = self.get_client_similarity_per_layer(client_id, server_round)
 			parameters_to_send, M = self._select_layers(client_similarity_per_layer, mean_similarity_per_layer, mean_similarity, parameters, server_round, nt, size_of_parameters, client_id, self.comment)
+			# M = [i for i in range(len(parameters))]
+			# parameters_to_send = fl.common.ndarrays_to_parameters(parameters)
 
 			self.fedpredict_clients_metrics[str(client.cid)]['acc_bytes_rate'] = size_of_parameters
 			config['M'] = M
@@ -211,21 +233,25 @@ class FedPredictBaseServer(FedAvgBaseServer):
 						layer = str(self.layer_selection_evaluate)
 						M = []
 						for i in layer:
+							i = int(i)*2
+							M.append(int(i) - 2)
 							M.append(int(i) - 1)
-							M.append(int(i))
+						print("foi: ", M)
 					else:
-						M = fedpredict_core_layer_selection(t=server_round, T=20, nt=nt, n_layers=n_layers, size_per_layer=size_of_layers, mean_similarity_per_layer=mean_similarity_per_layer, mean_similarity=mean_similarity)
+						M = fedpredict_core_layer_selection(t=server_round, T=self.num_rounds, nt=nt, n_layers=n_layers, size_per_layer=size_of_layers, mean_similarity_per_layer=mean_similarity_per_layer, mean_similarity=mean_similarity)
+						print("quantidade compartilhadas: ", M)
 				new_parameters = []
 				for i in range(len(parameters)):
 					if i in M:
-						decimals = self.decimals_per_layer[server_round][i]
-						print("decimais: ", decimals)
-						print("parametros originais: ", parameters[i].nbytes, parameters[i].dtype)
-						if decimals <= 4 and self.layer_selection_evaluate < 0:
-							data_type = np.half
-						else:
-							data_type = np.float32
-						new_parameters.append(parameters[i].astype(data_type))
+						# decimals = self.decimals_per_layer[server_round][i]
+						# print("decimais: ", decimals)
+						# print("parametros originais: ", parameters[i].nbytes, parameters[i].dtype)
+						# if decimals <= 4 and self.layer_selection_evaluate < 0:
+						# 	data_type = np.half
+						# else:
+						# 	data_type = np.float32
+						# new_parameters.append(parameters[i].astype(data_type))
+						new_parameters.append(parameters[i])
 						print("parametros reduzidos: ", parameters[i].nbytes)
 				parameters = new_parameters
 

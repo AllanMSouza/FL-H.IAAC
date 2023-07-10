@@ -113,7 +113,9 @@ class NonIid:
         self.server_nt_acc_analysis()
         self.server_analysis(title)
         self.evaluate_client_analysis()
+        print("chamar")
         if "FedPredict" in self.strategy_name_list:
+            print("entrou")
             self.similarity_analysis("Alpha=" + str(self.alpha))
 
     def server_nt_acc_analysis(self):
@@ -162,7 +164,7 @@ class NonIid:
                   title=title,
                   hue=hue,
                   y_lim=True,
-                  y_max=60)
+                  y_max=80)
 
         x_column = 'Server round'
         y_column = 'Time (seconds)'
