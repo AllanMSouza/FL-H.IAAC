@@ -328,7 +328,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			fit_response = {
 				'cid': self.cid
 			}
-			print("use gradient: ", self.use_gradient)
+
 			if self.use_gradient:
 				trained_parameters = [trained - original for trained, original in zip(trained_parameters, original_parameters)]
 				# trained_parameters = parameters_quantization_write(trained_parameters, 8)
