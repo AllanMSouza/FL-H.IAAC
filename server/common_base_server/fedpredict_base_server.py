@@ -192,7 +192,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			except:
 				pass
 
-			print("olha: ", self.similarity_between_layers_per_round[server_round])
+			# print("olha: ", self.similarity_between_layers_per_round[server_round])
 			client_similarity_per_layer = self.get_client_similarity_per_layer(client_id, server_round)
 			parameters_to_send, M = self._select_layers(client_similarity_per_layer, mean_similarity_per_layer, mean_similarity, parameters, server_round, nt, size_of_parameters, client_id, self.comment)
 			# M = [i for i in range(len(parameters))]
@@ -214,7 +214,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			size_list = []
 			for i in range(len(parameters)):
 				tamanho = get_size(parameters[i])
-				print("inicio camada: ", i, " tamanho: ", tamanho, " shape: ", parameters[i].shape)
+				# print("inicio camada: ", i, " tamanho: ", tamanho, " shape: ", parameters[i].shape)
 				size_list.append(tamanho)
 			print("Tamanho total parametros original: ", sum(size_list), sys.getsizeof(fl.common.ndarrays_to_parameters(parameters)))
 

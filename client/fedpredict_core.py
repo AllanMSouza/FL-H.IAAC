@@ -167,7 +167,6 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
         client_id = clients_ids[client_id]
 
         for layer_index in range(num_layers):
-            print("Indice da camada: ", layer_index)
             client_layer = client[layer_index]
             global_layer = global_parameter[layer_index]
             if np.ndim(global_layer) == 1:
@@ -193,8 +192,6 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
                     client_difference['min'].append(abs(difference.min()))
                     client_difference['max'].append(abs(difference.max()))
                     difference_per_layer_vector[layer_index] += np.absolute(difference).flatten().tolist()
-                    if layer_index in interest_layers:
-                        print("Diferença min: ", layer_index, k, client_id, difference[0][0])
                 # print("Diferença max: ", i, k, j, client_difference['max'])
                 if layer_index not in similarity_per_layer[client_id]:
                     similarity_per_layer[client_id][layer_index] = []
@@ -220,7 +217,6 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
                 client_difference['min'].append(abs(difference.min()))
                 client_difference['max'].append(abs(difference.max()))
                 difference_per_layer_vector[layer_index] += np.absolute(difference).flatten().tolist()
-                print("Diferença min: ", layer_index, client_id, difference[0])
                 # print("Diferença max: ", i, k, j, client_difference['max'])
                 if layer_index not in similarity_per_layer[client_id]:
                     similarity_per_layer[client_id][layer_index] = []
