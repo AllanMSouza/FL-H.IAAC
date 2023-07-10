@@ -143,7 +143,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			# It works as a table where for each round it has a line with two columns for the accuracy and
 			# the evolution level of the respective round
 			self.fedpredict_metrics['round_acc_el'] = {int(round): {'acc': self.accuracy_history[round], 'el': round/self.num_rounds} for round in self.accuracy_history}
-			print("Metricas dos clientes: ", self.clients_metrics)
+			# print("Metricas dos clientes: ", self.clients_metrics)
 			# self.fedpredict_metrics['nt'] = self.clients_metrics['nt']
 			self.fedpredict_metrics['el'] = self._calculate_evolution_level(server_round)
 		except Exception as e:

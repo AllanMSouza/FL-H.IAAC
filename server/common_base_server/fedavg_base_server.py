@@ -295,12 +295,11 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		weights_results = []
 		clients_parameters = []
 		clients_ids = []
-		print("Rodada: ", server_round, len(results))
 		for _, fit_res in results:
 			client_id = str(fit_res.metrics['cid'])
 			clients_ids.append(client_id)
-			print("Parametros aggregate fit: ", len(fl.common.parameters_to_ndarrays(fit_res.parameters)))
-			print("Fit respons", fit_res.metrics)
+			# print("Parametros aggregate fit: ", len(fl.common.parameters_to_ndarrays(fit_res.parameters)))
+			# print("Fit respons", fit_res.metrics)
 			clients_parameters.append(fl.common.parameters_to_ndarrays(fit_res.parameters))
 			if self.aggregation_method not in ['POC', 'FL-H.IAAC'] or int(server_round) <= 1:
 				weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples))
