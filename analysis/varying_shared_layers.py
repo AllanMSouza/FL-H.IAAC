@@ -55,14 +55,14 @@ class Varying_Shared_layers:
         # acc
         df = self.df_concat
         def strategy(df):
-            parameters = float(df['Size of parameters'].mean())
-            config = float(df['Size of config'].mean())
+            parameters = float(df['Size of parameters'].mean())/1000000
+            config = float(df['Size of config'].mean())/1000000
             acc = float(df['Accuracy'].mean())
             acc_gain_per_byte = acc/parameters
             total_size = parameters + config
 
-            return pd.DataFrame({'Size of parameters (bytes)': [parameters], 'Communication cost (bytes)': [total_size], 'Accuracy': [acc], 'Accuracy gain per byte': [acc_gain_per_byte]})
-        df = df[['Accuracy', 'Round', 'Size of parameters', 'Size of config', 'Strategy', 'Shared layers']].groupby(by=['Strategy', 'Shared layers', 'Round']).apply(lambda e: strategy(e)).reset_index()[['Accuracy', 'Size of parameters (bytes)', 'Communication cost (bytes)', 'Strategy', 'Shared layers', 'Round', 'Accuracy gain per byte']]
+            return pd.DataFrame({'Size of parameters (MB)': [parameters], 'Communication cost (MB)': [total_size], 'Accuracy': [acc], 'Accuracy gain per MB': [acc_gain_per_byte]})
+        df = df[['Accuracy', 'Round', 'Size of parameters', 'Size of config', 'Strategy', 'Shared layers']].groupby(by=['Strategy', 'Shared layers', 'Round']).apply(lambda e: strategy(e)).reset_index()[['Accuracy', 'Size of parameters (MB)', 'Communication cost (MB)', 'Strategy', 'Shared layers', 'Round', 'Accuracy gain per MB']]
         # print("Com alpha: ", alpha, "\n", df)
         df['Accuracy (%)'] = df['Accuracy'] * 100
         df['Accuracy (%)'] = df['Accuracy (%)'].round(4)
@@ -127,7 +127,7 @@ class Varying_Shared_layers:
                   y_min=10,
                   y_max=80)
         x_column = 'Round'
-        y_column = 'Communication cost (bytes)'
+        y_column = 'Communication cost (MB)'
         hue = 'Shared layers'
         line_plot(df=df,
                   base_dir=base_dir,
@@ -137,18 +137,21 @@ class Varying_Shared_layers:
                   title=title,
                   hue=hue,
                   hue_order=layer_selection_evaluate,
-                  type=1)
+                  type=1,
+                  y_lim=True,
+                  y_max=4,
+                  y_min=0)
 
         if comment == "bottom up":
             # df = df[df["Shared layers"] > 1]
             pass
-        print("Com alpha: ", alpha, "\n", df[['Accuracy', 'Shared layers', 'Round', 'Accuracy gain per byte']])
+        print("Com alpha: ", alpha, "\n", df[['Accuracy', 'Shared layers', 'Round', 'Accuracy gain per MB']])
         x_column = 'Round'
-        y_column = 'Accuracy gain per byte'
+        y_column = 'Accuracy gain per MB'
         hue = 'Shared layers'
         line_plot(df=df,
                   base_dir=base_dir,
-                  file_name="evaluate_client_accuracy_gain_per_byte_varying_shared_layers_lineplot",
+                  file_name="evaluate_client_accuracy_gain_per_MB_varying_shared_layers_lineplot",
                   x_column=x_column,
                   y_column=y_column,
                   title=title,
@@ -166,11 +169,11 @@ class Varying_Shared_layers:
             df_aux = df_aux[df_aux['Round'] == round]
             target = df_aux[df_aux['Shared layers'] == "{1, 2, 3, 4}"]
             target_acc = target['Accuracy (%)'].tolist()[0]
-            target_size = target['Communication cost (bytes)'].tolist()[0]
+            target_size = target['Communication cost (MB)'].tolist()[0]
             acc = df['Accuracy (%)'].tolist()[0]
-            size = df['Communication cost (bytes)'].tolist()[0]
+            size = df['Communication cost (MB)'].tolist()[0]
             acc_reduction = target_acc - acc
-            size_reduction = (target_size - size)/1000000
+            size_reduction = (target_size - size)
             # acc_weight = 1
             # size_weight = 1
             # acc_score = acc_score *acc_weight
@@ -182,14 +185,14 @@ class Varying_Shared_layers:
 
             return pd.DataFrame({'Accuracy reduction (%)': [acc_reduction], 'Communication reduction (MB)': [size_reduction]})
 
-        df = df[['Accuracy (%)', 'Size of parameters (bytes)', 'Communication cost (bytes)', 'Strategy', 'Shared layers',
-             'Round', 'Accuracy gain per byte']].groupby(
+        df = df[['Accuracy (%)', 'Size of parameters (MB)', 'Communication cost (MB)', 'Strategy', 'Shared layers',
+             'Round', 'Accuracy gain per MB']].groupby(
             by=['Strategy', 'Round', 'Shared layers']).apply(lambda e: comparison_with_shared_layers(e, df)).reset_index()[
             ['Strategy', 'Round', 'Shared layers', 'Accuracy reduction (%)', 'Communication reduction (MB)']]
 
         print("Final: ", df)
         df = df[df['Shared layers'] != "{1, 2, 3, 4}"]
-        layer_selection_evaluate =  ['FedPredict-v2', '{1}', '{1, 2}']
+        layer_selection_evaluate =  ['FedPredict-v2', '{1}']
         print("menor: ", df['Accuracy reduction (%)'].min())
         print("Fed", df[df['Shared layers'] == 'FedPredict-v2'][['Accuracy reduction (%)', 'Round']])
 
@@ -242,13 +245,13 @@ if __name__ == '__main__':
     num_clients = 20
     model_name = "CNN"
     dataset = "CIFAR10"
-    alpha = float(0.1)
+    alpha = float(2)
     num_rounds = 20
     epochs = 1
     # layer_selection_evaluate = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
     #layer_selection_evaluate = [1, 12, 123, 1234]
     # layer_selection_evaluate = [4, 34, 234, 1234]
-    layer_selection_evaluate = [-1, 1234]
+    layer_selection_evaluate = [-1, 1234, 1]
     comment = "set"
 
     Varying_Shared_layers(tp=type_model, strategy_name=strategy, fraction_fit=fraction_fit, aggregation_method=aggregation_method, new_clients=False, new_clients_train=False, num_clients=num_clients,
