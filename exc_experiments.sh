@@ -1,5 +1,5 @@
 #!/bin/bash
-#git checkout FedPer2
+#git checkout FedPredict-v2.1
 #git fetch
 #git pull
 
