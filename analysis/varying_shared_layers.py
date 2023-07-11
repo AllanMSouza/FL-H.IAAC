@@ -238,17 +238,17 @@ if __name__ == '__main__':
     strategy = "FedPredict"
     type_model = "torch"
     aggregation_method = "None"
-    fraction_fit = 0.3
+    fraction_fit = 0.4
     num_clients = 20
     model_name = "CNN"
     dataset = "CIFAR10"
-    alpha = float(2)
+    alpha = float(0.1)
     num_rounds = 20
     epochs = 1
     # layer_selection_evaluate = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
     #layer_selection_evaluate = [1, 12, 123, 1234]
     # layer_selection_evaluate = [4, 34, 234, 1234]
-    layer_selection_evaluate = [-1, 1, 12, 1234]
+    layer_selection_evaluate = [-1, 1234]
     comment = "set"
 
     Varying_Shared_layers(tp=type_model, strategy_name=strategy, fraction_fit=fraction_fit, aggregation_method=aggregation_method, new_clients=False, new_clients_train=False, num_clients=num_clients,
