@@ -1,4 +1,4 @@
-import tensorflow as tf
+# import tensorflow as tf
 import torch
 import numpy as np
 import random
@@ -142,34 +142,34 @@ class ManageDatasets():
     #
     #     return x_train, y_train, x_test, y_test
 
-    def load_MNIST(self):
+    # def load_MNIST(self):
+    #
+    #     (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
+    #     x_train, x_test = x_train / 255.0, x_test / 255.0
+    #
+    #     return x_train, y_train, x_test, y_test
 
-        (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
-        x_train, x_test = x_train / 255.0, x_test / 255.0
+    # def load_CIFAR10(self):
+    #
+    #     (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
+    #     y_train = np.array([i[0] for i in y_train])
+    #     y_test = np.array([i[0] for i in y_test])
+    #     x_train, x_test = x_train / 255.0, x_test / 255.0
+    #
+    #     # print("ex antes: ", x_train.shape)
+    #     x_train = np.array([np.moveaxis(i, -1, 0) for i in x_train])
+    #     # print("ex depois: ", x_train.shape)
+    #     x_test = np.array([np.moveaxis(i, -1, 0) for i in x_test])
+    #
+    #     print("rolutos: ", y_train)
+    #
+    #     return x_train, y_train, x_test, y_test
 
-        return x_train, y_train, x_test, y_test
-
-    def load_CIFAR10(self):
-
-        (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
-        y_train = np.array([i[0] for i in y_train])
-        y_test = np.array([i[0] for i in y_test])
-        x_train, x_test = x_train / 255.0, x_test / 255.0
-
-        # print("ex antes: ", x_train.shape)
-        x_train = np.array([np.moveaxis(i, -1, 0) for i in x_train])
-        # print("ex depois: ", x_train.shape)
-        x_test = np.array([np.moveaxis(i, -1, 0) for i in x_test])
-
-        print("rolutos: ", y_train)
-
-        return x_train, y_train, x_test, y_test
-
-    def load_CIFAR100(self):
-        (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar100.load_data()
-        x_train, x_test = x_train / 255.0, x_test / 255.0
-
-        return x_train, y_train, x_test, y_test
+    # def load_CIFAR100(self):
+    #     (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar100.load_data()
+    #     x_train, x_test = x_train / 255.0, x_test / 255.0
+    #
+    #     return x_train, y_train, x_test, y_test
 
     def load_tiny_imagenet(self):
 
