@@ -8,9 +8,9 @@ import torchvision.models as models
 from train_model import train_model
 from test_model import test_model
 
-# data_dir = '/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/dataset_utils/data/Tiny-ImageNet/raw_data/tiny-imagenet-200'
-data_dir = '/home/claudio/FL-H.IAAC/dataset_utils/data/Tiny-ImageNet/raw_data/tiny-imagenet-200'
-num_workers = {'train' : 100,'val'   : 0,'test'  : 0}
+data_dir = '/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/dataset_utils/data/Tiny-ImageNet/raw_data/tiny-imagenet-200'
+# data_dir = '/home/claudio/FL-H.IAAC/dataset_utils/data/Tiny-ImageNet/raw_data/tiny-imagenet-200'pip
+num_workers = {'train' : 40,'val'   : 30,'test'  : 30}
 data_transforms = {
     'train': transforms.Compose([
         transforms.ToTensor(),
@@ -34,10 +34,11 @@ model_ft = models.resnet18()
 model_ft.avgpool = nn.AdaptiveAvgPool2d(1)
 model_ft.fc.out_features = 200
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print("Dispositivo: ", device)
 model_ft = model_ft.to(device)
 #Loss Function
 criterion = nn.CrossEntropyLoss()
 # Observe that all parameters are being optimized
 optimizer_ft = optim.SGD(model_ft.parameters(), lr=0.001, momentum=0.9)
 
-train_model("64_no_pre",model_ft, dataloaders, dataset_sizes, criterion, optimizer_ft, num_epochs=10)
+train_model("64",model_ft, dataloaders, dataset_sizes, criterion, optimizer_ft, num_epochs=10)
