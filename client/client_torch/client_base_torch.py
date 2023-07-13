@@ -305,7 +305,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 						self.optimizer.step()
 
 						train_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
-
+				print("Completou, cliente: ", self.cid, " rodada: ", server_round)
 				trained_parameters = self.get_parameters_of_model()
 				self.save_parameters()
 
