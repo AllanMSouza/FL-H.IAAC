@@ -65,6 +65,7 @@ train_loss = 0
 train_acc = 0
 # train_model7("48",model_ft, dataloaders, dataset_sizes, criterion, optimizer_ft, num_epochs=10)
 train_num = 0
+log_interval = 10
 for step in range(1):
     for i, (x, y) in enumerate(trainloader):
         if type(x) == type([]):
@@ -83,6 +84,10 @@ for step in range(1):
         optimizer_ft.step()
 
         train_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
+
+        if i % log_interval == 0:
+            print('Train Epoch: {} [{}]\tLoss: {:.6f}'.format(
+                step, i * len(x), loss.item()))
 
 avg_loss_train = train_loss / train_num
 avg_acc_train = train_acc / train_num
