@@ -8,6 +8,7 @@ import torchvision.models as models
 from train_model import train_model
 from test_model import test_model
 from torch.utils.data import TensorDataset, DataLoader
+import time
 
 def dataset(data_path):
     """Load ImageNet (training and val set)."""
@@ -67,6 +68,7 @@ train_acc = 0
 train_num = 0
 log_interval = 10
 for step in range(1):
+    start_time = time.process_time()
     for i, (x, y) in enumerate(trainloader):
         if type(x) == type([]):
             x[0] = x[0].to(device)
@@ -86,8 +88,11 @@ for step in range(1):
         train_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
 
         if i % log_interval == 0:
+            total_time = time.process_time() - start_time
             print('Train Epoch: {} [{}]\tLoss: {:.6f}\t Acc: {}'.format(
-                step, (i+1) * len(x), loss.item(), train_acc))
+                step, (i+1) * len(x), loss.item(), train_acc/len(x)))
+            print("Duração: ", total_time)
+            start_time = time.process_time()
 
 avg_loss_train = train_loss / train_num
 avg_acc_train = train_acc / train_num
