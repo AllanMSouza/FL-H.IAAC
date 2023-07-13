@@ -45,10 +45,12 @@ class ResNet(nn.Module):
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.layer0 = self._make_layer(block, 64, layers[0], stride=1)
         self.layer1 = self._make_layer(block, 128, layers[1], stride=2)
-        self.layer2 = self._make_layer(block, 256, layers[2], stride=2)
-        self.layer3 = self._make_layer(block, 512, layers[3], stride=2)
-        self.avgpool = nn.AvgPool2d(7, stride=1)
-        self.fc = nn.Linear(512, num_classes)
+        # self.layer2 = self._make_layer(block, 256, layers[2], stride=2)
+        # self.layer3 = self._make_layer(block, 512, layers[3], stride=2)
+        # self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
+        # self.avgpool = nn.AvgPool2d(9, stride=1)
+        # self.fc = nn.Linear(512, num_classes)
+        self.fc = nn.Linear(100352, num_classes)
 
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
@@ -70,10 +72,10 @@ class ResNet(nn.Module):
         x = self.maxpool(x)
         x = self.layer0(x)
         x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
+        # x = self.layer2(x)
+        # x = self.layer3(x)
 
-        x = self.avgpool(x)
+        # x = self.avgpool(x)
         x = x.view(x.size(0), -1)
         x = self.fc(x)
 
@@ -155,11 +157,12 @@ num_epochs = 20
 batch_size = 16
 learning_rate = 0.01
 
-model = ResNet(ResidualBlock, [3, 4, 6, 3]).to(device)
+# model = ResNet(ResidualBlock, [3, 4, 6, 3]).to(device)
+model = ResNet(ResidualBlock, [2, 3, 6, 3]).to(device)
 
 # Loss and optimizer
 criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, weight_decay = 0.001, momentum = 0.9)
+optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, weight_decay = 0.01, momentum = 0.9)
 
 # Train the model
 total_step = len(train_loader)
