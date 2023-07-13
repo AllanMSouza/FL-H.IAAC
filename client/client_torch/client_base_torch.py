@@ -194,10 +194,11 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				return CNN(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim)
 			elif self.dataset in ['Tiny-ImageNet']:
 				# return AlexNet(num_classes=self.num_classes)
-				model = models.resnet18(pretrained=True)
-				model.avgpool = nn.AdaptiveAvgPool2d(1)
-				num_ftrs = model.fc.in_features
-				model.fc = nn.Linear(num_ftrs, 200)
+				# model = models.resnet18(pretrained=True, num_classes=self.num_classes).to(self.device)
+				model = CNN(input_shape=3, num_classes=self.num_classes, mid_dim=int(179776/4))
+				# model.avgpool = nn.AdaptiveAvgPool2d(1)
+				# num_ftrs = model.fc.in_features
+				# model.fc = nn.Linear(num_ftrs, 200)
 				print("Quantidade de camadas: ", len([i.shape for i in model.parameters()]))
 				# model = torch.nn.DataParallel(model).cuda()
 				return model
