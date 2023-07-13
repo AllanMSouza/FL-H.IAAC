@@ -4,6 +4,7 @@ from torchvision import datasets,transforms
 from torch import nn
 import matplotlib.pyplot as plt
 import numpy as np
+import time
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -27,6 +28,7 @@ validation_dataset = datasets.CIFAR10(root='./data', train=False, download=True,
 
 training_loader = torch.utils.data.DataLoader(training_dataset, batch_size=100,
                                               shuffle=True)  # Batch size of 100 i.e to work with 100 images at a time
+
 validation_loader = torch.utils.data.DataLoader(validation_dataset, batch_size=100, shuffle=False)
 
 
@@ -79,13 +81,14 @@ val_running_corrects_history = []
 print("Device: ", device)
 
 for e in range(epochs):  # training our model, put input according to every batch.
-
+    start_time = time.process_time()
     running_loss = 0.0
     running_corrects = 0.0
     val_running_loss = 0.0
     val_running_corrects = 0.0
-
+    treino = 0
     for inputs, labels in training_loader:
+        treino += len(labels)
         inputs = inputs.to(device)  # input to device as our model is running in mentioned device.
         labels = labels.to(device)
         outputs = model(inputs)  # every batch of 100 images are put as an input.
@@ -99,18 +102,21 @@ for e in range(epochs):  # training our model, put input according to every batc
         running_loss += loss.item()
         running_corrects += torch.sum(
             preds == labels.data)  # calculating te accuracy by taking the sum of all the correct predictions in a batch.
+    total_time = time.process_time() - start_time
+    print("Duração: ", total_time)
 
-    else:
-        with torch.no_grad():  # we do not need gradient for validation.
-            for val_inputs, val_labels in validation_loader:
-                val_inputs = val_inputs.to(device)
-                val_labels = val_labels.to(device)
-                val_outputs = model(val_inputs)
-                val_loss = criterion(val_outputs, val_labels)
+    with torch.no_grad():  # we do not need gradient for validation.
+        teste = 0
+        for val_inputs, val_labels in validation_loader:
+            teste += len(val_labels)
+            val_inputs = val_inputs.to(device)
+            val_labels = val_labels.to(device)
+            val_outputs = model(val_inputs)
+            val_loss = criterion(val_outputs, val_labels)
 
-                _, val_preds = torch.max(val_outputs, 1)
-                val_running_loss += val_loss.item()
-                val_running_corrects += torch.sum(val_preds == val_labels.data)
+            _, val_preds = torch.max(val_outputs, 1)
+            val_running_loss += val_loss.item()
+            val_running_corrects += torch.sum(val_preds == val_labels.data)
 
         epoch_loss = running_loss / len(training_loader)  # loss per epoch
         epoch_acc = running_corrects.float() / len(training_loader)  # accuracy per epoch
