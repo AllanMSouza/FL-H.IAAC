@@ -268,7 +268,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			selected_clients = []
 			trained_parameters = []
 			selected = 0
-
+			print("Iniciar treinamento")
 			if config['selected_clients'] != '':
 				selected_clients = [int(cid_selected) for cid_selected in config['selected_clients'].split(' ')]
 
