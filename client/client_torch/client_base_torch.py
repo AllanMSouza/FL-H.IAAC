@@ -161,8 +161,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 					dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid)
 				print("leu dataset", len(trainset))
 				self.input_shape = (32, 0)
-				trainLoader = DataLoader(dataset=trainset, batch_size=256, pin_memory=True, shuffle=True)
-				testLoader = DataLoader(dataset=valset, batch_size=256, pin_memory=True, shuffle=False)
+				trainLoader = DataLoader(dataset=trainset, batch_size=256, shuffle=True)
+				testLoader = DataLoader(dataset=valset, batch_size=256, shuffle=False)
 				print("leu loader: ")
 				# exit()
 
