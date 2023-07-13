@@ -286,6 +286,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				train_acc = 0
 				train_loss = 0
 				train_num = 0
+				print("Cliente: ", self.cid, " rodada: ", server_round)
 				for step in range(max_local_steps):
 					for i, (x, y) in enumerate(self.trainloader):
 						if type(x) == type([]):
