@@ -43,13 +43,13 @@ def dataset(data_path):
             normalize,
         ]))
 
-    trainLoader = DataLoader(dataset=train_dataset, batch_size=256, pin_memory=True, shuffle=True)
-    testLoader = DataLoader(dataset=val_dataset, batch_size=256, pin_memory=True, shuffle=False)
+    trainLoader = DataLoader(dataset=train_dataset, batch_size=256, shuffle=True)
+    testLoader = DataLoader(dataset=val_dataset, batch_size=256, shuffle=False)
 
     return trainLoader, testLoader
 
-data_dir = '/home/claudio/FL-H.IAAC/dataset_utils/data/Tiny-ImageNet/raw_data/tiny-imagenet-200'
-# data_dir = '/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/dataset_utils/data/Tiny-ImageNet/raw_data/tiny-imagenet-200'
+# data_dir = '/home/claudio/FL-H.IAAC/dataset_utils/data/Tiny-ImageNet/raw_data/tiny-imagenet-200'
+data_dir = '/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/dataset_utils/data/Tiny-ImageNet/raw_data/tiny-imagenet-200'
 
 train_loader, test_loader = dataset(data_dir)
 

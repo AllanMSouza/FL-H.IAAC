@@ -38,8 +38,8 @@ def dataset(data_path):
             normalize,
         ]))
 
-    trainLoader = DataLoader(dataset=train_dataset, batch_size=256, pin_memory=True, shuffle=True)
-    testLoader = DataLoader(dataset=val_dataset, batch_size=256, pin_memory=True, shuffle=False)
+    trainLoader = DataLoader(dataset=train_dataset, batch_size=256, shuffle=True)
+    testLoader = DataLoader(dataset=val_dataset, batch_size=256, shuffle=False)
 
     return trainLoader, testLoader
 
@@ -85,12 +85,13 @@ for step in range(1):
         loss.backward()
         optimizer_ft.step()
 
-        train_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
+        # train_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
+        train_acc += torch.sum(output == y.data)
 
         if i % log_interval == 0:
             total_time = time.process_time() - start_time
             print('Train Epoch: {} [{}]\tLoss: {:.6f}\t Acc: {}'.format(
-                step, (i+1) * len(x), loss.item(), train_acc/len(x)))
+                step, (i+1) * len(x), loss.item(), train_acc/len(train_num)))
             print("Duração: ", total_time)
             start_time = time.process_time()
 
