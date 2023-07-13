@@ -157,8 +157,8 @@ def save_dataloaders(dataset_name="CIFAR10", num_clients=10, num_classes=10, nii
         print("Original: ", len(index_train), " Sem duplicadas: ", len(pd.Series(index_train).drop_duplicates()), " classes: ", len(pd.Series(target[index_train]).unique().tolist()), " teste: ", len(index_test))
         count += len(index_train) + len(index_test)
 
-        filename_train = f"data/{dataset_name}/{num_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{client_id}/idx_train_{client_id}.pickle"
-        filename_test = f"data/{dataset_name}/{num_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{client_id}/idx_test_{client_id}.pickle"
+        filename_train = """data/{}/{}_clients/classes_per_client_{}/alpha_{}/{}/idx_train_{}.pickle""".format(dataset_name, num_clients, class_per_client, alpha, client_id, client_id)
+        filename_test = """data/{}/{}_clients/classes_per_client_{}/alpha_{}/{}/idx_test_{}.pickle""".format(dataset_name, num_clients, class_per_client, alpha, client_id, client_id)
 
         os.makedirs(os.path.dirname(filename_train), exist_ok=True)
         os.makedirs(os.path.dirname(filename_test), exist_ok=True)
