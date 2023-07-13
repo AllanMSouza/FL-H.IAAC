@@ -84,7 +84,7 @@ for step in range(1):
         optimizer_ft.step()
 
         train_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
-        
+
         if i % log_interval == 0:
             print('Train Epoch: {} [{}]\tLoss: {:.6f}\t Acc: {}'.format(
                 step, (i+1) * len(x), loss.item(), train_acc))
