@@ -37,8 +37,8 @@ def dataset(data_path):
             normalize,
         ]))
 
-    trainLoader = DataLoader(dataset=train_dataset, batch_size=1000, pin_memory=True, shuffle=True)
-    testLoader = DataLoader(dataset=val_dataset, batch_size=1000, pin_memory=True, shuffle=False)
+    trainLoader = DataLoader(dataset=train_dataset, batch_size=256, pin_memory=True, shuffle=True)
+    testLoader = DataLoader(dataset=val_dataset, batch_size=256, pin_memory=True, shuffle=False)
 
     return trainLoader, testLoader
 
