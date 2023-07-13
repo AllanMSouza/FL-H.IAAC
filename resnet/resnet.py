@@ -76,7 +76,7 @@ for step in range(1):
 
         optimizer_ft.zero_grad()
         output = model_ft(x)
-        y = torch.tensor(y.int().detach())
+        # y = torch.tensor(y.int().detach())
         loss = loss_ft(output, y)
         train_loss += loss.item() * y.shape[0]
         loss.backward()
