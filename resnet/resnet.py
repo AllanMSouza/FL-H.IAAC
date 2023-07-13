@@ -8,7 +8,8 @@ import torchvision.models as models
 from train_model import train_model
 from test_model import test_model
 
-data_dir = '/dataset_utils/data/Tiny-ImageNet/raw_data/tiny-imagenet-200'
+# data_dir = '/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/dataset_utils/data/Tiny-ImageNet/raw_data/tiny-imagenet-200'
+data_dir = '/home/claudio/FL-H.IAAC/dataset_utils/data/Tiny-ImageNet/raw_data/tiny-imagenet-200'
 num_workers = {'train' : 100,'val'   : 0,'test'  : 0}
 data_transforms = {
     'train': transforms.Compose([
