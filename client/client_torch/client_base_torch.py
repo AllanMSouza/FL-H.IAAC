@@ -183,7 +183,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			if self.model_name == 'Logist Regression':
 				return Logistic(input_shape=input_shape, num_classes=self.num_classes)
 			elif self.model_name == 'DNN':
-				return DNN(input_shape=input_shape, num_classes=self.num_classes)
+				return DNN(input_shape=input_shape, num_classes=self.num_classes).to(self.device)
 			elif self.model_name == 'CNN'  and self.dataset in ['MNIST', 'CIFAR10']:
 				if self.dataset in ['MNIST']:
 					input_shape = 1
@@ -191,11 +191,11 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				else:
 					input_shape = 3
 					mid_dim = 400
-				return CNN(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim)
+				return CNN(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim).to(self.device)
 			elif self.dataset in ['Tiny-ImageNet']:
 				# return AlexNet(num_classes=self.num_classes)
 				# model = models.resnet18(pretrained=True, num_classes=self.num_classes).to(self.device)
-				model = CNN(input_shape=3, num_classes=self.num_classes, mid_dim=int(179776/4))
+				model = CNN(input_shape=3, num_classes=self.num_classes, mid_dim=int(179776/4)).to(self.device)
 				# model.avgpool = nn.AdaptiveAvgPool2d(1)
 				# num_ftrs = model.fc.in_features
 				# model.fc = nn.Linear(num_ftrs, 200)
