@@ -65,8 +65,8 @@ ROUNDS = 20
 # STRATEGIES 					= ('FedPredict', 'FedPer', 'FedClassAvg', 'FedAVG', 'FedClassAvg_with_FedPredict', 'FedPer_with_FedPredict', 'FedProto', 'FedYogi', 'FedLocal',)
 # STRATEGIES_FOR_ANALYSIS = ['FedKD', 'FedAVG', 'FedPAQ']
 # STRATEGIES_TO_EXECUTE = ['FedKD', 'FedAVG']
-STRATEGIES_FOR_ANALYSIS = ['FedPredict', 'FedAVG']
-STRATEGIES_TO_EXECUTE = ['FedPredict', 'FedAVG']
+STRATEGIES_FOR_ANALYSIS = ['FedPredict']
+STRATEGIES_TO_EXECUTE = ['FedPredict']
 
 EXPERIMENTS = {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '', 'layer_selection_evaluate': 4},
                2: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '', 'layer_selection_evaluate': 4},
