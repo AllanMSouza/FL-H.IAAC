@@ -67,7 +67,7 @@ class FedPredictServerTorch(FedPredictBaseServer):
             self
     ) -> Optional[Parameters]:
         """Initialize global model parameters."""
-        model_parameters = [i.detach().numpy() for i in self.model.parameters()]
+        model_parameters = [i.detach().cpu().numpy() for i in self.model.parameters()]
         self.server_model_parameters = copy.deepcopy(model_parameters)
         return model_parameters
 

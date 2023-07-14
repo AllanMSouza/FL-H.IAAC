@@ -216,7 +216,7 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 
 						self.optimizer.zero_grad()
 						output = self.model(x)
-						y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
+						y = torch.tensor(y)
 						loss = self.loss(output, y)
 						local_parameters = [torch.Tensor(i) for i in self.get_parameters_of_model()]
 						global_parameters = [torch.Tensor(i) for i in parameters]
@@ -275,7 +275,7 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 						x = x.to(self.device)
 					self.optimizer.zero_grad()
 					y = y.to(self.device)
-					y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
+					y = torch.tensor(y)
 					output = self.model(x)
 					output2 = self.clone_model_fedclassavg(x)
 					output = output + torch.mul(output2, 4/int(server_round))

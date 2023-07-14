@@ -213,7 +213,7 @@ class FedKDClientTorch(FedAvgClientTorch):
 						x = x.to(self.device)
 					y = y.to(self.device)
 					train_num += y.shape[0]
-					y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
+					y = torch.tensor(y)
 
 					self.optimizer_teacher.zero_grad()
 					output_teacher = self.teacher_model(x)
@@ -257,7 +257,7 @@ class FedKDClientTorch(FedAvgClientTorch):
 					else:
 						x = x.to(self.device)
 					y = y.to(self.device)
-					y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
+					y = torch.tensor(y)
 					train_num += y.shape[0]
 
 					self.optimizer.zero_grad()
@@ -417,7 +417,7 @@ class FedKDClientTorch(FedAvgClientTorch):
 						x = x.to(self.device)
 					self.optimizer.zero_grad()
 					y = y.to(self.device)
-					y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
+					y = torch.tensor(y)
 					output, output_teacher = self.model(x)
 					loss = self.loss(output_teacher, y)
 					test_loss += loss.item() * y.shape[0]

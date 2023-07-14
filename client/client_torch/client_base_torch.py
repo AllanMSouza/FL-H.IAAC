@@ -216,7 +216,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 	# It does the same of "get_parameters", but using "get_parameters" in outside of the core of Flower is causing errors
 	def get_parameters_of_model(self):
 		try:
-			parameters = [i.detach().numpy() for i in self.model.parameters()]
+			parameters = [i.detach().cpu().numpy() for i in self.model.parameters()]
 			return parameters
 		except Exception as e:
 			print("get parameters of model")
@@ -294,7 +294,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 						self.optimizer.zero_grad()
 						output = self.model(x)
-						y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
+						y = torch.tensor(y)
 						loss = self.loss(output, y)
 						train_loss += loss.item() * y.shape[0]
 						loss.backward()
@@ -359,7 +359,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 						x = x.to(self.device)
 					self.optimizer.zero_grad()
 					y = y.to(self.device)
-					y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
+					y = torch.tensor(y)
 					output = self.model(x)
 					loss = self.loss(output, y)
 					test_loss += loss.item() * y.shape[0]

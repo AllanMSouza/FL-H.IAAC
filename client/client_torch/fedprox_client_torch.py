@@ -129,7 +129,7 @@ class FedProxClientTorch(FedAvgClientTorch):
 
 						self.optimizer.zero_grad()
 						output = self.model(x)
-						y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
+						y = torch.tensor(y)
 						loss = self.loss(output, y)
 						train_loss += loss.item() * y.shape[0]
 						loss.backward()

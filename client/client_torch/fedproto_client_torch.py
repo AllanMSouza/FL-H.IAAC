@@ -182,7 +182,7 @@ class FedProtoClientTorch(ClientBaseTorch):
 						# rep = self.model.base(x)
 						# output = self.model.head(rep)
 						output, rep = self.model(x)
-						y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
+						y = torch.tensor(y)
 						loss = self.loss(output, y)
 
 						if self.global_protos != None:
@@ -280,7 +280,7 @@ class FedProtoClientTorch(ClientBaseTorch):
 						x = x.to(self.device)
 					self.optimizer.zero_grad()
 					y = y.to(self.device)
-					y = torch.tensor(y.int().detach().numpy().astype(int).tolist())
+					y = torch.tensor(y)
 					output, rep = self.model(x)
 
 					# prediciton based on similarity
