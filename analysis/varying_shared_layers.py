@@ -126,6 +126,7 @@ class Varying_Shared_layers:
                   y_lim=True,
                   y_min=10,
                   y_max=80)
+        print("Custo {1}", df[df['Shared layers']=='{1}'])
         x_column = 'Round'
         y_column = 'Communication cost (MB)'
         hue = 'Shared layers'
