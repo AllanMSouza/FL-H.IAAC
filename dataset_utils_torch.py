@@ -137,42 +137,60 @@ class ManageDatasets():
 
         return x_train, y_train, x_test, y_test
 
-    def load_CIFAR10(self, n_clients, filename_train, filename_test, non_iid=False):
+    def load_CIFAR10(self, n_clients, filename_train, filename_test, non_iid=False, batch_size=32):
 
-        if non_iid:
+        try:
+            transform_train = transforms.Compose(
+                [transforms.Resize((32, 32)),  # resises the image so it can be perfect for our model.
+                 transforms.RandomHorizontalFlip(),  # FLips the image w.r.t horizontal axis
+                 transforms.RandomRotation(10),  # Rotates the image to a specified angel
+                 transforms.RandomAffine(0, shear=10, scale=(0.8, 1.2)),
+                 # Performs actions like zooms, change shear angles.
+                 transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),  # Set the color params
+                 transforms.ToTensor(),  # comvert the image to tensor so that it can work with torch
+                 transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))  # Normalize all the images
+                 ])
 
-            with open(filename_train, 'rb') as handle:
-                idx_train = pickle.load(handle)
+            transform_test = transforms.Compose([transforms.Resize((32, 32)),
+                                                 transforms.ToTensor(),
+                                                 transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+                                                 ])
+            training_dataset = datasets.CIFAR10(root='./data', train=True, download=True,
+                                                transform=transform_train)  # Data augmentation is only done on training images
+            validation_dataset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
 
-            with open(filename_test, 'rb') as handle:
-                idx_test = pickle.load(handle)
+            if non_iid:
 
-            # if self.cid >= 5:
-            # 	time.sleep(4)
-            (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
-            y_train = np.array([i[0] for i in y_train])
-            y_test = np.array([i[0] for i in y_test])
-            y = np.concatenate((y_train, y_test), axis=0)
-            x = np.concatenate((x_train, x_test), axis=0)/255.0
-            x_train = x[idx_train]
-            x_test = x[idx_test]
+                with open(filename_train, 'rb') as handle:
+                    idx_train = pickle.load(handle)
 
-            y_train = y[idx_train]
-            y_test = y[idx_test]
+                with open(filename_test, 'rb') as handle:
+                    idx_test = pickle.load(handle)
 
-            # print("ex antes: ", x_train.shape)
-            x_train = np.array([np.moveaxis(i, -1, 0) for i in x_train])
-            # print("ex depois: ", x_train.shape)
-            x_test = np.array([np.moveaxis(i, -1, 0) for i in x_test])
+                x = training_dataset.data
+                x = np.concatenate((x, validation_dataset.data))
+                y = training_dataset.targets
+                y = np.concatenate((y, validation_dataset.targets))
+                x_train = x[idx_train]
+                x_test = x[idx_test]
+                y_train = y[idx_train]
+                y_test = y[idx_test]
 
-        else:
+                training_dataset.data = x_train
+                training_dataset.targets = y_train
+                validation_dataset.data = x_test
+                validation_dataset.targets = y_test
 
-            (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
-            x_train, x_test                      = x_train/255.0, x_test/255.0
-            x_train, y_train, x_test, y_test     = self.slipt_dataset(x_train, y_train, x_test, y_test, n_clients)
+            training_loader = torch.utils.data.DataLoader(training_dataset, batch_size=batch_size,
+                                                          shuffle=True)  # Batch size of 100 i.e to work with 100 images at a time
 
+            validation_loader = torch.utils.data.DataLoader(validation_dataset, batch_size=batch_size, shuffle=False)
 
-        return x_train, y_train, x_test, y_test
+            return training_loader, validation_loader
+
+        except Exception as e:
+            print("Select CIFAR10")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
     def load_tiny_imagenet(self, n_clients, filename_train, filename_test, non_iid=False):
 
@@ -186,31 +204,25 @@ class ManageDatasets():
             with open(filename_test, 'rb') as handle:
                 idx_test = pickle.load(handle)
 
-            # if self.cid >= 5:
-            # 	time.sleep(4)
-            # idx_train = idx_train[:100]
-            # idx_test = idx_test[:100]
-            trainset, valset = load_data(dir_path + "tiny-imagenet-200/")
-            # dataset_image = []
-            # dataset_label = []
-            # dataset_image.extend(trainset.imgs)
-            # dataset_image.extend(valset.imgs)
-            # dataset_label.extend(trainset.targets)
-            # dataset_label.extend(valset.targets)
-            # x = np.array(dataset_image)
-            # y = np.array(dataset_label)
-            # x_train = x[idx_train]
-            # x_test = x[idx_test]
-            #
-            # y_train = y[idx_train]
-            # y_test = y[idx_test]
-            #
-            # trainset.imgs = x_train
-            # trainset.targets = y_train
-            # valset.imgs = x_test
-            # valset.targets = y_test
+            training_dataset, validation_dataset = load_data(dir_path + "tiny-imagenet-200/")
+            x = training_dataset.data
+            x = np.concatenate((x, validation_dataset.data))
+            y = training_dataset.targets
+            y = np.concatenate((y, validation_dataset.targets))
+            x_train = x[idx_train]
+            x_test = x[idx_test]
+            y_train = y[idx_train]
+            y_test = y[idx_test]
 
-            return trainset, valset
+            training_dataset.data = x_train
+            training_dataset.targets = y_train
+            validation_dataset.data = x_test
+            validation_dataset.targets = y_test
+
+            trainLoader = DataLoader(dataset=training_dataset, batch_size=256, shuffle=True)
+            testLoader = DataLoader(dataset=validation_dataset, batch_size=256, shuffle=False)
+
+            return trainLoader, testLoader
 
         except Exception as e:
             print("load tinyimagenet")
@@ -246,7 +258,7 @@ class ManageDatasets():
         return x_train, y_train, x_test, y_test
 
 
-    def select_dataset(self, dataset_name, n_clients, class_per_client, alpha, non_iid):
+    def select_dataset(self, dataset_name, n_clients, class_per_client, alpha, non_iid, bath_size):
         try:
             print("recebeu: ", self.cid, dataset_name, n_clients, class_per_client, alpha, non_iid)
             filename_train = f"dataset_utils/data/{dataset_name}/{n_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{self.cid}/idx_train_{self.cid}.pickle"
@@ -259,7 +271,7 @@ class ManageDatasets():
                 return self.load_CIFAR100(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
 
             elif dataset_name == 'CIFAR10':
-                return self.load_CIFAR10(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
+                return self.load_CIFAR10(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid, batch_size=bath_size)
 
             elif dataset_name == 'Tiny-ImageNet':
                 return self.load_tiny_imagenet(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test,

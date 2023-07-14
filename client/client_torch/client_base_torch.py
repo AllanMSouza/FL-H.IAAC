@@ -9,7 +9,7 @@ import time
 import sys
 
 from dataset_utils_torch import ManageDatasets
-from model_definition_torch import DNN, Logistic, CNN, AlexNet
+from model_definition_torch import DNN, Logistic, CNN, AlexNet, LeNet, LeNet2, CNN_5
 from torchvision import models
 import csv
 import torch.nn as nn
@@ -106,7 +106,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			self.fraction_fit	  = fraction_fit
 
 			self.loss = nn.CrossEntropyLoss()
-			self.learning_rate = 0.01
+			self.learning_rate = 0.001
 			self.new_clients = new_clients
 			self.new_clients_train = new_clients_train
 			# self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -140,30 +140,14 @@ class ClientBaseTorch(fl.client.NumPyClient):
 	def load_data(self, dataset_name, n_clients, batch_size=32):
 		try:
 			if dataset_name in ['MNIST', 'CIFAR10', 'CIFAR100']:
-				x_train, y_train, x_test, y_test = ManageDatasets(self.cid, self.model_name).select_dataset(
-					dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid)
-				self.input_shape = x_train.shape
-				tensor_x_train = torch.Tensor(x_train)  # transform to torch tensor
-				tensor_y_train = torch.Tensor(y_train)
-
-				train_dataset = TensorDataset(tensor_x_train, tensor_y_train)
-				trainLoader = DataLoader(train_dataset, batch_size, drop_last=True, shuffle=True)
-
-				tensor_x_test = torch.Tensor(x_test)  # transform to torch tensor
-				tensor_y_test = torch.Tensor(y_test)
-
-				test_dataset = TensorDataset(tensor_x_test, tensor_y_test)
-				testLoader = DataLoader(test_dataset, batch_size, drop_last=True, shuffle=True)
-				print("Carregou dados de ", self.dataset, len(x_train))
+				trainLoader, testLoader = ManageDatasets(self.cid, self.model_name).select_dataset(
+					dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid, batch_size)
+				self.input_shape = (3,64,64)
 			else:
 				print("gerar")
-				trainset, valset = ManageDatasets(self.cid, self.model_name).select_dataset(
-					dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid)
-				print("leu dataset", len(trainset))
+				trainLoader, testLoader = ManageDatasets(self.cid, self.model_name).select_dataset(
+					dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid, batch_size)
 				self.input_shape = (32, 0)
-				trainLoader = DataLoader(dataset=trainset, batch_size=256, shuffle=True)
-				testLoader = DataLoader(dataset=valset, batch_size=256, shuffle=False)
-				print("leu loader: ")
 				# exit()
 
 			return trainLoader, testLoader
@@ -192,6 +176,16 @@ class ClientBaseTorch(fl.client.NumPyClient):
 					input_shape = 3
 					mid_dim = 400
 				return CNN(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim).to(self.device)
+			elif self.model_name == 'CNN_5'  and self.dataset in ['MNIST', 'CIFAR10']:
+				if self.dataset in ['MNIST']:
+					input_shape = 1
+					mid_dim = 256
+				else:
+					input_shape = 3
+					mid_dim = 400
+				return CNN_5(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim).to(self.device)
+			elif self.model_name == 'Lenet':
+				return CNN_5(num_classes=self.num_classes).to(self.device)
 			elif self.dataset in ['Tiny-ImageNet']:
 				# return AlexNet(num_classes=self.num_classes)
 				# model = models.resnet18(pretrained=True, num_classes=self.num_classes).to(self.device)
@@ -287,8 +281,9 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				train_acc = 0
 				train_loss = 0
 				train_num = 0
-				print("Cliente: ", self.cid, " rodada: ", server_round)
+				print("Cliente: ", self.cid, " rodada: ", server_round, " Quantidade de camadas: ", len([i for i in self.model.parameters()]))
 				for step in range(max_local_steps):
+					start_time = time.process_time()
 					for i, (x, y) in enumerate(self.trainloader):
 						if type(x) == type([]):
 							x[0] = x[0].to(self.device)
@@ -306,7 +301,9 @@ class ClientBaseTorch(fl.client.NumPyClient):
 						self.optimizer.step()
 
 						train_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
-				print("Completou, cliente: ", self.cid, " rodada: ", server_round)
+						total_time = time.process_time() - start_time
+						# print("Duração: ", total_time)
+				# print("Completou, cliente: ", self.cid, " rodada: ", server_round)
 				trained_parameters = self.get_parameters_of_model()
 				self.save_parameters()
 
