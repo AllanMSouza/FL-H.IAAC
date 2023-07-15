@@ -9,7 +9,7 @@ import time
 import sys
 
 from dataset_utils_torch import ManageDatasets
-from model_definition_torch import DNN, Logistic, CNN, AlexNet, MobileNet, CNN_5
+from model_definition_torch import DNN, Logistic, CNN, AlexNet, MobileNet, CNN_5, resnet20
 from torchvision import models
 import csv
 import torch.nn as nn
@@ -176,14 +176,14 @@ class ClientBaseTorch(fl.client.NumPyClient):
 					input_shape = 3
 					mid_dim = 400
 				return CNN(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim).to(self.device)
-			elif self.model_name == 'CNN_5'  and self.dataset in ['MNIST', 'CIFAR10']:
+			elif self.model_name == 'Resnet20'  and self.dataset in ['MNIST', 'CIFAR10']:
 				if self.dataset in ['MNIST']:
 					input_shape = 1
 					mid_dim = 256
 				else:
 					input_shape = 3
 					mid_dim = 400
-				return CNN_5(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim).to(self.device)
+				return resnet20().to(self.device)
 			elif self.model_name == 'Mobilenet':
 				return MobileNet(num_classes=self.num_classes).to(self.device)
 			elif self.dataset in ['Tiny-ImageNet']:
