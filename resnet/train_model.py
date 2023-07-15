@@ -1,13 +1,11 @@
 import torch, time, copy, sys, os
 import matplotlib.pyplot as plt
-from livelossplot import PlotLosses
 
 def train_model(output_path, model, dataloaders, dataset_sizes, criterion, optimizer, num_epochs=5, scheduler=None):
     if not os.path.exists('models/'+str(output_path)):
         os.makedirs('models/'+str(output_path))
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     since = time.time()
-    liveloss = PlotLosses()
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
     best = 0
@@ -74,14 +72,8 @@ def train_model(output_path, model, dataloaders, dataset_sizes, criterion, optim
                 best = epoch + 1
                 best_model_wts = copy.deepcopy(model.state_dict())
                 
-        liveloss.update({
-            'log loss': avg_loss,
-            'val_log loss': val_loss,
-            'accuracy': t_acc,
-            'val_accuracy': val_acc
-        })
-                
-        liveloss.draw()
+
+
         print('Train Loss: {:.4f} Acc: {:.4f}'.format(avg_loss, t_acc))
         print(  'Val Loss: {:.4f} Acc: {:.4f}'.format(val_loss, val_acc))
         print()

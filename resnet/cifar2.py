@@ -26,6 +26,11 @@ training_dataset = datasets.CIFAR10(root='./data', train=True, download=True,
                                     transform=transform_train)  # Data augmentation is only done on training images
 validation_dataset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
 
+training_dataset.data = training_dataset.data[:40000]
+training_dataset.targets = training_dataset.targets[:40000]
+print("ola: ", training_dataset.data.shape, len(training_dataset.targets))
+exit()
+
 training_loader = torch.utils.data.DataLoader(training_dataset, batch_size=100,
                                               shuffle=True)  # Batch size of 100 i.e to work with 100 images at a time
 
@@ -70,7 +75,7 @@ class LeNet(nn.Module):
 model = LeNet().to(device)
 
 criterion = nn.CrossEntropyLoss() # same as categorical_crossentropy loss used in Keras models which runs on Tensorflow
-optimizer = torch.optim.Adam(model.parameters(), lr = 0.001) # fine tuned the lr
+optimizer = torch.optim.SGD(model.parameters(), lr = 0.001) # fine tuned the lr
 
 epochs = 15
 running_loss_history = []
