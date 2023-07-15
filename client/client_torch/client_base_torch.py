@@ -278,12 +278,14 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				self.model.train()
 
 				max_local_steps = self.local_epochs
-				train_acc = 0
-				train_loss = 0
-				train_num = 0
+
+
 				print("Cliente: ", self.cid, " rodada: ", server_round, " Quantidade de camadas: ", len([i for i in self.model.parameters()]))
 				for step in range(max_local_steps):
 					start_time = time.process_time()
+					train_acc = 0
+					train_loss = 0
+					train_num = 0
 					for i, (x, y) in enumerate(self.trainloader):
 						if type(x) == type([]):
 							x[0] = x[0].to(self.device)
@@ -296,7 +298,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 						output = self.model(x)
 						y = torch.tensor(y)
 						loss = self.loss(output, y)
-						train_loss += loss.item() * y.shape[0]
+						train_loss += loss.item()
 						loss.backward()
 						self.optimizer.step()
 
