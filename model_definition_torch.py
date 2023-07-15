@@ -94,47 +94,49 @@ class DNN_teacher(nn.Module):
 
     # ====================================================================================================================
 
-class LeNet2(nn.Module):
-    def __init__(self, num_classes):
-      super(LeNet2, self).__init__()
-      try:
-          self.network = nn.Sequential(
-              nn.Conv2d(3, 16, kernel_size=3, padding=1),
-              nn.ReLU(),
-              nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1),
-              nn.ReLU(),
-              nn.MaxPool2d(2, 2),  # output: 64 x 16 x 16
+def conv_dw(inplane, outplane, stride=1):
+    return nn.Sequential(nn.Conv2d(inplane, inplane, kernel_size=3, groups=inplane, stride=stride, padding=1),
+                         nn.BatchNorm2d(inplane), nn.ReLU(),
+                         nn.Conv2d(inplane, outplane, kernel_size=1, groups=1, stride=1), nn.BatchNorm2d(outplane),
+                         nn.ReLU())
 
-              nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
-              nn.ReLU(),
-              # nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
-              # nn.ReLU(),
-              # nn.MaxPool2d(2, 2),  # output: 128 x 8 x 8
+def conv_bw(inplane, outplane, kernel_size=3, stride=1):
+    return nn.Sequential(nn.Conv2d(inplane, outplane, kernel_size=kernel_size, groups=1, stride=stride, padding=1),
+                         nn.BatchNorm2d(outplane), nn.ReLU())
 
-              # nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
-              # nn.ReLU(),
-              # nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1),
-              # nn.ReLU(),
-              nn.MaxPool2d(2, 2),  # output: 256 x 4 x 4
+class MobileNet(nn.Module):
+    def __init__(self, num_classes=10):
+        super(MobileNet, self).__init__()
+        try:
+            layers = []
+            layers.append(conv_bw(3, 32, 3, 1))
+            layers.append(conv_dw(32, 64, 1))
+            layers.append(conv_dw(64, 128, 2))
+            layers.append(conv_dw(128, 128, 1))
+            layers.append(conv_dw(128, 256, 2))
+            layers.append(conv_dw(256, 256, 1))
+            layers.append(conv_dw(256, 512, 2))
+            for i in range(5):
+                layers.append(conv_dw(512, 512, 1))
 
-              nn.Flatten(),
-              nn.Dropout(p=0.5),
-              nn.Linear(4096, 64),
-              nn.ReLU(),
-              nn.Linear(64, 32),
-              nn.ReLU(),
-              nn.Linear(32, num_classes))
-      except Exception as e:
-          print("Lenet")
-          print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+            layers.append(conv_dw(512, 1024, 2))
+            layers.append(conv_dw(1024, 1024, 1))
+            self.classifer = nn.Sequential(nn.Dropout(0.5), nn.Linear(1024, num_classes))
+            self.feature = nn.Sequential(*layers)
+        except Exception as e:
+            print("Mobilenet")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
     def forward(self, x):
-      try:
-          out = self.network(x)
-          return out
-      except Exception as e:
-          print("Lenet forward")
-          print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+        try:
+            out = self.feature(x)
+            out = out.mean(3).mean(2)
+            out = out.view(-1, 1024)
+            out = self.classifer(out)
+            return out
+        except Exception as e:
+            print("Mobilenet forward")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
     # ====================================================================================================================
 

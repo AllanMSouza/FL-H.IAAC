@@ -155,6 +155,11 @@ class ManageDatasets():
                                                  transforms.ToTensor(),
                                                  transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
                                                  ])
+
+            transform = transforms.Compose(
+                [transforms.ToTensor(), transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616))])
+            transform_train = transform
+            transform_test = transform
             training_dataset = datasets.CIFAR10(root='./data', train=True, download=True,
                                                 transform=transform_train)  # Data augmentation is only done on training images
             validation_dataset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
