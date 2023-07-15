@@ -115,9 +115,9 @@ def dataset(data_path):
     return trainLoader, testLoader
 
 
-# data_dir = '/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/dataset_utils/data/Tiny-ImageNet/raw_data/tiny-imagenet-200'
+data_dir = '/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/dataset_utils/data/Tiny-ImageNet/raw_data/tiny-imagenet-200'
 # data_dir = '/home/claudio/FL-H.IAAC/dataset_utils/data/Tiny-ImageNet/raw_data/tiny-imagenet-200'
-data_dir = '/home/claudiocapanema/Documentos/FL-H.IAAC/dataset_utils/data/Tiny-ImageNet/raw_data/tiny-imagenet-200'
+# data_dir = '/home/claudiocapanema/Documentos/FL-H.IAAC/dataset_utils/data/Tiny-ImageNet/raw_data/tiny-imagenet-200'
 
 loss_ft = nn.CrossEntropyLoss()
 trainloader, testloader = dataset(data_dir)
@@ -158,12 +158,12 @@ for step in range(1):
         optimizer_ft.step()
 
         train_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
-        # train_acc += torch.sum(output == y.data)
+        # train_acc += torch.sum(output == y)
 
         if i % log_interval == 0:
             total_time = time.process_time() - start_time
-            print('Train Epoch: {} [{}]\tLoss: {:.6f}\t Acc: {}'.format(
-                step, (i+1) * len(x), loss.item(), train_acc/train_num))
+            print('Train Epoch: {} [{}]\tLoss: {}\t Acc: {}'.format(
+                step, (i+1) * len(x), train_loss / train_num, train_acc / train_num))
             print("Duração: ", total_time)
             start_time = time.process_time()
 
