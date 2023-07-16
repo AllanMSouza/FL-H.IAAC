@@ -97,16 +97,16 @@ def load_dataset(data_path):
 
 
     np.random.seed(9)
-    idx = np.random.randint(low=0, high=110000, size=5000)
+    idx = np.random.randint(low=0, high=100000, size=5000)
 
     print(len(pd.Series(full_dataset.targets).unique().tolist()))
     print(len(pd.Series(full_dataset.targets)))
     print(len(pd.Series(val_dataset.targets).unique().tolist()))
     print(len(pd.Series(val_dataset.targets)))
 
-    full_dataset.samples = full_dataset.samples + val_dataset.samples
-    full_dataset.imgs = full_dataset.imgs + val_dataset.imgs
-    full_dataset.targets = full_dataset.targets + val_dataset.targets
+    # full_dataset.samples = full_dataset.samples + val_dataset.samples
+    # full_dataset.imgs = full_dataset.imgs + val_dataset.imgs
+    # full_dataset.targets = full_dataset.targets + val_dataset.targets
     # exit()
 
     print(full_dataset.samples[:1])
