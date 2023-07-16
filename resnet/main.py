@@ -193,7 +193,7 @@ if opt.model_name == "MOBILE_NET":
     model = MobileNet()
 else:
     # model = resnet20(num_classes=num_classes)
-    model = torchvision.models.resnet18(weights=torchvision.models.ResNet18_Weights.IMAGENET1K_V1)
+    model = torchvision.models.resnet18()
     model.avgpool = nn.AdaptiveAvgPool2d(1)
     model.fc = torch.nn.Linear(in_features=512, out_features=200, bias=True)
 model.to(device)
