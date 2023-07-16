@@ -98,7 +98,7 @@ def load_dataset(data_path):
 
 
     np.random.seed(9)
-    idx = np.random.randint(low=0, high=100000, size=30000)
+    idx = np.random.randint(low=0, high=100000, size=7000)
 
     print(len(pd.Series(full_dataset.targets).unique().tolist()))
     print(len(pd.Series(full_dataset.targets)))
