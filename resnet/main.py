@@ -58,7 +58,7 @@ def reoganize_val_dataset(VALID_DIR):
             os.rename(os.path.join(val_img_dir, img), os.path.join(newpath, img))
 
         if os.path.exists(val_img_dir):
-            os.rmdir(val_img_dir)
+            os.remove(val_img_dir)
 
 
 
