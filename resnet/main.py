@@ -80,10 +80,11 @@ def load_dataset(data_path):
     full_dataset = datasets.ImageFolder(
         traindir,
         transforms.Compose([
+            transforms.Resize((224, 224)),  # must same as here
             transforms.RandomResizedCrop(224),
-            transforms.RandomHorizontalFlip(),
+            transforms.RandomHorizontalFlip(),  # data augmentation
             transforms.ToTensor(),
-            normalize,
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])  # normalization
         ]))
 
     # val_dataset = datasets.ImageFolder(
