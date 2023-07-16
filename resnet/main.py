@@ -144,7 +144,7 @@ def load_dataset(data_path):
     return train_loader, test_loader
 
 parser = OptionParser()
-parser.add_option("-e", "--epochs",  dest="local_epochs", default=2,             help="Number times that the learning algorithm will work through the entire training dataset", metavar="INT")
+parser.add_option("-e", "--epochs",  dest="local_epochs", default=1,             help="Number times that the learning algorithm will work through the entire training dataset", metavar="INT")
 parser.add_option("-b", "--batch",   dest="batch_size",   default=32,            help="Number of samples processed before the model is updated", metavar="INT")
 parser.add_option("-m", "--model",   dest="model_name",   default='MOBILE_NET',  help="Model used for trainning", metavar="STR")
 parser.add_option("-d", "--dataset", dest="dataset",      default='CIFAR10',     help="Dataset used for trainning", metavar="STR")
