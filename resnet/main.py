@@ -242,10 +242,10 @@ with torch.no_grad():
             class_correct[label] += c[i].item()
             class_total[label] += 1
 
-for label in class_total:
+for i in range(len(class_total)):
 
-    if class_total[label] == 0:
-        class_total[label] = 1
+    if class_total[i] == 0:
+        class_total[i] = 1
 
 for i in range(10):
     print('Accuracy of %5s : %2d %%' % (classes[i], 100 * class_correct[i] / class_total[i]))
