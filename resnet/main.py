@@ -6,39 +6,109 @@ from optparse import OptionParser
 import torch
 import torch.nn as nn
 import torchvision
+from torchvision import datasets
 import torchvision.transforms as transforms
 import torch.optim as optim
 import numpy as np
 
 from Model_MobileNet import MobileNet
 from Model_ResNet import resnet20
+import pandas as pd
+import os
+import shutil
+import copy
+
+def reoganize_val_dataset(VALID_DIR):
+    # Create separate validation subfolders for the validation images based on
+    # their labels indicated in the val_annotations txt file
+    original = copy.deepcopy(VALID_DIR)
+    val_img_dir = os.path.join(VALID_DIR, 'images')
+    # already_reoganized = os.path.isfile(os.path.join(VALID_DIR, 'images/n01443537/val_68.JPEG'))
+    # print(already_reoganized)
+    #
+    # # exit()
+    # if not already_reoganized:
+
+    # Open and read val annotations text file
+    fp = open(os.path.join(VALID_DIR, 'val_annotations.txt'), 'r')
+    data = fp.readlines()
+
+    # Create dictionary to store img filename (word 0) and corresponding
+    # label (word 1) for every line in the txt file (as key value pair)
+    val_img_dict = {}
+    for line in data:
+        words = line.split('\t')
+        val_img_dict[words[0]] = words[1]
+    fp.close()
+
+    # Display first 10 entries of resulting val_img_dict dictionary
+    # {k: val_img_dict[k] for k in list(val_img_dict)[:10]}
+
+    # Create subfolders (if not present) for validation images based on label,
+    # and move images into the respective folders
+    for img, folder in val_img_dict.items():
+        newpath = (os.path.join(val_img_dir.replace('images', ""), folder + "/images"))
+        # print("a", val_img_dir)
+        # print("b", folder)
+        # print(newpath)
+        # exit()
+        if not os.path.exists(newpath):
+            os.makedirs(newpath)
+        if os.path.exists(os.path.join(val_img_dir, img)):
+            os.rename(os.path.join(val_img_dir, img), os.path.join(newpath, img))
+
+        if os.path.exists(val_img_dir):
+            os.rmdir(val_img_dir)
+
+
 
 def load_dataset(data_path):
     import torch
     import torchvision
     import torchvision.transforms as transforms
     # Load all the images
-    transformation = transforms.Compose([
-        # Randomly augment the image data
-        # Random horizontal flip
-        transforms.RandomHorizontalFlip(0.5),
-        # Random vertical flip
-        transforms.RandomVerticalFlip(0.3),
-        # transform to tensors
-        transforms.ToTensor(),
-        # Normalize the pixel values (in R, G, and B channels)
-        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
-    ])
+    """Load ImageNet (training and val set)."""
 
-    # Load all of the images, transforming them
-    full_dataset = torchvision.datasets.ImageFolder(
-        root=data_path,
-        transform=transformation,
+    # Load ImageNet and normalize
+    traindir = os.path.join(data_path, "train")
+    valdir = os.path.join(data_path, "val")
+    reoganize_val_dataset(valdir)
 
-    )
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                     std=[0.229, 0.224, 0.225])
 
-    np.random.seed(4)
+    full_dataset = datasets.ImageFolder(
+        traindir,
+        transforms.Compose([
+            transforms.RandomResizedCrop(224),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            normalize,
+        ]))
+
+    val_dataset = datasets.ImageFolder(
+        valdir,
+        transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            normalize,
+        ]))
+
+
+    np.random.seed(9)
     idx = np.random.randint(low=0, high=110000, size=5000)
+
+    print(len(pd.Series(full_dataset.targets).unique().tolist()))
+    print(len(pd.Series(full_dataset.targets)))
+    print(len(pd.Series(val_dataset.targets).unique().tolist()))
+    print(len(pd.Series(val_dataset.targets)))
+
+    full_dataset.samples = full_dataset.samples + val_dataset.samples
+    full_dataset.imgs = full_dataset.imgs + val_dataset.imgs
+    full_dataset.targets = full_dataset.targets + val_dataset.targets
+    # exit()
+
     print(full_dataset.samples[:1])
     print([tuple(i) for i in np.array(full_dataset.samples)[idx].tolist()][:1])
     print("ola: ", idx.shape, idx[0], type(full_dataset.imgs), type(full_dataset.targets), type(full_dataset.samples))
@@ -52,11 +122,11 @@ def load_dataset(data_path):
     test_size = len(full_dataset) - train_size
 
     # use torch.utils.data.random_split for training/test split
-    train_dataset, test_dataset = torch.utils.data.random_split(full_dataset, [train_size, test_size])
+    full_dataset, test_dataset = torch.utils.data.random_split(full_dataset, [train_size, test_size])
 
     # define a loader for the training data we can iterate through in 50-image batches
     train_loader = torch.utils.data.DataLoader(
-        train_dataset,
+        full_dataset,
         batch_size=256,
         num_workers=0,
         shuffle=True
@@ -73,7 +143,7 @@ def load_dataset(data_path):
     return train_loader, test_loader
 
 parser = OptionParser()
-parser.add_option("-e", "--epochs",  dest="local_epochs", default=1,             help="Number times that the learning algorithm will work through the entire training dataset", metavar="INT")
+parser.add_option("-e", "--epochs",  dest="local_epochs", default=2,             help="Number times that the learning algorithm will work through the entire training dataset", metavar="INT")
 parser.add_option("-b", "--batch",   dest="batch_size",   default=32,            help="Number of samples processed before the model is updated", metavar="INT")
 parser.add_option("-m", "--model",   dest="model_name",   default='MOBILE_NET',  help="Model used for trainning", metavar="STR")
 parser.add_option("-d", "--dataset", dest="dataset",      default='CIFAR10',     help="Dataset used for trainning", metavar="STR")
@@ -112,8 +182,8 @@ elif opt.dataset == "CIFAR10":
     test_loader = torch.utils.data.DataLoader(testset, batch_size=int(opt.batch_size), shuffle=False)
 else:
     num_classes = 200
-    # data_dir = '/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/dataset_utils/data/Tiny-ImageNet/raw_data/tiny-imagenet-200'
-    data_dir = '/home/claudiocapanema/Documentos/FL-H.IAAC/dataset_utils/data/Tiny-ImageNet/raw_data/tiny-imagenet-200'
+    data_dir = '/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/dataset_utils/data/Tiny-ImageNet/raw_data/tiny-imagenet-200'
+    # data_dir = '/home/claudiocapanema/Documentos/FL-H.IAAC/dataset_utils/data/Tiny-ImageNet/raw_data/tiny-imagenet-200'
     train_loader, test_loader = load_dataset(data_dir)
     classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
@@ -126,7 +196,7 @@ model.to(device)
 
 lr = 0.001
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+optimizer = optim.Adam(model.parameters(), lr=lr)
 epochs = int(opt.local_epochs)
 
 #Metrics
@@ -223,8 +293,8 @@ with torch.no_grad():
     results = results + "EVALUATE-Test-Loss " + str(test_loss) + "\n"
 
 #Acc of each class
-class_correct = list(0. for i in range(10))
-class_total = list(0. for i in range(10))
+class_correct = list(0. for i in range(num_classes))
+class_total = list(0. for i in range(num_classes))
 
 with torch.no_grad():
     for data in test_loader:
@@ -247,9 +317,9 @@ for i in range(len(class_total)):
     if class_total[i] == 0:
         class_total[i] = 1
 
-for i in range(10):
-    print('Accuracy of %5s : %2d %%' % (classes[i], 100 * class_correct[i] / class_total[i]))
-    results = results + "CLASS-"+str(classes[i])+"-Acc " + str(100 * class_correct[i] / class_total[i]) + "\n"
+for i in range(num_classes):
+    print('Accuracy of %s : %2d %%' % (i, 100 * class_correct[i] / class_total[i]))
+    results = results + "-Acc " + str(100 * class_correct[i] / class_total[i]) + "\n"
 
 with open(opt.output_file, 'a+') as f:
     f.write(results)
