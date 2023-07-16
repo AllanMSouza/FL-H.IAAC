@@ -198,7 +198,7 @@ else:
     model.fc = torch.nn.Linear(in_features=512, out_features=200, bias=True)
 model.to(device)
 
-lr = 0.001
+lr = 0.0001
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=lr)
 epochs = int(opt.local_epochs)
