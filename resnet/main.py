@@ -167,7 +167,7 @@ for epoch in range(epochs):
     results = results + "EPOCH-"+str(epoch)+"-Acc " + str(accu) + "\n"
     results = results + "EPOCH-"+str(epoch)+"-Loss " + str(train_loss) + "\n"
     print('Train Loss: %.3f | Accuracy: %.3f' % (train_loss, accu))
-    print("Tamanho treino: ", int(total/epoch))
+    print("Tamanho treino: ", int(total/epochs))
 
 end_time = time.time()
 print("Training Time: {} sec".format(end_time - start_time))
