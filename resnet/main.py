@@ -86,14 +86,14 @@ def load_dataset(data_path):
             normalize,
         ]))
 
-    val_dataset = datasets.ImageFolder(
-        valdir,
-        transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
-            transforms.ToTensor(),
-            normalize,
-        ]))
+    # val_dataset = datasets.ImageFolder(
+    #     valdir,
+    #     transforms.Compose([
+    #         transforms.Resize(256),
+    #         transforms.CenterCrop(224),
+    #         transforms.ToTensor(),
+    #         normalize,
+    #     ]))
 
 
     np.random.seed(9)
@@ -101,8 +101,8 @@ def load_dataset(data_path):
 
     print(len(pd.Series(full_dataset.targets).unique().tolist()))
     print(len(pd.Series(full_dataset.targets)))
-    print(len(pd.Series(val_dataset.targets).unique().tolist()))
-    print(len(pd.Series(val_dataset.targets)))
+    # print(len(pd.Series(val_dataset.targets).unique().tolist()))
+    # print(len(pd.Series(val_dataset.targets)))
 
     # full_dataset.samples = full_dataset.samples + val_dataset.samples
     # full_dataset.imgs = full_dataset.imgs + val_dataset.imgs
