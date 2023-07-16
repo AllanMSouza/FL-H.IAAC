@@ -37,6 +37,7 @@ def load_dataset(data_path):
 
     )
 
+    np.random.seed(4)
     idx = np.random.randint(low=0, high=110000, size=5000)
     print(full_dataset.samples[:1])
     print([tuple(i) for i in np.array(full_dataset.samples)[idx].tolist()][:1])
@@ -240,6 +241,11 @@ with torch.no_grad():
             label = labels[i]
             class_correct[label] += c[i].item()
             class_total[label] += 1
+
+for label in class_total:
+
+    if class_total[label] == 0:
+        class_total[label] = 1
 
 for i in range(10):
     print('Accuracy of %5s : %2d %%' % (classes[i], 100 * class_correct[i] / class_total[i]))
