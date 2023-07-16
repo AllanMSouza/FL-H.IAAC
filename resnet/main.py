@@ -37,7 +37,7 @@ def load_dataset(data_path):
 
     )
 
-    idx = np.random.randint(low=0, high=110000, size=20000)
+    idx = np.random.randint(low=0, high=110000, size=5000)
     print(full_dataset.samples[:1])
     print([tuple(i) for i in np.array(full_dataset.samples)[idx].tolist()][:1])
     print("ola: ", idx.shape, idx[0], type(full_dataset.imgs), type(full_dataset.targets), type(full_dataset.samples))
@@ -229,6 +229,7 @@ with torch.no_grad():
     for data in test_loader:
         x, labels = data
         x = x.to(device)
+        labels = torch.from_numpy(np.array([int(i) for i in labels]))
         labels = labels.to(device)
 
         outputs = model(x)
