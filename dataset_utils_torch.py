@@ -214,15 +214,21 @@ class ManageDatasets():
             x = np.concatenate((x, validation_dataset.imgs))
             y = training_dataset.targets
             y = np.concatenate((y, validation_dataset.targets))
+            samples = training_dataset.samples
+            samples = np.concatenate((samples, validation_dataset.samples))
             x_train = x[idx_train]
             x_test = x[idx_test]
             y_train = y[idx_train]
             y_test = y[idx_test]
+            samples_train = samples[idx_train]
+            samples_test = samples[idx_test]
 
             training_dataset.data = x_train
             training_dataset.targets = y_train
+            training_dataset.samples = samples_train
             validation_dataset.data = x_test
             validation_dataset.targets = y_test
+            validation_dataset.samples = samples_test
 
             trainLoader = DataLoader(dataset=training_dataset, batch_size=256, shuffle=True)
             testLoader = DataLoader(dataset=validation_dataset, batch_size=256, shuffle=False)

@@ -8,9 +8,68 @@ import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
 import torch.optim as optim
+import numpy as np
 
 from Model_MobileNet import MobileNet
 from Model_ResNet import resnet20
+
+def load_dataset(data_path):
+    import torch
+    import torchvision
+    import torchvision.transforms as transforms
+    # Load all the images
+    transformation = transforms.Compose([
+        # Randomly augment the image data
+        # Random horizontal flip
+        transforms.RandomHorizontalFlip(0.5),
+        # Random vertical flip
+        transforms.RandomVerticalFlip(0.3),
+        # transform to tensors
+        transforms.ToTensor(),
+        # Normalize the pixel values (in R, G, and B channels)
+        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+    ])
+
+    # Load all of the images, transforming them
+    full_dataset = torchvision.datasets.ImageFolder(
+        root=data_path,
+        transform=transformation,
+
+    )
+
+    idx = np.random.randint(low=0, high=110000, size=20000)
+    print(full_dataset.samples[:1])
+    print([tuple(i) for i in np.array(full_dataset.samples)[idx].tolist()][:1])
+    print("ola: ", idx.shape, idx[0], type(full_dataset.imgs), type(full_dataset.targets), type(full_dataset.samples))
+    full_dataset.imgs = list(np.array(full_dataset.imgs)[idx])
+    full_dataset.targets = list(np.array(full_dataset.targets)[idx])
+    full_dataset.samples = [tuple(i) for i in np.array(full_dataset.samples)[idx].tolist()]
+    print("tamanho: ", len(full_dataset.imgs))
+
+    # Split into training (70% and testing (30%) datasets)
+    train_size = int(0.7 * len(full_dataset))
+    test_size = len(full_dataset) - train_size
+
+    # use torch.utils.data.random_split for training/test split
+    train_dataset, test_dataset = torch.utils.data.random_split(full_dataset, [train_size, test_size])
+
+    # define a loader for the training data we can iterate through in 50-image batches
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset,
+        batch_size=256,
+        num_workers=0,
+        shuffle=True
+    )
+
+    # define a loader for the testing data we can iterate through in 50-image batches
+    test_loader = torch.utils.data.DataLoader(
+        test_dataset,
+        batch_size=256,
+        num_workers=0,
+        shuffle=False
+    )
+
+    return train_loader, test_loader
 
 parser = OptionParser()
 parser.add_option("-e", "--epochs",  dest="local_epochs", default=1,             help="Number times that the learning algorithm will work through the entire training dataset", metavar="INT")
@@ -35,6 +94,7 @@ root_path = './data/cifar10_data'
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 #Data Load
+num_classes = 10
 if opt.dataset == "MNIST":
     transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616))])
     trainset = torchvision.datasets.CIFAR10(root=root_path, train=True, download=True, transform=transform)
@@ -43,20 +103,23 @@ if opt.dataset == "MNIST":
     test_loader = torch.utils.data.DataLoader(testset, batch_size=int(opt.batch_size), shuffle=False)
 
     classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
-else:
+elif opt.dataset == "CIFAR10":
     transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616))])
     trainset = torchvision.datasets.CIFAR10(root=root_path, train=True, download=True, transform=transform)
     train_loader = torch.utils.data.DataLoader(trainset, batch_size=int(opt.batch_size), shuffle=True)
     testset = torchvision.datasets.CIFAR10(root=root_path, train=False, download=True, transform=transform)
     test_loader = torch.utils.data.DataLoader(testset, batch_size=int(opt.batch_size), shuffle=False)
-
+else:
+    num_classes = 200
+    data_dir = '/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/dataset_utils/data/Tiny-ImageNet/raw_data/tiny-imagenet-200'
+    train_loader, test_loader = load_dataset(data_dir)
     classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
 #Model Definition
 if opt.model_name == "MOBILE_NET":
     model = MobileNet()
 else:
-    model = resnet20()
+    model = resnet20(num_classes=num_classes)
 model.to(device)
 
 lr = 0.001
@@ -79,7 +142,9 @@ for epoch in range(epochs):
     for i, data in enumerate(tqdm(train_loader, ncols=100, desc="Epoch "+str(epoch+1))):
         inputs, labels = data
         inputs = inputs.to(device)
-        labels = labels.clone().detach().long().to(device)
+        labels = torch.from_numpy(np.array([int(i) for i in labels]))
+        # print(labels)
+        # labels = labels.clone().detach().long().to(device)
 
         optimizer.zero_grad()
         outputs = model(inputs)

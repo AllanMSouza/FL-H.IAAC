@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 # import warnings
 import warnings
 # filter warnings
+from Model_ResNet import resnet20
 warnings.filterwarnings('ignore')
 
 class CNN(nn.Module):
@@ -239,7 +240,8 @@ print("test: ", len(testloader.dataset))
 # exit()
 
 #Load Resnet18
-model = CNN(input_shape=3, mid_dim=400, num_classes=200)
+# model = CNN(input_shape=3, mid_dim=400, num_classes=200)
+model = resnet20(num_classes=200)
 #Finetune Final few layers to adjust for tiny imagenet input
 # model_ft.avgpool = nn.AdaptiveAvgPool2d(1)
 # model_ft.fc = torch.nn.Linear(in_features=512, out_features=200, bias=True)
