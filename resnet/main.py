@@ -140,6 +140,7 @@ total = 0
 #Train
 start_time = time.time()
 for epoch in range(epochs):
+    tamanho = 0
     for i, data in enumerate(tqdm(train_loader, ncols=100, desc="Epoch "+str(epoch+1))):
         inputs, labels = data
         inputs = inputs.to(device)
@@ -166,6 +167,7 @@ for epoch in range(epochs):
     results = results + "EPOCH-"+str(epoch)+"-Acc " + str(accu) + "\n"
     results = results + "EPOCH-"+str(epoch)+"-Loss " + str(train_loss) + "\n"
     print('Train Loss: %.3f | Accuracy: %.3f' % (train_loss, accu))
+    print("Tamanho treino: ", int(total/epoch))
 
 end_time = time.time()
 print("Training Time: {} sec".format(end_time - start_time))
@@ -203,6 +205,7 @@ with torch.no_grad():
     for j, val in enumerate(test_loader):
         val_x, val_label = val
         val_x = val_x.to(device)
+        val_label = torch.from_numpy(np.array([int(i) for i in val_label]))
         val_label = val_label.clone().detach().long().to(device)
 
         val_output = model(val_x)
