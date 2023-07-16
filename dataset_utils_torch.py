@@ -210,8 +210,8 @@ class ManageDatasets():
                 idx_test = pickle.load(handle)
 
             training_dataset, validation_dataset = load_data(dir_path + "tiny-imagenet-200/")
-            x = training_dataset.data
-            x = np.concatenate((x, validation_dataset.data))
+            x = training_dataset.imgs
+            x = np.concatenate((x, validation_dataset.imgs))
             y = training_dataset.targets
             y = np.concatenate((y, validation_dataset.targets))
             x_train = x[idx_train]
