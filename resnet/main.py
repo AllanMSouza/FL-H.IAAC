@@ -253,3 +253,5 @@ for i in range(10):
 
 with open(opt.output_file, 'a+') as f:
     f.write(results)
+
+print("Totais: ", class_total)
