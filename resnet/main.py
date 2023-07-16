@@ -143,7 +143,7 @@ for epoch in range(epochs):
     for i, data in enumerate(tqdm(train_loader, ncols=100, desc="Epoch "+str(epoch+1))):
         inputs, labels = data
         inputs = inputs.to(device)
-        labels = torch.from_numpy(np.array([int(i) for i in labels]))
+        labels = torch.from_numpy(np.array([int(i) for i in labels])).to(device)
         # print(labels)
         # labels = labels.clone().detach().long().to(device)
 
@@ -180,6 +180,7 @@ with torch.no_grad():
     for j, trn in enumerate(train_loader):
         trn_x, trn_label = trn
         trn_x = trn_x.to(device)
+        trn_label = torch.from_numpy(np.array([int(i) for i in trn_label]))
         trn_label = trn_label.clone().detach().long().to(device)
 
         trn_output = model(trn_x)
