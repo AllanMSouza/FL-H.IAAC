@@ -194,6 +194,7 @@ if opt.model_name == "MOBILE_NET":
 else:
     # model = resnet20(num_classes=num_classes)
     model = torchvision.models.resnet18(pretrained=True)
+    model.fc = torch.nn.Linear(in_features=512, out_features=200, bias=True)
 model.to(device)
 
 lr = 0.001
