@@ -94,6 +94,74 @@ class DNN_teacher(nn.Module):
 
 # ====================================================================================================================
 
+model_codes = {
+    'model_1': [64, 'M', 128, 'M', 'D', 256, 'M', 512, 'M', 'D'],
+    'model_2': [64, 'M', 128, 'M', 'D', 256, 256, 'M', 512, 512, 'M', 'D'],
+    'model_3': [64, 64, 'M', 128, 128, 'M', 'D', 256, 256, 256, 'M', 512, 512, 512, 'M', 'D'],
+    'model_4': [64, 64, 64, 64, 'M', 128, 128, 128, 128, 'M', 'D', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M', 'D']
+}
+
+class CNN_EMNIST(nn.Module):
+    def __init__(self, model_code, in_channels, out_dim, act='relu', use_bn=True, dropout=0.3):
+        super(CNN_EMNIST, self).__init__()
+
+        try:
+            if act == 'relu':
+                self.act = nn.ReLU()
+            elif act == 'leakyrelu':
+                self.act = nn.LeakyReLU()
+            else:
+                raise ValueError("Not a valid activation function")
+
+            self.layers = self.make_layers(model_code, in_channels, use_bn, dropout)
+            self.classifier = nn.Sequential(nn.Linear(512, 256),
+                                            self.act,
+                                            nn.Linear(256, out_dim)
+                                            )
+
+        except Exception as e:
+            print("CNN EMNIST")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+    def forward(self, x):
+        try:
+            x = self.layers(x)
+            x = torch.flatten(x, 1)
+            x = self.classifier(x)
+            # skipped softmax siince cross-entropy loss is used
+            return x
+        except Exception as e:
+            print("CNN EMNIST forward")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+    def make_layers(self, model_code, in_channels, use_bn, dropout):
+        try:
+            layers = []
+            for x in model_codes[model_code]:
+                if x == "M":
+                    layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
+                elif x == 'D':
+                    layers += [nn.Dropout(dropout)]
+                else:
+                    print("aki: ", in_channels, x)
+                    layers += [nn.Conv2d(in_channels=in_channels,
+                                         out_channels=x,
+                                         kernel_size=3,
+                                         stride=1,
+                                         padding=1)]
+                    if use_bn:
+                        layers += [nn.BatchNorm2d(x)]
+
+                    layers += [self.act]
+                    in_channels = x
+
+            return nn.Sequential(*layers)
+        except Exception as e:
+            print("CNN EMNIST make layers")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+# ====================================================================================================================
+
 import torch.nn.init as init
 
 def _weights_init(m):

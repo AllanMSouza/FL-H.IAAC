@@ -7,6 +7,7 @@ import pandas as pd
 from torch.utils.data import TensorDataset, DataLoader
 from sklearn.model_selection import train_test_split
 import os
+import torchvision
 import torchvision.transforms as transforms
 import subprocess
 from torchvision.datasets import ImageFolder, DatasetFolder, ImageNet
@@ -14,7 +15,28 @@ import torchvision.datasets as datasets
 import time
 import sys
 
-def load_data(data_path):
+def load_data_eminist(data_path):
+    """Load Emnist (training and val set)."""
+
+    # Load ImageNet and normalize
+    traindir = os.path.join(data_path, "train")
+    valdir = os.path.join(data_path, "val")
+    transform = transforms.Compose([transforms.ToTensor(),
+                                    transforms.Normalize((0.5,), (0.5,)),
+                                    ])
+    trainset = datasets.ImageFolder(
+        traindir,
+        transform
+    )
+
+    valset = datasets.ImageFolder(
+        valdir,
+        transform
+    )
+
+    return trainset, valset
+
+def load_data_imagenet(data_path):
     """Load ImageNet (training and val set)."""
 
     # Load ImageNet and normalize
@@ -194,7 +216,7 @@ class ManageDatasets():
             command = """cd {} \nunzip 'tiny-imagenet-200.zip'""".format(dir_path)
             subprocess.Popen(command, shell=True).wait()
 
-        trainset, valset = load_data(dir_path+ "tiny-imagenet-200/")
+        trainset, valset = load_data_imagenet(dir_path + "tiny-imagenet-200/")
 
         # trainset = ImageFolder_custom(root=dir_path + '', transform=transform)
         # testset = ImageFolder_custom(root=dir_path + '', transform=transform)
@@ -226,6 +248,52 @@ class ManageDatasets():
 
         return dataset_image, dataset_label, np.array([]), np.array([])
 
+    def load_emnist(self):
+
+        dir_path = "data/EMNIST/"
+
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+
+            # Setup directory for train/test data
+        config_path = dir_path + "config.json"
+        train_path = dir_path + "train/"
+        test_path = dir_path + "test/"
+
+        from six.moves import urllib
+        opener = urllib.request.build_opener()
+        opener.addheaders = [('User-agent', 'Mozilla/5.0')]
+        urllib.request.install_opener(opener)
+
+        # Get EMNIST data
+        transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize([0.5], [0.5])])
+
+        trainset = torchvision.datasets.EMNIST(
+            root=dir_path + "raw_data", train=True, download=True, transform=transform, split='balanced')
+        testset = torchvision.datasets.EMNIST(
+            root=dir_path + "raw_data", train=False, download=True, transform=transform, split='balanced')
+        trainloader = torch.utils.data.DataLoader(
+            trainset, batch_size=len(trainset.data), shuffle=False)
+        testloader = torch.utils.data.DataLoader(
+            testset, batch_size=len(testset.data), shuffle=False)
+
+        for _, train_data in enumerate(trainloader, 0):
+            trainset.data, trainset.targets = train_data
+        for _, test_data in enumerate(testloader, 0):
+            testset.data, testset.targets = test_data
+
+        dataset_image = []
+        dataset_label = []
+
+        dataset_image.extend(trainset.data.cpu().detach().numpy())
+        dataset_image.extend(testset.data.cpu().detach().numpy())
+        dataset_label.extend(trainset.targets.cpu().detach().numpy())
+        dataset_label.extend(testset.targets.cpu().detach().numpy())
+        dataset_image = np.array(dataset_image)
+        dataset_label = np.array(dataset_label)
+
+        return dataset_image, dataset_label, np.array([]), np.array([])
+
     def slipt_dataset(self, x_train, y_train, x_test, y_test, n_clients):
         p_train = int(len(x_train) / n_clients)
         p_test = int(len(x_test) / n_clients)
@@ -244,6 +312,48 @@ class ManageDatasets():
 
         return x_train, y_train, x_test, y_test
 
+    def generate_mnist(dir_path, num_clients, num_classes, niid, balance, partition):
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+
+        # Setup directory for train/test data
+        config_path = dir_path + "config.json"
+        train_path = dir_path + "train/"
+        test_path = dir_path + "test/"
+
+        # FIX HTTP Error 403: Forbidden
+        from six.moves import urllib
+        opener = urllib.request.build_opener()
+        opener.addheaders = [('User-agent', 'Mozilla/5.0')]
+        urllib.request.install_opener(opener)
+
+        # Get MNIST data
+        transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize([0.5], [0.5])])
+
+        trainset = torchvision.datasets.EMNIST(
+            root=dir_path + "raw_data", train=True, download=True, transform=transform, split='balanced')
+        testset = torchvision.datasets.EMNIST(
+            root=dir_path + "raw_data", train=False, download=True, transform=transform, split='balanced')
+        trainloader = torch.utils.data.DataLoader(
+            trainset, batch_size=len(trainset.data), shuffle=False)
+        testloader = torch.utils.data.DataLoader(
+            testset, batch_size=len(testset.data), shuffle=False)
+
+        for _, train_data in enumerate(trainloader, 0):
+            trainset.data, trainset.targets = train_data
+        for _, test_data in enumerate(testloader, 0):
+            testset.data, testset.targets = test_data
+
+        dataset_image = []
+        dataset_label = []
+
+        dataset_image.extend(trainset.data.cpu().detach().numpy())
+        dataset_image.extend(testset.data.cpu().detach().numpy())
+        dataset_label.extend(trainset.targets.cpu().detach().numpy())
+        dataset_label.extend(testset.targets.cpu().detach().numpy())
+        dataset_image = np.array(dataset_image)
+        dataset_label = np.array(dataset_label)
+
     def select_dataset(self, dataset_name):
 
         if dataset_name == 'MNIST':
@@ -257,6 +367,9 @@ class ManageDatasets():
 
         elif dataset_name == 'Tiny-ImageNet':
             return self.load_tiny_imagenet()
+
+        elif dataset_name == 'EMNIST':
+            return self.load_emnist()
 
         # elif dataset_name == 'MotionSense':
         #     return self.load_MotionSense()

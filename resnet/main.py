@@ -57,8 +57,8 @@ def reoganize_val_dataset(VALID_DIR):
         if os.path.exists(os.path.join(val_img_dir, img)):
             os.rename(os.path.join(val_img_dir, img), os.path.join(newpath, img))
 
-        if os.path.exists(val_img_dir):
-            os.system("rm -rf " + val_img_dir)
+        # if os.path.exists(val_img_dir):
+        #     os.system("rm -rf " + val_img_dir)
 
 
 
@@ -143,6 +143,37 @@ def load_dataset(data_path):
 
     return train_loader, test_loader
 
+
+def load_emnist(dir_path):
+
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+
+        # Setup directory for train/test data
+    config_path = dir_path + "config.json"
+    train_path = dir_path + "train/"
+    test_path = dir_path + "test/"
+
+    from six.moves import urllib
+    opener = urllib.request.build_opener()
+    opener.addheaders = [('User-agent', 'Mozilla/5.0')]
+    urllib.request.install_opener(opener)
+
+    # Get EMNIST data
+    transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize([0.5], [0.5])])
+
+    trainset = torchvision.datasets.EMNIST(
+        root=dir_path, train=True, download=False, transform=transform, split='balanced')
+    testset = torchvision.datasets.EMNIST(
+        root=dir_path, train=False, download=False, transform=transform, split='balanced')
+    trainloader = torch.utils.data.DataLoader(
+        trainset, batch_size=len(trainset.data), shuffle=False)
+    testloader = torch.utils.data.DataLoader(
+        testset, batch_size=len(testset.data), shuffle=False)
+
+    return trainloader, testloader
+
+
 parser = OptionParser()
 parser.add_option("-e", "--epochs",  dest="local_epochs", default=1,             help="Number times that the learning algorithm will work through the entire training dataset", metavar="INT")
 parser.add_option("-b", "--batch",   dest="batch_size",   default=32,            help="Number of samples processed before the model is updated", metavar="INT")
@@ -183,11 +214,13 @@ elif opt.dataset == "CIFAR10":
     test_loader = torch.utils.data.DataLoader(testset, batch_size=int(opt.batch_size), shuffle=False)
 else:
     num_classes = 200
-    # data_dir = '/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/dataset_utils/data/Tiny-ImageNet/raw_data/tiny-imagenet-200'
-    data_dir = '/home/claudiocapanema/Documentos/FL-H.IAAC/dataset_utils/data/Tiny-ImageNet/raw_data/tiny-imagenet-200'
-    train_loader, test_loader = load_dataset(data_dir)
-    classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
+    data_dir = '/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/dataset_utils/data/Tiny-ImageNet/raw_data/tiny-imagenet-200'
+    # data_dir = '/home/claudiocapanema/Documentos/FL-H.IAAC/dataset_utils/data/Tiny-ImageNet/raw_data/tiny-imagenet-200'
+    # train_loader, test_loader = load_dataset(data_dir)
 
+train_loader, test_loader = load_emnist('/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/dataset_utils/data/EMNIST/raw_data/')
+classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
+exit()
 #Model Definition
 if opt.model_name == "MOBILE_NET":
     model = MobileNet()

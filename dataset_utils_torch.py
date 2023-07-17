@@ -137,6 +137,69 @@ class ManageDatasets():
 
         return x_train, y_train, x_test, y_test
 
+    def load_EMNIST(self, n_clients, filename_train, filename_test, non_iid=False, batch_size=32):
+
+        try:
+            dir_path = "dataset_utils/data/EMNIST/raw_data/"
+            if not os.path.exists(dir_path):
+                os.makedirs(dir_path)
+
+                # Setup directory for train/test data
+            config_path = dir_path + "config.json"
+            train_path = dir_path + "train/"
+            test_path = dir_path + "test/"
+
+            from six.moves import urllib
+            opener = urllib.request.build_opener()
+            opener.addheaders = [('User-agent', 'Mozilla/5.0')]
+            urllib.request.install_opener(opener)
+
+            # Get EMNIST data
+            transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize([0.5], [0.5])])
+
+            training_dataset = datasets.EMNIST(
+                root=dir_path, train=True, download=False, transform=transform, split='balanced')
+            validation_dataset = datasets.EMNIST(
+                root=dir_path, train=False, download=False, transform=transform, split='balanced')
+
+            with open(filename_train, 'rb') as handle:
+                idx_train = pickle.load(handle)
+
+            with open(filename_test, 'rb') as handle:
+                idx_test = pickle.load(handle)
+
+            print("antes: ", training_dataset.data.shape)
+            x = training_dataset.data
+            training_dataset.data = torch.concatenate((training_dataset.data, validation_dataset.data))
+            y = training_dataset.targets
+            training_dataset.targets = torch.concatenate((training_dataset.targets, validation_dataset.targets))
+            validation_dataset.data = training_dataset.data[idx_test]
+            validation_dataset.targets = training_dataset.targets[idx_test]
+            training_dataset.data = training_dataset.data[idx_train]
+            training_dataset.targets = training_dataset.targets[idx_train]
+
+            print("vali: ", validation_dataset.data.shape)
+
+
+
+            # training_dataset.data = x_train
+            # training_dataset.targets = y_train
+            # validation_dataset.data = x_test
+            # validation_dataset.targets = y_test
+
+            training_loader = torch.utils.data.DataLoader(training_dataset, batch_size=batch_size,
+                                                          shuffle=True)  # Batch size of 100 i.e to work with 100 images at a time
+
+            validation_loader = torch.utils.data.DataLoader(validation_dataset, batch_size=batch_size, shuffle=False)
+
+            print("baixou", len(training_dataset))
+
+            return training_loader, validation_loader
+
+        except Exception as e:
+            print("load EMNIST")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
     def load_CIFAR10(self, n_clients, filename_train, filename_test, non_iid=False, batch_size=32):
 
         try:
@@ -277,6 +340,9 @@ class ManageDatasets():
 
             if dataset_name == 'MNIST':
                 return self.load_MNIST(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
+
+            elif dataset_name == 'EMNIST':
+                return self.load_EMNIST(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
 
             elif dataset_name == 'CIFAR100':
                 return self.load_CIFAR100(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)

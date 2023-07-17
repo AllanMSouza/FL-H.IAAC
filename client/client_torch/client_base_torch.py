@@ -9,7 +9,7 @@ import time
 import sys
 
 from dataset_utils_torch import ManageDatasets
-from model_definition_torch import DNN, Logistic, CNN, AlexNet, MobileNet, CNN_5, resnet20
+from model_definition_torch import DNN, Logistic, CNN, AlexNet, MobileNet, CNN_5, resnet20, CNN_EMNIST
 from torchvision import models
 import csv
 import torch.nn as nn
@@ -139,7 +139,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 	def load_data(self, dataset_name, n_clients, batch_size=32):
 		try:
-			if dataset_name in ['MNIST', 'CIFAR10', 'CIFAR100']:
+			if dataset_name in ['MNIST', 'CIFAR10', 'CIFAR100', 'EMNIST']:
 				trainLoader, testLoader = ManageDatasets(self.cid, self.model_name).select_dataset(
 					dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid, batch_size)
 				self.input_shape = (3,64,64)
@@ -176,6 +176,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 					input_shape = 3
 					mid_dim = 400
 				return CNN(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim).to(self.device)
+			elif self.model_name == 'CNN_EMNIST' and self.dataset == 'EMNIST':
+				return CNN_EMNIST(model_code='model_1', in_channels=1, out_dim=self.num_classes, act='relu', use_bn=True, dropout=0.3)
 			elif self.model_name == 'Resnet20'  and self.dataset in ['MNIST', 'CIFAR10']:
 				if self.dataset in ['MNIST']:
 					input_shape = 1
