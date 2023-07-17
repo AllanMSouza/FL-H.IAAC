@@ -168,7 +168,6 @@ class ManageDatasets():
             with open(filename_test, 'rb') as handle:
                 idx_test = pickle.load(handle)
 
-            print("antes: ", training_dataset.data.shape)
             x = training_dataset.data
             training_dataset.data = torch.concatenate((training_dataset.data, validation_dataset.data))
             y = training_dataset.targets
@@ -177,8 +176,6 @@ class ManageDatasets():
             validation_dataset.targets = training_dataset.targets[idx_test]
             training_dataset.data = training_dataset.data[idx_train]
             training_dataset.targets = training_dataset.targets[idx_train]
-
-            print("vali: ", validation_dataset.data.shape)
 
 
 

@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from optparse import OptionParser
-from base_plots import bar_plot, line_plot
+from base_plots import bar_plot, line_plot, ecdf_plot
 from pathlib import Path
 import os
 import ast
@@ -164,7 +164,7 @@ class NonIid:
                   title=title,
                   hue=hue,
                   y_lim=True,
-                  y_max=80)
+                  y_max=100)
 
         x_column = 'Server round'
         y_column = 'Time (seconds)'
@@ -193,7 +193,10 @@ class NonIid:
                   x_column=x_column,
                   y_column=y_column,
                   title=title,
-                  hue=hue)
+                  hue=hue,
+                  y_lim=True,
+                  y_min=0,
+                  y_max=100)
 
         # loss
         x_column = 'Round'
@@ -207,6 +210,11 @@ class NonIid:
                   y_column=y_column,
                   title=title,
                   hue=hue)
+
+        ecdf_plot(df=df, base_dir=self.base_dir,
+                  file_name="""evaluate_client_ecdf_accuracy""".format(),
+                  x_column='Accuracy (%)', y_column=None, title='CDF',
+                  y_lim=True, y_max=1)
 
         # size of parameters
         print(df)
@@ -397,4 +405,4 @@ if __name__ == '__main__':
     dataset = opt.dataset
     if dataset == 'CIFAR10':
         dataset = 'CIFAR-10'
-    c.start('Exp. ' + str(int(opt.experiment)-1) + " (" + dataset + ");" + "Alpha="+str(opt.alpha)+"; Layer order="+comment+"; Shared layers="+str(opt.layer_selection_evaluate))
+    c.start('Exp. ' + str(int(opt.experiment)-1) + " (" + dataset + ");" + " Alpha="+str(opt.alpha))

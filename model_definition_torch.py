@@ -143,7 +143,6 @@ class CNN_EMNIST(nn.Module):
                 elif x == 'D':
                     layers += [nn.Dropout(dropout)]
                 else:
-                    print("aki: ", in_channels, x)
                     layers += [nn.Conv2d(in_channels=in_channels,
                                          out_channels=x,
                                          kernel_size=3,

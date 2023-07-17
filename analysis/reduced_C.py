@@ -6,57 +6,60 @@ import seaborn as sns
 import scipy.stats as st
 import os
 
-class JointAnalysis():
-    def __int__(self):
-        pass
+class Ola:
 
-    def build_filenames_and_read(self, type, strategies, pocs, datasets, experiments, clients='50', model='CNN', file_type='evaluate_client.csv'):
+    def __int__(self, tp, strategy_name, new_clients, aggregation_method, fraction_fit, new_clients_train, num_clients, model_name, dataset,
+                 class_per_client, alpha, num_rounds, epochs, comment, experiment, layer):
 
+        self.type = tp
+        self.strategy_name = strategy_name
+        self.aggregation_method = aggregation_method
+        self.fraction_fit = fraction_fit
+        self.new_clients = new_clients
+        self.new_clients_train = new_clients_train
+        self.num_clients = num_clients
+        self.model_name = model_name
+        self.dataset = dataset
+        self.class_per_client = class_per_client
+        self.alpha = alpha
+        self.num_rounds = num_rounds
+        self.epochs = epochs
+        self.comment = comment
+        self.experiment = experiment
+        self.layer = layer
+
+    def build_filenames(self):
+
+        file = "evaluate_client.csv"
         df_concat = None
-        count = 0
-        for i in experiments:
-            experiment = experiments[i]
-            new_clients = experiment['new_clients']
-            local_epochs = experiment['local_epochs']
+        for c in self.fraction_fit:
+            filename = os.path.abspath(os.path.join(os.getcwd(),
+                                                    os.pardir)) + "/FL-H.IAAC/" + f"logs/{self.type}/{self.strategy_name}-{self.aggregation_method}-{c}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(self.layer)}_layer_selection_evaluate/{file}"
+            df = pd.read_csv(filename)
+            df['Strategy'] = np.array([self.strategy_name] * len(df))
+            df['Strategy'] = np.array([self.dataset] * len(df))
+            df['Experiment'] = np.array([self.experiment] * len(df))
+            df['C'] = np.array([c] * len(df))
+            df['Dataset'] = np.array([self.dataset] * len(df))
+            df['Strategy'] = np.array(['FedAvg' if i == 'FedAVG' else i for i in df['Strategy'].tolist()])
+            if df_concat is None:
+                df_concat = df
+            else:
+                df_concat = pd.concat([df_concat, df], ignore_index=True)
 
-            for dataset in datasets:
+        self.df_concat = df_concat
+        print(df_concat)
 
-                for poc in pocs:
 
-                    for strategy in strategies:
-
-                        filename = """{}/{}/{}-POC-{}/{}/{}/{}/{}/{}/{}""".format(os.path.abspath(os.path.join(os.getcwd(), 
-                                                                                                                os.pardir)) + "/FL-H.IAAC/logs",
-                                                                                                                type,
-                                                                                                                strategy,
-                                                                                                                poc,
-                                                                                                                new_clients,
-                                                                                                                clients,
-                                                                                                                model,
-                                                                                                                dataset,
-                                                                                                                local_epochs,
-                                                                                                                file_type)
-
-                        df = pd.read_csv(filename)
-                        df['Strategy'] = np.array([strategy] * len(df))
-                        df['Experiment'] = np.array([i] * len(df))
-                        df['POC'] = np.array([poc] * len(df))
-                        df['Dataset'] = np.array([dataset] * len(df))
-                        df['Strategy'] = np.array(['FedAvg' if i=='FedAVG' else i for i in df['Strategy'].tolist()])
-                        if count == 0:
-                            df_concat = df
-                        else:
-                            df_concat = pd.concat([df_concat, df], ignore_index=True)
-
-                        count += 1
         pocs = [0.2, 0.3, 0.4]
         print(df_concat)
         df_concat['Accuracy (%)'] = df_concat['Accuracy'] * 100
         df_concat['Round (t)'] = df_concat['Round']
+        print("dataset: ", df_concat)
         # plots
         # self.joint_plot_acc_two_plots(df=df_concat, experiment=1, pocs=pocs)
         # self.joint_plot_acc_four_plots(df=df_concat, experiment=1, pocs=pocs)
-        self.joint_plot_reduced_C_plots(df=df_concat, experiment=1)
+        ## self.joint_plot_reduced_C_plots(df=df_concat, experiment=1)
         # self.joint_plot_acc_two_plots(df=df_concat, experiment=2, pocs=pocs)
         # self.joint_plot_acc_four_plots(df=df_concat, experiment=2, pocs=pocs)
         # self.joint_plot_acc_two_plots(df=df_concat, experiment=3, pocs=pocs)
@@ -427,15 +430,22 @@ if __name__ == '__main__':
     #                                                                                                                                                                       4: {'new_clients': 'new_clients_True_train_True', 'local_epochs': '2_local_epochs'}}
     experiments = {1: {'new_clients': 'new_clients_False_train_False', 'local_epochs': '1_local_epochs'}}
 
-    strategies = ['FedPredict', 'FedPer', 'FedAVG']
-    # pocs = [0.1, 0.2, 0.3]
-    pocs = [0.1, 0.2, 0.3, 0.4]
-    datasets = ['MNIST', 'CIFAR10']
-    # datasets = ['MNIST']
-    clients = '50'
-    model = 'CNN'
-    type = 'torch'
-    file_type = 'evaluate_client.csv'
+    strategy = ["FedPredict"]
+    type_model = "torch"
+    aggregation_method = "None"
+    fraction_fit = [0.3]
+    num_clients = 20
+    model_name = "CNN"
+    dataset = "CIFAR10"
+    alpha = float(2)
+    num_rounds = 20
+    epochs = 1
+    experiment = 1
+    # layer_selection_evaluate = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
+    # layer_selection_evaluate = [1, 12, 123, 1234]
+    # layer_selection_evaluate = [4, 34, 234, 1234]
+    layer_selection_evaluate = -1
+    comment = "set"
 
-    joint_plot = JointAnalysis()
-    joint_plot.build_filenames_and_read(type, strategies, pocs, datasets, experiments, clients, model, file_type)
+    joint_plot = Ola()#tp=type_model, strategy_name=strategy, new_clients=False, aggregation_method=aggregation_method,  fraction_fit=fraction_fit, new_clients_train=False, num_clients=num_clients, model_name=model_name, dataset=dataset, class_per_client=2, alpha=alpha, num_rounds=num_rounds, epochs=epochs, comment=comment, experiment=experiment, layer=layer_selection_evaluate)
+    joint_plot.build_filenames()
