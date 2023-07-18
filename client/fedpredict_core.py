@@ -113,8 +113,9 @@ def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_sim
 
             # print("el servidor: ", el, " el local: ", evolutionary_level)
 
-            eq1 = (-1 + update_level - 1 + reference_similarity)
-            eq2 = round(np.exp(eq1), 6)
+            # eq1 = (-1 + update_level - 1 + reference_similarity)
+            # eq2 = round(np.exp(eq1), 6)
+            eq2 = (update_level + reference_similarity)/2
             shared_layers = int(np.ceil(eq2 * n_layers))
 
         shared_layers = [i for i in range(shared_layers*2)]
