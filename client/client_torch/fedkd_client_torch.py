@@ -172,8 +172,8 @@ class FedKDClientTorch(FedAvgClientTorch):
 				return Logistic(input_shape=input_shape, num_classes=self.num_classes)
 			elif self.model_name == 'DNN':
 				return DNN_teacher(input_shape=input_shape, num_classes=self.num_classes), DNN_student(input_shape=input_shape, num_classes=self.num_classes)
-			elif self.model_name == 'CNN'  and self.dataset in ['MNIST', 'CIFAR10']:
-				if self.dataset in ['MNIST']:
+			elif self.model_name in ['CNN', 'CNN_EMNIST']  and self.dataset in ['MNIST', 'CIFAR10', 'EMNIST']:
+				if self.dataset in ['MNIST', 'EMNIST']:
 					input_shape = 1
 					mid_dim_teacher = 256
 					mid_dim_student = 256
@@ -194,63 +194,19 @@ class FedKDClientTorch(FedAvgClientTorch):
 			print("create model")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def train_teacher(self):
-
-		try:
-			self.teacher_model.train()
-			self.model.eval()
-
-			max_local_steps = self.local_epochs
-			train_acc_teacher = 0
-			train_loss_teacher = 0
-			train_num = 0
-			kl_loss = torch.nn.KLDivLoss(reduction="batchmean")
-			for step in range(max_local_steps):
-				for i, (x, y) in enumerate(self.trainloader):
-					if type(x) == type([]):
-						x[0] = x[0].to(self.device)
-					else:
-						x = x.to(self.device)
-					y = y.to(self.device)
-					train_num += y.shape[0]
-					y = torch.tensor(y)
-
-					self.optimizer_teacher.zero_grad()
-					output_teacher = self.teacher_model(x)
-					output_student = self.model(x)
-					loss_teacher = self.loss(output_teacher, y)
-					loss_student = self.loss(output_student, y)
-					# print("valor da loss teacher: ",
-					# 	  kl_loss(output_student, F.softmax(output_teacher)) / (loss_teacher + loss_student))
-					print("valor da loss normal teacher: ", loss_student)
-					# loss_teacher += kl_loss(output_student, F.softmax(output_teacher)) / (loss_teacher + loss_student)
-					# loss_teacher += torch.nn.functional.kl_div(output_teacher, output_student) / (loss_teacher + loss_student)
-					train_loss_teacher += loss_teacher.item() * y.shape[0]
-					loss_teacher.backward()
-					self.optimizer_teacher.step()
-
-					train_acc_teacher += (torch.sum(torch.argmax(output_teacher, dim=1) == y)).item()
-			print("acc teacher: ", train_acc_teacher/train_num)
-			self.save_parameters_teacher()
-
-			return train_loss_teacher, train_acc_teacher, train_num
-
-		except Exception as e:
-			print("train teacher")
-			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
-
-	def train_student(self, server_round):
+	def train_student_and_teacher(self, server_round):
 
 		try:
 			self.model.train()
 
 			max_local_steps = self.local_epochs
-			train_acc_student = 0
-			train_acc_teacher = 0
-			train_loss_student = 0
-			train_num = 0
+
 			kl_loss = torch.nn.KLDivLoss(reduction="batchmean")
 			for step in range(max_local_steps):
+				train_acc_student = 0
+				train_acc_teacher = 0
+				train_loss_student = 0
+				train_num = 0
 				for i, (x, y) in enumerate(self.trainloader):
 					if type(x) == type([]):
 						x[0] = x[0].to(self.device)
@@ -279,7 +235,7 @@ class FedKDClientTorch(FedAvgClientTorch):
 					# print("valor da loss student: ", kl_loss(output_student, F.softmax(output_teacher))/(loss_teacher + loss_student))
 					print("valor da loss normal student: ", loss)
 					# loss_student += kl_loss(output_student, F.softmax(output_teacher))/(loss_teacher + loss_student)
-					train_loss_student += loss.item() * y.shape[0]
+					train_loss_student += loss.item()
 
 					# print("saida: ", output_student.shape, " alvo: ", y.shape, output_student[0])
 					loss.backward()
@@ -320,7 +276,7 @@ class FedKDClientTorch(FedAvgClientTorch):
 				selected = 1
 
 				# train_loss_teacher, train_acc_teacher, train_num = self.train_teacher()
-				train_loss_student, train_acc_student, train_num = self.train_student(server_round)
+				train_loss_student, train_acc_student, train_num = self.train_student_and_teacher(server_round)
 
 				trained_parameters = self.get_parameters_of_model()
 				self.save_parameters()

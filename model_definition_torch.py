@@ -242,8 +242,8 @@ class ResNet(nn.Module):
         return out
 
 
-def resnet20(num_classes=10):
-    return ResNet(BasicBlock, [3, 3, 3], num_classes=num_classes)
+def resnet20(num_classes=10, num_blocks=[3, 3, 3]):
+    return ResNet(BasicBlock, num_blocks, num_classes=num_classes)
 
 # ====================================================================================================================
 
@@ -323,13 +323,16 @@ class LeNet(nn.Module):
 
 # ====================================================================================================================
 
-
 class CNNDistillation(nn.Module):
-    def __init__(self, input_shape=1, mid_dim=256, num_classes=10):
+    def __init__(self, input_shape=1, mid_dim=256, num_classes=10, dataset='CIFAR10'):
         try:
             super(CNNDistillation, self).__init__()
-            self.student = CNN(input_shape=input_shape, mid_dim=mid_dim, num_classes=num_classes)
-            self.teacher = CNN(input_shape=input_shape, mid_dim=mid_dim, num_classes=num_classes)
+            if dataset == "CIFAR10":
+                self.student = CNN(input_shape=input_shape, mid_dim=mid_dim, num_classes=num_classes)
+                self.teacher = CNN(input_shape=input_shape, mid_dim=mid_dim, num_classes=num_classes)
+            elif dataset == "EMNIST":
+                self.student = resnet20(num_classes, [3, 1, 1])
+                self.teacher = resnet20(num_classes)
         except Exception as e:
             print("CNNDistillation")
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)

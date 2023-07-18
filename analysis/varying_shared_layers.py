@@ -95,7 +95,10 @@ class Varying_Shared_layers:
                     new_shared_layer += layer
                 else:
                     new_shared_layer += ", " + layer
+
             new_shared_layer += "}"
+            if shared_layer == "10":
+                new_shared_layer = "All layers"
 
             shared_layers_list[i] = new_shared_layer
             sort[shared_layer] = shared_layers_list[i]
@@ -109,7 +112,7 @@ class Varying_Shared_layers:
         layer_selection_evaluate = sort
         print("ord: ", layer_selection_evaluate)
 
-        title = """Alpha={}; Layer order={}""".format(alpha, comment)
+        title = """Alpha={}""".format(alpha)
         base_dir = """analysis/output/torch/varying_shared_layers/{}/{}_clients/{}_fraction_fit/alpha_{}/{}_comment/""".format(self.dataset, self.num_clients, self.fraction_fit, alpha, self.comment)
         os.makedirs(base_dir + "png/", exist_ok=True)
         os.makedirs(base_dir + "svg/", exist_ok=True)
@@ -123,10 +126,10 @@ class Varying_Shared_layers:
                   hue=hue,
                   hue_order=layer_selection_evaluate,
                   type=1,
-                  y_lim=True,
+                  y_lim=False,
                   y_min=10,
                   y_max=80)
-        print("Custo {1}", df[df['Shared layers']=='{1}'])
+        # print("Custo {1}", df[df['Shared layers']=='{1}'])
         x_column = 'Round'
         y_column = 'Communication cost (MB)'
         hue = 'Shared layers'
@@ -139,7 +142,7 @@ class Varying_Shared_layers:
                   hue=hue,
                   hue_order=layer_selection_evaluate,
                   type=1,
-                  y_lim=True,
+                  y_lim=False,
                   y_max=4,
                   y_min=0)
 
@@ -168,7 +171,7 @@ class Varying_Shared_layers:
 
             round = df['Round'].tolist()[0]
             df_aux = df_aux[df_aux['Round'] == round]
-            target = df_aux[df_aux['Shared layers'] == "{1, 2, 3, 4}"]
+            target = df_aux[df_aux['Shared layers'] == "All layers"]
             target_acc = target['Accuracy (%)'].tolist()[0]
             target_size = target['Communication cost (MB)'].tolist()[0]
             acc = df['Accuracy (%)'].tolist()[0]
@@ -192,8 +195,8 @@ class Varying_Shared_layers:
             ['Strategy', 'Round', 'Shared layers', 'Accuracy reduction (%)', 'Communication reduction (MB)']]
 
         print("Final: ", df)
-        df = df[df['Shared layers'] != "{1, 2, 3, 4}"]
-        layer_selection_evaluate =  ['FedPredict-v2', '{1}']
+        df = df[df['Shared layers'] != "All layers"]
+        layer_selection_evaluate =  ['FedPredict-v2']
         print("menor: ", df['Accuracy reduction (%)'].min())
         print("Fed", df[df['Shared layers'] == 'FedPredict-v2'][['Accuracy reduction (%)', 'Round']])
 
@@ -210,7 +213,7 @@ class Varying_Shared_layers:
                   hue_order=layer_selection_evaluate,
                   type=1,
                   log_scale=False,
-                  y_lim=True,
+                  y_lim=False,
                   y_max=10,
                   y_min=-3)
 
@@ -227,7 +230,7 @@ class Varying_Shared_layers:
                   hue_order=layer_selection_evaluate,
                   type=1,
                   log_scale=True,
-                  y_lim=True,
+                  y_lim=False,
                   y_max=4,
                   y_min=0,
                   n=1)
@@ -242,17 +245,17 @@ if __name__ == '__main__':
     strategy = "FedPredict"
     type_model = "torch"
     aggregation_method = "None"
-    fraction_fit = 0.4
+    fraction_fit = 0.3
     num_clients = 20
-    model_name = "CNN"
-    dataset = "CIFAR10"
-    alpha = float(2)
-    num_rounds = 20
+    model_name = "CNN_EMNIST"
+    dataset = "EMNIST"
+    alpha = float(0.1)
+    num_rounds = 7
     epochs = 1
     # layer_selection_evaluate = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
     #layer_selection_evaluate = [1, 12, 123, 1234]
     # layer_selection_evaluate = [4, 34, 234, 1234]
-    layer_selection_evaluate = [-1, 1234, 1]
+    layer_selection_evaluate = [-1, 10]
     comment = "set"
 
     Varying_Shared_layers(tp=type_model, strategy_name=strategy, fraction_fit=fraction_fit, aggregation_method=aggregation_method, new_clients=False, new_clients_train=False, num_clients=num_clients,

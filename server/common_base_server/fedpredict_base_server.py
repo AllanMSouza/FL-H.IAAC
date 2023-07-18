@@ -167,6 +167,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		return parameters_aggregated, metrics_aggregated
 
 	def configure_evaluate(self, server_round, parameters, client_manager):
+		print("Similaridade: ", self.similarity_between_layers_per_round[server_round])
 		client_evaluate_list = super().configure_evaluate(server_round, parameters, client_manager)
 		client_evaluate_list_fedpredict = []
 		accuracy = 0
@@ -237,6 +238,8 @@ class FedPredictBaseServer(FedAvgBaseServer):
 							M.append(int(i) - 2)
 							M.append(int(i) - 1)
 						print("foi: ", M)
+						if layer == '10':
+							M = [i for i in range(len(parameters))]
 					else:
 						M = fedpredict_core_layer_selection(t=server_round, T=self.num_rounds, nt=nt, n_layers=n_layers, size_per_layer=size_of_layers, mean_similarity_per_layer=mean_similarity_per_layer, mean_similarity=mean_similarity)
 						print("quantidade compartilhadas: ", M)
