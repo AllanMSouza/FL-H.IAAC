@@ -95,17 +95,33 @@ class DNN_teacher(nn.Module):
 # ====================================================================================================================
 
 model_codes = {
-    'model_1': [64, 'M', 128, 'M', 'D', 256, 'M', 512, 'M', 'D'],
+    'CNN_6': [64, 'M', 128, 'M', 'D'],
+    'CNN_8': [64, 'M', 128, 'M', 'D', 256, 'M', 'D'],
+    'model_10': [64, 'M', 128, 'M', 'D', 256, 'M', 512, 'M', 'D'],
     'model_2': [64, 'M', 128, 'M', 'D', 256, 256, 'M', 512, 512, 'M', 'D'],
     'model_3': [64, 64, 'M', 128, 128, 'M', 'D', 256, 256, 256, 'M', 512, 512, 512, 'M', 'D'],
     'model_4': [64, 64, 64, 64, 'M', 128, 128, 128, 128, 'M', 'D', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M', 'D']
 }
 
+classifier_in_out = {
+    'EMNIST':{
+            'CNN_6': [6272, 64],
+            'CNN_8': [2304, 128],
+            'model_10': [512, 256]
+    },
+    'CIFAR10':{
+'CNN_6': [8192, 64],
+            'CNN_8': [2304, 128],
+            'model_10': [512, 256]
+    }
+}
+
 class CNN_EMNIST(nn.Module):
-    def __init__(self, model_code, in_channels, out_dim, act='relu', use_bn=True, dropout=0.3):
+    def __init__(self, dataset, model_code, in_channels, out_dim, act='relu', use_bn=True, dropout=0.3):
         super(CNN_EMNIST, self).__init__()
 
         try:
+            self.classifier_in_out = classifier_in_out[dataset][model_code]
             if act == 'relu':
                 self.act = nn.ReLU()
             elif act == 'leakyrelu':
@@ -114,9 +130,9 @@ class CNN_EMNIST(nn.Module):
                 raise ValueError("Not a valid activation function")
 
             self.layers = self.make_layers(model_code, in_channels, use_bn, dropout)
-            self.classifier = nn.Sequential(nn.Linear(512, 256),
+            self.classifier = nn.Sequential(nn.Linear(self.classifier_in_out[0], self.classifier_in_out[1]),
                                             self.act,
-                                            nn.Linear(256, out_dim)
+                                            nn.Linear(self.classifier_in_out[1], out_dim)
                                             )
 
         except Exception as e:

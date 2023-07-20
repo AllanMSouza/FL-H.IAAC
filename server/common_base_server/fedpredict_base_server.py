@@ -161,7 +161,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			clients_ids.append(client_id)
 			clients_parameters.append(fl.common.parameters_to_ndarrays(fit_res.parameters))
 
-		self.similarity_between_layers_per_round_and_client[server_round], self.similarity_between_layers_per_round[server_round], self.mean_similarity_per_round[server_round] = fedpredict_layerwise_similarity(fl.common.parameters_to_ndarrays(parameters_aggregated), clients_parameters, clients_ids, server_round)
+		self.similarity_between_layers_per_round_and_client[server_round], self.similarity_between_layers_per_round[server_round], self.mean_similarity_per_round[server_round] = fedpredict_layerwise_similarity(fl.common.parameters_to_ndarrays(parameters_aggregated), clients_parameters, clients_ids, server_round, self.dataset, str(self.alpha))
 
 
 		return parameters_aggregated, metrics_aggregated
@@ -241,7 +241,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 						if layer == '10':
 							M = [i for i in range(len(parameters))]
 					else:
-						M = fedpredict_core_layer_selection(t=server_round, T=self.num_rounds, nt=nt, n_layers=n_layers, size_per_layer=size_of_layers, mean_similarity_per_layer=mean_similarity_per_layer, mean_similarity=mean_similarity)
+						M = fedpredict_core_layer_selection(t=server_round, T=self.num_rounds, nt=nt, n_layers=n_layers, size_per_layer=size_of_layers, mean_similarity_per_layer=mean_similarity_per_layer, mean_similarity=mean_similarity, first_similarity=self.similarity_between_layers_per_round[1][len(parameters)-2]['mean'])
 						print("quantidade compartilhadas: ", M)
 				new_parameters = []
 				for i in range(len(parameters)):

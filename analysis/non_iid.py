@@ -271,8 +271,9 @@ class NonIid:
     def similarity_analysis(self, title):
 
         df = self.df_files_names['similarity'].drop_duplicates()
+        df = df.query("Similarity > 0")
         df['Similarity'] = df['Similarity'].round(4)
-        df['Layer'] = df['Layer'].astype(int)
+        df['Layer'] = df['Layer'].astype(int) + 1
         print("ddd: \n", df)
         x_column = 'Server round'
         y_column = 'Similarity'
@@ -280,6 +281,7 @@ class NonIid:
         hue_order = np.sort(df[hue].unique().tolist()).tolist()
         print("ordem: ", hue_order)
         type = 1
+        y_min = {'EMNIST': 0.9, 'CIFAR10': 0}[dataset]
         line_plot(df=df,
                   base_dir=self.base_dir,
                   file_name="similarity_between_layers_per_round_lineplot",
@@ -290,7 +292,7 @@ class NonIid:
                   hue_order=hue_order,
                   type=type,
                   y_lim=True,
-                  y_min=0.2)
+                  y_min=y_min)
 
         x_column = 'Server round'
         y_column = 'Similarity'
@@ -302,7 +304,7 @@ class NonIid:
                   y_column=y_column,
                   title=title,
                   y_lim=True,
-                  y_min=0.6)
+                  y_min=y_min)
 
 
 

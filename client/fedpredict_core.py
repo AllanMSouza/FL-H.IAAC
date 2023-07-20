@@ -90,15 +90,18 @@ def fedpredict_core(t, T, nt):
         print("fedpredict core")
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_similarity_per_layer, mean_similarity):
+def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_similarity_per_layer, mean_similarity, first_similarity):
     try:
 
         # 9
         if nt == 0:
             shared_layers = 0
         else:
-            reference_similarity = mean_similarity_per_layer[int(n_layers*2-2)]['mean']
-            print("referencia: ", n_layers*2-1, reference_similarity)
+            # reference_similarity = (mean_similarity_per_layer[int(n_layers*2-2)]['mean'] + mean_similarity_per_layer[int(n_layers*2-1)]['mean'])/2
+            # reference_similarity = min([mean_similarity_per_layer[int(n_layers * 2 - 2)]['mean'],
+            #                         mean_similarity_per_layer[int(n_layers * 2 - 1)]['mean']])
+            reference_similarity = mean_similarity_per_layer[int(n_layers * 2 - 2)]['mean']
+            print("referencia: ", n_layers*2-1, "ref: ", reference_similarity, "first: ", first_similarity)
             # evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
             # normalizar dentro de 0 e 1
             # updated_level = 1/rounds_without_fit
@@ -113,9 +116,9 @@ def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_sim
 
             # print("el servidor: ", el, " el local: ", evolutionary_level)
 
-            # eq1 = (-1 + update_level - 1 + reference_similarity)
-            # eq2 = round(np.exp(eq1), 6)
-            eq2 = (update_level + reference_similarity)/2
+            eq1 = (-1 + update_level - 1 + reference_similarity)
+            eq2 = round(np.exp(eq1), 6)
+            # eq2 = (update_level + reference_similarity)/2
             shared_layers = int(np.ceil(eq2 * n_layers))
 
         shared_layers = [i for i in range(shared_layers*2)]
@@ -149,12 +152,13 @@ def fedpredict_similarity_per_round_rate(similarities, num_layers, current_round
         similarity_rate[layer] = (similarities_list[current_round] - similarities_list[initial_round])/round_window
 
 
-def fedpredict_layerwise_similarity(global_parameter, clients_parameters, clients_ids, server_round):
+def fedpredict_layerwise_similarity(global_parameter, clients_parameters, clients_ids, server_round, dataset, alpha):
 
     num_layers = len(global_parameter)
     num_clients = len(clients_parameters)
     similarity_per_layer = {i: {} for i in clients_ids}
-    interest_layers = [0, 1, num_layers-2, num_layers-1]
+    # interest_layers = [0, 1, int(num_layers/2)-2, int(num_layers/2)-1, num_layers-2, num_layers-1]
+    interest_layers = [0, 1, num_layers - 2, num_layers - 1]
     difference_per_layer = {i: {j: {'min': [], 'max': []} for j in range(num_layers)} for i in clients_ids}
     difference_per_layer_vector = {j: [] for j in range(num_layers)}
     mean_similarity_per_layer = {i: {'mean': 0, 'ci': 0} for i in range(num_layers)}
@@ -228,8 +232,8 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
 
     layers_mean_similarity = []
     for layer_index in interest_layers:
-        if layer_index % 2 != 0:
-            continue
+        # if layer_index % 2 != 0:
+        #     continue
         similarities = []
         min_difference = []
         max_difference = []
@@ -246,10 +250,12 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
         mean_difference_per_layer[layer_index]['max'] = np.mean(max_difference)
         print("""similaridade (camada {}): {}""".format(layer_index, mean_similarity_per_layer[layer_index]))
     for layer in difference_per_layer_vector:
+        if np.sum(difference_per_layer_vector[layer]) == 0:
+            continue
         df = pd.DataFrame({'Difference': difference_per_layer_vector[layer], 'x': [i for i in range(len(difference_per_layer_vector[layer]))]})
-        line_plot(df=df, base_dir='', file_name="""lineplot_difference_{}_layer_{}_round""".format(str(layer), str(server_round)), x_column='x', y_column='Difference', title='Difference between global and local parameters', y_lim=True, y_max=0.065)
-        box_plot(df=df, base_dir='', file_name="""boxplot_difference_{}_layer_{}_round""".format(str(layer), str(server_round)), x_column=None, y_column='Difference', title='Difference between global and local parameters', y_lim=True, y_max=0.065)
-        ecdf_plot(df=df, base_dir='', file_name="""ecdf_difference_{}_layer_{}_round""".format(str(layer), str(server_round)), x_column='Difference', y_column=None, title='Difference between global and local parameters', y_lim=True, y_max=0.065)
+        # line_plot(df=df, base_dir='', file_name="""lineplot_difference_layer_{}_round_{}_dataset_{}_alpha_{}""".format(str(layer), str(server_round), dataset, alpha), x_column='x', y_column='Difference', title='Difference between global and local parameters', y_lim=True, y_max=0.065)
+        box_plot(df=df, base_dir='', file_name="""boxplot_difference_layer_{}_round_{}_dataset_{}_alpha_{}""".format(str(layer), str(server_round), dataset, alpha), x_column=None, y_column='Difference', title='Difference between global and local parameters', y_lim=True, y_max=0.065)
+        # ecdf_plot(df=df, base_dir='', file_name="""ecdf_difference_layer_{}_round_dataset_{}_alpha_{}""".format(str(layer), str(server_round), dataset, alpha), x_column='Difference', y_column=None, title='Difference between global and local parameters', y_lim=True, y_max=0.065)
         # print("Camada: ", layer, " Diferença média: ", pd.Series(difference_per_layer_vector[layer]).describe()['mean'])
 
 

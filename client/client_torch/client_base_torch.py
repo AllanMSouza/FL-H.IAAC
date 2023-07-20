@@ -160,8 +160,10 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		try:
 			# print("tamanho: ", self.input_shape, " dispositivo: ", self.device)
 			input_shape = self.input_shape
-			if self.dataset in ['MNIST', 'CIFAR10', 'CIFAR100']:
-				input_shape = self.input_shape[1]*self.input_shape[2]
+			if self.dataset in ['MNIST', 'EMNIST']:
+				input_shape = 1
+			elif self.dataset in ['CIFAR10']:
+				input_shape = 3
 			elif self.dataset in ['MotionSense', 'UCIHAR']:
 				input_shape = self.input_shape[1]
 			if self.model_name == 'Logist Regression':
@@ -170,14 +172,12 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				return DNN(input_shape=input_shape, num_classes=self.num_classes).to(self.device)
 			elif self.model_name == 'CNN'  and self.dataset in ['MNIST', 'CIFAR10']:
 				if self.dataset in ['MNIST']:
-					input_shape = 1
 					mid_dim = 256
 				else:
-					input_shape = 3
 					mid_dim = 400
 				return CNN(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim).to(self.device)
-			elif self.model_name == 'CNN_EMNIST' and self.dataset == 'EMNIST':
-				return CNN_EMNIST(model_code='model_1', in_channels=1, out_dim=self.num_classes, act='relu', use_bn=True, dropout=0.3)
+			elif self.dataset in ['EMNIST', 'CIFAR10'] and self.model_name in ['CNN_6', 'CNN_8', 'CNN_10']:
+				return CNN_EMNIST(dataset=self.dataset, model_code=self.model_name, in_channels=input_shape, out_dim=self.num_classes, act='relu', use_bn=True, dropout=0.3)
 			elif self.model_name == 'Resnet20'  and self.dataset in ['MNIST', 'CIFAR10']:
 				if self.dataset in ['MNIST']:
 					input_shape = 1

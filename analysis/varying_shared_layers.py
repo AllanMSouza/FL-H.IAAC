@@ -116,7 +116,7 @@ class Varying_Shared_layers:
         style = 'Alpha'
 
         title = """Accuracy in {}""".format(dataset)
-        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}_clients/{}_fraction_fit/alpha_{}/{}_comment/""".format(self.dataset, self.num_clients, self.fraction_fit, alpha, self.comment)
+        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}_clients/{}_fraction_fit/alpha_{}/{}/{}_comment/""".format(self.dataset, self.num_clients, self.fraction_fit, alpha, self.model_name, self.comment)
         os.makedirs(base_dir + "png/", exist_ok=True)
         os.makedirs(base_dir + "svg/", exist_ok=True)
         os.makedirs(base_dir + "csv/", exist_ok=True)
@@ -253,7 +253,7 @@ if __name__ == '__main__':
     aggregation_method = "None"
     fraction_fit = 0.3
     num_clients = 20
-    model_name = "CNN_EMNIST"
+    model_name = "CNN_10"
     dataset = "EMNIST"
     alpha = [0.1, 2.0]
     num_rounds = 7
