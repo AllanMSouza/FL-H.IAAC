@@ -281,7 +281,7 @@ class NonIid:
         hue_order = np.sort(df[hue].unique().tolist()).tolist()
         print("ordem: ", hue_order)
         type = 1
-        y_min = {'EMNIST': 0.9, 'CIFAR10': 0}[dataset]
+        y_min = {'EMNIST': 0.9, 'CIFAR-10': 0.9}[dataset]
         line_plot(df=df,
                   base_dir=self.base_dir,
                   file_name="similarity_between_layers_per_round_lineplot",

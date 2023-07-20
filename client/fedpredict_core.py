@@ -98,9 +98,11 @@ def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_sim
             shared_layers = 0
         else:
             # reference_similarity = (mean_similarity_per_layer[int(n_layers*2-2)]['mean'] + mean_similarity_per_layer[int(n_layers*2-1)]['mean'])/2
-            # reference_similarity = min([mean_similarity_per_layer[int(n_layers * 2 - 2)]['mean'],
-            #                         mean_similarity_per_layer[int(n_layers * 2 - 1)]['mean']])
-            reference_similarity = mean_similarity_per_layer[int(n_layers * 2 - 2)]['mean']
+            reference_similarity = min([mean_similarity_per_layer[int(n_layers * 2 - 2)]['mean'],
+                                    mean_similarity_per_layer[int(n_layers * 2 - 1)]['mean']])
+            # reference_similarity = mean_similarity_per_layer[int(n_layers * 2 - 2)]['mean']
+            penalty = abs(mean_similarity_per_layer[int(n_layers * 2 - 2)]['mean'] -
+                                    mean_similarity_per_layer[int(n_layers * 2 - 1)]['mean'])
             print("referencia: ", n_layers*2-1, "ref: ", reference_similarity, "first: ", first_similarity)
             # evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
             # normalizar dentro de 0 e 1
@@ -116,7 +118,7 @@ def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_sim
 
             # print("el servidor: ", el, " el local: ", evolutionary_level)
 
-            eq1 = (-1 + update_level - 1 + reference_similarity)
+            eq1 = (-1 + update_level - 1 + reference_similarity - penalty)
             eq2 = round(np.exp(eq1), 6)
             # eq2 = (update_level + reference_similarity)/2
             shared_layers = int(np.ceil(eq2 * n_layers))
@@ -163,7 +165,7 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
     difference_per_layer_vector = {j: [] for j in range(num_layers)}
     mean_similarity_per_layer = {i: {'mean': 0, 'ci': 0} for i in range(num_layers)}
     mean_difference_per_layer = {i: {'min': 0, 'max': 0} for i in range(num_layers)}
-
+    # print("primeira: ", num_layers)
 
 
     for client_id in range(num_clients):
@@ -172,6 +174,7 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
         client_id = clients_ids[client_id]
 
         for layer_index in range(num_layers):
+            # print("tamanho maximo: ", num_layers)
             client_layer = client[layer_index]
             global_layer = global_parameter[layer_index]
             if np.ndim(global_layer) == 1:
@@ -213,7 +216,8 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
                 else:
                     cka = CKA()
                     similarity = cka.linear_CKA(global_layer, client_layer)
-                    difference = global_layer[layer_index] - client_layer[layer_index]
+                    # print("par: ", len(global_layer), len(client_layer), layer_index)
+                    difference = global_layer - client_layer
 
                 similarity_per_layer[client_id][layer_index] = similarity
 

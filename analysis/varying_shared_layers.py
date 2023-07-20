@@ -30,7 +30,9 @@ class Varying_Shared_layers:
     def start(self):
 
         self.build_filenames()
-        self.evaluate_client_analysis_shared_layers(self.layer_selection_evaluate)
+
+        for model in self.model_name:
+            self.evaluate_client_analysis_shared_layers(model)
 
     def build_filenames(self):
 
@@ -38,24 +40,27 @@ class Varying_Shared_layers:
         df_concat = None
         for layers in self.layer_selection_evaluate:
             for a in self.alpha:
-                filename = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/" + f"logs/{self.type}/{self.strategy_name}-{self.aggregation_method}-{self.fraction_fit}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{a}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(layers)}_layer_selection_evaluate/{file}"
-                df = pd.read_csv(filename)
-                df['Shared layers'] = np.array([layers] * len(df))
-                df['Strategy'] = np.array([self.strategy_name] * len(df))
-                df['Alpha'] = np.array([a]*len(df))
-                if df_concat is None:
-                    df_concat = df
-                else:
-                    df_concat = pd.concat([df_concat, df], ignore_index=True)
+                for model in self.model_name:
+                    filename = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/" + f"logs/{self.type}/{self.strategy_name}-{self.aggregation_method}-{self.fraction_fit}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{model}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{a}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(layers)}_layer_selection_evaluate/{file}"
+                    df = pd.read_csv(filename)
+                    df['Shared layers'] = np.array([layers] * len(df))
+                    df['Strategy'] = np.array([self.strategy_name] * len(df))
+                    df['Alpha'] = np.array([a]*len(df))
+                    df['Model'] = np.array([model]*len(df))
+                    if df_concat is None:
+                        df_concat = df
+                    else:
+                        df_concat = pd.concat([df_concat, df], ignore_index=True)
 
         self.df_concat = df_concat
         print(df_concat)
 
 
 
-    def evaluate_client_analysis_shared_layers(self, layer_selection_evaluate):
+    def evaluate_client_analysis_shared_layers(self, model):
         # acc
         df = self.df_concat
+        df = df.query("""Model == '{}'""".format(model))
         def strategy(df):
             parameters = float(df['Size of parameters'].mean())/1000000
             config = float(df['Size of config'].mean())/1000000
@@ -115,14 +120,14 @@ class Varying_Shared_layers:
         print("ord: ", layer_selection_evaluate)
         style = 'Alpha'
 
-        title = """Accuracy in {}""".format(dataset)
-        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}_clients/{}_fraction_fit/alpha_{}/{}/{}_comment/""".format(self.dataset, self.num_clients, self.fraction_fit, alpha, self.model_name, self.comment)
+        title = """Accuracy in {}; Model={}""".format(dataset, model)
+        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}_clients/{}_fraction_fit/model_{}/alpha_{}/{}/{}_comment/""".format(self.dataset, self.num_clients, self.fraction_fit, model, alpha, self.model_name, self.comment)
         os.makedirs(base_dir + "png/", exist_ok=True)
         os.makedirs(base_dir + "svg/", exist_ok=True)
         os.makedirs(base_dir + "csv/", exist_ok=True)
         line_plot(df=df,
                   base_dir=base_dir,
-                  file_name="evaluate_client_acc_round_varying_shared_layers_lineplot" + "_ " + dataset + "_" + "_alpha" + str(alpha),
+                  file_name="evaluate_client_acc_round_varying_shared_layers_lineplot" + "_ " + dataset + "_" + "_alpha" + str(alpha) + "_model_" + model,
                   x_column=x_column,
                   y_column=y_column,
                   title=title,
@@ -134,13 +139,13 @@ class Varying_Shared_layers:
                   y_min=0,
                   y_max=100)
         # print("Custo {1}", df[df['Shared layers']=='{1}'])
-        title = """Communication cost in {}""".format(dataset)
+        title = """Communication cost in {}; Model={}""".format(dataset, model)
         x_column = 'Round'
         y_column = 'Communication cost (MB)'
         hue = 'Shared layers'
         line_plot(df=df,
                   base_dir=base_dir,
-                  file_name="evaluate_client_communication_cost_round_varying_shared_layers_lineplot" + "_ " + dataset + "_" + "_alpha" + str(alpha),
+                  file_name="evaluate_client_communication_cost_round_varying_shared_layers_lineplot" + "_ " + dataset + "_" + "_alpha" + str(alpha) + "_model_" + model,
                   x_column=x_column,
                   y_column=y_column,
                   title=title,
@@ -161,7 +166,7 @@ class Varying_Shared_layers:
         hue = 'Shared layers'
         line_plot(df=df,
                   base_dir=base_dir,
-                  file_name="evaluate_client_accuracy_gain_per_MB_varying_shared_layers_lineplot" + "_ " + dataset + "_" + "_alpha" + str(alpha),
+                  file_name="evaluate_client_accuracy_gain_per_MB_varying_shared_layers_lineplot" + "_ " + dataset + "_" + "_alpha" + str(alpha) + "_model_" + model,
                   x_column=x_column,
                   y_column=y_column,
                   title=title,
@@ -211,7 +216,7 @@ class Varying_Shared_layers:
         hue = 'Shared layers'
         line_plot(df=df,
                   base_dir=base_dir,
-                  file_name="evaluate_client_accuracy_reduction_varying_shared_layers_lineplot" + "_ " + dataset + "_" + "_alpha" + str(alpha),
+                  file_name="evaluate_client_accuracy_reduction_varying_shared_layers_lineplot" + "_ " + dataset + "_" + "_alpha" + str(alpha) + "_model_" + model,
                   x_column=x_column,
                   y_column=y_column,
                   title=title,
@@ -228,7 +233,7 @@ class Varying_Shared_layers:
         hue = 'Shared layers'
         line_plot(df=df,
                   base_dir=base_dir,
-                  file_name="evaluate_client_communication_reduction_varying_shared_layers_lineplot" + "_ " + dataset + "_" + "_alpha" + str(alpha),
+                  file_name="evaluate_client_communication_reduction_varying_shared_layers_lineplot" + "_ " + dataset + "_" + "_alpha" + str(alpha) + "_model_" + model,
                   x_column=x_column,
                   y_column=y_column,
                   title=title,
@@ -253,7 +258,7 @@ if __name__ == '__main__':
     aggregation_method = "None"
     fraction_fit = 0.3
     num_clients = 20
-    model_name = "CNN_10"
+    model_name = ["CNN_10"]
     dataset = "EMNIST"
     alpha = [0.1, 2.0]
     num_rounds = 7
