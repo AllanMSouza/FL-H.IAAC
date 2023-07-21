@@ -1,6 +1,8 @@
+import copy
+
 import numpy as np
 import pandas as pd
-from base_plots import bar_plot, line_plot, ecdf_plot
+from base_plots import bar_plot, line_plot, ecdf_plot, box_plot
 import matplotlib.pyplot as plt
 import seaborn as sns
 import scipy.stats as st
@@ -31,9 +33,18 @@ class Varying_Shared_layers:
 
         self.build_filenames()
 
-        for model in self.model_name:
-            self.evaluate_client_analysis_shared_layers(model)
+        df_concat = None
 
+        for model in self.model_name:
+            for dataset in self.dataset:
+                df = self.evaluate_client_analysis_shared_layers(model, dataset)
+                if df_concat is None:
+                    df_concat = df
+                else:
+                    df_concat = pd.concat([df_concat, df], ignore_index=True)
+
+        print(df_concat)
+        self.evaluate_client_analysis_differnt_models(df_concat)
     def build_filenames(self):
 
         file = "evaluate_client.csv"
@@ -41,26 +52,65 @@ class Varying_Shared_layers:
         for layers in self.layer_selection_evaluate:
             for a in self.alpha:
                 for model in self.model_name:
-                    filename = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/" + f"logs/{self.type}/{self.strategy_name}-{self.aggregation_method}-{self.fraction_fit}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{model}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{a}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(layers)}_layer_selection_evaluate/{file}"
-                    df = pd.read_csv(filename)
-                    df['Shared layers'] = np.array([layers] * len(df))
-                    df['Strategy'] = np.array([self.strategy_name] * len(df))
-                    df['Alpha'] = np.array([a]*len(df))
-                    df['Model'] = np.array([model]*len(df))
-                    if df_concat is None:
-                        df_concat = df
-                    else:
-                        df_concat = pd.concat([df_concat, df], ignore_index=True)
+                    for dataset in self.dataset:
+                        filename = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/" + f"logs/{self.type}/{self.strategy_name}-{self.aggregation_method}-{self.fraction_fit}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{model}/{dataset}/classes_per_client_{self.class_per_client}/alpha_{a}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(layers)}_layer_selection_evaluate/{file}"
+                        df = pd.read_csv(filename)
+                        df['Shared layers'] = np.array([layers] * len(df))
+                        df['Strategy'] = np.array([self.strategy_name] * len(df))
+                        df['Alpha'] = np.array([a]*len(df))
+                        df['Model'] = np.array([model]*len(df))
+                        df['Dataset'] = np.array([dataset]*len(df))
+                        if df_concat is None:
+                            df_concat = df
+                        else:
+                            df_concat = pd.concat([df_concat, df], ignore_index=True)
 
         self.df_concat = df_concat
-        print(df_concat)
 
 
 
-    def evaluate_client_analysis_shared_layers(self, model):
+    def evaluate_client_analysis_differnt_models(self, df):
+
+        def summary(df):
+
+            parameters = df['Parameters reduction (%)'].mean()
+            accuracy_reduction = df['Accuracy reduction (%)'].mean()
+
+            return pd.DataFrame({'Parameters reduction (%)': [parameters], 'Accuracy reduction (%)': [accuracy_reduction]})
+
+        df = df.groupby(['Dataset', 'Model', 'Alpha', 'Strategy', 'Shared layers', 'Round']).apply(summary).reset_index()
+
+        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}_clients/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
+            str(self.dataset), self.num_clients, self.fraction_fit, str(self.model_name), str(self.alpha), self.comment)
+        os.makedirs(base_dir + "png/", exist_ok=True)
+        os.makedirs(base_dir + "svg/", exist_ok=True)
+        os.makedirs(base_dir + "csv/", exist_ok=True)
+        print("ei")
+        print(df)
+        x_column = 'Model'
+        y_column = 'Accuracy reduction (%)'
+        hue = 'Alpha'
+        order = ['CNN_8', 'CNN_10']
+        sci = True
+        filename = """evaluate_client_acc_reduction_alpha_model"""
+        title = """Accuracy reduction"""
+        box_plot(base_dir=base_dir, file_name=filename, title=title, df=df, x_column=x_column, y_column=y_column, y_lim=True, y_max=2, y_min=-1, hue=hue, x_order=order)
+
+        x_column = 'Model'
+        y_column = 'Parameters reduction (%)'
+        hue = 'Alpha'
+        order = ['CNN_6', 'CNN_8', 'CNN_10']
+        sci = True
+        filename = """evaluate_client_parameters_reduction_alpha_model"""
+        title = """Parameters reduction (%)"""
+        box_plot(base_dir=base_dir, file_name=filename, title=title, df=df, x_column=x_column, y_column=y_column,
+                 y_lim=True, y_max=100, y_min=0, hue=hue, x_order=order)
+
+
+    def evaluate_client_analysis_shared_layers(self, model, dataset):
         # acc
         df = self.df_concat
-        df = df.query("""Model == '{}'""".format(model))
+        df = df.query("""Model == '{}' and Dataset == '{}'""".format(model, dataset))
         def strategy(df):
             parameters = float(df['Size of parameters'].mean())/1000000
             config = float(df['Size of config'].mean())/1000000
@@ -69,7 +119,7 @@ class Varying_Shared_layers:
             total_size = parameters + config
 
             return pd.DataFrame({'Size of parameters (MB)': [parameters], 'Communication cost (MB)': [total_size], 'Accuracy': [acc], 'Accuracy gain per MB': [acc_gain_per_byte]})
-        df = df[['Accuracy', 'Round', 'Size of parameters', 'Size of config', 'Strategy', 'Shared layers', 'Alpha']].groupby(by=['Strategy', 'Shared layers', 'Round', 'Alpha']).apply(lambda e: strategy(e)).reset_index()[['Accuracy', 'Size of parameters (MB)', 'Communication cost (MB)', 'Strategy', 'Shared layers', 'Round', 'Accuracy gain per MB', 'Alpha']]
+        df = df[['Accuracy', 'Round', 'Size of parameters', 'Size of config', 'Strategy', 'Shared layers', 'Alpha', 'Dataset', 'Model']].groupby(by=['Strategy', 'Shared layers', 'Round', 'Alpha', 'Dataset', 'Model']).apply(lambda e: strategy(e)).reset_index()[['Accuracy', 'Size of parameters (MB)', 'Communication cost (MB)', 'Strategy', 'Shared layers', 'Round', 'Accuracy gain per MB', 'Alpha', 'Dataset', 'Model']]
         # print("Com alpha: ", alpha, "\n", df)
         df['Accuracy (%)'] = df['Accuracy'] * 100
         df['Accuracy (%)'] = df['Accuracy (%)'].round(4)
@@ -121,7 +171,7 @@ class Varying_Shared_layers:
         style = 'Alpha'
 
         title = """Accuracy in {}; Model={}""".format(dataset, model)
-        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}_clients/{}_fraction_fit/model_{}/alpha_{}/{}/{}_comment/""".format(self.dataset, self.num_clients, self.fraction_fit, model, alpha, self.model_name, self.comment)
+        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}_clients/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(dataset, self.num_clients, self.fraction_fit, model, alpha, self.comment)
         os.makedirs(base_dir + "png/", exist_ok=True)
         os.makedirs(base_dir + "svg/", exist_ok=True)
         os.makedirs(base_dir + "csv/", exist_ok=True)
@@ -179,16 +229,22 @@ class Varying_Shared_layers:
         df.to_csv(filename, index=False)
 
         def comparison_with_shared_layers(df, df_aux):
+            print("fr: ", df.columns)
+            round = int(df['Round'].values[0])
+            dataset = str(df['Dataset'].values[0])
+            alpha = float(df['Alpha'].values[0])
+            model = str(df['Model'].values[0])
 
-            round = df['Round'].tolist()[0]
-            df_aux = df_aux[df_aux['Round'] == round]
-            target = df_aux[df_aux['Shared layers'] == "All layers"]
+            df_copy = copy.deepcopy(df_aux.query("""Round == {} and Dataset == '{}' and Alpha == {} and Model == '{}'""".format(round, dataset, alpha, model)))
+            print("apos: ", df_copy.columns)
+            target = df_copy[df_copy['Shared layers'] == "All layers"]
             target_acc = target['Accuracy (%)'].tolist()[0]
-            target_size = target['Communication cost (MB)'].tolist()[0]
+            target_size = target['Size of parameters (MB)'].tolist()[0]
             acc = df['Accuracy (%)'].tolist()[0]
-            size = df['Communication cost (MB)'].tolist()[0]
+            size = df['Size of parameters (MB)'].tolist()[0]
             acc_reduction = target_acc - acc
             size_reduction = (target_size - size)
+            size_reduction_percentage = (1 - size/target_size) * 100
             # acc_weight = 1
             # size_weight = 1
             # acc_score = acc_score *acc_weight
@@ -198,14 +254,15 @@ class Varying_Shared_layers:
             #     acc_reduction = 0.0001
             #     size_reduction = 0.0001
 
-            return pd.DataFrame({'Accuracy reduction (%)': [acc_reduction], 'Communication reduction (MB)': [size_reduction]})
+            return pd.DataFrame({'Accuracy reduction (%)': [acc_reduction], 'Parameters reduction (MB)': [size_reduction], 'Parameters reduction (%)': [size_reduction_percentage]})
 
-        df = df[['Accuracy (%)', 'Size of parameters (MB)', 'Communication cost (MB)', 'Strategy', 'Shared layers',
-             'Round', 'Accuracy gain per MB']].groupby(
-            by=['Strategy', 'Round', 'Shared layers']).apply(lambda e: comparison_with_shared_layers(e, df)).reset_index()[
-            ['Strategy', 'Round', 'Shared layers', 'Accuracy reduction (%)', 'Communication reduction (MB)']]
+        print("antes: ", df.columns)
+        aux = copy.deepcopy(df)
+        df = df[['Accuracy (%)', 'Size of parameters (MB)', 'Communication cost (MB)', 'Strategy', 'Shared layers', 'Round', 'Accuracy gain per MB', 'Alpha', 'Dataset', 'Model']].groupby(
+            by=['Strategy', 'Round', 'Shared layers', 'Dataset', 'Alpha', 'Model']).apply(lambda e: comparison_with_shared_layers(df=e, df_aux=aux)).reset_index()[['Strategy', 'Round', 'Shared layers', 'Alpha', 'Accuracy reduction (%)', 'Parameters reduction (MB)', 'Parameters reduction (%)', 'Dataset', 'Model']]
 
-        print("Final: ", df)
+        df_preprocessed = copy.deepcopy(df)
+
         df = df[df['Shared layers'] != "All layers"]
         layer_selection_evaluate =  ['FedPredict-v2', '{1}']
         print("menor: ", df['Accuracy reduction (%)'].min())
@@ -229,11 +286,11 @@ class Varying_Shared_layers:
                   y_min=-3)
 
         x_column = 'Round'
-        y_column = 'Communication reduction (MB)'
+        y_column = 'Parameters reduction (MB)'
         hue = 'Shared layers'
         line_plot(df=df,
                   base_dir=base_dir,
-                  file_name="evaluate_client_communication_reduction_varying_shared_layers_lineplot" + "_ " + dataset + "_" + "_alpha" + str(alpha) + "_model_" + model,
+                  file_name="evaluate_client_Parameters_reduction_varying_shared_layers_lineplot" + "_ " + dataset + "_" + "_alpha" + str(alpha) + "_model_" + model,
                   x_column=x_column,
                   y_column=y_column,
                   title=title,
@@ -245,6 +302,8 @@ class Varying_Shared_layers:
                   y_max=4,
                   y_min=0,
                   n=1)
+
+        return df_preprocessed
 
 
 if __name__ == '__main__':
@@ -258,8 +317,8 @@ if __name__ == '__main__':
     aggregation_method = "None"
     fraction_fit = 0.3
     num_clients = 20
-    model_name = ["CNN_10"]
-    dataset = "EMNIST"
+    model_name = ["CNN_6", "CNN_8", "CNN_10"]
+    dataset = ["CIFAR10"]
     alpha = [0.1, 2.0]
     num_rounds = 7
     epochs = 1
