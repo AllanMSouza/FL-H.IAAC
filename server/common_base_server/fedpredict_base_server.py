@@ -240,6 +240,8 @@ class FedPredictBaseServer(FedAvgBaseServer):
 						print("foi: ", M)
 						if layer == '10':
 							M = [i for i in range(len(parameters))]
+						elif layer == '50':
+							M = [i for i in range(len(parameters)//2)]
 					else:
 						M = fedpredict_core_layer_selection(t=server_round, T=self.num_rounds, nt=nt, n_layers=n_layers, size_per_layer=size_of_layers, mean_similarity_per_layer=mean_similarity_per_layer, mean_similarity=mean_similarity, first_similarity=self.similarity_between_layers_per_round[1][len(parameters)-2]['mean'])
 						print("quantidade compartilhadas: ", M)

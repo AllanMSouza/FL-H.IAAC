@@ -2,7 +2,7 @@ import copy
 
 import numpy as np
 import pandas as pd
-from base_plots import bar_plot, line_plot, ecdf_plot, box_plot
+from base_plots import bar_plot, line_plot, ecdf_plot, box_plot, violin_plot
 import matplotlib.pyplot as plt
 import seaborn as sns
 import scipy.stats as st
@@ -75,36 +75,86 @@ class Varying_Shared_layers:
 
             parameters = df['Parameters reduction (%)'].mean()
             accuracy_reduction = df['Accuracy reduction (%)'].mean()
+            acc = df['Accuracy (%)'].mean()
 
-            return pd.DataFrame({'Parameters reduction (%)': [parameters], 'Accuracy reduction (%)': [accuracy_reduction]})
+            return pd.DataFrame({'Parameters reduction (%)': [parameters], 'Accuracy reduction (%)': [accuracy_reduction], 'Accuracy (%)': [acc]})
 
         df = df.groupby(['Dataset', 'Model', 'Alpha', 'Strategy', 'Shared layers', 'Round']).apply(summary).reset_index()
 
         base_dir = """analysis/output/torch/varying_shared_layers/{}/{}_clients/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
             str(self.dataset), self.num_clients, self.fraction_fit, str(self.model_name), str(self.alpha), self.comment)
+        dataset = self.dataset[0]
         os.makedirs(base_dir + "png/", exist_ok=True)
         os.makedirs(base_dir + "svg/", exist_ok=True)
         os.makedirs(base_dir + "csv/", exist_ok=True)
         print("ei")
-        print(df)
+        print(df.iloc[0])
         x_column = 'Model'
         y_column = 'Accuracy reduction (%)'
         hue = 'Alpha'
-        order = ['CNN_8', 'CNN_10']
+        order = ['CNN_6', 'CNN_8', 'CNN_10']
         sci = True
-        filename = """evaluate_client_acc_reduction_alpha_model"""
-        title = """Accuracy reduction"""
-        box_plot(base_dir=base_dir, file_name=filename, title=title, df=df, x_column=x_column, y_column=y_column, y_lim=True, y_max=2, y_min=-1, hue=hue, x_order=order)
+        filename = """evaluate_client_acc_reduction_alpha_model_{}""".format(dataset)
+        title = """Accuracy reduction; Dataset={}""".format(dataset)
+        bar_plot(base_dir=base_dir, file_name=filename, title=title, df=df,
+                 x_column=x_column, y_column=y_column, y_lim=True, y_max=4,
+                 y_min=-1, hue=hue, x_order=order)
+        filename = """evaluate_client_acc_reduction_alpha_model_{}""".format(dataset)
+        title = """Accuracy reduction; Dataset={}""".format(dataset)
+        violin_plot(base_dir=base_dir, file_name=filename, title=title, df=df,
+                 x_column=x_column, y_column=y_column, y_lim=True, y_max=10,
+                 y_min=-1, hue=hue, x_order=order)
+        # filename = """evaluate_client_acc_alpha_model_lineplot"""
+        # y_column = "Accuracy (%)"
+        # x_column = "Round"
+        # hue = "Shared layers"
+        # style = "Alpha"
+        # line_plot(df=df,
+        #           base_dir=base_dir,
+        #           file_name=filename,
+        #           x_column=x_column,
+        #           y_column=y_column,
+        #           title=title,
+        #           hue=hue,
+        #           style=style,
+        #           hue_order=None,
+        #           type=1,
+        #           log_scale=False,
+        #           y_lim=True,
+        #           y_max=100,
+        #           y_min=0)
 
         x_column = 'Model'
         y_column = 'Parameters reduction (%)'
         hue = 'Alpha'
         order = ['CNN_6', 'CNN_8', 'CNN_10']
         sci = True
-        filename = """evaluate_client_parameters_reduction_alpha_model"""
-        title = """Parameters reduction (%)"""
-        box_plot(base_dir=base_dir, file_name=filename, title=title, df=df, x_column=x_column, y_column=y_column,
+        filename = """evaluate_client_parameters_reduction_alpha_model_{}""".format(dataset)
+        title = """Parameters reduction (%); Dataset={}""".format(dataset)
+        bar_plot(base_dir=base_dir, file_name=filename, title=title, df=df, x_column=x_column, y_column=y_column,
+                 y_lim=True, y_max=50, y_min=0, hue=hue, x_order=order)
+        filename = """evaluate_client_parameters_reduction_alpha_model_{}""".format(dataset)
+        title = """Parameters reduction (%); Dataset={}""".format(dataset)
+        violin_plot(base_dir=base_dir, file_name=filename, title=title, df=df, x_column=x_column, y_column=y_column,
                  y_lim=True, y_max=100, y_min=0, hue=hue, x_order=order)
+        # filename = """evaluate_client_parameters_alpha_model_lineplot"""
+        # x_column = "Round"
+        # y_column = "Parameters reduction (%)"
+        # hue = "Shared layers"
+        # style = "Alpha"
+        # line_plot(df=df,
+        #           base_dir=base_dir,
+        #           file_name=filename,
+        #           x_column=x_column,
+        #           y_column=y_column,
+        #           title=title,
+        #           hue=hue,
+        #           hue_order=layer_selection_evaluate,
+        #           type=1,
+        #           log_scale=False,
+        #           y_lim=True,
+        #           y_max=100,
+        #           y_min=0)
 
 
     def evaluate_client_analysis_shared_layers(self, model, dataset):
@@ -241,6 +291,7 @@ class Varying_Shared_layers:
             target_acc = target['Accuracy (%)'].tolist()[0]
             target_size = target['Size of parameters (MB)'].tolist()[0]
             acc = df['Accuracy (%)'].tolist()[0]
+            accuracy = df['Accuracy (%)'].mean()
             size = df['Size of parameters (MB)'].tolist()[0]
             acc_reduction = target_acc - acc
             size_reduction = (target_size - size)
@@ -254,12 +305,13 @@ class Varying_Shared_layers:
             #     acc_reduction = 0.0001
             #     size_reduction = 0.0001
 
-            return pd.DataFrame({'Accuracy reduction (%)': [acc_reduction], 'Parameters reduction (MB)': [size_reduction], 'Parameters reduction (%)': [size_reduction_percentage]})
+            return pd.DataFrame({'Accuracy reduction (%)': [acc_reduction], 'Parameters reduction (MB)': [size_reduction],
+                                 'Parameters reduction (%)': [size_reduction_percentage], 'Accuracy (%)': [accuracy]})
 
         print("antes: ", df.columns)
         aux = copy.deepcopy(df)
         df = df[['Accuracy (%)', 'Size of parameters (MB)', 'Communication cost (MB)', 'Strategy', 'Shared layers', 'Round', 'Accuracy gain per MB', 'Alpha', 'Dataset', 'Model']].groupby(
-            by=['Strategy', 'Round', 'Shared layers', 'Dataset', 'Alpha', 'Model']).apply(lambda e: comparison_with_shared_layers(df=e, df_aux=aux)).reset_index()[['Strategy', 'Round', 'Shared layers', 'Alpha', 'Accuracy reduction (%)', 'Parameters reduction (MB)', 'Parameters reduction (%)', 'Dataset', 'Model']]
+            by=['Strategy', 'Round', 'Shared layers', 'Dataset', 'Alpha', 'Model']).apply(lambda e: comparison_with_shared_layers(df=e, df_aux=aux)).reset_index()[['Strategy', 'Round', 'Shared layers', 'Alpha', 'Accuracy (%)', 'Accuracy reduction (%)', 'Parameters reduction (MB)', 'Parameters reduction (%)', 'Dataset', 'Model']]
 
         df_preprocessed = copy.deepcopy(df)
 

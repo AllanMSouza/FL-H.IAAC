@@ -45,9 +45,9 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 # Configurations
 TYPE = 'torch'
 # DATASETS      				= ['MNIST', 'CIFAR10', 'Tiny-ImageNet']
-DATASETS = ['EMNIST']
+DATASETS = ['CIFAR10']
 # DATASETS      					= ['UCIHAR', 'MotionSense']
-MODELS = ['CNN_6']
+MODELS = ['CNN_6', 'CNN_8', 'CNN_10']
 ALGORITHMS = ['None', 'POC', 'FedLTA']
 EPOCHS = {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2], '6': [1], '7': [1], '8': [1], '9': [1], '10': [1],
           '11': [1], '12': [1], '13': [1], '14': [1], '15': [1], '16': [1], '17': [1], '18': [1], '19': [1], '20': [1],
@@ -129,7 +129,7 @@ EXPERIMENTS = {
     24: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
          'comment': 'set', 'layer_selection_evaluate': 123},
     25: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'layer_selection_evaluate': 124},
+         'comment': 'set', 'layer_selection_evaluate': 50},
     26: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
          'comment': 'set', 'layer_selection_evaluate': 10},
     27: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
