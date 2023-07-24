@@ -64,17 +64,17 @@ def box_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_s
 
     figure.set_title(title)
 
-    if hue is not None:
-        medians = df.groupby([x_column, hue])[y_column].median()
-    else:
-        medians = df.groupby([x_column])[y_column].median()
-    print("mediana: ", medians)
-    medians = medians.round(3)
+    # if hue is not None:
+    #     medians = df.groupby([x_column, hue])[y_column].median()
+    # else:
+    #     medians = df.groupby([x_column])[y_column].median()
+    # print("mediana: ", medians)
+    # medians = medians.round(3)
     vertical_offset = df[y_column].median() * 0.05  # offset from median for display
 
-    for xtick in figure.get_xticks():
-        figure.text(xtick, medians[xtick] + vertical_offset, medians[xtick],
-                      horizontalalignment='center', size='x-small', color='w', weight='semibold')
+    # for xtick in figure.get_xticks():
+    #     figure.text(xtick, medians[xtick] + vertical_offset, medians[xtick],
+    #                   horizontalalignment='center', size='x-small', color='w', weight='semibold')
 
     if tipo == 2:
         plt.legend(bbox_to_anchor=(0.5, 1), loc='upper left', borderaxespad=0, title='Rounds since the last training (nt)')

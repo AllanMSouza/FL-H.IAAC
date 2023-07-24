@@ -205,7 +205,9 @@ class Varying_Shared_layers:
 
             new_shared_layer += "}"
             if shared_layer == "10":
-                new_shared_layer = "All layers"
+                new_shared_layer = "100% of the layers"
+            if shared_layer == "50":
+                new_shared_layer = "50% of the layers"
 
             shared_layers_list[i] = new_shared_layer
             sort[shared_layer] = shared_layers_list[i]
@@ -287,7 +289,7 @@ class Varying_Shared_layers:
 
             df_copy = copy.deepcopy(df_aux.query("""Round == {} and Dataset == '{}' and Alpha == {} and Model == '{}'""".format(round, dataset, alpha, model)))
             print("apos: ", df_copy.columns)
-            target = df_copy[df_copy['Shared layers'] == "All layers"]
+            target = df_copy[df_copy['Shared layers'] == "100% of the layers"]
             target_acc = target['Accuracy (%)'].tolist()[0]
             target_size = target['Size of parameters (MB)'].tolist()[0]
             acc = df['Accuracy (%)'].tolist()[0]
@@ -315,8 +317,8 @@ class Varying_Shared_layers:
 
         df_preprocessed = copy.deepcopy(df)
 
-        df = df[df['Shared layers'] != "All layers"]
-        layer_selection_evaluate =  ['FedPredict-v2', '{1}']
+        df = df[df['Shared layers'] != "100% of the layers"]
+        layer_selection_evaluate =  ['FedPredict-v2', '{1}', '50% of the layers']
         print("menor: ", df['Accuracy reduction (%)'].min())
         print("Fed", df[df['Shared layers'] == 'FedPredict-v2'][['Accuracy reduction (%)', 'Round']])
 
@@ -377,7 +379,7 @@ if __name__ == '__main__':
     # layer_selection_evaluate = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
     #layer_selection_evaluate = [1, 12, 123, 1234]
     # layer_selection_evaluate = [4, 34, 234, 1234]
-    layer_selection_evaluate = [-1, 10]
+    layer_selection_evaluate = [-1, 10, 1]
     comment = "set"
 
     Varying_Shared_layers(tp=type_model, strategy_name=strategy, fraction_fit=fraction_fit, aggregation_method=aggregation_method, new_clients=False, new_clients_train=False, num_clients=num_clients,

@@ -45,7 +45,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 # Configurations
 TYPE = 'torch'
 # DATASETS      				= ['MNIST', 'CIFAR10', 'Tiny-ImageNet']
-DATASETS = ['CIFAR10']
+DATASETS = ['CIFAR10', 'EMNIST']
 # DATASETS      					= ['UCIHAR', 'MotionSense']
 MODELS = ['CNN_6', 'CNN_8', 'CNN_10']
 ALGORITHMS = ['None', 'POC', 'FedLTA']
