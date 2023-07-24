@@ -117,6 +117,32 @@ class NonIid:
         if "FedPredict" in self.strategy_name_list:
             print("entrou")
             self.similarity_analysis("Alpha=" + str(self.alpha))
+            self.norm_analysis()
+
+
+    def norm_analysis(self):
+
+        df_server = self.df_files_names['server'].query("Strategy == 'FedPredict'")
+
+        print("achei")
+        print(df_server)
+
+        title = """Communication cost in {}; Model={}""".format(self.dataset_name, self.model_name)
+        x_column = 'Server round'
+        y_column = 'Norm'
+        hue = None
+        line_plot(df=df_server,
+                  base_dir=self.base_dir,
+                  file_name="server_norm" + "_ " + self.dataset_name + "_" + "_alpha" + str(
+                      "") + "_model_" + self.model_name,
+                  x_column=x_column,
+                  y_column=y_column,
+                  title=title,
+                  hue=hue,
+                  type=1,
+                  y_lim=False,
+                  y_max=4,
+                  y_min=0)
 
     def server_nt_acc_analysis(self):
 

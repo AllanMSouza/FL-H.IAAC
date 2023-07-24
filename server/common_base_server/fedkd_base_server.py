@@ -129,7 +129,7 @@ class FedKDBaseServer(FedAvgBaseServer):
 					weights_results.append((inverse_parameter_svd_reading(fl.common.parameters_to_ndarrays(fit_res.parameters), self.model_shape), fit_res.num_examples))
 
 		#print(f'LEN AGGREGATED PARAMETERS: {len(weights_results)}')
-		parameters_aggregated = fl.common.ndarrays_to_parameters(self._aggregate(weights_results))
+		parameters_aggregated = fl.common.ndarrays_to_parameters(self._aggregate(weights_results, server_round))
 		# self.similarity_between_layers_per_round_and_client[server_round], self.similarity_between_layers_per_round[server_round], self.mean_similarity_per_round[server_round], self.decimals_per_layer[server_round] = fedpredict_layerwise_similarity(fl.common.parameters_to_ndarrays(parameters_aggregated), clients_parameters, clients_ids, server_round)
 		# Aggregate custom metrics if aggregation fn was provided
 		metrics_aggregated = {}

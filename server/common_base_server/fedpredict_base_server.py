@@ -15,6 +15,21 @@ from client.fedpredict_core import fedpredict_core_layer_selection, fedpredict_l
 from pathlib import Path
 import shutil
 
+from flwr.common import (
+    EvaluateIns,
+    EvaluateRes,
+    FitIns,
+    FitRes,
+    MetricsAggregationFn,
+    NDArrays,
+    Parameters,
+    Scalar,
+    ndarrays_to_parameters,
+    parameters_to_ndarrays,
+)
+
+from utils.quantization.parameters_svd import parameter_svd_write, inverse_parameter_svd_reading
+
 def get_size(parameter):
 	try:
 		# #print("recebeu: ", parameter.shape, parameter.ndim)
@@ -75,6 +90,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 						 new_clients_train=new_clients_train,
 						 type=type)
 
+		self.n_rate = float(args.n_rate)
 		self.server_learning_rate = server_learning_rate
 		self.server_momentum = server_momentum
 		self.momentum_vector = None
@@ -87,6 +103,9 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		self.create_folder(strategy_name)
 		self.similarity_between_layers_per_round = {}
 		self.similarity_between_layers_per_round_and_client = {}
+		self.parameters_aggregated_gradient = {}
+		self.parameters_aggregated_checkpoint = {}
+		self.gradient_norm = None
 		self.T = float(args.T)
 
 	def create_folder(self, strategy_name):
@@ -150,6 +169,13 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			print("update fedpredict metrics")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
+	# def configure_fit(self, server_round, parameters, client_manager):
+	# 	if server_round == 1:
+	# 		self.initial_parameters = parameters_to_ndarrays(parameters)
+	# 	results = super().configure_fit(server_round, parameters, client_manager)
+	# 	# Return client/config pairs
+	# 	return results
+
 	def aggregate_fit(self, server_round, results, failures):
 
 		parameters_aggregated, metrics_aggregated = super().aggregate_fit(server_round, results, failures)
@@ -163,6 +189,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 
 		self.similarity_between_layers_per_round_and_client[server_round], self.similarity_between_layers_per_round[server_round], self.mean_similarity_per_round[server_round] = fedpredict_layerwise_similarity(fl.common.parameters_to_ndarrays(parameters_aggregated), clients_parameters, clients_ids, server_round, self.dataset, str(self.alpha))
 
+		self.parameters_aggregated_checkpoint[server_round] = parameters_to_ndarrays(parameters_aggregated)
 
 		return parameters_aggregated, metrics_aggregated
 
@@ -197,7 +224,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			client_similarity_per_layer = self.get_client_similarity_per_layer(client_id, server_round)
 			parameters_to_send, M = self._select_layers(client_similarity_per_layer, mean_similarity_per_layer, mean_similarity, parameters, server_round, nt, size_of_parameters, client_id, self.comment)
 			# M = [i for i in range(len(parameters))]
-			# parameters_to_send = fl.common.ndarrays_to_parameters(parameters)
+			# parameters_to_send = ndarrays_to_parameters(parameter_svd_write(parameters_to_ndarrays(parameters_to_send), self.n_rate))
 
 			self.fedpredict_clients_metrics[str(client.cid)]['acc_bytes_rate'] = size_of_parameters
 			config['M'] = M
@@ -305,3 +332,64 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		self.similarity_filename = f"{self.base}/similarity_between_layers.csv"
 		df = pd.DataFrame(data)
 		df.to_csv(self.similarity_filename, index=False)
+
+	def _gradient_metric(self, updated_global_parameters, server_round):
+
+		norm = []
+
+		for layer in updated_global_parameters:
+
+			norm.append(np.linalg.norm(layer))
+
+		self.gradient_norm = float(np.mean(norm))
+		print("norma: ", self.gradient_norm)
+
+	def _get_server_header(self):
+
+		server_header = super()._get_server_header()
+		return server_header + ["Norm"]
+
+	def _get_server_data(self, process_time, server_round, accuracy_aggregated, accuracy_std, top5, top1):
+
+		return [process_time, server_round, accuracy_aggregated, accuracy_std, top5, top1, self.gradient_norm]
+
+	# def _subtract(self, server_round, parameters_aggregated):
+	#
+	# 	try:
+	# 		previous_server_round = server_round - 1
+	# 		previous_parameter_gradient = self.parameters_aggregated_gradient[previous_server_round]
+	# 		parameter_gradient = copy.deepcopy(previous_parameter_gradient)
+	#
+	# 		for i in range(len(parameters_aggregated)):
+	#
+	# 			layer_previous_round = parameter_gradient[i]
+	# 			layer_aggregated = parameters_aggregated[i]
+	# 			parameter_gradient[i] = self._sub(layer_previous_round, layer_aggregated)
+	#
+	# 			elif np.ndim(la)
+	#
+	# 	except Exception as e:
+	# 		print("_subtract")
+	# 		print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, 0), type(e).__name__,
+	# 			  e)
+	#
+	# def _sub(self, aggregated_layer_previous_round, aggregated_layer_current_round):
+	#
+	# 	try:
+	# 		if np.ndim(aggregated_layer_previous_round) <= 2:
+	#
+	# 			gradient = aggregated_layer_previous_round - aggregated_layer_current_round
+	# 			return gradient
+	#
+	# 		elif np.ndim(aggregated_layer_previous_round) >= 3:
+	# 			u = []
+	# 			for i in range(len(aggregated_layer_previous_round)):
+	# 				r = self._sub(aggregated_layer_previous_round[i], aggregated_layer_current_round[i])
+	# 				u.append(r)
+	# 			return np.array(u)
+	#
+	# 	except Exception as e:
+	# 		print("_sub")
+	# 		print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, 0), type(e).__name__,
+	# 			  e)
+

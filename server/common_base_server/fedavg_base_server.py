@@ -310,7 +310,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 					weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples))
 
 		#print(f'LEN AGGREGATED PARAMETERS: {len(weights_results)}')
-		parameters_aggregated = fl.common.ndarrays_to_parameters(self._aggregate(weights_results))
+		parameters_aggregated = fl.common.ndarrays_to_parameters(self._aggregate(weights_results, server_round))
 		# Aggregate custom metrics if aggregation fn was provided
 		metrics_aggregated = {}
 		if server_round == 1:
@@ -457,7 +457,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		top1 = accs[-1]
 
 		assert self.server_filename is not None
-		data = [time.process_time()-self.start_time, server_round, accuracy_aggregated, accuracy_std, top5, top1]
+		data = self._get_server_data(time.process_time()-self.start_time, server_round, accuracy_aggregated, accuracy_std, top5, top1)
 
 		self._write_output(filename=self.server_filename,
 						   data=data
@@ -492,6 +492,10 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 		return loss_aggregated, metrics_aggregated
 
+	def _get_server_data(self, process_time, server_round, accuracy_aggregated, accuracy_std, top5, top1):
+
+		return [process_time, server_round, accuracy_aggregated, accuracy_std, top5, top1]
+
 	def end_evaluate_function(self):
 		pass
 	def select_clients_bellow_average(self):
@@ -505,9 +509,10 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 		return selected_clients
 
-	def _aggregate(self, parameters):
+	def _aggregate(self, parameters, server_round):
 
 		updated_global_parameters = aggregate(parameters)
+		self._gradient_metric(updated_global_parameters, server_round)
 		if self.use_gradient:
 			print("usou o gradiente")
 			last_global_model = self.previous_global_parameters[-1]
@@ -520,6 +525,10 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 
 		return updated_global_parameters
+
+	def _gradient_metric(self, updated_global_parameters, server_round):
+
+		pass
 
 	def _calculate_mean_of_server_nt_acc(self, server_round):
 
@@ -550,7 +559,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.server_nt_acc_filename = f"{self.base}/server_nt_acc.csv"
 		self.predictions_client_filename = f"{self.base}/predictions_client.csv"
 
-		server_header = ["Time", "Server round", "Accuracy aggregated", "Accuracy std", "Top5", "Top1"]
+		server_header = self._get_server_header()
 		train_header = ["Round", "Cid", "Selected", "Total time", "Size of parameters", "Avg loss train", "Avg accuracy train"]
 		evaluate_header = ["Round", "Cid", "Size of parameters", "Size of config", "Loss", "Accuracy"]
 		server_nt_acc_header = ["Round", "Accuracy (%)", "nt"]
@@ -569,6 +578,9 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self._write_header(self.server_nt_acc_filename, server_nt_acc_header)
 		self._write_header(self.predictions_client_filename, predictions_header)
 
+	def _get_server_header(self):
+
+		return ["Time", "Server round", "Accuracy aggregated", "Accuracy std", "Top5", "Top1"]
 
 	def _write_output(self, filename, data):
 
