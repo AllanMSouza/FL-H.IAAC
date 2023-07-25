@@ -103,10 +103,35 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		self.create_folder(strategy_name)
 		self.similarity_between_layers_per_round = {}
 		self.similarity_between_layers_per_round_and_client = {}
+		self.initial_similarity = 0
+		self.current_similarity = 0
 		self.parameters_aggregated_gradient = {}
 		self.parameters_aggregated_checkpoint = {}
 		self.gradient_norm = None
 		self.T = float(args.T)
+
+	def calculate_initial_similarity(self, server_round, rate=0.1):
+
+		rounds = int(rate*self.T)
+
+		sm = 0
+		rounds = min(rounds, server_round)
+		for i in range(1, rounds +1):
+
+			sm += self.similarity_between_layers_per_round[i][0]['mean']
+
+		self.initial_similarity = sm/rounds
+
+	def calculate_current_similarity(self, server_round, rate=0.05):
+
+		rounds = max(1, int(rate * self.T))
+		rounds = min(server_round, rounds)
+
+		sm = 0
+		for i in range(server_round - rounds, server_round + 1):
+			sm += self.similarity_between_layers_per_round[i][0]['mean']
+
+		self.current_similarity = sm / rounds
 
 	def create_folder(self, strategy_name):
 
@@ -187,9 +212,12 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			clients_ids.append(client_id)
 			clients_parameters.append(fl.common.parameters_to_ndarrays(fit_res.parameters))
 
-		self.similarity_between_layers_per_round_and_client[server_round], self.similarity_between_layers_per_round[server_round], self.mean_similarity_per_round[server_round] = fedpredict_layerwise_similarity(fl.common.parameters_to_ndarrays(parameters_aggregated), clients_parameters, clients_ids, server_round, self.dataset, str(self.alpha))
+		self.similarity_between_layers_per_round_and_client[server_round], self.similarity_between_layers_per_round[server_round], self.mean_similarity_per_round[server_round] = fedpredict_layerwise_similarity(self.previous_global_parameters[server_round-1], clients_parameters, clients_ids, server_round, self.dataset, str(self.alpha))
 
 		self.parameters_aggregated_checkpoint[server_round] = parameters_to_ndarrays(parameters_aggregated)
+
+		# if server_round == 3:
+		# 	self.calculate_initial_similarity(server_round)
 
 		return parameters_aggregated, metrics_aggregated
 
@@ -204,6 +232,8 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		# 	accuracy = self.accuracy_history[len(self.accuracy_history)]
 		size_of_parameters = []
 		parameters = fl.common.parameters_to_ndarrays(parameters)
+		# if server_round >= 4:
+		# 	self.calculate_current_similarity(server_round)
 		for i in range(1, len(parameters)):
 			size_of_parameters.append(get_size(parameters[i]))
 		for client_tuple in client_evaluate_list:
@@ -270,7 +300,8 @@ class FedPredictBaseServer(FedAvgBaseServer):
 						elif layer == '50':
 							M = [i for i in range(len(parameters)//2)]
 					else:
-						M = fedpredict_core_layer_selection(t=server_round, T=self.num_rounds, nt=nt, n_layers=n_layers, size_per_layer=size_of_layers, mean_similarity_per_layer=mean_similarity_per_layer, mean_similarity=mean_similarity, first_similarity=self.similarity_between_layers_per_round[1][len(parameters)-2]['mean'])
+						# self.similarity_between_layers_per_round[1][len(parameters)-2]['mean']
+						M = fedpredict_core_layer_selection(t=server_round, T=self.num_rounds, nt=nt, n_layers=n_layers, size_per_layer=size_of_layers, mean_similarity_per_layer=mean_similarity_per_layer, current_similarity=self.current_similarity, first_similarity=self.initial_similarity)
 						print("quantidade compartilhadas: ", M)
 				new_parameters = []
 				for i in range(len(parameters)):
@@ -337,7 +368,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 
 		norm = []
 
-		layer = updated_global_parameters[0]
+		layer = updated_global_parameters[-2]
 		norm = np.linalg.norm(layer)
 
 		self.gradient_norm = float(norm)

@@ -90,7 +90,7 @@ def fedpredict_core(t, T, nt):
         print("fedpredict core")
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_similarity_per_layer, mean_similarity, first_similarity):
+def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_similarity_per_layer, current_similarity, first_similarity):
     try:
 
         # 9
@@ -98,12 +98,13 @@ def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_sim
             shared_layers = 0
         else:
             # reference_similarity = (mean_similarity_per_layer[int(n_layers*2-2)]['mean'] + mean_similarity_per_layer[int(n_layers*2-1)]['mean'])/2
-            reference_similarity = min([mean_similarity_per_layer[int(n_layers * 2 - 2)]['mean'],
-                                    mean_similarity_per_layer[int(n_layers * 2 - 1)]['mean']])
-            # reference_similarity = mean_similarity_per_layer[int(n_layers * 2 - 2)]['mean']
-            penalty = abs(mean_similarity_per_layer[int(n_layers * 2 - 2)]['mean'] -
-                                    mean_similarity_per_layer[int(n_layers * 2 - 1)]['mean'])
-            print("referencia: ", n_layers*2-1, "ref: ", reference_similarity, "first: ", first_similarity)
+            # reference_similarity = min([mean_similarity_per_layer[int(n_layers * 2 - 2)]['mean'],
+            #                         mean_similarity_per_layer[int(n_layers * 2 - 1)]['mean']])
+            # # reference_similarity = mean_similarity_per_layer[int(n_layers * 2 - 2)]['mean']
+            # penalty = abs(mean_similarity_per_layer[int(n_layers * 2 - 2)]['mean'] -
+            #                         mean_similarity_per_layer[int(n_layers * 2 - 1)]['mean'])
+            sm = max(0, current_similarity - first_similarity)
+            print("referencia: ", "first: ", first_similarity, " current: ", current_similarity, " diff: ", sm)
             # evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
             # normalizar dentro de 0 e 1
             # updated_level = 1/rounds_without_fit
@@ -118,14 +119,16 @@ def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_sim
 
             # print("el servidor: ", el, " el local: ", evolutionary_level)
 
-            eq1 = (-1 + update_level - 1 + reference_similarity - penalty)
+            # eq1 = (update_level - evolution_level+reference_similarity) #v2
+
+            eq1 = (update_level - evolution_level + sm)
             eq2 = round(np.exp(eq1), 6)
             # eq2 = (update_level + reference_similarity)/2
             shared_layers = int(np.ceil(eq2 * n_layers))
 
         shared_layers = [i for i in range(shared_layers*2)]
 
-        print("Shared layers: ", shared_layers, " similaridade: ", mean_similarity, " rodada: ", t)
+        print("Shared layers: ", shared_layers, " rodada: ", t)
 
         return shared_layers
 
@@ -158,6 +161,7 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
 
     num_layers = len(global_parameter)
     num_clients = len(clients_parameters)
+    print("global: ", num_layers)
     similarity_per_layer = {i: {} for i in clients_ids}
     # interest_layers = [0, 1, int(num_layers/2)-2, int(num_layers/2)-1, num_layers-2, num_layers-1]
     interest_layers = [0, 1, num_layers - 2, num_layers - 1]

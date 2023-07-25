@@ -124,12 +124,13 @@ class NonIid:
 
         df_server = self.df_files_names['server'].query("Strategy == 'FedPredict'")
 
-        print("achei")
-        print(df_server)
+        print("achei", df_server.columns)
+
 
         title = """Communication cost in {}; Model={}""".format(self.dataset_name, self.model_name)
         x_column = 'Server round'
         y_column = 'Norm'
+        print(df_server[[x_column, y_column]])
         hue = None
         line_plot(df=df_server,
                   base_dir=self.base_dir,
@@ -141,7 +142,7 @@ class NonIid:
                   hue=hue,
                   type=1,
                   y_lim=False,
-                  y_max=4,
+                  y_max=0.01,
                   y_min=0)
 
     def server_nt_acc_analysis(self):
@@ -317,7 +318,7 @@ class NonIid:
                   hue=hue,
                   hue_order=hue_order,
                   type=type,
-                  y_lim=True,
+                  y_lim=False,
                   y_min=y_min)
 
         x_column = 'Server round'
@@ -329,7 +330,7 @@ class NonIid:
                   x_column=x_column,
                   y_column=y_column,
                   title=title,
-                  y_lim=True,
+                  y_lim=False,
                   y_min=y_min)
 
 

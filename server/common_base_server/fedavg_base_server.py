@@ -114,7 +114,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.clients_metrics = self._clients_metrics()
 		self.evaluate_config = {}
 		self._write_output_files_headers()
-		self.previous_global_parameters = [[]]
+		self.previous_global_parameters = []
 		self.mean_similarity_per_round = {}
 		self.model_shape = []
 		self.decimals_per_layer = {}

@@ -81,8 +81,8 @@ class Varying_Shared_layers:
 
         df = df.groupby(['Dataset', 'Model', 'Alpha', 'Strategy', 'Shared layers', 'Round']).apply(summary).reset_index()
 
-        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}_clients/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
-            str(self.dataset), self.num_clients, self.fraction_fit, str(self.model_name), str(self.alpha), self.comment)
+        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
+            str(self.dataset), self.num_clients, self.num_rounds, self.fraction_fit, str(self.model_name), str(self.alpha), self.comment)
         dataset = self.dataset[0]
         os.makedirs(base_dir + "png/", exist_ok=True)
         os.makedirs(base_dir + "svg/", exist_ok=True)
@@ -97,7 +97,7 @@ class Varying_Shared_layers:
         filename = """evaluate_client_acc_reduction_alpha_model_{}""".format(dataset)
         title = """Accuracy reduction; Dataset={}""".format(dataset)
         bar_plot(base_dir=base_dir, file_name=filename, title=title, df=df,
-                 x_column=x_column, y_column=y_column, y_lim=True, y_max=4,
+                 x_column=x_column, y_column=y_column, y_lim=True, y_max=50,
                  y_min=-1, hue=hue, x_order=order)
         filename = """evaluate_client_acc_reduction_alpha_model_{}""".format(dataset)
         title = """Accuracy reduction; Dataset={}""".format(dataset)
@@ -132,7 +132,7 @@ class Varying_Shared_layers:
         filename = """evaluate_client_parameters_reduction_alpha_model_{}""".format(dataset)
         title = """Parameters reduction (%); Dataset={}""".format(dataset)
         bar_plot(base_dir=base_dir, file_name=filename, title=title, df=df, x_column=x_column, y_column=y_column,
-                 y_lim=True, y_max=50, y_min=0, hue=hue, x_order=order)
+                 y_lim=True, y_max=100, y_min=0, hue=hue, x_order=order)
         filename = """evaluate_client_parameters_reduction_alpha_model_{}""".format(dataset)
         title = """Parameters reduction (%); Dataset={}""".format(dataset)
         violin_plot(base_dir=base_dir, file_name=filename, title=title, df=df, x_column=x_column, y_column=y_column,
@@ -223,7 +223,7 @@ class Varying_Shared_layers:
         style = 'Alpha'
 
         title = """Accuracy in {}; Model={}""".format(dataset, model)
-        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}_clients/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(dataset, self.num_clients, self.fraction_fit, model, alpha, self.comment)
+        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(dataset, self.num_clients, self.num_rounds, self.fraction_fit, model, alpha, self.comment)
         os.makedirs(base_dir + "png/", exist_ok=True)
         os.makedirs(base_dir + "svg/", exist_ok=True)
         os.makedirs(base_dir + "csv/", exist_ok=True)
@@ -374,7 +374,7 @@ if __name__ == '__main__':
     model_name = ["CNN_6", "CNN_8", "CNN_10"]
     dataset = ["CIFAR10"]
     alpha = [0.1, 2.0]
-    num_rounds = 7
+    num_rounds = 14
     epochs = 1
     # layer_selection_evaluate = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
     #layer_selection_evaluate = [1, 12, 123, 1234]
