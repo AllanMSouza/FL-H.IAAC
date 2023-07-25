@@ -337,11 +337,10 @@ class FedPredictBaseServer(FedAvgBaseServer):
 
 		norm = []
 
-		for layer in updated_global_parameters:
+		layer = updated_global_parameters[0]
+		norm = np.linalg.norm(layer)
 
-			norm.append(np.linalg.norm(layer))
-
-		self.gradient_norm = float(np.mean(norm))
+		self.gradient_norm = float(norm)
 		print("norma: ", self.gradient_norm)
 
 	def _get_server_header(self):
