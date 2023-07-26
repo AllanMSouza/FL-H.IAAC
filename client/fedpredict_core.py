@@ -103,7 +103,7 @@ def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_sim
             # # reference_similarity = mean_similarity_per_layer[int(n_layers * 2 - 2)]['mean']
             # penalty = abs(mean_similarity_per_layer[int(n_layers * 2 - 2)]['mean'] -
             #                         mean_similarity_per_layer[int(n_layers * 2 - 1)]['mean'])
-            sm = max(0, current_similarity - first_similarity)
+            sm = max(0, abs(current_similarity - first_similarity))
             print("referencia: ", "first: ", first_similarity, " current: ", current_similarity, " diff: ", sm)
             # evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
             # normalizar dentro de 0 e 1
@@ -121,7 +121,10 @@ def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_sim
 
             # eq1 = (update_level - evolution_level+reference_similarity) #v2
 
-            eq1 = (update_level - evolution_level + sm)
+            lamda = 0.2
+            # eq1 = (update_level - evolution_level - (1-sm)* lamda) # v3
+            eq1 = (update_level - evolution_level + first_similarity * lamda)  # v4
+            # eq1 = (update_level - evolution_level + (1 - sm) * 0.2)
             eq2 = round(np.exp(eq1), 6)
             # eq2 = (update_level + reference_similarity)/2
             shared_layers = int(np.ceil(eq2 * n_layers))

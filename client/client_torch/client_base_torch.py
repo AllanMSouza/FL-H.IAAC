@@ -386,7 +386,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		try:
 			server_round = int(config['round'])
 			n_rounds = int(config['n_rounds'])
-			print("p recebidos: ", len(parameters))
+			print("p recebidos: ", len(parameters), " round: ", server_round)
 			self.set_parameters_to_model_evaluate(parameters, config)
 			# loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
 
