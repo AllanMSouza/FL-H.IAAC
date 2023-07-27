@@ -123,7 +123,11 @@ def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_sim
 
             lamda = 0.2
             # eq1 = (update_level - evolution_level - (1-sm)* lamda) # v3
-            eq1 = (update_level - evolution_level + first_similarity * lamda)  # v4
+            # eq1 = (update_level - evolution_level - (1-sm) * lamda)  # v4 bom mas invertido
+            # eq1 = (-update_level - evolution_level - sm * lamda)  # v5 cai demais e invertido
+            # eq1 = (-update_level - evolution_level + sm) # v6 cai demais
+            # eq1 = (-update_level**(1/2) - evolution_level - sm) # v7 cai demais
+            eq1 = (-update_level - evolution_level - sm)/3  # v8 ótimo
             # eq1 = (update_level - evolution_level + (1 - sm) * 0.2)
             eq2 = round(np.exp(eq1), 6)
             # eq2 = (update_level + reference_similarity)/2

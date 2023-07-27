@@ -301,7 +301,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 							M = [i for i in range(len(parameters)//2)]
 					else:
 						# self.similarity_between_layers_per_round[1][len(parameters)-2]['mean']
-						M = fedpredict_core_layer_selection(t=server_round, T=self.num_rounds, nt=nt, n_layers=n_layers, size_per_layer=size_of_layers, mean_similarity_per_layer=mean_similarity_per_layer, current_similarity=self.similarity_between_layers_per_round[server_round][len(parameters)-1]['mean'], first_similarity=self.similarity_between_layers_per_round[server_round][len(parameters)-2]['mean'])
+						M = fedpredict_core_layer_selection(t=server_round, T=self.num_rounds, nt=nt, n_layers=n_layers, size_per_layer=size_of_layers, mean_similarity_per_layer=mean_similarity_per_layer, current_similarity=self.similarity_between_layers_per_round[server_round][0]['mean'], first_similarity=self.similarity_between_layers_per_round[server_round][len(parameters)-2]['mean'])
 						print("quantidade compartilhadas: ", M)
 				new_parameters = []
 				for i in range(len(parameters)):
