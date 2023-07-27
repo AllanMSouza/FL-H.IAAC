@@ -54,7 +54,7 @@ class CKA(object):
 
         return hsic / (var1 * var2)
 
-def fedpredict_core(t, T, nt):
+def fedpredict_core(t, T, nt, sm):
     try:
 
         # 9
@@ -74,8 +74,8 @@ def fedpredict_core(t, T, nt):
             evolution_level = t / T
 
             # print("el servidor: ", el, " el local: ", evolutionary_level)
-
-            eq1 = (-update_level - evolution_level)
+            # eq1 = (-update_level - evolution_level) # v1
+            eq1 = (-update_level - evolution_level - sm) # v2 melhor
             eq2 = round(np.exp(eq1), 6)
             global_model_weight = eq2
 
@@ -124,7 +124,7 @@ def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_sim
             lamda = 0.2
             # eq1 = (update_level - evolution_level - (1-sm)* lamda) # v3
             # eq1 = (update_level - evolution_level - (1-sm) * lamda)  # v4 bom mas invertido
-            # eq1 = (-update_level - evolution_level - sm * lamda)  # v5 cai demais e invertido
+            # eq1 = (-update_level - evolution_level - sm)  # v5 cai demais e invertido
             # eq1 = (-update_level - evolution_level + sm) # v6 cai demais
             # eq1 = (-update_level**(1/2) - evolution_level - sm) # v7 cai demais
             eq1 = (-update_level - evolution_level - sm)/3  # v8 ótimo

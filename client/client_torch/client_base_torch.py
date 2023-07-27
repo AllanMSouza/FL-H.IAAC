@@ -1,26 +1,17 @@
 import flwr as fl
-import random
-import time
 import copy
 import numpy as np
 import torch
-import os
 import time
 import sys
 
 from dataset_utils_torch import ManageDatasets
-from model_definition_torch import DNN, Logistic, CNN, AlexNet, MobileNet, CNN_5, resnet20, CNN_EMNIST
-from torchvision import models
+from models.torch import DNN, Logistic, CNN, MobileNet, resnet20, CNN_EMNIST
 import csv
 import torch.nn as nn
-from utils.quantization.quantization import quantize_linear_symmetric
-from torch.utils.data import DataLoader
-from torch.utils.data import TensorDataset, DataLoader
-from utils.quantization import inverse_parameter_quantization_reading, parameters_quantization_write
 import warnings
 warnings.simplefilter("ignore")
 
-import logging
 # logging.getLogger("torch").setLevel(logging.ERROR)
 from torch.nn.parameter import Parameter
 import random

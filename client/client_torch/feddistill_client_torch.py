@@ -1,26 +1,15 @@
-import flwr as fl
-import tensorflow
-import random
-import time
-import numpy as np
 import copy
-import torch
 import os
 import time
 import sys
 from collections import defaultdict
 from pathlib import Path
-from dataset_utils_torch import ManageDatasets
-from model_definition_torch import DNN_proto, Logistic_Proto, CNN_proto
-import csv
+from models.torch import DNN_proto, Logistic_Proto, CNN_proto
 import torch.nn as nn
-from torch.utils.data import DataLoader
-from torch.utils.data import TensorDataset, DataLoader
 import warnings
-import json
+
 warnings.simplefilter("ignore")
 from client.client_torch.client_base_torch import ClientBaseTorch
-import logging
 # logging.getLogger("torch").setLevel(logging.ERROR)
 from torch.nn.parameter import Parameter
 import torch

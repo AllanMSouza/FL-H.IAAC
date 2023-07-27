@@ -1,26 +1,21 @@
 from client.client_torch import FedAvgClientTorch
 from torch.nn.parameter import Parameter
 import torch
-import json
-import math
 from pathlib import Path
 import numpy as np
-import flwr
-import json
 from utils.quantization.parameters_svd import inverse_parameter_svd_reading, parameter_svd_write
 import os
 import sys
 import time
 import copy
-import pandas as pd
-from model_definition_torch import DNN, Logistic, CNN, CNN_student, DNN_student, DNN_teacher, AlexNet, CNNDistillation
+from models.torch import Logistic, DNN_student, DNN_teacher, CNNDistillation
 from torchvision import models
 import torch.nn.functional as F
 
 import warnings
 warnings.simplefilter("ignore")
 
-import logging
+
 # logging.getLogger("torch").setLevel(logging.ERROR)
 
 def get_size(parameter):

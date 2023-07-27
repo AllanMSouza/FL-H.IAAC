@@ -274,7 +274,7 @@ def conv_bw(inplane, outplane, kernel_size=3, stride=1):
                          nn.BatchNorm2d(outplane), nn.ReLU())
 
 class MobileNet(nn.Module):
-    def __init__(self, num_classes=10):
+    def __init__(self, num_classes=10, input_size=3):
         super(MobileNet, self).__init__()
         try:
             layers = []

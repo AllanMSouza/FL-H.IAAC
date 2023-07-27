@@ -258,6 +258,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 
 			self.fedpredict_clients_metrics[str(client.cid)]['acc_bytes_rate'] = size_of_parameters
 			config['M'] = M
+			config['sm'] = max(0, abs(self.similarity_between_layers_per_round[server_round][0]['mean'] - self.similarity_between_layers_per_round[server_round][len(parameters)-2]['mean']))
 			evaluate_ins = fl.common.EvaluateIns(parameters_to_send, config)
 			client_evaluate_list_fedpredict.append((client, evaluate_ins))
 

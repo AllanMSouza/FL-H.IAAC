@@ -79,11 +79,11 @@ class FedPredictClientTorch(FedAvgClientTorch):
 			print("save parameters")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def _fedpredict_plugin(self, global_parameters, t, T, nt, M):
+	def _fedpredict_plugin(self, global_parameters, t, T, nt, M, sm):
 
 		try:
 
-			local_model_weights, global_model_weight = fedpredict_core(t, T, nt)
+			local_model_weights, global_model_weight = fedpredict_core(t, T, nt, sm)
 
 			# Load global parameters into 'self.clone_model' (global model)
 			global_parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
@@ -130,6 +130,7 @@ class FedPredictClientTorch(FedAvgClientTorch):
 			last_global_accuracy = config['last_global_accuracy']
 			# print("chegou")
 			M = config['M']
+			sm = config['sm']
 			local_layer_count = 0
 			global_layer_count = 0
 			parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
@@ -148,7 +149,7 @@ class FedPredictClientTorch(FedAvgClientTorch):
 			if os.path.exists(self.filename):
 				# Load local parameters to 'self.model'
 				self.model.load_state_dict(torch.load(self.filename))
-				self._fedpredict_plugin(global_parameters, t, T, nt, M)
+				self._fedpredict_plugin(global_parameters, t, T, nt, M, sm)
 		except Exception as e:
 			print("Set parameters to model")
 			print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, self.cid), type(e).__name__, e)
