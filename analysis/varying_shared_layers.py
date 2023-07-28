@@ -342,6 +342,7 @@ class Varying_Shared_layers:
         x_column = 'Round'
         y_column = 'Parameters reduction (MB)'
         hue = 'Shared layers'
+        style = 'Alpha'
         line_plot(df=df,
                   base_dir=base_dir,
                   file_name="evaluate_client_Parameters_reduction_varying_shared_layers_lineplot" + "_ " + dataset + "_" + "_alpha" + str(alpha) + "_model_" + model,
@@ -349,6 +350,7 @@ class Varying_Shared_layers:
                   y_column=y_column,
                   title=title,
                   hue=hue,
+                  style=style,
                   hue_order=layer_selection_evaluate,
                   type=1,
                   log_scale=True,
@@ -371,7 +373,7 @@ if __name__ == '__main__':
     aggregation_method = "None"
     fraction_fit = 0.3
     num_clients = 20
-    model_name = ["CNN_6", "CNN_8", "CNN_10"]
+    model_name = ["CNN_10"]
     dataset = ["CIFAR10"]
     alpha = [0.1, 2.0]
     num_rounds = 14

@@ -75,7 +75,7 @@ def fedpredict_core(t, T, nt, sm):
 
             # print("el servidor: ", el, " el local: ", evolutionary_level)
             # eq1 = (-update_level - evolution_level) # v1
-            eq1 = (-update_level - evolution_level - sm) # v2 melhor
+            eq1 = (-update_level - evolution_level) # v2 melhor
             eq2 = round(np.exp(eq1), 6)
             global_model_weight = eq2
 
