@@ -193,7 +193,7 @@ class Varying_Shared_layers:
         for i in range(len(shared_layers_list)):
             shared_layer = str(shared_layers_list[i])
             if "-1" in shared_layer:
-                shared_layers_list[i] = "FedPredict-v2"
+                shared_layers_list[i] = "FedPredict (with ALS)"
                 sort[shared_layer] = shared_layers_list[i]
                 continue
             new_shared_layer = "{"
@@ -318,9 +318,11 @@ class Varying_Shared_layers:
         df_preprocessed = copy.deepcopy(df)
 
         df = df[df['Shared layers'] != "100% of the layers"]
-        layer_selection_evaluate =  ['FedPredict-v2', '{1}', '50% of the layers']
+        df = df[df['Shared layers'] != "{1}"]
+        layer_selection_evaluate =  ['FedPredict (with ALS)']
         print("menor: ", df['Accuracy reduction (%)'].min())
-        print("Fed", df[df['Shared layers'] == 'FedPredict-v2'][['Accuracy reduction (%)', 'Round']])
+        print("Fed", df[df['Shared layers'] == 'FedPredict (with ALS)'][['Accuracy reduction (%)', 'Round']])
+        print("tra: ", df['Shared layers'].unique().tolist())
 
         x_column = 'Round'
         y_column = 'Accuracy reduction (%)'
@@ -359,6 +361,27 @@ class Varying_Shared_layers:
                   y_min=0,
                   n=1)
 
+        x_column = 'Round'
+        y_column = 'Parameters reduction (%)'
+        hue = 'Shared layers'
+        style = 'Alpha'
+        line_plot(df=df,
+                  base_dir=base_dir,
+                  file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot" + "_ " + dataset + "_" + "_alpha" + str(
+                      alpha) + "_model_" + model,
+                  x_column=x_column,
+                  y_column=y_column,
+                  title=title,
+                  hue=hue,
+                  style=style,
+                  hue_order=layer_selection_evaluate,
+                  type=1,
+                  log_scale=False,
+                  y_lim=True,
+                  y_max=100,
+                  y_min=20,
+                  n=1)
+
         return df_preprocessed
 
 
@@ -381,7 +404,7 @@ if __name__ == '__main__':
     # layer_selection_evaluate = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
     #layer_selection_evaluate = [1, 12, 123, 1234]
     # layer_selection_evaluate = [4, 34, 234, 1234]
-    layer_selection_evaluate = [-1, 10, 1]
+    layer_selection_evaluate = [-1, 10]
     comment = "set"
 
     Varying_Shared_layers(tp=type_model, strategy_name=strategy, fraction_fit=fraction_fit, aggregation_method=aggregation_method, new_clients=False, new_clients_train=False, num_clients=num_clients,

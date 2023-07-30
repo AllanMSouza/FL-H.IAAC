@@ -175,14 +175,14 @@ class Verify:
 
     def server_analysis(self, index):
 
+        print("indice: ", index)
         rounds = 100
         rounds_without_fit = [1, 2, 5, 10, 100]
         rounds_without_fit_list = []
         start_round = 0
         x = []
         for i in range(1, rounds + 1):
-            if i%10 == 0:
-                x.append(i)
+            x.append(i)
         # x = [i for i in range(1, rounds + 1)]
         # rounds_without_fit_list = rounds_without_fit_list + [rounds_without_fit] * len(x)
         sm = [0, 0.4, 0.8, 1]
@@ -199,7 +199,7 @@ class Verify:
         print("tamanho y: ", len(y), len(rounds_without_fit_list), len(x_new), len(sm_list))
         x_column = 'Round (t)'
         if index == 0:
-            y_column = 'Weight of global parameter (gw)'
+            y_column = 'Fraction of shared layers (fl)'
         else:
             y_column = 'Updated level (ul)'
         hue = 'Rounds since the last training (nt)'
@@ -209,6 +209,8 @@ class Verify:
         df = pd.DataFrame({x_column: x_new, y_column: y, hue: rounds_without_fit_list, style: sm_list})
         title = ""
         print("x: ", df[x_column].unique().tolist())
+        df = df.drop_duplicates()
+        # print(df.to_string())
         if index == 1:
             print(df.drop_duplicates(subset=[y_column, hue]))
             print("Ola")
@@ -228,6 +230,9 @@ class Verify:
                      title=title,
                       hue=hue,
                       style=style,
+                      y_lim=True,
+                      y_max=1,
+                      y_min=0.35,
                       type=2,
                       hue_order=hue_order)
 

@@ -146,7 +146,8 @@ def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_
     file_name = """{}_lineplot""".format(file_name)
 
     if ax is None:
-        plt.figure()
+        # fig, ax = plt.subplots()
+        figure = plt.figure()
     sns.set(style='whitegrid')
     log = ""
     if log_scale:
@@ -156,16 +157,21 @@ def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_
         plt.ylim([y_min, y_max])
 
     x = df[x_column].tolist()
-    plt.xticks(np.arange(0, max(x) + 1, 2.0))
+    # plt.xticks(np.arange(0, max(x) + 1, 2.0))
 
     if type is not None:
         palette = sns.color_palette()
         figure = sns.lineplot(x=x_column, y=y_column, data=df, hue=hue, ax=ax, palette=palette, hue_order=hue_order, style=style).set_title(title)
     else:
         figure = sns.lineplot(x=x_column, y=y_column, data=df, hue=hue, ax=ax, hue_order=hue_order, style=style).set_title(title)
-
+    print("nof")
     if type == 2:
-        plt.legend(bbox_to_anchor=(0.5, 1), loc='upper left', borderaxespad=0, title='Rounds since the last training (nt)')
+    #     plt.legend(bbox_to_anchor=(0.5, 1), loc='upper left', borderaxespad=0, title='Rounds since the last training (nt)')
+        plt.xticks(np.arange(0, max(x)+1, 20))
+        plt.legend(bbox_to_anchor=(1.05, 1.15), loc='right', borderaxespad=0, ncol=4, title='')
+        # lines_labels = [["100"], ["10"], ["5"], ["2"], ["1"]]
+        # lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
+        # plt.legend([3, 2, 1], label='Line 1', loc='upper left', ncol=3, bbox_to_anchor=(0.2, 1))
 
     if type == 3:
         figure.legend([l1, l2, l3, l4],  # The line objects
