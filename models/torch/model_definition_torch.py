@@ -94,25 +94,36 @@ class DNN_teacher(nn.Module):
 
 # ====================================================================================================================
 
+# model_codes = {
+#     'CNN_6': [64, 'M', 128, 'M', 'D'],
+#     'CNN_8': [64, 'M', 128, 'M', 'D', 256, 'M', 'D'],
+#     'CNN_10': [64, 'M', 128, 'M', 'D', 256, 'M', 512, 'M', 'D'],
+#     'CNN_12': [64, 'M', 128, 'M', 'D', 256, 256, 'M', 512, 512, 'M', 'D'],
+#     'model_3': [64, 64, 'M', 128, 128, 'M', 'D', 256, 256, 256, 'M', 512, 512, 512, 'M', 'D'],
+#     'model_4': [64, 64, 64, 64, 'M', 128, 128, 128, 128, 'M', 'D', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M', 'D']
+# }
+
 model_codes = {
-    'CNN_6': [64, 'M', 128, 'M', 'D'],
+    'CNN_6': [32, 'M', 64, 'M', 'D'],
     'CNN_8': [64, 'M', 128, 'M', 'D', 256, 'M', 'D'],
-    'CNN_10': [64, 'M', 128, 'M', 'D', 256, 'M', 512, 'M', 'D'],
-    'model_2': [64, 'M', 128, 'M', 'D', 256, 256, 'M', 512, 512, 'M', 'D'],
+    'CNN_10': [32, 'M', 64, 'M', 'D', 128, 'M', 256, 'M', 'D'],
+    'CNN_12': [64, 'M', 128, 'M', 'D', 256, 'M', 512, 512, 'M', 'D'],
     'model_3': [64, 64, 'M', 128, 128, 'M', 'D', 256, 256, 256, 'M', 512, 512, 512, 'M', 'D'],
     'model_4': [64, 64, 64, 64, 'M', 128, 128, 128, 128, 'M', 'D', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M', 'D']
 }
 
 classifier_in_out = {
     'EMNIST':{
-            'CNN_6': [6272, 64],
+            'CNN_6': [3136, 1568],
             'CNN_8': [2304, 128],
-            'CNN_10': [512, 256]
+            'CNN_10': [256, 128],
+            'CNN_12': [512, 256]
     },
     'CIFAR10':{
-            'CNN_6': [8192, 64],
+            'CNN_6': [4096, 2048],
             'CNN_8': [4096, 128],
-            'CNN_10': [2048, 256]
+            'CNN_10': [1024, 512],
+            'CNN_12': [2048, 256]
     }
 }
 
@@ -122,8 +133,10 @@ class CNN_EMNIST(nn.Module):
 
         try:
             self.classifier_in_out = classifier_in_out[dataset][model_code]
+            self.dataset = dataset
+            self.model_code = model_code
             if act == 'relu':
-                self.act = nn.ReLU()
+                self.act = nn.ReLU(inplace=True)
             elif act == 'leakyrelu':
                 self.act = nn.LeakyReLU()
             else:
@@ -132,7 +145,9 @@ class CNN_EMNIST(nn.Module):
             self.layers = self.make_layers(model_code, in_channels, use_bn, dropout)
             self.classifier = nn.Sequential(nn.Linear(self.classifier_in_out[0], self.classifier_in_out[1]),
                                             self.act,
-                                            nn.Linear(self.classifier_in_out[1], out_dim)
+                                            nn.Linear(self.classifier_in_out[1], self.classifier_in_out[1]//2),
+                                            self.act,
+                                            nn.Linear(self.classifier_in_out[1]//2, out_dim)
                                             )
 
         except Exception as e:
@@ -153,17 +168,27 @@ class CNN_EMNIST(nn.Module):
     def make_layers(self, model_code, in_channels, use_bn, dropout):
         try:
             layers = []
+            count = 0
             for x in model_codes[model_code]:
                 if x == "M":
                     layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
                 elif x == 'D':
+                    if self.model_code == 'CNN_6':
+                        dropout = 0.3
+                    elif self.model_code == 'CNN_10':
+                        if count < 1:
+                            dropout = 0.3
+                        else:
+                            dropout = 0.3
                     layers += [nn.Dropout(dropout)]
+                    count += 1
                 else:
                     layers += [nn.Conv2d(in_channels=in_channels,
                                          out_channels=x,
                                          kernel_size=3,
                                          stride=1,
-                                         padding=1)]
+                                         padding=1,
+                                         bias=True)]
                     if use_bn:
                         layers += [nn.BatchNorm2d(x)]
 
@@ -278,7 +303,7 @@ class MobileNet(nn.Module):
         super(MobileNet, self).__init__()
         try:
             layers = []
-            layers.append(conv_bw(3, 32, 3, 1))
+            layers.append(conv_bw(input_size, 32, input_size, 1))
             layers.append(conv_dw(32, 64, 1))
             layers.append(conv_dw(64, 128, 2))
             layers.append(conv_dw(128, 128, 1))
@@ -290,8 +315,9 @@ class MobileNet(nn.Module):
 
             layers.append(conv_dw(512, 1024, 2))
             layers.append(conv_dw(1024, 1024, 1))
-            self.classifer = nn.Sequential(nn.Dropout(0.5), nn.Linear(1024, num_classes))
             self.feature = nn.Sequential(*layers)
+            self.classifer = nn.Sequential(nn.Dropout(0.5), nn.Linear(1024, num_classes))
+
         except Exception as e:
             print("Mobilenet")
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
@@ -369,36 +395,87 @@ class CNN_5(nn.Module):
     def __init__(self, input_shape=1, mid_dim=256, num_classes=10):
         try:
             super(CNN_5, self).__init__()
-            self.conv1 = nn.Conv2d(input_shape, 16, 3, 1,
-                                   padding=1)  # input is color image, hence 3 i/p channels. 16 filters, kernal size is tuned to 3 to avoid overfitting, stride is 1 , padding is 1 extract all edge features.
-            self.conv2 = nn.Conv2d(16, 32, 3, 1,
-                                   padding=1)  # We double the feature maps for every conv layer as in pratice it is really good.
-            self.conv3 = nn.Conv2d(32, 64, 3, 1, padding=1)
-            self.fc1 = nn.Linear(4 * 4 * 64,
-                                 500)  # I/p image size is 32*32, after 3 MaxPooling layers it reduces to 4*4 and 64 because our last conv layer has 64 outputs. Output nodes is 500
-            self.dropout1 = nn.Dropout(0.5)
-            self.fc2 = nn.Linear(500, num_classes)
+            self.network = nn.Sequential(
+                nn.Conv2d(input_shape, 32, kernel_size=3, padding=1),
+                nn.ReLU(),
+                nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(2, 2),  # output: 64 x 16 x 16
+                nn.BatchNorm2d(64),
+
+                nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(2, 2),  # output: 128 x 8 x 8
+                nn.BatchNorm2d(128),
+
+                nn.Flatten(),
+                nn.Linear(8192, 4096),
+                nn.ReLU(),
+                nn.Linear(4096, 2048),
+                nn.ReLU(),
+                nn.Linear(2048, 1024),
+                nn.ReLU(),
+                nn.Linear(1024, 512),
+                nn.ReLU(),
+                nn.Linear(512, num_classes))
+
         except Exception as e:
             print("CNN 5")
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
     def forward(self, x):
         try:
-            x = F.relu(self.conv1(x))  # Apply relu to each output of conv layer.
-            x = F.max_pool2d(x, 2, 2)  # Max pooling layer with kernal of 2 and stride of 2
-            x = F.relu(self.conv2(x))
-            x = F.max_pool2d(x, 2, 2)
-            x = F.relu(self.conv3(x))
-            x = F.max_pool2d(x, 2, 2)
-            x = x.view(-1, 4 * 4 * 64)  # flatten our images to 1D to input it to the fully connected layers
-            x = F.relu(self.fc1(x))
-            x = self.dropout1(
-                x)  # Applying dropout b/t layers which exchange highest parameters. This is a good practice
-            x = self.fc2(x)
-            return x
+            return self.network(x)
         except Exception as e:
             print("CNN 5")
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+# ====================================================================================================================
+# melhor 3
+class CNN_X(nn.Module):
+    def __init__(self, input_size=1, mid_dim=144, num_classes=10):
+        try:
+            super(CNN_X, self).__init__()
+            self.network = nn.Sequential(
+                nn.Conv2d(input_size, 32, kernel_size=3, padding=1),
+                nn.ReLU(),
+                nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(2, 2),  # output: 64 x 16 x 16
+                nn.BatchNorm2d(64),
+
+                nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
+                nn.ReLU(),
+                nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(2, 2),  # output: 128 x 8 x 8
+                nn.BatchNorm2d(128),
+
+                nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
+                nn.ReLU(),
+                nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(2, 2),  # output: 256 x 4 x 4
+                nn.BatchNorm2d(256),
+
+                nn.Flatten(),
+                nn.Linear(mid_dim * 4 * 4, 1024),
+                nn.ReLU(),
+                nn.Linear(1024, 512),
+                nn.ReLU(),
+                nn.Linear(512, num_classes))
+
+        except Exception as e:
+            print("CNN x")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+    def forward(self, x):
+        try:
+            return self.network(x)
+        except Exception as e:
+            print("CNN x forward")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
 
 # ====================================================================================================================
 # melhor 3

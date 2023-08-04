@@ -748,6 +748,10 @@ class SimulationFL():
 		# 	"max_calls"           : 1,
 		# 	"ignore_reinit_error" : True
 		# }
+		DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+		print("device: ", DEVICE)
+		if DEVICE.type == "cuda":
+			client_resources = {"num_cpus": 6, "num_gpus": 1}
 
 		fl.simulation.start_simulation(
 						    client_fn     = self.create_client,
@@ -755,6 +759,7 @@ class SimulationFL():
 						    config        = fl.server.ServerConfig(num_rounds=self.rounds),
 						    strategy      = self.create_strategy(),
 						    #ray_init_args = ray_args
+							# client_resources=client_resources
 						)
 
 

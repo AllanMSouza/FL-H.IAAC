@@ -63,6 +63,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.average_accuracy   = 0
 		self.last_accuracy      = 0
 		self.current_accuracy   = 0
+		self.server_learning_rate = 1 if fraction_fit == 0.3 else 1
 
 		self.non_iid = non_iid
 
@@ -511,17 +512,32 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 	def _aggregate(self, parameters, server_round):
 
+
+
 		updated_global_parameters = aggregate(parameters)
 		self._gradient_metric(updated_global_parameters, server_round)
-		if self.use_gradient:
+		# pseudo_gradient: NDArrays = [
+		# 	x - y
+		# 	for x, y in zip(
+		# 		self.previous_global_parameters[-1], updated_global_parameters
+		# 	)
+		# ]
+
+		if self.use_gradient and server_round > 1:
+			# pseudo_gradient = updated_global_parameters
 			print("usou o gradiente")
 			last_global_model = self.previous_global_parameters[-1]
 			updated_global_parameters_layers = []
 			for global_layer, gradient_layer in zip(last_global_model, updated_global_parameters):
 				# print("gggf", gradient_layer[0])
 				# print("shapes: ", global_layer.shape, gradient_layer.shape)
-				updated_global_parameters_layers.append(global_layer + gradient_layer)
+				updated_global_parameters_layers.append(global_layer - gradient_layer)
 			updated_global_parameters = updated_global_parameters_layers
+
+		# updated_global_parameters = [
+		# 	x - self.server_learning_rate * y
+		# 	for x, y in zip(self.previous_global_parameters[-1], pseudo_gradient)
+		# ]
 
 
 		return updated_global_parameters

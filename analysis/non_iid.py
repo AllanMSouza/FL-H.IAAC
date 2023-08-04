@@ -301,6 +301,9 @@ class NonIid:
         df = df.query("Similarity > 0")
         df['Similarity'] = df['Similarity'].round(4)
         df['Layer'] = df['Layer'].astype(int) + 1
+        df['Server round'] = df['Server round'].astype(int)
+        df = df.query("""Layer == 1 or Layer == {}""".format(df['Layer'].max()-1))
+        df = df[df['Server round'] > 1]
         print("ddd: \n", df)
         x_column = 'Server round'
         y_column = 'Similarity'

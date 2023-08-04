@@ -165,6 +165,8 @@ def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_
     else:
         figure = sns.lineplot(x=x_column, y=y_column, data=df, hue=hue, ax=ax, hue_order=hue_order, style=style).set_title(title)
     print("nof")
+
+    # plt.xticks(np.arange(min(x), max(x) + 1, max(x)//10))
     if type == 2:
     #     plt.legend(bbox_to_anchor=(0.5, 1), loc='upper left', borderaxespad=0, title='Rounds since the last training (nt)')
         plt.xticks(np.arange(0, max(x)+1, 20))

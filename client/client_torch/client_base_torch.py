@@ -6,7 +6,7 @@ import time
 import sys
 
 from dataset_utils_torch import ManageDatasets
-from models.torch import DNN, Logistic, CNN, MobileNet, resnet20, CNN_EMNIST
+from models.torch import DNN, Logistic, CNN, MobileNet, resnet20, CNN_EMNIST, MobileNetV2, CNN_X, CNN_5
 import csv
 import torch.nn as nn
 import warnings
@@ -97,12 +97,14 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			self.fraction_fit	  = fraction_fit
 
 			self.loss = nn.CrossEntropyLoss()
-			self.learning_rate = 0.001
+			self.learning_rate = 0.0008 if self.dataset == "CIFAR10" else 0.0008
+			if model_name == "CNN_10":
+				self.learning_rate = 0.005
 			self.new_clients = new_clients
 			self.new_clients_train = new_clients_train
 			# self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 			self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-			# self.device = torch.device("cuda:0")
+			# self.device = torch.device("cpu")
 			self.type = 'torch'
 
 			#params
@@ -123,7 +125,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			self.trainloader, self.testloader = self.load_data(self.dataset, n_clients=self.n_clients)
 			self.model                                           = self.create_model().to(self.device)
 			# self.device = 'cpu'
-			self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate, momentum=0.9)
+			self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate) if self.model_name == "Mobilenet" else torch.optim.SGD(self.model.parameters(), lr=self.learning_rate, momentum=0.9)
+			# self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
 
 		except Exception as e:
 			print("init client")
@@ -163,13 +166,13 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				model =  Logistic(input_shape=input_shape, num_classes=self.num_classes)
 			elif self.model_name == 'DNN':
 				model =  DNN(input_shape=input_shape, num_classes=self.num_classes)
-			elif self.model_name == 'CNN'  and self.dataset in ['MNIST', 'CIFAR10']:
-				if self.dataset in ['MNIST']:
+			elif self.model_name == 'CNN'  and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10']:
+				if self.dataset in ['EMNIST', 'MNIST']:
 					mid_dim = 256
 				else:
 					mid_dim = 400
 				model =  CNN(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim)
-			elif self.dataset in ['EMNIST', 'CIFAR10'] and self.model_name in ['CNN_6', 'CNN_8', 'CNN_10']:
+			elif self.dataset in ['EMNIST', 'CIFAR10'] and self.model_name in ['CNN_6', 'CNN_8', 'CNN_10', 'CNN_12']:
 				model =  CNN_EMNIST(dataset=self.dataset, model_code=self.model_name, in_channels=input_shape, out_dim=self.num_classes, act='relu', use_bn=True, dropout=0.3)
 			elif self.model_name == 'Resnet20'  and self.dataset in ['MNIST', 'CIFAR10']:
 				if self.dataset in ['MNIST']:
@@ -180,7 +183,27 @@ class ClientBaseTorch(fl.client.NumPyClient):
 					mid_dim = 400
 				model =  resnet20()
 			elif self.model_name == 'Mobilenet':
-				model =  MobileNet(num_classes=self.num_classes)
+				model =  MobileNet(num_classes=self.num_classes, input_size=input_shape)
+			elif self.model_name == 'CNN_X':
+				if self.dataset in ["EMNIST", "MNIST"]:
+					mid_dim = 144
+				else:
+					mid_dim = 256
+				model =  CNN_X(num_classes=self.num_classes, mid_dim=mid_dim, input_size=input_shape)
+				self.learning_rate = 0.001 if self.dataset == "CIFAR10" else 0.01
+				self.optimizer = torch.optim.Adam(model.parameters(),
+												  lr=self.learning_rate) if self.model_name == "Mobilenet" else torch.optim.SGD(
+					model.parameters(), lr=self.learning_rate, momentum=0.9)
+			elif self.model_name == 'CNN_5':
+				if self.dataset in ["EMNIST", "MNIST"]:
+					mid_dim = 144
+				else:
+					mid_dim = 256
+				model =  CNN_5(num_classes=self.num_classes, mid_dim=mid_dim, input_shape=input_shape)
+				self.learning_rate = 0.001 if self.dataset == "CIFAR10" else 0.01
+				self.optimizer = torch.optim.Adam(model.parameters(),
+												  lr=self.learning_rate) if self.model_name == "Mobilenet" else torch.optim.SGD(
+					model.parameters(), lr=self.learning_rate, momentum=0.9)
 			elif self.dataset in ['Tiny-ImageNet']:
 				# return AlexNet(num_classes=self.num_classes)
 				# model = models.resnet18(pretrained=True, num_classes=self.num_classes).to(self.device)
@@ -193,7 +216,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				# model = torch.nn.DataParallel(model).cuda()
 
 			if model is not None:
-				# model.to(self.device)
+				model.to(self.device)
 				return model
 			else:
 				raise Exception("Wrong model name")
@@ -274,6 +297,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				self.round_of_last_fit = server_round
 
 				selected = 1
+				self.model.to(self.device)
 				self.model.train()
 
 				max_local_steps = self.local_epochs
@@ -332,8 +356,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				'cid': self.cid
 			}
 
-			if self.use_gradient:
-				trained_parameters = [trained - original for trained, original in zip(trained_parameters, original_parameters)]
+			if self.use_gradient and server_round > 1:
+				trained_parameters = [original - trained for trained, original in zip(trained_parameters, original_parameters)]
 				# trained_parameters = parameters_quantization_write(trained_parameters, 8)
 				# print("quantizou: ", trained_parameters[0])
 			return trained_parameters, train_num, fit_response
@@ -343,6 +367,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 	def model_eval(self):
 		try:
+			self.model.to(self.device)
 			self.model.eval()
 
 			test_acc = 0
@@ -365,8 +390,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 					loss = self.loss(output, y)
 					test_loss += loss.item() * y.shape[0]
 					prediction = torch.argmax(output, dim=1)
-					predictions = np.append(predictions, prediction)
-					labels = np.append(labels, y)
+					predictions = np.append(predictions, prediction.cpu())
+					labels = np.append(labels, y.cpu())
 					test_acc += (torch.sum(prediction == y)).item()
 					test_num += y.shape[0]
 

@@ -175,7 +175,7 @@ def load_emnist(dir_path):
 
 
 parser = OptionParser()
-parser.add_option("-e", "--epochs",  dest="local_epochs", default=1,             help="Number times that the learning algorithm will work through the entire training dataset", metavar="INT")
+parser.add_option("-e", "--epochs",  dest="local_epochs", default=10,             help="Number times that the learning algorithm will work through the entire training dataset", metavar="INT")
 parser.add_option("-b", "--batch",   dest="batch_size",   default=32,            help="Number of samples processed before the model is updated", metavar="INT")
 parser.add_option("-m", "--model",   dest="model_name",   default='MOBILE_NET',  help="Model used for trainning", metavar="STR")
 parser.add_option("-d", "--dataset", dest="dataset",      default='CIFAR10',     help="Dataset used for trainning", metavar="STR")
@@ -209,6 +209,8 @@ if opt.dataset == "MNIST":
 elif opt.dataset == "CIFAR10":
     transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616))])
     trainset = torchvision.datasets.CIFAR10(root=root_path, train=True, download=True, transform=transform)
+    trainset.data = trainset.data[:15000]
+    trainset.targets = trainset.targets[:15000]
     train_loader = torch.utils.data.DataLoader(trainset, batch_size=int(opt.batch_size), shuffle=True)
     testset = torchvision.datasets.CIFAR10(root=root_path, train=False, download=True, transform=transform)
     test_loader = torch.utils.data.DataLoader(testset, batch_size=int(opt.batch_size), shuffle=False)
@@ -218,9 +220,9 @@ else:
     # data_dir = '/home/claudiocapanema/Documentos/FL-H.IAAC/dataset_utils/data/Tiny-ImageNet/raw_data/tiny-imagenet-200'
     # train_loader, test_loader = load_dataset(data_dir)
 
-train_loader, test_loader = load_emnist('/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/dataset_utils/data/EMNIST/raw_data/')
-classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
-exit()
+# train_loader, test_loader = load_emnist('/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/dataset_utils/data/EMNIST/raw_data/')
+# classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
+
 #Model Definition
 if opt.model_name == "MOBILE_NET":
     model = MobileNet()
@@ -231,7 +233,7 @@ else:
     model.fc = torch.nn.Linear(in_features=512, out_features=200, bias=True)
 model.to(device)
 
-lr = 0.0001
+lr = 0.001
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=lr)
 epochs = int(opt.local_epochs)
