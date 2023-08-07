@@ -65,6 +65,22 @@ def svd(layer, n_components):
         print("svd")
         print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, 0), type(e).__name__, e)
 
+def if_reduces_size(shape, n_components):
+
+    try:
+        p = shape[0]
+        q = shape[1]
+        k = n_components
+
+        if p*k + k*k + k*q < p*q:
+            return True
+        else:
+            return False
+
+    except Exception as e:
+        print("svd")
+        print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, 0), type(e).__name__, e)
+
 
 def inverse_parameter_svd_reading(arrays, model_shape):
     try:
@@ -128,23 +144,29 @@ def inverse_parameter_svd(u, v, layer_index, sigma=None, sig_ind=None):
         print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, 0), type(e).__name__, e)
 
 def test():
-    original = [np.random.random((4, 4, 4)) for i in range(1)]
+    original = [np.random.random((5, 5)) for i in range(1)]
 
-    U, Sigma, VT = np.linalg.svd(original[0], full_matrices=True)
-    U = U[:, :, :2]
-    Sigma = np.expand_dims(Sigma[ :, 2], 1)
-    VT = VT[:, :2, :].T
+    threshold = 2
+    U, Sigma, VT = np.linalg.svd(original[0], full_matrices=False)
+    print("compactado shapes 1: ", [i.shape for i in [U, Sigma, VT]])
+    U = U[:, :threshold]
+    Sigma = Sigma[ : threshold]
+    VT = VT[:threshold, :]
 
-    print("compactado shapes: ", [i.shape for i in [U, Sigma, VT]])
+    print("compactado shapes 2: ", [i.shape for i in [U, Sigma, VT]])
+    print(original[0])
 
-    svd = parameter_svd_write(original, 0.5)
-    original_ = inverse_parameter_svd_reading(svd, [i.shape for i in original])
-    o = [U[0], Sigma.T, VT[0]]
-    print("numpy shape: ", [i.shape for i in o])
-
-    print("Original: \n", original, [i.shape for i in original])
-    print("Np recontruido: \n", np.matmul(U*Sigma.T, VT.T))
-    print("Reconstruído: \n", original_)
+    # svd = parameter_svd_write(original, 0.5)
+    # original_ = inverse_parameter_svd_reading(svd, [i.shape for i in original])
+    # o = [U[0], Sigma.T, VT[0]]
+    # print("numpy shape: ", [i.shape for i in o])
+    #
+    # print("Original: \n", original, [i.shape for i in original])
+    # print("Np recontruido: \n", np.matmul(U*Sigma.T, VT.T))
+    # print("Reconstruído: \n", original_)
+    print("Reconstruido")
+    r = np.matmul(U * Sigma[..., None, :], VT)
+    print(r)
 
 
 if __name__ == "__main__":

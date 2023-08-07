@@ -11,6 +11,7 @@ import copy
 
 from server.common_base_server import FedAvgBaseServer
 from client.fedpredict_core import fedpredict_core_layer_selection, fedpredict_layerwise_similarity
+from utils.quantization.parameters_svd import if_reduces_size
 
 from pathlib import Path
 import shutil
@@ -107,7 +108,10 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		self.current_similarity = 0
 		self.parameters_aggregated_gradient = {}
 		self.parameters_aggregated_checkpoint = {}
-		self.gradient_norm = None
+		self.layers_comppression_range = []
+		self.gradient_norm = []
+		self.gradient_norm_round = []
+		self.gradient_norm_nt = []
 		self.T = float(args.T)
 
 	def calculate_initial_similarity(self, server_round, rate=0.1):
@@ -216,6 +220,12 @@ class FedPredictBaseServer(FedAvgBaseServer):
 
 		self.parameters_aggregated_checkpoint[server_round] = parameters_to_ndarrays(parameters_aggregated)
 
+		if server_round == 1:
+			self.model_shape = [i.shape for i in self.parameters_aggregated_checkpoint[1]]
+			self._layer_compression_range()
+			print("tamanho do modelo: ", self.model_shape)
+			print("range: ", self.layers_comppression_range)
+
 		# if server_round == 3:
 		# 	self.calculate_initial_similarity(server_round)
 
@@ -255,6 +265,8 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			parameters_to_send, M = self._select_layers(client_similarity_per_layer, mean_similarity_per_layer, mean_similarity, parameters, server_round, nt, size_of_parameters, client_id, self.comment)
 			# M = [i for i in range(len(parameters))]
 			# parameters_to_send = ndarrays_to_parameters(parameter_svd_write(parameters_to_ndarrays(parameters_to_send), self.n_rate))
+			if float(self.layer_selection_evaluate) == -2:
+				self._compredict(client_id, server_round, len(M))
 
 			self.fedpredict_clients_metrics[str(client.cid)]['acc_bytes_rate'] = size_of_parameters
 			config['M'] = M
@@ -263,6 +275,26 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			client_evaluate_list_fedpredict.append((client, evaluate_ins))
 
 		return client_evaluate_list_fedpredict
+
+	def _compredict(self, client_id, server_round, M):
+
+		nt = server_round - self.fedpredict_clients_metrics[str(client_id)]['round_of_last_fit']
+		current_global_model = self.previous_global_parameters[-1]
+		round_of_last_fit = self.fedpredict_clients_metrics[str(client_id)]['round_of_last_fit']
+		if round_of_last_fit >= 1:
+			last_trained_global_model = self.previous_global_parameters[self.fedpredict_clients_metrics[str(client_id)]['round_of_last_fit']-1]
+			gradients = []
+			for i in range(M):
+				# if i % 2 == 0:
+				if len(self.model_shape[i]) >= 2:
+					gradients.append(current_global_model[i] - last_trained_global_model[i])
+			gradient_norm = [np.linalg.norm(g) for g in gradients]
+			if len(gradient_norm) > 0:
+				self.gradient_norm.append(np.mean(gradient_norm))
+				self.gradient_norm_round.append(server_round)
+				self.gradient_norm_nt.append(nt)
+
+			print("Client: ", client_id, " round: ", server_round, " nt: ", nt, " norm: ", np.mean(gradient_norm), " camadas: ", M, " todos: ", gradient_norm)
 
 	def _select_layers(self, client_similarity_per_layer, mean_similarity_per_layer, mean_similarity, parameters, server_round, nt, size_of_layers, client_id, comment):
 
@@ -337,6 +369,26 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			print("_select_layers")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
+	def _layer_compression_range(self):
+
+		layers_range = []
+		for shape in self.model_shape:
+
+			layer_range = []
+			if len(shape) >= 2:
+				shape = shape[-2:]
+
+				col = shape[1]
+				for n_components in range(1, col+1):
+					if if_reduces_size(shape, n_components):
+						layer_range.append(n_components)
+					else:
+						break
+
+			layers_range.append(layer_range)
+
+		self.layers_comppression_range = layers_range
+
 	def get_client_similarity_per_layer(self, client_id, server_round):
 
 		round_similarity = self.similarity_between_layers_per_round_and_client[server_round]
@@ -347,6 +399,18 @@ class FedPredictBaseServer(FedAvgBaseServer):
 
 	def end_evaluate_function(self):
 		self._write_similarity()
+		self._write_norm()
+
+	def _write_norm(self):
+
+		columns = ["Server round", "Norm", "nt"]
+		data = {column: [] for column in columns}
+
+		data = {'Round': self.gradient_norm_round, 'Norm': self.gradient_norm, 'nt': self.gradient_norm_nt}
+
+		self.similarity_filename = f"{self.base}/norm.csv"
+		df = pd.DataFrame(data)
+		df.to_csv(self.similarity_filename, index=False)
 
 	def _write_similarity(self):
 
@@ -372,8 +436,8 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		layer = updated_global_parameters[-2]
 		norm = np.linalg.norm(layer)
 
-		self.gradient_norm = float(norm)
-		print("norma: ", self.gradient_norm)
+		# self.gradient_norm = float(norm)
+		print("norma: ", float(norm))
 
 	def _get_server_header(self):
 

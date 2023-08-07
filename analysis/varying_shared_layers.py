@@ -91,7 +91,8 @@ class Varying_Shared_layers:
 
         self.df_concat = df_concat
         self.df_concat_similarity = df_concat_similarity
-        print("Leu similaridade", df_concat_similarity['Dataset'].unique().tolist())
+        # print("Leu similaridade", df_concat_similarity[['Round', 'Alpha', 'Similarity', 'Dataset', 'Model', 'Layer']].drop_duplicates().to_string())
+        # exit()
 
     def build_filename_fedavg(self, df_concat):
 
@@ -398,17 +399,31 @@ class Varying_Shared_layers:
 
         df = self.df_concat_similarity
         max_layer = df['Layer'].max() - 1
-        df = df.query("""Layer == 0 or Layer == {}""".format(max_layer))
-        def summary(df, max_layer):
+        max_layer_dataset = {dataset: df.query("""Model == '{}'""".format(dataset))['Layer'].max() - 1 for dataset in self.model_name}
+        # df = df.query("""Layer == 0 or Layer == {}""".format(max_layer))
+        def summary(df, max_layer_dataset):
 
             deno = df['Similarity'].tolist()[0]
             if deno == 0:
                 deno = 1
-            df = df.query("Layer == 0")['Similarity'].tolist()[0] - df.query("""Layer == {}""".format(max_layer))["Similarity"].tolist()[0]
+            # print("rodar:")
+            # print(df)
+            max_layer = max_layer_dataset[df['Model'].tolist()[0]]
+            df = df.query("""Layer == 0 or Layer == {}""".format(max_layer))
+            layer_0 = df.query("Layer == 0")
+            layer__last = df.query("""Layer == {}""".format(max_layer))
+            if len(layer_0) < 1 or len(layer__last) < 1:
+                print("vazio:")
+                print(df, " maximo: ", max_layer)
+                return
+            else:
+                df = abs(layer_0['Similarity'].tolist()[0] - layer__last['Similarity'].tolist()[0])
 
             return pd.DataFrame({'df': [df]})
 
-        df = df.groupby(['Round', 'Dataset', 'Alpha', 'Model']).apply(lambda e: summary(df=e, max_layer=max_layer)).reset_index()
+        print("simi: ", max_layer)
+        print(df.to_string())
+        df = df.groupby(['Round', 'Dataset', 'Alpha', 'Model']).apply(lambda e: summary(df=e, max_layer_dataset=max_layer_dataset)).reset_index()
 
         base_dir = """analysis/output/torch/varying_shared_layers/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
             str(self.dataset), self.num_clients, self.num_rounds, self.fraction_fit, str(self.model_name), str(self.alpha), self.comment)
@@ -423,7 +438,7 @@ class Varying_Shared_layers:
             x_column = 'Round'
             y_column = 'df'
             hue = 'Alpha'
-            order = [0.1, 2.0]
+            order = sorted(self.alpha)
             sci = True
             filename = """df_similarity_{}""".format(str(self.dataset))
 
@@ -434,7 +449,8 @@ class Varying_Shared_layers:
             print("filename: ", filename)
             x = df[x_column].tolist()
             y = df[y_column].tolist()
-
+            print("filtrado:")
+            print(df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[0])).to_string())
             line_plot(ax=ax[0, 0], base_dir=base_dir, file_name=filename, title=title, df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[0])),
                      x_column=x_column, y_column=y_column, y_lim=True, y_max=0.6,
                      y_min=0, hue=hue, hue_order=order, type=1)
@@ -815,11 +831,11 @@ if __name__ == '__main__':
     strategy = "FedPredict"
     type_model = "torch"
     aggregation_method = "None"
-    fraction_fit = 0.3
+    fraction_fit = 0.7
     num_clients = 20
     model_name = ["CNN_6", "CNN_10"]
     dataset = ["EMNIST", "CIFAR10"]
-    alpha = [0.1, 2.0]
+    alpha = [0.1, 5.0]
     num_rounds = 20
     epochs = 1
     # layer_selection_evaluate = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]

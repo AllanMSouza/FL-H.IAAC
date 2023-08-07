@@ -34,13 +34,15 @@ class NonIid:
                                  'server': 'server.csv',
                                  'train_client': 'train_client.csv',
                                  'server_nt_acc': 'server_nt_acc.csv',
-                                 'similarity': 'similarity_between_layers.csv'}
+                                 'similarity': 'similarity_between_layers.csv',
+                                 'norm': 'norm.csv'}
 
         self.df_files_names = {'evaluate_client': None,
                                'server': None,
                                'train_client': None,
                                'server_nt_acc': None,
-                               'similarity': None}
+                               'similarity': None,
+                               'norm': None}
 
     def _get_strategy_config(self, strategy_name):
         if self.aggregation_method == 'POC':
@@ -143,6 +145,29 @@ class NonIid:
                   type=1,
                   y_lim=False,
                   y_max=0.01,
+                  y_min=0)
+
+        # client round x norm x nt
+
+        df = self.df_files_names['norm']
+
+        print("achei", df.columns)
+
+        title = """{}; {}""".format(self.model_name, self.dataset_name)
+        x_column = 'Round'
+        y_column = 'Norm'
+        hue = 'nt'
+        line_plot(df=df,
+                  base_dir=self.base_dir,
+                  file_name="round_norm_nt" + "_ " + self.dataset_name + "_" + "_alpha" + str(
+                      "") + "_model_" + self.model_name,
+                  x_column=x_column,
+                  y_column=y_column,
+                  title=title,
+                  hue=hue,
+                  type=1,
+                  y_lim=True,
+                  y_max=1,
                   y_min=0)
 
     def server_nt_acc_analysis(self):

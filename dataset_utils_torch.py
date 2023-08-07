@@ -155,7 +155,8 @@ class ManageDatasets():
             urllib.request.install_opener(opener)
 
             # Get EMNIST data
-            transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize([0.5], [0.5])])
+            transform = transforms.Compose([transforms.ToTensor(), transforms.RandomRotation(10),
+                                             transforms.Normalize([0.5], [0.5])])
 
             training_dataset = datasets.EMNIST(
                 root=dir_path, train=True, download=False, transform=transform, split='balanced')
@@ -223,7 +224,7 @@ class ManageDatasets():
             dir_path = "dataset_utils/data/CIFAR10/raw_data/"
             training_dataset = datasets.CIFAR10(root=dir_path, train=True, download=False,
                                                 transform=transform_train)  # Data augmentation is only done on training images
-            validation_dataset = datasets.CIFAR10(root=dir_path, train=False, download=False, transform=transform_test)
+            validation_dataset = datasets.CIFAR10(root=dir_path, train=False, download=False, transform=transform_train)
 
             if non_iid:
 
