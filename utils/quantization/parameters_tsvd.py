@@ -89,7 +89,7 @@ def inverse_parameter_svd_reading(arrays, model_shape):
         return reconstructed_model
 
     except Exception as e:
-        print("inverse_paramete_svd")
+        print("inverse_paramete_tsvd")
         print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, 0), type(e).__name__, e)
 
 

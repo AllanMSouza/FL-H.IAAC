@@ -294,6 +294,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			original_parameters = copy.deepcopy(parameters)
 			if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
 				self.set_parameters_to_model_fit(parameters)
+				self.save_parameters_global_model(parameters)
 				self.round_of_last_fit = server_round
 
 				selected = 1
@@ -439,6 +440,9 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		except Exception as e:
 			print("evaluate")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+	def save_parameters_global_model(self, global_model):
+		pass
 
 	def _write_output(self, filename, data):
 

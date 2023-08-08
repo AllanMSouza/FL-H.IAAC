@@ -16,10 +16,8 @@ def parameter_svd_write(arrays, n_components_list):
             else:
                 n_components = n_components_list
             # print("Indice da camada: ", i)
-            if n_components is not None:
-                arrays_compre += parameter_svd(arrays[i], n_components)
-            else:
-                arrays_compre += arrays[i]
+            r = parameter_svd(arrays[i], n_components)
+            arrays_compre += r
 
         return arrays_compre
 
@@ -30,7 +28,7 @@ def parameter_svd_write(arrays, n_components_list):
 def parameter_svd(layer, n_components):
 
     try:
-        if np.ndim(layer) == 1:
+        if np.ndim(layer) == 1 or n_components is None:
             return [layer, np.array([]), np.array([])]
         elif np.ndim(layer) == 2:
             r = svd(layer, n_components)
@@ -91,17 +89,20 @@ def if_reduces_size(shape, n_components):
         print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, 0), type(e).__name__, e)
 
 
-def inverse_parameter_svd_reading(arrays, model_shape):
+def inverse_parameter_svd_reading(arrays, model_shape, M=0):
     try:
-
+        print("recebidos aki: ", [i.shape for i in arrays])
+        if M == 0:
+            M = len(model_shape)
         sketched_paramters = []
         reconstructed_model = []
         parameter_index = 0
         sig_ind = 0
         j = 0
-        for i in range(len(model_shape)):
+        for i in range(M):
             layer_shape = model_shape[i]
             # print("i32: ", i*3+2)
+            print("valor i: ", i, i*3, len(model_shape), len(arrays))
             u = arrays[i*3]
             v = arrays[i*3 + 1]
 
@@ -126,6 +127,9 @@ def inverse_parameter_svd_reading(arrays, model_shape):
 
 def inverse_parameter_svd(u, v, layer_index, sigma=None, sig_ind=None):
     try:
+        print("no inverse parameter svd: ", layer_index)
+        if len(v) == 0:
+            return u
         if len(layer_index) == 1:
             # print("u1")
             return u
@@ -143,6 +147,7 @@ def inverse_parameter_svd(u, v, layer_index, sigma=None, sig_ind=None):
             # print("u4")
             for i in range(len(u)):
                 layers_j = []
+                print("u shape: ", u.shape, " v shape: ", v.shape)
                 for j in range(len(u[i])):
                     layers_j.append(np.matmul(u[i][j] * sigma[i][j], v[i][j]))
                 layers_l.append(layers_j)

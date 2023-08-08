@@ -265,13 +265,17 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			parameters_to_send, M = self._select_layers(client_similarity_per_layer, mean_similarity_per_layer, mean_similarity, parameters, server_round, nt, size_of_parameters, client_id, self.comment)
 			# M = [i for i in range(len(parameters))]
 			# parameters_to_send = ndarrays_to_parameters(parameter_svd_write(parameters_to_ndarrays(parameters_to_send), self.n_rate))
-			if float(self.layer_selection_evaluate) == -2:
+			if int(self.layer_selection_evaluate) == -2:
+				print("igual")
 				parameters_to_send = self._compredict(client_id, server_round, len(M), parameters_to_send)
+			else:
+				print("nao igual")
 
 			self.fedpredict_clients_metrics[str(client.cid)]['acc_bytes_rate'] = size_of_parameters
 			config['M'] = M
 			config['sm'] = max(0, abs(self.similarity_between_layers_per_round[server_round][0]['mean'] - self.similarity_between_layers_per_round[server_round][len(parameters)-2]['mean']))
 			evaluate_ins = fl.common.EvaluateIns(parameters_to_send, config)
+			print("Evaluate enviar: ", client_id, [i.shape for i in parameters_to_ndarrays(parameters_to_send)])
 			client_evaluate_list_fedpredict.append((client, evaluate_ins))
 
 		return client_evaluate_list_fedpredict
@@ -312,7 +316,27 @@ class FedPredictBaseServer(FedAvgBaseServer):
 				self.gradient_norm_round.append(server_round)
 				self.gradient_norm_nt.append(nt)
 
-			print("Client: ", client_id, " round: ", server_round, " nt: ", nt, " norm: ", np.mean(gradient_norm), " camadas: ", M, " todos: ", gradient_norm)
+			# print("Client: ", client_id, " round: ", server_round, " nt: ", nt, " norm: ", np.mean(gradient_norm), " camadas: ", M, " todos: ", gradient_norm)
+			#
+			# print("Comp nent: ", n_components_list, M)
+			# print("par: ", parameter)
+			# print("clien: ", client_id)
+			# for i in parameter:
+			# 	if type(i) == list:
+			# 		print("Lista: ", i)
+			# 	else:
+			# 		print("comprimu: ", i.shape)
+			print("modelo compredict: ", [i.shape for i in parameter])
+
+		else:
+			new_parameter = []
+			for param in parameter:
+				new_parameter.append(param)
+				new_parameter.append(np.array([]))
+				new_parameter.append(np.array([]))
+
+			parameter = new_parameter
+
 
 		return  ndarrays_to_parameters(parameter)
 
