@@ -143,6 +143,46 @@ def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_sim
         print("fedpredict core server")
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
+def fedpredict_core_compredict(t, T, nt, n_layers, layer, layer_norm, compression_range):
+    try:
+
+        # 9
+        layers_n_components = []
+        # evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
+        # normalizar dentro de 0 e 1
+        # updated_level = 1/rounds_without_fit
+        # updated_level = 1 - max(0, -acc_of_last_fit+self.accuracy_of_last_round_of_evalute)
+        # if acc_of_last_evaluate < last_global_accuracy:
+        # updated_level = max(-last_global_accuracy + acc_of_last_evaluate, 0)
+        # else:
+        norm = min(layer_norm, 1)
+        update_level = 1 / nt
+        # evolutionary_level = (server_round / 50)
+        # print("client id: ", self.cid, " primeiro round", self.first_round)
+        evolution_level = t / T
+
+        # print("el servidor: ", el, " el local: ", evolutionary_level)
+
+        # eq1 = (update_level - evolution_level+reference_similarity) #v2
+
+        lamda = 0.2
+        # eq1 = (update_level - evolution_level - (1-sm)* lamda) # v3
+        # eq1 = (update_level - evolution_level - (1-sm) * lamda)  # v4 bom mas invertido
+        # eq1 = (-update_level - evolution_level - sm)  # v5 cai demais e invertido
+        # eq1 = (-update_level - evolution_level + sm) # v6 cai demais
+        # eq1 = (-update_level**(1/2) - evolution_level - sm) # v7 cai demais
+        eq1 = (-update_level - evolution_level)/2  # v8 ótimo
+        # eq1 = (update_level - evolution_level + (1 - sm) * 0.2)
+        eq2 = round(np.exp(eq1), 6)
+        # eq2 = (update_level + reference_similarity)/2
+        n_components = int(np.ceil(eq2 * compression_range))
+
+        return n_components
+
+    except Exception as e:
+        print("fedpredict core server")
+        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
 
 # def set_parameters_to_model(parameters, model_name):
 #     # print("tamanho: ", self.input_shape, " dispositivo: ", self.device)

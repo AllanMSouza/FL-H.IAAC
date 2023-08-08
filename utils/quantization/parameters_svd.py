@@ -2,7 +2,7 @@ import  sys
 import numpy as np
 from sklearn.utils.extmath import randomized_svd
 
-def parameter_svd_write(arrays, n_components):
+def parameter_svd_write(arrays, n_components_list):
 
     try:
 
@@ -11,8 +11,15 @@ def parameter_svd_write(arrays, n_components):
         sigma_parameters = []
         arrays_compre = []
         for i in range(len(arrays)):
+            if type(n_components_list) == list:
+                n_components = n_components_list[i]
+            else:
+                n_components = n_components_list
             # print("Indice da camada: ", i)
-            arrays_compre += parameter_svd(arrays[i], n_components)
+            if n_components is not None:
+                arrays_compre += parameter_svd(arrays[i], n_components)
+            else:
+                arrays_compre += arrays[i]
 
         return arrays_compre
 
@@ -49,8 +56,10 @@ def svd(layer, n_components):
     try:
         np.random.seed(0)
         # print("ola: ", int(len(layer) * n_components), layer.shape, layer)
+        if n_components > 0 and n_components < 1:
+            n_components = int(len(layer) * n_components)
         U, Sigma, VT = randomized_svd(layer,
-                                      n_components=int(len(layer) * n_components),
+                                      n_components=n_components,
                                       n_iter=5,
                                       random_state=0)
         # U, Sigma, VT = np.linalg.svd(layer, full_matrices=True)

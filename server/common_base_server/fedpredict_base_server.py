@@ -10,7 +10,7 @@ import pandas as pd
 import copy
 
 from server.common_base_server import FedAvgBaseServer
-from client.fedpredict_core import fedpredict_core_layer_selection, fedpredict_layerwise_similarity
+from client.fedpredict_core import fedpredict_core_layer_selection, fedpredict_layerwise_similarity, fedpredict_core_compredict
 from utils.quantization.parameters_svd import if_reduces_size
 
 from pathlib import Path
@@ -266,7 +266,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			# M = [i for i in range(len(parameters))]
 			# parameters_to_send = ndarrays_to_parameters(parameter_svd_write(parameters_to_ndarrays(parameters_to_send), self.n_rate))
 			if float(self.layer_selection_evaluate) == -2:
-				self._compredict(client_id, server_round, len(M))
+				parameters_to_send = self._compredict(client_id, server_round, len(M), parameters_to_send)
 
 			self.fedpredict_clients_metrics[str(client.cid)]['acc_bytes_rate'] = size_of_parameters
 			config['M'] = M
@@ -276,7 +276,9 @@ class FedPredictBaseServer(FedAvgBaseServer):
 
 		return client_evaluate_list_fedpredict
 
-	def _compredict(self, client_id, server_round, M):
+	def _compredict(self, client_id, server_round, M, parameter):
+
+		parameter = parameters_to_ndarrays(parameter)
 
 		nt = server_round - self.fedpredict_clients_metrics[str(client_id)]['round_of_last_fit']
 		current_global_model = self.previous_global_parameters[-1]
@@ -284,17 +286,35 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		if round_of_last_fit >= 1:
 			last_trained_global_model = self.previous_global_parameters[self.fedpredict_clients_metrics[str(client_id)]['round_of_last_fit']-1]
 			gradients = []
+			gradient_norm = []
+			n_components_list = []
 			for i in range(M):
 				# if i % 2 == 0:
-				if len(self.model_shape[i]) >= 2:
-					gradients.append(current_global_model[i] - last_trained_global_model[i])
-			gradient_norm = [np.linalg.norm(g) for g in gradients]
+				layer = parameter[i]
+				if len(layer.shape) >= 2:
+					gradient = current_global_model[i] - last_trained_global_model[i]
+					norm = np.linalg.norm(gradient)
+					gradient_norm.append(norm)
+					compression_range = self.layers_comppression_range[i]
+					if compression_range < 0:
+						n_components = fedpredict_core_compredict(server_round, self.T, nt, layer, norm, compression_range)
+					else:
+						n_components = None
+				else:
+					n_components = None
+
+				n_components_list.append(n_components)
+
+			parameter = parameter_svd_write(parameter, n_components_list)
+
 			if len(gradient_norm) > 0:
 				self.gradient_norm.append(np.mean(gradient_norm))
 				self.gradient_norm_round.append(server_round)
 				self.gradient_norm_nt.append(nt)
 
 			print("Client: ", client_id, " round: ", server_round, " nt: ", nt, " norm: ", np.mean(gradient_norm), " camadas: ", M, " todos: ", gradient_norm)
+
+		return  ndarrays_to_parameters(parameter)
 
 	def _select_layers(self, client_similarity_per_layer, mean_similarity_per_layer, mean_similarity, parameters, server_round, nt, size_of_layers, client_id, comment):
 
@@ -374,14 +394,14 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		layers_range = []
 		for shape in self.model_shape:
 
-			layer_range = []
+			layer_range = 0
 			if len(shape) >= 2:
 				shape = shape[-2:]
 
 				col = shape[1]
 				for n_components in range(1, col+1):
 					if if_reduces_size(shape, n_components):
-						layer_range.append(n_components)
+						layer_range = n_components
 					else:
 						break
 
