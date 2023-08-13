@@ -72,9 +72,10 @@ def svd(layer, n_components):
         print("svd")
         print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, 0), type(e).__name__, e)
 
-def if_reduces_size(shape, n_components):
+def if_reduces_size(shape, n_components, dtype=np.float64):
 
     try:
+        size = np.array([1], dtype=dtype)
         p = shape[0]
         q = shape[1]
         k = n_components

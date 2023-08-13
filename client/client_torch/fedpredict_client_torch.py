@@ -129,14 +129,14 @@ class FedPredictClientTorch(FedAvgClientTorch):
 			print("merge models")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def _decompress(self, compressed_global_model_gradients, M):
+	def _decompress(self, compressed_global_model_gradients, M, decompress):
 
 		try:
-			if len(compressed_global_model_gradients) > 0:
+			if decompress:
 				decompressed_gradients = inverse_parameter_svd_reading(compressed_global_model_gradients, [i.shape for i in self.get_parameters({})], len(M))
 				parameters = [Parameter(torch.Tensor(i.tolist())) for i in decompressed_gradients]
 			else:
-				parameters = []
+				parameters = [Parameter(torch.Tensor(i.tolist())) for i in compressed_global_model_gradients]
 
 			if os.path.exists(self.global_model_filename):
 				# Load local parameters to 'self.model'
@@ -181,10 +181,11 @@ class FedPredictClientTorch(FedAvgClientTorch):
 			# print("chegou")
 			M = config['M']
 			sm = config['sm']
+			decompress = config['decompress']
 			local_layer_count = 0
 			global_layer_count = 0
 			print("decompress client: ", self.cid)
-			self._decompress(global_parameters, M)
+			self._decompress(global_parameters, M, decompress)
 			parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
 			# print("parametros locais: ", [i.shape for i in self.model.parameters()])
 			if len(parameters) != len(M):

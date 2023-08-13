@@ -112,7 +112,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		self.gradient_norm = []
 		self.gradient_norm_round = []
 		self.gradient_norm_nt = []
-		self.T = float(args.T)
+		self.T = int(args.T)
 
 	def calculate_initial_similarity(self, server_round, rate=0.1):
 
@@ -216,7 +216,12 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			clients_ids.append(client_id)
 			clients_parameters.append(fl.common.parameters_to_ndarrays(fit_res.parameters))
 
-		self.similarity_between_layers_per_round_and_client[server_round], self.similarity_between_layers_per_round[server_round], self.mean_similarity_per_round[server_round] = fedpredict_layerwise_similarity(self.previous_global_parameters[server_round-1], clients_parameters, clients_ids, server_round, self.dataset, str(self.alpha))
+		if self.use_gradient:
+			global_parameter = [current - previous for current, previous in zip(parameters_to_ndarrays(parameters_aggregated), self.previous_global_parameters[server_round-1])]
+		else:
+			global_parameter = self.previous_global_parameters[server_round]
+
+		self.similarity_between_layers_per_round_and_client[server_round], self.similarity_between_layers_per_round[server_round], self.mean_similarity_per_round[server_round] = fedpredict_layerwise_similarity(global_parameter, clients_parameters, clients_ids, server_round, self.dataset, str(self.alpha), self.use_gradient)
 
 		self.parameters_aggregated_checkpoint[server_round] = parameters_to_ndarrays(parameters_aggregated)
 
@@ -260,17 +265,22 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			except:
 				pass
 
+			print("Tamanho parametros antes: ", sum([i.nbytes for i in parameters]))
 			# print("olha: ", self.similarity_between_layers_per_round[server_round])
 			client_similarity_per_layer = self.get_client_similarity_per_layer(client_id, server_round)
 			parameters_to_send, M = self._select_layers(client_similarity_per_layer, mean_similarity_per_layer, mean_similarity, parameters, server_round, nt, size_of_parameters, client_id, self.comment)
 			# M = [i for i in range(len(parameters))]
 			# parameters_to_send = ndarrays_to_parameters(parameter_svd_write(parameters_to_ndarrays(parameters_to_send), self.n_rate))
+			print("Tamanho parametros als: ", sum(i.nbytes for i in parameters_to_ndarrays(parameters_to_send)))
 			if int(self.layer_selection_evaluate) == -2:
 				print("igual")
+				config['decompress'] = True
 				parameters_to_send = self._compredict(client_id, server_round, len(M), parameters_to_send)
 			else:
+				config['decompress'] = False
 				print("nao igual")
 
+			print("Tamanho parametros compredict: ", sum(i.nbytes for i in parameters_to_ndarrays(parameters_to_send)))
 			self.fedpredict_clients_metrics[str(client.cid)]['acc_bytes_rate'] = size_of_parameters
 			config['M'] = M
 			config['sm'] = max(0, abs(self.similarity_between_layers_per_round[server_round][0]['mean'] - self.similarity_between_layers_per_round[server_round][len(parameters)-2]['mean']))
@@ -300,8 +310,8 @@ class FedPredictBaseServer(FedAvgBaseServer):
 					norm = np.linalg.norm(gradient)
 					gradient_norm.append(norm)
 					compression_range = self.layers_comppression_range[i]
-					if compression_range < 0:
-						n_components = fedpredict_core_compredict(server_round, self.T, nt, layer, norm, compression_range)
+					if compression_range > 0:
+						n_components = fedpredict_core_compredict(server_round, self.num_rounds, nt, layer, norm, compression_range)
 					else:
 						n_components = None
 				else:
@@ -317,15 +327,6 @@ class FedPredictBaseServer(FedAvgBaseServer):
 				self.gradient_norm_nt.append(nt)
 
 			# print("Client: ", client_id, " round: ", server_round, " nt: ", nt, " norm: ", np.mean(gradient_norm), " camadas: ", M, " todos: ", gradient_norm)
-			#
-			# print("Comp nent: ", n_components_list, M)
-			# print("par: ", parameter)
-			# print("clien: ", client_id)
-			# for i in parameter:
-			# 	if type(i) == list:
-			# 		print("Lista: ", i)
-			# 	else:
-			# 		print("comprimu: ", i.shape)
 			print("modelo compredict: ", [i.shape for i in parameter])
 
 		else:
@@ -351,10 +352,10 @@ class FedPredictBaseServer(FedAvgBaseServer):
 				tamanho = get_size(parameters[i])
 				# print("inicio camada: ", i, " tamanho: ", tamanho, " shape: ", parameters[i].shape)
 				size_list.append(tamanho)
-			print("Tamanho total parametros original: ", sum(size_list), sys.getsizeof(fl.common.ndarrays_to_parameters(parameters)))
+			# print("Tamanho total parametros original: ", sum(size_list), sys.getsizeof(fl.common.ndarrays_to_parameters(parameters)))
 
-			print("quantidade de camadas: ", len(parameters), [i.shape for i in parameters], " comment: ", comment)
-			print("layer selection evaluate: ", self.layer_selection_evaluate, self.comment)
+			# print("quantidade de camadas: ", len(parameters), [i.shape for i in parameters], " comment: ", comment)
+			# print("layer selection evaluate: ", self.layer_selection_evaluate, self.comment)
 			if self.fedpredict_clients_metrics[client_id]['first_round'] != -1:
 				# baixo-cima
 				if comment == "":
@@ -371,7 +372,6 @@ class FedPredictBaseServer(FedAvgBaseServer):
 							i = int(i)*2
 							M.append(int(i) - 2)
 							M.append(int(i) - 1)
-						print("foi: ", M)
 						if layer == '10':
 							M = [i for i in range(len(parameters))]
 						elif layer == '50':
@@ -379,7 +379,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 					else:
 						# self.similarity_between_layers_per_round[1][len(parameters)-2]['mean']
 						M = fedpredict_core_layer_selection(t=server_round, T=self.num_rounds, nt=nt, n_layers=n_layers, size_per_layer=size_of_layers, mean_similarity_per_layer=mean_similarity_per_layer, current_similarity=self.similarity_between_layers_per_round[server_round][0]['mean'], first_similarity=self.similarity_between_layers_per_round[server_round][len(parameters)-2]['mean'])
-						print("quantidade compartilhadas: ", M)
+						# print("quantidade compartilhadas: ", M)
 				new_parameters = []
 				for i in range(len(parameters)):
 					if i in M:
@@ -392,20 +392,19 @@ class FedPredictBaseServer(FedAvgBaseServer):
 						# 	data_type = np.float32
 						# new_parameters.append(parameters[i].astype(data_type))
 						new_parameters.append(parameters[i])
-						print("parametros reduzidos: ", parameters[i].nbytes)
+						# print("parametros reduzidos: ", parameters[i].nbytes)
 				parameters = new_parameters
 
 			# parameters = parameters[-2:]
-			print("quantidade de camadas retornadas: ", len(parameters), " nt: ", nt)
+			# print("quantidade de camadas retornadas: ", len(parameters), " nt: ", nt)
 			size_list = []
 			for i in range(len(parameters)):
 				# tamanho = get_size(parameters[i])
 				tamanho = parameters[i].nbytes
-				print("final camada: ", i, " tamanho: ", tamanho, " shape: ", parameters[i].shape)
+				# print("final camada: ", i, " tamanho: ", tamanho, " shape: ", parameters[i].shape)
 				size_list.append(tamanho)
 
 			parameters = fl.common.ndarrays_to_parameters(parameters)
-			print("Tamanho total parametros depois: ", sum(size_list), sys.getsizeof(parameters))
 
 			return parameters, M
 

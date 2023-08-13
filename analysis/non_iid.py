@@ -104,8 +104,11 @@ class NonIid:
                 file_name = self.base_files_names[j]
                 if 'similarity' in file_name and strategy_name != 'FedPredict':
                     continue
+                if 'norm' in file_name and strategy_name != 'FedPredict':
+                    continue
                 df = pd.read_csv(models_directories[strategy_name]+file_name)
                 df['Strategy'] = np.array([strategy_name]*len(df))
+                df['Alpha'] = np.array([self.alpha]*len(df))
                 if i == 0:
                     self.df_files_names[j] = df
                 else:
@@ -125,6 +128,9 @@ class NonIid:
     def norm_analysis(self):
 
         df_server = self.df_files_names['server'].query("Strategy == 'FedPredict'")
+
+        if len(df_server) == 0:
+            return
 
         print("achei", df_server.columns)
 
@@ -269,14 +275,18 @@ class NonIid:
                   y_lim=True, y_max=1)
 
         # size of parameters
-        print(df)
+        print("eol: ", df.columns)
         def strategy(df):
-            parameters = float(df['Size of parameters'].mean())/1000000
-            config = float(df['Size of config'].mean())/1000000
+            parameters = df['Size of parameters']/1000000
+            config = df['Size of config']/1000000
             total_size = parameters + config
 
             return pd.DataFrame({'Size of parameters (MB)': [parameters], 'Communication cost (MB)': [total_size]})
-        df_test = df[['Round', 'Size of parameters', 'Size of config', 'Strategy']].groupby('Strategy').apply(lambda e: strategy(e)).reset_index()[['Size of parameters (MB)', 'Communication cost (MB)', 'Strategy']]
+
+        print("tamanho parametros: \n", df.to_string())
+        df['Size of parameters (MB)'] = df['Size of parameters']/1000000
+        df['Communication cost (MB)'] = df['Size of config']/1000000
+        df_test = df
         df_test.to_csv(self.base_dir+"csv/evaluate_client_size_of_parameters_round.csv", index=False)
         strategies = df_test['Strategy'].unique().tolist()
         hue_order = []
@@ -289,27 +299,30 @@ class NonIid:
         hue_order = reference + hue_order
         print("ordem: ", hue_order)
         df_test = df_test.sort_values('Size of parameters (MB)')
-        print(df_test)
+        print("efl: ", df_test.columns)
         print(self.base_dir)
-        x_column = 'Strategy'
+        x_column = 'Round'
         y_column = 'Size of parameters (MB)'
-        hue = None
-        title = "Size of parameters (MB)"
-        bar_plot(df=df_test,
+        hue = 'Strategy'
+        style = None
+        title = """Size of parameters (MB); {}; {}""".format(self.dataset_name, self.alpha)
+        line_plot(df=df_test,
                   base_dir=self.base_dir,
-                  file_name="evaluate_client_size_of_parameters_round_barplot",
+                  file_name="evaluate_client_size_of_parameters_round",
                   x_column=x_column,
                   y_column=y_column,
                   title=title,
                   hue=hue,
+                  style=style,
                  hue_order=hue_order,
                  y_lim=True,
-                 sci=True)
+                 y_max=30,
+                 y_min=0)
 
         y_column = 'Communication cost (MB)'
-        hue = None
+        hue = 'Strategy'
         title = "Communication cost (MB)"
-        bar_plot(df=df_test,
+        line_plot(df=df_test,
                  base_dir=self.base_dir,
                  file_name="evaluate_client_communication_cost_round_barplot",
                  x_column=x_column,
@@ -318,7 +331,8 @@ class NonIid:
                  hue=hue,
                  hue_order=hue_order,
                  y_lim=True,
-                 sci=True)
+                 y_min=0,
+                 y_max=30)
 
     def similarity_analysis(self, title):
 

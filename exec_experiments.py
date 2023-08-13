@@ -45,9 +45,9 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 # Configurations
 TYPE = 'torch'
 # DATASETS      				= ['MNIST', 'CIFAR10', 'Tiny-ImageNet']
-DATASETS = ['EMNIST']
+DATASETS = ['EMNIST', 'CIFAR10']
 # DATASETS      					= ['UCIHAR', 'MotionSense']
-MODELS = ['CNN_6']
+MODELS = ['CNN_1', 'CNN_2']
 ALGORITHMS = ['None', 'POC', 'FedLTA']
 EPOCHS = {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2], '6': [1], '7': [1], '8': [1], '9': [1], '10': [1],
           '11': [1], '12': [1], '13': [1], '14': [1], '15': [1], '16': [1], '17': [1], '18': [1], '19': [1], '20': [1],
@@ -55,11 +55,11 @@ EPOCHS = {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2], '6': [1], '7': [1], 
           '31': [1], '32': [1]}
 # CLIENTS       				= {'MNIST': 50, 'CIFAR10': 50, 'CIFAR100': 50, 'MotionSense': 50, 'UCIHAR': 50}
 CLASSES = {'MNIST': 10, 'CIFAR10': 10, 'Tiny-ImageNet': 200, 'EMNIST': 47}
-CLIENTS = {'MNIST': [8], 'CIFAR10': [10], 'EMNIST': [10], 'CIFAR100': [50], 'MotionSense': [24], 'UCIHAR': [30],
+CLIENTS = {'MNIST': [8], 'CIFAR10': [20], 'EMNIST': [20], 'CIFAR100': [50], 'MotionSense': [24], 'UCIHAR': [30],
            'Tiny-ImageNet': [2]}
-ALPHA = [0.1, 5.0]
+ALPHA = [0.1, 2.0, 5.0]
 # ALPHA = [1]
-FRACTION_FIT = {'None': [0.5], 'POC': [0], 'FedLTA': [0]}
+FRACTION_FIT = {'None': [0.3], 'POC': [0], 'FedLTA': [0]}
 SPECIFIC_PARAMETERS = {'FedAVG': {'use_gradient': 'True', 'bits': 8}, 'FedKD': {'use_gradient': 'True', 'bits': 8},
                        'FedPAQ': {'use_gradient': 'True', 'bits': 8}, 'FedDistill': {'use_gradient': '', 'bits': 8},
                        'FedPredict': {'use_gradient': 'True', 'bits': 8}}
@@ -68,12 +68,12 @@ DECAY = {'None': 0, 'POC': 0, 'FedLTA': 0.1}
 NEW_CLIENTS = {'None': ['FALSE'], 'POC': ['FALSE', 'TRUE']}
 NEW_CLIENTS_TRAIN = {'FALSE': ['FALSE'], 'TRUE': ['FALSE', 'TRUE']}
 # DECAY         				= (0.001, 0.005, 0.009)
-ROUNDS = 21
+ROUNDS = 20
 # STRATEGIES 					= ('FedPredict', 'FedPer', 'FedClassAvg', 'FedAVG', 'FedClassAvg_with_FedPredict', 'FedPer_with_FedPredict', 'FedProto', 'FedYogi', 'FedLocal',)
 # STRATEGIES_FOR_ANALYSIS = ['FedKD', 'FedAVG', 'FedPAQ']
 # STRATEGIES_TO_EXECUTE = ['FedKD', 'FedAVG']
-STRATEGIES_FOR_ANALYSIS = ['FedPredict']
-STRATEGIES_TO_EXECUTE = ['FedPredict']
+STRATEGIES_FOR_ANALYSIS = {'26': ['FedPredict'], '30': ['FedPredict'], '31': ['FedPredict']}
+STRATEGIES_TO_EXECUTE = {'26': ['FedPredict'], '30': ['FedPredict'], '31': ['FedPredict']}
 
 EXPERIMENTS = {
     1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '',
@@ -164,7 +164,7 @@ def execute_experiment(experiment, algorithm, new_client, new_client_train, comm
                             for poc in POC[algorithm]:
                                 for alpha in ALPHA:
                                     decay = DECAY[algorithm]
-                                    for strategy in STRATEGIES_TO_EXECUTE:
+                                    for strategy in STRATEGIES_TO_EXECUTE[experiment]:
                                         use_gradient = SPECIFIC_PARAMETERS[strategy]['use_gradient']
 
                                         print(
@@ -183,7 +183,7 @@ def execute_experiment(experiment, algorithm, new_client, new_client_train, comm
                                     # subprocess.Popen(['rm', '-fr', '/tmp/ray/']).wait()
                                     # subprocess.Popen(['rm', '/tmp/*.py']).wait()
                                     strategies_arg = ""
-                                    for i in STRATEGIES_FOR_ANALYSIS:
+                                    for i in STRATEGIES_FOR_ANALYSIS[experiment]:
                                         strategies_arg = strategies_arg + """ --strategy='{}'""".format(i)
                                     if len(STRATEGIES_FOR_ANALYSIS) > 0:
                                         analytics_result_dir = """python analysis/non_iid.py --dataset='{}' --model='{}' --round={} --client={} --aggregation_method='{}' --poc={} --new_clients={} --new_clients_train={} --non-iid={} --comment='{}' --epochs={} --decay={} --fraction_fit={} --class_per_client={} --alpha={} --layer_selection_evaluate={} --experiment={} {}""".format(

@@ -388,7 +388,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		else:
 			selected_clients = clients
 		print("selecionar (evaluate): ", [client.cid for client in selected_clients])
-		print("Parametros para enviar evaluate: ", len(fl.common.parameters_to_ndarrays(parameters)))
+		print("Parametros para enviar evaluate: ", len(fl.common.parameters_to_ndarrays(parameters)), " tamanho: ", sum([i.nbytes for i in parameters_to_ndarrays(parameters)]))
 		if selected_clients:
 			for client in selected_clients:
 				if self.clients_metrics[client.cid]['count'] == 0:

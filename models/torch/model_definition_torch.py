@@ -93,6 +93,71 @@ class DNN_teacher(nn.Module):
         return x
 
 # ====================================================================================================================
+class CNN_2(torch.nn.Module):
+    def __init__(self, input_shape, mid_dim=64, num_classes=10):
+        super().__init__()
+        self.model = torch.nn.Sequential(
+            # Input = 3 x 32 x 32, Output = 32 x 32 x 32
+            torch.nn.Conv2d(in_channels=input_shape, out_channels=32, kernel_size=3, padding=1),
+            torch.nn.ReLU(),
+            # Input = 32 x 32 x 32, Output = 32 x 16 x 16
+            torch.nn.MaxPool2d(kernel_size=2),
+
+            # Input = 32 x 16 x 16, Output = 64 x 16 x 16
+            torch.nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1),
+            torch.nn.ReLU(),
+            # Input = 64 x 16 x 16, Output = 64 x 8 x 8
+            torch.nn.MaxPool2d(kernel_size=2),
+
+            # Input = 64 x 8 x 8, Output = 64 x 8 x 8
+            torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1),
+            torch.nn.ReLU(),
+            # Input = 64 x 8 x 8, Output = 64 x 4 x 4
+            torch.nn.MaxPool2d(kernel_size=2),
+
+            torch.nn.Flatten(),
+            torch.nn.Linear(mid_dim * 4 * 4, 512),
+            torch.nn.ReLU(),
+            torch.nn.Linear(512, num_classes)
+        )
+
+    def forward(self, x):
+        return self.model(x)
+# bom para alpha 2
+# class CNN_2(nn.Module):
+#     def __init__(self):
+#         super(CNN_2, self).__init__()
+#         # convolutional layer (sees 32x32x3 image tensor)
+#         self.conv1 = nn.Conv2d(3, 16, 3, padding=1)
+#         # convolutional layer (sees 16x16x16 tensor)
+#         self.conv2 = nn.Conv2d(16, 32, 3, padding=1)
+#         # convolutional layer (sees 8x8x32 tensor)
+#         self.conv3 = nn.Conv2d(32, 64, 3, padding=1)
+#         # max pooling layer
+#         self.pool = nn.MaxPool2d(2, 2)
+#         # linear layer (64 * 4 * 4 -> 500)
+#         self.fc1 = nn.Linear(64 * 4 * 4, 500)
+#         # linear layer (500 -> 10)
+#         self.fc2 = nn.Linear(500, 10)
+#         # dropout layer (p=0.25)
+#         self.dropout = nn.Dropout(0.25)
+#
+#     def forward(self, x):
+#         # add sequence of convolutional and max pooling layers
+#         x = self.pool(F.relu(self.conv1(x)))
+#         x = self.pool(F.relu(self.conv2(x)))
+#         x = self.pool(F.relu(self.conv3(x)))
+#         # flatten image input
+#         x = x.view(-1, 64 * 4 * 4)
+#         # add dropout layer
+#         x = self.dropout(x)
+#         # add 1st hidden layer, with relu activation function
+#         x = F.relu(self.fc1(x))
+#         # add dropout layer
+#         x = self.dropout(x)
+#         # add 2nd hidden layer, with relu activation function
+#         x = self.fc2(x)
+#         return x
 
 # model_codes = {
 #     'CNN_6': [64, 'M', 128, 'M', 'D'],
@@ -104,31 +169,37 @@ class DNN_teacher(nn.Module):
 # }
 
 model_codes = {
-    'CNN_6': [32, 'M', 64, 'M', 'D'],
+    'CNN_6': [64, 'M', 128, 'M', 'D', 256, 'M', 'D'],
     'CNN_8': [64, 'M', 128, 'M', 'D', 256, 'M', 'D'],
-    'CNN_10': [32, 'M', 64, 'M', 'D', 128, 'M', 256, 'M', 'D'],
+    'CNN_10': [32, 32, 'M', 64, 'M', 'D', 128, 'M', 256, 'M', 'D'],
     'CNN_12': [64, 'M', 128, 'M', 'D', 256, 'M', 512, 512, 'M', 'D'],
+    'CNN_1': [32, 'M', 64, 'M'],
+    'CNN_2': [16, 'M', 32, 'M', 64, 'M'],
     'model_3': [64, 64, 'M', 128, 128, 'M', 'D', 256, 256, 256, 'M', 512, 512, 512, 'M', 'D'],
     'model_4': [64, 64, 64, 64, 'M', 128, 128, 128, 128, 'M', 'D', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M', 'D']
 }
 
 classifier_in_out = {
     'EMNIST':{
-            'CNN_6': [3136, 1568],
+            'CNN_1': [1024, 512],
+            'CNN_2': [64, 32],
+            'CNN_6': [2304, 1152],
             'CNN_8': [2304, 128],
             'CNN_10': [256, 128],
             'CNN_12': [512, 256]
     },
     'CIFAR10':{
-            'CNN_6': [4096, 2048],
-            'CNN_8': [4096, 128],
+            'CNN_1': [1600, 512],
+            'CNN_2': [64*4*4, 512],
+            'CNN_6': [4096, 1048],
+            'CNN_8': [2304, 128],
             'CNN_10': [1024, 512],
             'CNN_12': [2048, 256]
     }
 }
 
 class CNN_EMNIST(nn.Module):
-    def __init__(self, dataset, model_code, in_channels, out_dim, act='relu', use_bn=True, dropout=0.3):
+    def __init__(self, dataset, model_code, in_channels, out_dim, act='relu', use_bn=False, dropout=0.3):
         super(CNN_EMNIST, self).__init__()
 
         try:
@@ -143,12 +214,25 @@ class CNN_EMNIST(nn.Module):
                 raise ValueError("Not a valid activation function")
 
             self.layers = self.make_layers(model_code, in_channels, use_bn, dropout)
-            self.classifier = nn.Sequential(nn.Linear(self.classifier_in_out[0], self.classifier_in_out[1]),
-                                            self.act,
-                                            nn.Linear(self.classifier_in_out[1], self.classifier_in_out[1]//2),
-                                            self.act,
-                                            nn.Linear(self.classifier_in_out[1]//2, out_dim)
-                                            )
+
+            if self.model_code == 'CNN_1':
+                self.classifier = nn.Sequential(nn.Linear(self.classifier_in_out[0], self.classifier_in_out[1]),
+                                                self.act,
+                                                nn.Linear(self.classifier_in_out[1], out_dim)
+                                                )
+            elif self.model_code == 'CNN_2':
+                self.classifier = nn.Sequential(nn.Linear(self.classifier_in_out[0], self.classifier_in_out[1]),
+                                                self.act,
+                                                nn.Dropout(0.5),
+                                                nn.Linear(self.classifier_in_out[1], 64),
+                                                nn.Dropout(0.5),
+                                                self.act,
+                                                nn.Linear(64, out_dim)
+                                                )
+                # self.classifier = nn.Sequential(nn.Linear(self.classifier_in_out[0], self.classifier_in_out[1]),
+                #                                 self.act,
+                #                                 nn.Linear(self.classifier_in_out[1], out_dim)
+                #                                 )
 
         except Exception as e:
             print("CNN EMNIST")
@@ -171,7 +255,7 @@ class CNN_EMNIST(nn.Module):
             count = 0
             for x in model_codes[model_code]:
                 if x == "M":
-                    layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
+                    layers += [nn.MaxPool2d(kernel_size=(2, 2))]
                 elif x == 'D':
                     if self.model_code == 'CNN_6':
                         dropout = 0.3
@@ -183,16 +267,22 @@ class CNN_EMNIST(nn.Module):
                     layers += [nn.Dropout(dropout)]
                     count += 1
                 else:
+                    if self.model_code == 'CNN_2':
+                        kernel_size = 3
+                        padding = 1
+                    else:
+                        kernel_size = 5
+                        padding = 0
                     layers += [nn.Conv2d(in_channels=in_channels,
                                          out_channels=x,
-                                         kernel_size=3,
+                                         kernel_size=kernel_size,
                                          stride=1,
-                                         padding=1,
-                                         bias=True)]
-                    if use_bn:
+                                         padding=padding,
+                                         bias=True), nn.ReLU(inplace=True)]
+                    if self.dataset == 'CIFAR10' and self.model_code == 'CNN_2':
                         layers += [nn.BatchNorm2d(x)]
 
-                    layers += [self.act]
+                    # layers += [self.act]
                     in_channels = x
 
             return nn.Sequential(*layers)
@@ -395,29 +485,37 @@ class CNN_5(nn.Module):
     def __init__(self, input_shape=1, mid_dim=256, num_classes=10):
         try:
             super(CNN_5, self).__init__()
-            self.network = nn.Sequential(
-                nn.Conv2d(input_shape, 32, kernel_size=3, padding=1),
-                nn.ReLU(),
-                nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
-                nn.ReLU(),
-                nn.MaxPool2d(2, 2),  # output: 64 x 16 x 16
-                nn.BatchNorm2d(64),
-
-                nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
-                nn.ReLU(),
-                nn.MaxPool2d(2, 2),  # output: 128 x 8 x 8
-                nn.BatchNorm2d(128),
-
-                nn.Flatten(),
-                nn.Linear(8192, 4096),
-                nn.ReLU(),
-                nn.Linear(4096, 2048),
-                nn.ReLU(),
-                nn.Linear(2048, 1024),
-                nn.ReLU(),
+            self.conv1 = nn.Sequential(
+                nn.Conv2d(input_shape,
+                          32,
+                          kernel_size=5,
+                          padding=0,
+                          stride=1,
+                          bias=True),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(kernel_size=(2, 2))
+            )
+            self.conv2 = nn.Sequential(
+                nn.Conv2d(32,
+                          64,
+                          kernel_size=5,
+                          padding=0,
+                          stride=1,
+                          bias=True),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(kernel_size=(2, 2))
+            )
+            self.fc1 = nn.Sequential(
                 nn.Linear(1024, 512),
-                nn.ReLU(),
-                nn.Linear(512, num_classes))
+                nn.ReLU(inplace=True),
+                nn.Dropout(0.5),
+                nn.Linear(512, 256),
+                nn.ReLU(inplace=True),
+                nn.Dropout(0.3),
+                nn.Linear(256, 128),
+                nn.ReLU(inplace=True),
+                nn.Linear(128, num_classes)
+            )
 
         except Exception as e:
             print("CNN 5")
@@ -425,7 +523,11 @@ class CNN_5(nn.Module):
 
     def forward(self, x):
         try:
-            return self.network(x)
+            out = self.conv1(x)
+            out = self.conv2(out)
+            out = torch.flatten(out, 1)
+            out = self.fc1(out)
+            return out
         except Exception as e:
             print("CNN 5")
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)

@@ -71,11 +71,11 @@ def fedpredict_core(t, T, nt, sm):
             update_level = 1 / nt
             # evolutionary_level = (server_round / 50)
             # print("client id: ", self.cid, " primeiro round", self.first_round)
-            evolution_level = t / T
+            evolution_level = t / 100
 
             # print("el servidor: ", el, " el local: ", evolutionary_level)
-            # eq1 = (-update_level - evolution_level) # v1
-            eq1 = (-update_level - evolution_level) # v2 melhor
+            # eq1 = (-update_level - evolution_level) # v1 pior
+            eq1 = (-update_level - evolution_level - sm) # v3 melhor
             eq2 = round(np.exp(eq1), 6)
             global_model_weight = eq2
 
@@ -115,7 +115,7 @@ def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_sim
             update_level = 1 / nt
             # evolutionary_level = (server_round / 50)
             # print("client id: ", self.cid, " primeiro round", self.first_round)
-            evolution_level = t / T
+            evolution_level = t / 100
 
             # print("el servidor: ", el, " el local: ", evolutionary_level)
 
@@ -128,6 +128,7 @@ def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_sim
             # eq1 = (-update_level - evolution_level + sm) # v6 cai demais
             # eq1 = (-update_level**(1/2) - evolution_level - sm) # v7 cai demais
             eq1 = (-update_level - evolution_level - sm)/3  # v8 ótimo
+            # eq1 = (-update_level - evolution_level - sm) # v9
             # eq1 = (update_level - evolution_level + (1 - sm) * 0.2)
             eq2 = round(np.exp(eq1), 6)
             # eq2 = (update_level + reference_similarity)/2
@@ -143,7 +144,7 @@ def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_sim
         print("fedpredict core server")
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-def fedpredict_core_compredict(t, T, nt, n_layers, layer, layer_norm, compression_range):
+def fedpredict_core_compredict(t, T, nt, layer, layer_norm, compression_range):
     try:
 
         # 9
@@ -171,11 +172,15 @@ def fedpredict_core_compredict(t, T, nt, n_layers, layer, layer_norm, compressio
         # eq1 = (-update_level - evolution_level - sm)  # v5 cai demais e invertido
         # eq1 = (-update_level - evolution_level + sm) # v6 cai demais
         # eq1 = (-update_level**(1/2) - evolution_level - sm) # v7 cai demais
-        eq1 = (-update_level - evolution_level)/2  # v8 ótimo
+        # eq1 = (-update_level - evolution_level)/2  # v2 ótimo
+        # eq1 = (-update_level - evolution_level - norm) / 3  # v3 mesma coisa para alpha 0.1
+        # eq1 = (- evolution_level - norm) / 2  # v4 melhor até o momento
+        eq1 = (- norm) # v5
         # eq1 = (update_level - evolution_level + (1 - sm) * 0.2)
         eq2 = round(np.exp(eq1), 6)
         # eq2 = (update_level + reference_similarity)/2
-        n_components = int(np.ceil(eq2 * compression_range))
+        n_components = int(np.ceil((1-eq2) * compression_range))
+        print("fracao: ", 1 - eq2)
 
         return n_components
 
@@ -204,7 +209,7 @@ def fedpredict_similarity_per_round_rate(similarities, num_layers, current_round
         similarity_rate[layer] = (similarities_list[current_round] - similarities_list[initial_round])/round_window
 
 
-def fedpredict_layerwise_similarity(global_parameter, clients_parameters, clients_ids, server_round, dataset, alpha):
+def fedpredict_layerwise_similarity(global_parameter, clients_parameters, clients_ids, server_round, dataset, alpha, gradient):
 
     num_layers = len(global_parameter)
     num_clients = len(clients_parameters)
@@ -239,6 +244,9 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
                 for k in range(len(global_layer)):
                     global_layer_k = global_layer[k][0]
                     client_layer_k = client_layer[k][0]
+
+                    # if gradient:
+                    #     client_layer_k = global_layer_k - client_layer_k
                     cka = CKA()
                     if layer_index not in interest_layers:
                         similarity = 0
@@ -266,6 +274,7 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
                     difference = np.array([0])
                 else:
                     cka = CKA()
+                    # client_layer = global_layer - client_layer
                     similarity = cka.linear_CKA(global_layer, client_layer)
                     # print("par: ", len(global_layer), len(client_layer), layer_index)
                     difference = global_layer - client_layer

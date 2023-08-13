@@ -29,6 +29,10 @@ class Varying_Shared_layers:
         self.epochs = epochs
         self.comment = comment
         self.layer_selection_evaluate = layer_selection_evaluate
+        if -1 in self.layer_selection_evaluate:
+            self.experiment = "als"
+        elif -2 in self.layer_selection_evaluate:
+            self.experiment = "compredict"
 
     def start(self):
 
@@ -47,7 +51,11 @@ class Varying_Shared_layers:
         print(df_concat)
         self.evaluate_client_analysis_differnt_models(df_concat)
         self.evaluate_client_joint_parameter_reduction(df_concat)
-        self.evaluate_client_joint_accuracy(self.build_filename_fedavg(df_concat))
+        alphas = df_concat['Alpha'].unique().tolist()
+        for alpha in alphas:
+            self.evaluate_client_joint_accuracy(self.build_filename_fedavg(df_concat), alpha)
+        # for alpha in alphas:
+        #     self.evaluate_client_joint_accuracy(df_concat, alpha)
         self.similarity()
 
     def build_filenames(self):
@@ -73,7 +81,7 @@ class Varying_Shared_layers:
                                 else:
                                     df_concat = pd.concat([df_concat, df], ignore_index=True)
                             elif "similarity" in file:
-                                if layers != -1:
+                                if layers not in [-1, -2]:
                                     continue
                                 df['Alpha'] = np.array([a] * len(df))
                                 df['Round'] = np.array(df['Server round'].tolist())
@@ -98,12 +106,14 @@ class Varying_Shared_layers:
 
         files = ["evaluate_client.csv"]
         df_concat_similarity = None
-        for layers in [-1]:
+        for layers in [min(self.layer_selection_evaluate)]:
             for a in self.alpha:
                 for model in self.model_name:
                     for dataset in self.dataset:
                         for file in files:
                             filename = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/" + f"logs/{self.type}/FedAVG-{self.aggregation_method}-{self.fraction_fit}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{model}/{dataset}/classes_per_client_{self.class_per_client}/alpha_{a}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(layers)}_layer_selection_evaluate/{file}"
+                            if not os.path.exists(filename):
+                                return df_concat
                             df = pd.read_csv(filename)
                             if "evaluate" in file:
                                 df['Shared layers'] = np.array([layers] * len(df))
@@ -135,11 +145,13 @@ class Varying_Shared_layers:
 
     def evaluate_client_joint_parameter_reduction(self, df):
 
-        df = df[df['Shared layers'] == "FedPredict (with ALS)"]
+        # df = df[df['Shared layers'] == "FedPredict (with ALS)"]
+        df = df[df['Shared layers'] != '100% of the layers']
         fig, ax = plt.subplots(2, 2,  sharex='all', sharey='all', figsize=(6, 6))
 
-        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
-            str(self.dataset), self.num_clients, self.num_rounds, self.fraction_fit, str(self.model_name),
+        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
+            self.experiment, str(self.dataset), self.num_clients, self.num_rounds, self.fraction_fit,
+            str(self.model_name),
             str(self.alpha), self.comment)
 
         x_column = 'Round'
@@ -148,6 +160,7 @@ class Varying_Shared_layers:
         style = 'Alpha'
 
         if len(self.dataset) >= 2:
+            fig, ax = plt.subplots(2, 2, sharex='all', sharey='all', figsize=(6, 6))
             title = """{}; {}""".format(self.dataset[0], self.model_name[0])
             x = df[x_column].tolist()
             y = df[y_column].tolist()
@@ -250,27 +263,97 @@ class Varying_Shared_layers:
             figure = fig.get_figure()
             Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
             Path(base_dir + "svg/").mkdir(parents=True, exist_ok=True)
-            filename = """parameters_reduction_percentage_varying_shared_layers_lineplot_joint_{}""".format(str(self.dataset))
+            filename = """parameters_reduction_percentage_{}_varying_shared_layers_lineplot_joint_{}""".format(self.experiment, str(self.dataset))
             figure.savefig(base_dir + "png/" + filename + ".png", bbox_inches='tight', dpi=400)
             figure.savefig(base_dir + "svg/" + filename + ".svg", bbox_inches='tight', dpi=400)
 
-    def evaluate_client_joint_accuracy(self, df):
+        else:
+            fig, ax = plt.subplots(1, 2, sharex='all', sharey='all', figsize=(8, 6))
+            title = """{}; {}""".format(self.dataset[0], self.model_name[0])
+            x = df[x_column].tolist()
+            y = df[y_column].tolist()
+            print("jointplot: \n", df.query("""Dataset == '{}'""".format(self.dataset[0])))
+            line_plot(ax=ax[0],
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[0])),
+                      base_dir=base_dir,
+                      file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
+                      x_column=x_column,
+                      y_column=y_column,
+                      title=title,
+                      hue=hue,
+                      style=style,
+                      # hue_order=layer_selection_evaluate,
+                      type=1,
+                      log_scale=False,
+                      y_lim=True,
+                      y_max=100,
+                      y_min=20,
+                      n=1)
+
+            ax[0].get_legend().remove()
+            ax[0].set_xlabel('')
+            ax[0].set_ylabel('')
+            title = """{}; {}""".format(self.dataset[0], self.model_name[1])
+            line_plot(ax=ax[1],
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[1])),
+                      base_dir=base_dir,
+                      file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
+                      x_column=x_column,
+                      y_column=y_column,
+                      title=title,
+                      hue=hue,
+                      style=style,
+                      # hue_order=layer_selection_evaluate,
+                      type=1,
+                      log_scale=False,
+                      y_lim=True,
+                      y_max=100,
+                      y_min=20,
+                      n=1)
+
+            ax[1].get_legend().remove()
+            ax[1].set_xlabel('')
+            ax[1].set_ylabel('')
+
+            fig.suptitle("", fontsize=16)
+            fig.supxlabel(x_column, y=-0.02)
+            fig.supylabel(y_column, x=-0.005)
+            # plt.tight_layout(pad=0.5)
+
+            plt.subplots_adjust(wspace=0.07, hspace=0.14)
+            lines_labels = [ax[0].get_legend_handles_labels()]
+            lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
+            fig.legend(lines, labels, loc='upper center', ncol=4, bbox_to_anchor=(0.5, 1.06))
+            figure = fig.get_figure()
+            Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
+            Path(base_dir + "svg/").mkdir(parents=True, exist_ok=True)
+            filename = """parameters_reduction_percentage_{}_varying_shared_layers_lineplot_joint_{}""".format(self.experiment, str(self.dataset))
+            figure.savefig(base_dir + "png/" + filename + ".png", bbox_inches='tight', dpi=400)
+            figure.savefig(base_dir + "svg/" + filename + ".svg", bbox_inches='tight', dpi=400)
+
+    def evaluate_client_joint_accuracy(self, df, alpha):
 
         # df = df[df['Shared layers'] == "FedPredict (with ALS)"]
-        fig, ax = plt.subplots(2, 2,  sharex='all', sharey='all', figsize=(6, 6))
 
-        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
-            str(self.dataset), self.num_clients, self.num_rounds, self.fraction_fit, str(self.model_name),
+        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
+            self.experiment, str(self.dataset), self.num_clients, self.num_rounds, self.fraction_fit,
+            str(self.model_name),
             str(self.alpha), self.comment)
 
         x_column = 'Round'
         y_column = 'Accuracy (%)'
         hue = 'Shared layers'
-        style = 'Alpha'
+        style = None
 
-        layer_selection_evaluate = ['FedPredict (with ALS)', '100% of the layers', 'FedAvg']
+        df = df.query("""Alpha == {}""".format(alpha))
+
+        if -1 in self.layer_selection_evaluate:
+            layer_selection_evaluate = ['FedPredict (with ALS)', '100% of the layers', 'FedAvg']
+        else:
+            layer_selection_evaluate = ['FedPredict (with ALS + Compredict)', '100% of the layers']
 
         if len(self.dataset) >= 2:
+            fig, ax = plt.subplots(2, 2, sharex='all', sharey='all', figsize=(6, 6))
             title = """{}; {}""".format(self.dataset[0], self.model_name[0])
             x = df[x_column].tolist()
             y = df[y_column].tolist()
@@ -385,12 +468,81 @@ class Varying_Shared_layers:
             plt.subplots_adjust(wspace=0.07, hspace=0.14)
             lines_labels = [ax[0, 0].get_legend_handles_labels()]
             lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-            fig.legend(lines, labels, loc='upper center', ncol=4, bbox_to_anchor=(0.5, 1.05))
+            fig.legend(lines, labels, loc='upper center', ncol=4, title="""Alpha={}""".format(alpha), bbox_to_anchor=(0.5, 1.05))
             # plt.xticks(np.arange(min(x), max(x) + 1, max(x) // 5))
             figure = fig.get_figure()
             Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
             Path(base_dir + "svg/").mkdir(parents=True, exist_ok=True)
-            filename = """accuracy_varying_shared_layers_lineplot_joint_{}""".format(str(self.dataset))
+            print("de intere: ", base_dir)
+            filename = """accuracy_varying_shared_layers_{}_lineplot_joint_{}_alpha_{}""".format(self.experiment, str(self.dataset), str(alpha))
+            figure.savefig(base_dir + "png/" + filename + ".png", bbox_inches='tight', dpi=400)
+            figure.savefig(base_dir + "svg/" + filename + ".svg", bbox_inches='tight', dpi=400)
+
+        else:
+            fig, ax = plt.subplots(1, 2, sharex='all', sharey='all', figsize=(10, 6))
+            title = """{}; {}""".format(self.dataset[0], self.model_name[0])
+            x = df[x_column].tolist()
+            y = df[y_column].tolist()
+            print("jointplot: \n",
+                  df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[0])))
+            line_plot(ax=ax[0],
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[0])),
+                      base_dir=base_dir,
+                      file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
+                      x_column=x_column,
+                      y_column=y_column,
+                      title=title,
+                      hue=hue,
+                      style=style,
+                      hue_order=layer_selection_evaluate,
+                      type=1,
+                      log_scale=False,
+                      y_lim=True,
+                      y_max=100,
+                      y_min=0,
+                      n=1)
+
+            ax[0].get_legend().remove()
+            ax[0].set_xlabel('')
+            ax[0].set_ylabel('')
+            # ax[0, 0].set_xticks([])
+            # ax[0, 0].set_yticks(np.arange(0, 101, 10))
+
+            title = """{}; {}""".format(self.dataset[0], self.model_name[1])
+            line_plot(ax=ax[1],
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[1])),
+                      base_dir=base_dir,
+                      file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
+                      x_column=x_column,
+                      y_column=y_column,
+                      title=title,
+                      hue=hue,
+                      style=style,
+                      hue_order=layer_selection_evaluate,
+                      type=1,
+                      log_scale=False,
+                      y_lim=True,
+                      y_max=100,
+                      y_min=0,
+                      n=1)
+
+            ax[1].get_legend().remove()
+            ax[1].set_xlabel('')
+            ax[1].set_ylabel('')
+            fig.suptitle("", fontsize=16)
+            fig.supxlabel(x_column, y=-0.02)
+            fig.supylabel(y_column, x=-0.005)
+
+            plt.subplots_adjust(wspace=0.07, hspace=0.14)
+            lines_labels = [ax[0].get_legend_handles_labels()]
+            lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
+            fig.legend(lines, labels, loc='upper center', ncol=4, title="""Alpha={}""".format(alpha),
+                       bbox_to_anchor=(0.5, 1.05))
+            # plt.xticks(np.arange(min(x), max(x) + 1, max(x) // 5))
+            figure = fig.get_figure()
+            Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
+            Path(base_dir + "svg/").mkdir(parents=True, exist_ok=True)
+            filename = """accuracy_varying_shared_layers_{}_lineplot_joint_{}_alpha_{}""".format(self.experiment, str(self.dataset), str(alpha))
             figure.savefig(base_dir + "png/" + filename + ".png", bbox_inches='tight', dpi=400)
             figure.savefig(base_dir + "svg/" + filename + ".svg", bbox_inches='tight', dpi=400)
 
@@ -425,15 +577,17 @@ class Varying_Shared_layers:
         print(df.to_string())
         df = df.groupby(['Round', 'Dataset', 'Alpha', 'Model']).apply(lambda e: summary(df=e, max_layer_dataset=max_layer_dataset)).reset_index()
 
-        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
-            str(self.dataset), self.num_clients, self.num_rounds, self.fraction_fit, str(self.model_name), str(self.alpha), self.comment)
+        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
+            self.experiment, str(self.dataset), self.num_clients, self.num_rounds, self.fraction_fit,
+            str(self.model_name),
+            str(self.alpha), self.comment)
         print("agrupou: ", df)
 
         if len(self.dataset) == 2:
             os.makedirs(base_dir + "png/", exist_ok=True)
             os.makedirs(base_dir + "svg/", exist_ok=True)
             os.makedirs(base_dir + "csv/", exist_ok=True)
-            print("ei")
+            print("dataset == 2")
             print(df.iloc[0])
             x_column = 'Round'
             y_column = 'df'
@@ -468,8 +622,9 @@ class Varying_Shared_layers:
             ax[0, 1].set_xlabel('')
             ax[0, 1].set_ylabel('')
 
+            title = """{}; {}""".format(self.dataset[0], self.model_name[1])
             line_plot(ax=ax[1, 0], base_dir=base_dir, file_name=filename, title=title,
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[0])),
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[1])),
                       x_column=x_column, y_column=y_column, y_lim=True, y_max=0.6,
                       y_min=0, hue=hue, hue_order=order, type=1)
             ax[1, 0].get_legend().remove()
@@ -477,10 +632,10 @@ class Varying_Shared_layers:
             ax[1, 0].set_ylabel('')
             # ax[0, 0].set_xticks([])
             # ax[0, 0].set_yticks(np.arange(0, 0.6, 0.1))
-            title = """{}; {}""".format(self.dataset[1], self.model_name[0])
+            title = """{}; {}""".format(self.dataset[1], self.model_name[1])
 
             line_plot(ax=ax[1, 1], base_dir=base_dir, file_name=filename, title=title,
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[1], self.model_name[0])),
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[1], self.model_name[1])),
                       x_column=x_column, y_column=y_column, y_lim=True, y_max=0.6,
                       y_min=0, hue=hue, hue_order=order, type=1)
             ax[1, 1].get_legend().remove()
@@ -505,6 +660,65 @@ class Varying_Shared_layers:
             figure.savefig(base_dir + "png/" + filename + ".png", bbox_inches='tight', dpi=400)
             figure.savefig(base_dir + "svg/" + filename + ".svg", bbox_inches='tight', dpi=400)
 
+        else:
+            os.makedirs(base_dir + "png/", exist_ok=True)
+            os.makedirs(base_dir + "svg/", exist_ok=True)
+            os.makedirs(base_dir + "csv/", exist_ok=True)
+            print("dataset == 1")
+            print(df.iloc[0])
+            x_column = 'Round'
+            y_column = 'df'
+            hue = 'Alpha'
+            order = sorted(self.alpha)
+            sci = True
+            filename = """df_similarity_{}""".format(str(self.dataset))
+
+            title = """{}; {}""".format(self.dataset[0], self.model_name[0])
+
+            fig, ax = plt.subplots(1, 2, sharex='all', sharey='all', figsize=(6, 6))
+            print("endereco: ", base_dir)
+            print("filename: ", filename)
+            x = df[x_column].tolist()
+            y = df[y_column].tolist()
+            print("filtrado:")
+            print(df.query(
+                """Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[0])).to_string())
+            line_plot(ax=ax[0], base_dir=base_dir, file_name=filename, title=title,
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[0])),
+                      x_column=x_column, y_column=y_column, y_lim=True, y_max=0.6,
+                      y_min=0, hue=hue, hue_order=order, type=1)
+            ax[0].get_legend().remove()
+            ax[0].set_xlabel('')
+            ax[0].set_ylabel('')
+            # ax[0, 0].set_xticks([])
+            # ax[0, 0].set_yticks(np.arange(0, 0.6, 0.1))
+            title = """{}; {}""".format(self.dataset[0], self.model_name[1])
+
+            line_plot(ax=ax[1], base_dir=base_dir, file_name=filename, title=title,
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[1])),
+                      x_column=x_column, y_column=y_column, y_lim=True, y_max=0.6,
+                      y_min=0, hue=hue, hue_order=order, type=1)
+            ax[1].get_legend().remove()
+            ax[1].set_xlabel('')
+            ax[1].set_ylabel('')
+
+            fig.suptitle("", fontsize=16)
+            fig.supxlabel(x_column, y=-0.02)
+            fig.supylabel(y_column, x=-0.005)
+            # ax[0, 1].set_yticks(np.arange(0, 0.6, 0.1))
+            # plt.tight_layout(pad=0.5)
+            # ax[0, 1].set_xticks(np.arange(min(x), max(x) + 1, max(x) // 10))
+            plt.subplots_adjust(wspace=0.07, hspace=0.14)
+            lines_labels = [ax[0].get_legend_handles_labels()]
+            lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
+            fig.legend(lines, labels, title=hue, loc='upper center', ncol=3, bbox_to_anchor=(0.5, 1.06))
+
+            figure = fig.get_figure()
+            Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
+            Path(base_dir + "svg/").mkdir(parents=True, exist_ok=True)
+            figure.savefig(base_dir + "png/" + filename + ".png", bbox_inches='tight', dpi=400)
+            figure.savefig(base_dir + "svg/" + filename + ".svg", bbox_inches='tight', dpi=400)
+
     def evaluate_client_analysis_differnt_models(self, df):
 
         def summary(df):
@@ -517,18 +731,20 @@ class Varying_Shared_layers:
 
         df = df.groupby(['Dataset', 'Model', 'Alpha', 'Strategy', 'Shared layers', 'Round']).apply(summary).reset_index()
 
-        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
-            str(self.dataset), self.num_clients, self.num_rounds, self.fraction_fit, str(self.model_name), str(self.alpha), self.comment)
+        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
+            self.experiment, str(self.dataset), self.num_clients, self.num_rounds, self.fraction_fit,
+            str(self.model_name),
+            str(self.alpha), self.comment)
         dataset = self.dataset[0]
         os.makedirs(base_dir + "png/", exist_ok=True)
         os.makedirs(base_dir + "svg/", exist_ok=True)
         os.makedirs(base_dir + "csv/", exist_ok=True)
-        print("ei")
+        print("sumario")
         print(df.iloc[0])
         x_column = 'Model'
         y_column = 'Accuracy reduction (%)'
         hue = 'Alpha'
-        order = ['CNN_6', 'CNN_8', 'CNN_10']
+        order = ['CNN_6', 'CNN_10']
         sci = True
         filename = """evaluate_client_acc_reduction_alpha_model_{}""".format(dataset)
         title = """Accuracy reduction; Dataset={}""".format(dataset)
@@ -563,7 +779,7 @@ class Varying_Shared_layers:
         x_column = 'Model'
         y_column = 'Parameters reduction (%)'
         hue = 'Alpha'
-        order = ['CNN_6', 'CNN_8', 'CNN_10']
+        order = ['CNN_6', 'CNN_10']
         sci = True
         filename = """evaluate_client_parameters_reduction_alpha_model_{}""".format(dataset)
         title = """Parameters reduction (%); Dataset={}""".format(dataset)
@@ -633,6 +849,10 @@ class Varying_Shared_layers:
                 shared_layers_list[i] = "FedPredict (with ALS)"
                 sort[shared_layer] = shared_layers_list[i]
                 continue
+            if "-2" in shared_layer:
+                shared_layers_list[i] = "FedPredict (with ALS + Compredict)"
+                sort[shared_layer] = shared_layers_list[i]
+                continue
             new_shared_layer = "{"
             for layer in shared_layer:
                 if len(new_shared_layer) == 1:
@@ -660,7 +880,7 @@ class Varying_Shared_layers:
         style = 'Alpha'
 
         title = """Accuracy in {}; Model={}""".format(dataset, model)
-        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(dataset, self.num_clients, self.num_rounds, self.fraction_fit, model, alpha, self.comment)
+        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(self.experiment, dataset, self.num_clients, self.num_rounds, self.fraction_fit, model, alpha, self.comment)
         os.makedirs(base_dir + "png/", exist_ok=True)
         os.makedirs(base_dir + "svg/", exist_ok=True)
         os.makedirs(base_dir + "csv/", exist_ok=True)
@@ -756,7 +976,8 @@ class Varying_Shared_layers:
 
         df = df[df['Shared layers'] != "100% of the layers"]
         df = df[df['Shared layers'] != "{1}"]
-        layer_selection_evaluate =  ['FedPredict (with ALS)']
+        # layer_selection_evaluate =  ['FedPredict (with ALS)']
+        layer_selection_evaluate = ['FedPredict (with ALS + Compredict)']
         print("menor: ", df['Accuracy reduction (%)'].min())
         print("Fed", df[df['Shared layers'] == 'FedPredict (with ALS)'][['Accuracy reduction (%)', 'Round']])
         print("tra: ", df['Shared layers'].unique().tolist())
@@ -831,11 +1052,11 @@ if __name__ == '__main__':
     strategy = "FedPredict"
     type_model = "torch"
     aggregation_method = "None"
-    fraction_fit = 0.7
+    fraction_fit = 0.3
     num_clients = 20
-    model_name = ["CNN_6", "CNN_10"]
+    model_name = ["CNN_1", "CNN_2"]
     dataset = ["EMNIST", "CIFAR10"]
-    alpha = [0.1, 5.0]
+    alpha = [0.1, 2.0, 5.0]
     num_rounds = 20
     epochs = 1
     # layer_selection_evaluate = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
