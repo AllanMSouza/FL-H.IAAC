@@ -104,7 +104,7 @@ class NonIid:
                 file_name = self.base_files_names[j]
                 if 'similarity' in file_name and strategy_name != 'FedPredict':
                     continue
-                if 'norm' in file_name and strategy_name != 'FedPredict':
+                if 'norm' in file_name and strategy_name != 'FedPredict' and self.layer_selection_evaluate != -2:
                     continue
                 df = pd.read_csv(models_directories[strategy_name]+file_name)
                 df['Strategy'] = np.array([strategy_name]*len(df))
@@ -122,12 +122,14 @@ class NonIid:
         if "FedPredict" in self.strategy_name_list:
             print("entrou")
             self.similarity_analysis("Alpha=" + str(self.alpha))
-            self.norm_analysis()
+            print("selecao de camadas: ", self.layer_selection_evaluate)
+            if -2 == self.layer_selection_evaluate:
+                self.norm_analysis()
 
 
     def norm_analysis(self):
 
-        df_server = self.df_files_names['server'].query("Strategy == 'FedPredict'")
+        df_server = self.df_files_names['norm'].query("Strategy == 'FedPredict'")
 
         if len(df_server) == 0:
             return
@@ -136,8 +138,9 @@ class NonIid:
 
 
         title = """Communication cost in {}; Model={}""".format(self.dataset_name, self.model_name)
-        x_column = 'Server round'
+        x_column = 'Round'
         y_column = 'Norm'
+        print("norma: ")
         print(df_server[[x_column, y_column]])
         hue = None
         line_plot(df=df_server,
@@ -172,7 +175,7 @@ class NonIid:
                   title=title,
                   hue=hue,
                   type=1,
-                  y_lim=True,
+                  y_lim=False,
                   y_max=1,
                   y_min=0)
 

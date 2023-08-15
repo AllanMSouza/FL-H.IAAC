@@ -550,32 +550,47 @@ class Varying_Shared_layers:
 
 
         df = self.df_concat_similarity
+        print("Df similaridade: \n", df)
         max_layer = df['Layer'].max() - 1
         max_layer_dataset = {dataset: df.query("""Model == '{}'""".format(dataset))['Layer'].max() - 1 for dataset in self.model_name}
         # df = df.query("""Layer == 0 or Layer == {}""".format(max_layer))
-        def summary(df, max_layer_dataset):
+        def summary(ag, d_f):
 
-            deno = df['Similarity'].tolist()[0]
+
+            deno = ag['Similarity'].tolist()[0]
+            dataset = ag['Dataset'].tolist()[0]
+            alpha = ag['Alpha'].tolist()[0]
+            model = ag['Model'].tolist()[0]
+            max_layer = int(ag.query("""Model == '{}'""".format(model))['Layer'].max()) - 1
+            round = ag['Round'].tolist()[0]
+            print("pergunta: ", """Round <= {} and Model == '{}' and Alpha == {} and Dataset == '{}' and Layer == {}""".format(round, model, alpha, dataset, 0))
+            similarities_0 = np.mean(d_f.query("""Round <= {} and Model == '{}' and Alpha == {} and Dataset == '{}' and Layer == {}""".format(round, model, alpha, dataset, 0))['Similarity'].to_numpy())
+            similarities_last = np.mean(d_f.query("""Round <= {} and Model == '{}' and Alpha == {} and Dataset == '{}' and Layer == {}""".format(round, model, alpha, dataset, max_layer))['Similarity'].to_numpy())
+            print("resultado: ", similarities_0, similarities_last, " maximo: ", max_layer)
             if deno == 0:
                 deno = 1
             # print("rodar:")
             # print(df)
-            max_layer = max_layer_dataset[df['Model'].tolist()[0]]
-            df = df.query("""Layer == 0 or Layer == {}""".format(max_layer))
-            layer_0 = df.query("Layer == 0")
-            layer__last = df.query("""Layer == {}""".format(max_layer))
-            if len(layer_0) < 1 or len(layer__last) < 1:
-                print("vazio:")
-                print(df, " maximo: ", max_layer)
-                return
-            else:
-                df = abs(layer_0['Similarity'].tolist()[0] - layer__last['Similarity'].tolist()[0])
+            print("olha: ", similarities_0, similarities_last)
 
-            return pd.DataFrame({'df': [df]})
+            # df = df.query("""Layer == 0 or Layer == {}""".format(max_layer))
+            # layer_0 = df.query("Layer == 0")
+            # layer__last = df.query("""Layer == {}""".format(max_layer))
+            # if len(layer_0) < 1 or len(layer__last) < 1:
+            #     print("vazio:")
+            #     print(df, " maximo: ", max_layer)
+            #     return
+            # else:
+            if similarities_0 is not None and similarities_last is not None:
+                dif = abs(similarities_0 - similarities_last)
+            else:
+                dif = 1
+
+            return pd.DataFrame({'df': [dif]})
 
         print("simi: ", max_layer)
         print(df.to_string())
-        df = df.groupby(['Round', 'Dataset', 'Alpha', 'Model']).apply(lambda e: summary(df=e, max_layer_dataset=max_layer_dataset)).reset_index()
+        df = df.groupby(['Round', 'Dataset', 'Alpha', 'Model']).apply(lambda e: summary(ag=e, d_f=df)).reset_index()
 
         base_dir = """analysis/output/torch/varying_shared_layers/{}/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
             self.experiment, str(self.dataset), self.num_clients, self.num_rounds, self.fraction_fit,
@@ -606,7 +621,7 @@ class Varying_Shared_layers:
             print("filtrado:")
             print(df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[0])).to_string())
             line_plot(ax=ax[0, 0], base_dir=base_dir, file_name=filename, title=title, df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[0])),
-                     x_column=x_column, y_column=y_column, y_lim=True, y_max=0.6,
+                     x_column=x_column, y_column=y_column, y_lim=True, y_max=1,
                      y_min=0, hue=hue, hue_order=order, type=1)
             ax[0, 0].get_legend().remove()
             ax[0, 0].set_xlabel('')
@@ -616,7 +631,7 @@ class Varying_Shared_layers:
             title = """{}; {}""".format(self.dataset[1], self.model_name[0])
 
             line_plot(ax=ax[0, 1], base_dir=base_dir, file_name=filename, title=title, df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[1], self.model_name[0])),
-                      x_column=x_column, y_column=y_column, y_lim=True, y_max=0.6,
+                      x_column=x_column, y_column=y_column, y_lim=True, y_max=1,
                       y_min=0, hue=hue, hue_order=order, type=1)
             ax[0, 1].get_legend().remove()
             ax[0, 1].set_xlabel('')
@@ -625,7 +640,7 @@ class Varying_Shared_layers:
             title = """{}; {}""".format(self.dataset[0], self.model_name[1])
             line_plot(ax=ax[1, 0], base_dir=base_dir, file_name=filename, title=title,
                       df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[1])),
-                      x_column=x_column, y_column=y_column, y_lim=True, y_max=0.6,
+                      x_column=x_column, y_column=y_column, y_lim=True, y_max=1,
                       y_min=0, hue=hue, hue_order=order, type=1)
             ax[1, 0].get_legend().remove()
             ax[1, 0].set_xlabel('')
@@ -636,7 +651,7 @@ class Varying_Shared_layers:
 
             line_plot(ax=ax[1, 1], base_dir=base_dir, file_name=filename, title=title,
                       df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[1], self.model_name[1])),
-                      x_column=x_column, y_column=y_column, y_lim=True, y_max=0.6,
+                      x_column=x_column, y_column=y_column, y_lim=True, y_max=1,
                       y_min=0, hue=hue, hue_order=order, type=1)
             ax[1, 1].get_legend().remove()
             ax[1, 1].set_xlabel('')
@@ -685,7 +700,7 @@ class Varying_Shared_layers:
                 """Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[0])).to_string())
             line_plot(ax=ax[0], base_dir=base_dir, file_name=filename, title=title,
                       df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[0])),
-                      x_column=x_column, y_column=y_column, y_lim=True, y_max=0.6,
+                      x_column=x_column, y_column=y_column, y_lim=True, y_max=1,
                       y_min=0, hue=hue, hue_order=order, type=1)
             ax[0].get_legend().remove()
             ax[0].set_xlabel('')
@@ -696,7 +711,7 @@ class Varying_Shared_layers:
 
             line_plot(ax=ax[1], base_dir=base_dir, file_name=filename, title=title,
                       df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[1])),
-                      x_column=x_column, y_column=y_column, y_lim=True, y_max=0.6,
+                      x_column=x_column, y_column=y_column, y_lim=True, y_max=1,
                       y_min=0, hue=hue, hue_order=order, type=1)
             ax[1].get_legend().remove()
             ax[1].set_xlabel('')
@@ -1056,13 +1071,13 @@ if __name__ == '__main__':
     num_clients = 20
     model_name = ["CNN_1", "CNN_2"]
     dataset = ["EMNIST", "CIFAR10"]
-    alpha = [0.1, 2.0, 5.0]
+    alpha = [0.1, 1.0, 2.0, 5.0]
     num_rounds = 20
     epochs = 1
     # layer_selection_evaluate = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
     #layer_selection_evaluate = [1, 12, 123, 1234]
     # layer_selection_evaluate = [4, 34, 234, 1234]
-    layer_selection_evaluate = [-1, 10]
+    layer_selection_evaluate = [-2, 10]
     comment = "set"
 
     Varying_Shared_layers(tp=type_model, strategy_name=strategy, fraction_fit=fraction_fit, aggregation_method=aggregation_method, new_clients=False, new_clients_train=False, num_clients=num_clients,

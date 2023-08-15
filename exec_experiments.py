@@ -57,7 +57,7 @@ EPOCHS = {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2], '6': [1], '7': [1], 
 CLASSES = {'MNIST': 10, 'CIFAR10': 10, 'Tiny-ImageNet': 200, 'EMNIST': 47}
 CLIENTS = {'MNIST': [8], 'CIFAR10': [20], 'EMNIST': [20], 'CIFAR100': [50], 'MotionSense': [24], 'UCIHAR': [30],
            'Tiny-ImageNet': [2]}
-ALPHA = [0.1, 2.0, 5.0]
+ALPHA = [0.1, 1.0, 2.0, 5.0]
 # ALPHA = [1]
 FRACTION_FIT = {'None': [0.3], 'POC': [0], 'FedLTA': [0]}
 SPECIFIC_PARAMETERS = {'FedAVG': {'use_gradient': 'True', 'bits': 8}, 'FedKD': {'use_gradient': 'True', 'bits': 8},
@@ -68,12 +68,12 @@ DECAY = {'None': 0, 'POC': 0, 'FedLTA': 0.1}
 NEW_CLIENTS = {'None': ['FALSE'], 'POC': ['FALSE', 'TRUE']}
 NEW_CLIENTS_TRAIN = {'FALSE': ['FALSE'], 'TRUE': ['FALSE', 'TRUE']}
 # DECAY         				= (0.001, 0.005, 0.009)
-ROUNDS = 20
+ROUNDS = 50
 # STRATEGIES 					= ('FedPredict', 'FedPer', 'FedClassAvg', 'FedAVG', 'FedClassAvg_with_FedPredict', 'FedPer_with_FedPredict', 'FedProto', 'FedYogi', 'FedLocal',)
 # STRATEGIES_FOR_ANALYSIS = ['FedKD', 'FedAVG', 'FedPAQ']
 # STRATEGIES_TO_EXECUTE = ['FedKD', 'FedAVG']
-STRATEGIES_FOR_ANALYSIS = {'26': ['FedPredict'], '30': ['FedPredict'], '31': ['FedPredict']}
-STRATEGIES_TO_EXECUTE = {'26': ['FedPredict'], '30': ['FedPredict'], '31': ['FedPredict']}
+STRATEGIES_FOR_ANALYSIS = {'26': ['FedPredict'], '30': ['FedAVG', 'FedPredict'], '31': ['FedPredict']}
+STRATEGIES_TO_EXECUTE = {'26': ['FedPredict'], '30': ['FedAVG', 'FedPredict'], '31': ['FedPredict']}
 
 EXPERIMENTS = {
     1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '',

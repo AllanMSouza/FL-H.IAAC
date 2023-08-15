@@ -104,6 +104,8 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		self.create_folder(strategy_name)
 		self.similarity_between_layers_per_round = {}
 		self.similarity_between_layers_per_round_and_client = {}
+		self.model_size = None
+		self.similarity_list_per_layer = None
 		self.initial_similarity = 0
 		self.current_similarity = 0
 		self.parameters_aggregated_gradient = {}
@@ -208,6 +210,15 @@ class FedPredictBaseServer(FedAvgBaseServer):
 	def aggregate_fit(self, server_round, results, failures):
 
 		parameters_aggregated, metrics_aggregated = super().aggregate_fit(server_round, results, failures)
+		if server_round == 1:
+			self.model_shape = [i.shape for i in parameters_to_ndarrays(parameters_aggregated)]
+			self.model_size = len(self.model_shape)
+			self.similarity_list_per_layer = {i: [] for i in range(self.model_size)}
+			self._layer_compression_range()
+			print("shape do modelo: ", self.model_shape)
+			print("tamanho do modelo: ", self.model_size)
+			print("similaridade inicial: ", self.similarity_list_per_layer)
+			print("range: ", self.layers_comppression_range)
 		weights_results = []
 		clients_parameters = []
 		clients_ids = []
@@ -221,15 +232,13 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		else:
 			global_parameter = self.previous_global_parameters[server_round]
 
-		self.similarity_between_layers_per_round_and_client[server_round], self.similarity_between_layers_per_round[server_round], self.mean_similarity_per_round[server_round] = fedpredict_layerwise_similarity(global_parameter, clients_parameters, clients_ids, server_round, self.dataset, str(self.alpha), self.use_gradient)
+		self.similarity_between_layers_per_round_and_client[server_round], self.similarity_between_layers_per_round[server_round], self.mean_similarity_per_round[server_round], self.similarity_list_per_layer = fedpredict_layerwise_similarity(global_parameter, clients_parameters, clients_ids, server_round, self.dataset, str(self.alpha), self.similarity_list_per_layer)
+		self.df = max(0, abs(np.mean(self.similarity_list_per_layer[0]) - np.mean(self.similarity_list_per_layer[self.model_size - 2])))
+		print("df médio: ", self.df, " rodada: ", server_round)
 
 		self.parameters_aggregated_checkpoint[server_round] = parameters_to_ndarrays(parameters_aggregated)
 
-		if server_round == 1:
-			self.model_shape = [i.shape for i in self.parameters_aggregated_checkpoint[1]]
-			self._layer_compression_range()
-			print("tamanho do modelo: ", self.model_shape)
-			print("range: ", self.layers_comppression_range)
+
 
 		# if server_round == 3:
 		# 	self.calculate_initial_similarity(server_round)
@@ -283,7 +292,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			print("Tamanho parametros compredict: ", sum(i.nbytes for i in parameters_to_ndarrays(parameters_to_send)))
 			self.fedpredict_clients_metrics[str(client.cid)]['acc_bytes_rate'] = size_of_parameters
 			config['M'] = M
-			config['sm'] = max(0, abs(self.similarity_between_layers_per_round[server_round][0]['mean'] - self.similarity_between_layers_per_round[server_round][len(parameters)-2]['mean']))
+			config['df'] = self.df
 			evaluate_ins = fl.common.EvaluateIns(parameters_to_send, config)
 			print("Evaluate enviar: ", client_id, [i.shape for i in parameters_to_ndarrays(parameters_to_send)])
 			client_evaluate_list_fedpredict.append((client, evaluate_ins))
@@ -378,7 +387,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 							M = [i for i in range(len(parameters)//2)]
 					else:
 						# self.similarity_between_layers_per_round[1][len(parameters)-2]['mean']
-						M = fedpredict_core_layer_selection(t=server_round, T=self.num_rounds, nt=nt, n_layers=n_layers, size_per_layer=size_of_layers, mean_similarity_per_layer=mean_similarity_per_layer, current_similarity=self.similarity_between_layers_per_round[server_round][0]['mean'], first_similarity=self.similarity_between_layers_per_round[server_round][len(parameters)-2]['mean'])
+						M = fedpredict_core_layer_selection(t=server_round, T=self.num_rounds, nt=nt, n_layers=n_layers, size_per_layer=size_of_layers, mean_similarity_per_layer=mean_similarity_per_layer, df=self.df)
 						# print("quantidade compartilhadas: ", M)
 				new_parameters = []
 				for i in range(len(parameters)):

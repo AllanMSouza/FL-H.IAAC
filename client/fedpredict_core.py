@@ -74,8 +74,8 @@ def fedpredict_core(t, T, nt, sm):
             evolution_level = t / 100
 
             # print("el servidor: ", el, " el local: ", evolutionary_level)
-            # eq1 = (-update_level - evolution_level) # v1 pior
-            eq1 = (-update_level - evolution_level - sm) # v3 melhor
+            eq1 = (-update_level - evolution_level) # v1 pior
+            # eq1 = (-update_level - evolution_level - sm) # v3 melhor
             eq2 = round(np.exp(eq1), 6)
             global_model_weight = eq2
 
@@ -90,7 +90,7 @@ def fedpredict_core(t, T, nt, sm):
         print("fedpredict core")
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_similarity_per_layer, current_similarity, first_similarity):
+def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_similarity_per_layer, df):
     try:
 
         # 9
@@ -103,8 +103,7 @@ def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_sim
             # # reference_similarity = mean_similarity_per_layer[int(n_layers * 2 - 2)]['mean']
             # penalty = abs(mean_similarity_per_layer[int(n_layers * 2 - 2)]['mean'] -
             #                         mean_similarity_per_layer[int(n_layers * 2 - 1)]['mean'])
-            sm = max(0, abs(current_similarity - first_similarity))
-            print("referencia: ", "first: ", first_similarity, " current: ", current_similarity, " diff: ", sm)
+            print("similaridade layer selection: ", df)
             # evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
             # normalizar dentro de 0 e 1
             # updated_level = 1/rounds_without_fit
@@ -124,11 +123,14 @@ def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_sim
             lamda = 0.2
             # eq1 = (update_level - evolution_level - (1-sm)* lamda) # v3
             # eq1 = (update_level - evolution_level - (1-sm) * lamda)  # v4 bom mas invertido
-            # eq1 = (-update_level - evolution_level - sm)  # v5 cai demais e invertido
+            # eq1 = (-update_level - evolution_level - df)  # v5 cai demais e invertido
             # eq1 = (-update_level - evolution_level + sm) # v6 cai demais
             # eq1 = (-update_level**(1/2) - evolution_level - sm) # v7 cai demais
-            eq1 = (-update_level - evolution_level - sm)/3  # v8 ótimo
-            # eq1 = (-update_level - evolution_level - sm) # v9
+            eq1 = (-update_level - evolution_level - df)/3  # v8 ótimo
+            # eq1 = (-update_level - evolution_level - df) # v9
+            # eq1 = (-update_level - evolution_level - df/3)  # v10 reduz bem mas acurácia ruim para alpha 2 e 5
+            # eq1 = (-update_level - evolution_level - df**2)  # v11 reduz bem mas acurácia ruim para alpha 2 e 5
+            # eq1 = (-update_level - evolution_level - df ** 3)  # v12 reduz bem mas acurácia ruim para alpha 2 e 5
             # eq1 = (update_level - evolution_level + (1 - sm) * 0.2)
             eq2 = round(np.exp(eq1), 6)
             # eq2 = (update_level + reference_similarity)/2
@@ -209,7 +211,7 @@ def fedpredict_similarity_per_round_rate(similarities, num_layers, current_round
         similarity_rate[layer] = (similarities_list[current_round] - similarities_list[initial_round])/round_window
 
 
-def fedpredict_layerwise_similarity(global_parameter, clients_parameters, clients_ids, server_round, dataset, alpha, gradient):
+def fedpredict_layerwise_similarity(global_parameter, clients_parameters, clients_ids, server_round, dataset, alpha, similarity_per_layer_list):
 
     num_layers = len(global_parameter)
     num_clients = len(clients_parameters)
@@ -307,6 +309,7 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
             max_difference += difference_per_layer[client_id][layer_index]['max']
 
         mean = np.mean(similarities)
+        similarity_per_layer_list[layer_index].append(mean)
         layers_mean_similarity.append(mean)
         mean_similarity_per_layer[layer_index]['mean'] = mean
         mean_similarity_per_layer[layer_index]['ci'] = st.norm.interval(alpha=0.95, loc=np.mean(similarities), scale=st.sem(similarities))[1] - np.mean(similarities)
@@ -328,7 +331,7 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
     # print("Diferença por camada: ", mean_difference_per_layer)
     # print("Decimals layer: ", decimals_layer)
 
-    return similarity_per_layer, mean_similarity_per_layer, np.mean(layers_mean_similarity)
+    return similarity_per_layer, mean_similarity_per_layer, np.mean(layers_mean_similarity), similarity_per_layer_list
 
 def decimals_per_layer(mean_difference_per_layer):
 
