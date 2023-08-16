@@ -132,7 +132,7 @@ class FedPredictClientTorch(FedAvgClientTorch):
 	def _decompress(self, compressed_global_model_gradients, M, decompress):
 
 		try:
-			if decompress:
+			if decompress and len(compressed_global_model_gradients) > 0:
 				decompressed_gradients = inverse_parameter_svd_reading(compressed_global_model_gradients, [i.shape for i in self.get_parameters({})], len(M))
 				parameters = [Parameter(torch.Tensor(i.tolist())) for i in decompressed_gradients]
 			else:

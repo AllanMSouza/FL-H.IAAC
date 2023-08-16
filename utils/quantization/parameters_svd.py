@@ -103,7 +103,7 @@ def inverse_parameter_svd_reading(arrays, model_shape, M=0):
         for i in range(M):
             layer_shape = model_shape[i]
             # print("i32: ", i*3+2)
-            print("valor i: ", i, i*3, len(model_shape), len(arrays))
+            print("valor i: ", i, i*3, len(model_shape), len(arrays), "valor de M: ", M)
             u = arrays[i*3]
             v = arrays[i*3 + 1]
 
