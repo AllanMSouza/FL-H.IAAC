@@ -55,7 +55,7 @@ EPOCHS = {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2], '6': [1], '7': [1], 
           '31': [1], '32': [1]}
 # CLIENTS       				= {'MNIST': 50, 'CIFAR10': 50, 'CIFAR100': 50, 'MotionSense': 50, 'UCIHAR': 50}
 CLASSES = {'MNIST': 10, 'CIFAR10': 10, 'Tiny-ImageNet': 200, 'EMNIST': 47}
-CLIENTS = {'MNIST': [8], 'CIFAR10': [20], 'EMNIST': [2], 'CIFAR100': [50], 'MotionSense': [24], 'UCIHAR': [30],
+CLIENTS = {'MNIST': [8], 'CIFAR10': [20], 'EMNIST': [20], 'CIFAR100': [50], 'MotionSense': [24], 'UCIHAR': [30],
            'Tiny-ImageNet': [2]}
 ALPHA = [0.1, 1.0, 2.0, 5.0]
 # ALPHA = [1]
