@@ -166,19 +166,19 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				model =  Logistic(input_shape=input_shape, num_classes=self.num_classes)
 			elif self.model_name == 'DNN':
 				model =  DNN(input_shape=input_shape, num_classes=self.num_classes)
-			elif self.model_name == 'CNN_2' and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10']:
-				if self.dataset == 'CIFAR10':
-					mid_dim = 64
-				else:
-					mid_dim = 36
-				return  CNN_2(input_shape=input_shape, mid_dim=mid_dim, num_classes=self.num_classes)
+			# elif self.model_name == 'CNN_2' and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10']:
+			# 	if self.dataset == 'CIFAR10':
+			# 		mid_dim = 64
+			# 	else:
+			# 		mid_dim = 36
+			# 	return  CNN_2(input_shape=input_shape, mid_dim=mid_dim, num_classes=self.num_classes)
 			elif self.model_name == 'CNN'  and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10']:
 				if self.dataset in ['EMNIST', 'MNIST']:
 					mid_dim = 256
 				else:
 					mid_dim = 400
 				model =  CNN(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim)
-			elif self.dataset in ['EMNIST', 'CIFAR10'] and self.model_name in ['CNN_1', 'CNN_2', 'CNN_6', 'CNN_8', 'CNN_10', 'CNN_12']:
+			elif self.dataset in ['EMNIST', 'CIFAR10'] and self.model_name in ['CNN_1', 'CNN_2', 'CNN_3', 'CNN_6', 'CNN_8', 'CNN_10', 'CNN_12']:
 				model =  CNN_EMNIST(dataset=self.dataset, model_code=self.model_name, in_channels=input_shape, out_dim=self.num_classes, act='relu', use_bn=True, dropout=0.3)
 			elif self.model_name == 'Resnet20'  and self.dataset in ['MNIST', 'CIFAR10']:
 				if self.dataset in ['MNIST']:

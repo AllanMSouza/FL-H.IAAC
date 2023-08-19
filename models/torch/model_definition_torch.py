@@ -175,6 +175,7 @@ model_codes = {
     'CNN_12': [64, 'M', 128, 'M', 'D', 256, 'M', 512, 512, 'M', 'D'],
     'CNN_1': [32, 'M', 64, 'M'],
     'CNN_2': [16, 'M', 32, 'M', 64, 'M'],
+    'CNN_3': [16, 'M', 32, 'M', 64, 64, 'M'],
     'model_3': [64, 64, 'M', 128, 128, 'M', 'D', 256, 256, 256, 'M', 512, 512, 512, 'M', 'D'],
     'model_4': [64, 64, 64, 64, 'M', 128, 128, 128, 128, 'M', 'D', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M', 'D']
 }
@@ -183,6 +184,7 @@ classifier_in_out = {
     'EMNIST':{
             'CNN_1': [1024, 512],
             'CNN_2': [64, 32],
+            'CNN_3': [576, 32],
             'CNN_6': [2304, 1152],
             'CNN_8': [2304, 128],
             'CNN_10': [256, 128],
@@ -191,6 +193,7 @@ classifier_in_out = {
     'CIFAR10':{
             'CNN_1': [1600, 512],
             'CNN_2': [64*4*4, 512],
+            'CNN_3': [64*4*4, 512],
             'CNN_6': [4096, 1048],
             'CNN_8': [2304, 128],
             'CNN_10': [1024, 512],
@@ -215,7 +218,7 @@ class CNN_EMNIST(nn.Module):
 
             self.layers = self.make_layers(model_code, in_channels, use_bn, dropout)
 
-            if self.model_code == 'CNN_1':
+            if self.model_code in ['CNN_1', 'CNN_3']:
                 self.classifier = nn.Sequential(nn.Linear(self.classifier_in_out[0], self.classifier_in_out[1]),
                                                 self.act,
                                                 nn.Linear(self.classifier_in_out[1], out_dim)
@@ -268,6 +271,9 @@ class CNN_EMNIST(nn.Module):
                     count += 1
                 else:
                     if self.model_code == 'CNN_2':
+                        kernel_size = 3
+                        padding = 1
+                    elif self.model_code == 'CNN_3':
                         kernel_size = 3
                         padding = 1
                     else:
