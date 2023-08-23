@@ -54,15 +54,20 @@ class Varying_Shared_layers:
         alphas = df_concat['Alpha'].unique().tolist()
         for alpha in alphas:
             self.evaluate_client_joint_accuracy(self.build_filename_fedavg(df_concat), alpha)
-        # for alpha in alphas:
-        #     self.evaluate_client_joint_accuracy(df_concat, alpha)
+            pass
+        for alpha in alphas:
+            self.evaluate_client_joint_accuracy(df_concat, alpha)
         self.similarity()
+        for alpha in alphas:
+            self.evaluate_client_norm_analysis_nt(alpha)
+        self.evaluate_client_norm_analysis()
 
     def build_filenames(self):
 
-        files = ["evaluate_client.csv", "similarity_between_layers.csv"]
+        files = ["evaluate_client.csv", "similarity_between_layers.csv", "norm.csv"]
         df_concat = None
         df_concat_similarity = None
+        df_concat_norm = None
         for layers in self.layer_selection_evaluate:
             for a in self.alpha:
                 for model in self.model_name:
@@ -93,12 +98,26 @@ class Varying_Shared_layers:
                                     df_concat_similarity = df
                                 else:
                                     df_concat_similarity = pd.concat([df_concat_similarity, df], ignore_index=True)
+                            elif "norm" in file:
+                                if layers not in [-1, -2]:
+                                    continue
+                                df['Alpha'] = np.array([a] * len(df))
+                                df['Server round'] = np.array(df['Round'].tolist())
+                                df['Dataset'] = np.array([dataset] * len(df))
+                                df['Model'] = np.array([model] * len(df))
+                                df['Shared layers'] = np.array([layers] * len(df))
+                                df['Strategy'] = np.array([self.strategy_name] * len(df))
+                                if df_concat_norm is None:
+                                    df_concat_norm = df
+                                else:
+                                    df_concat_norm = pd.concat([df_concat_norm, df], ignore_index=True)
 
 
         print("contruído: ", df_concat.columns)
 
         self.df_concat = df_concat
         self.df_concat_similarity = df_concat_similarity
+        self.df_concat_norm = df_concat_norm
         # print("Leu similaridade", df_concat_similarity[['Round', 'Alpha', 'Similarity', 'Dataset', 'Model', 'Layer']].drop_duplicates().to_string())
         # exit()
 
@@ -111,8 +130,9 @@ class Varying_Shared_layers:
                 for model in self.model_name:
                     for dataset in self.dataset:
                         for file in files:
-                            filename = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/" + f"logs/{self.type}/FedAVG-{self.aggregation_method}-{self.fraction_fit}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{model}/{dataset}/classes_per_client_{self.class_per_client}/alpha_{a}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(layers)}_layer_selection_evaluate/{file}"
+                            filename = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/" + f"logs/{self.type}/FedAVG-{self.aggregation_method}-{self.fraction_fit}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{model}/{dataset}/classes_per_client_{self.class_per_client}/alpha_{a}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(-1)}_layer_selection_evaluate/{file}"
                             if not os.path.exists(filename):
+                                print("não achou fedavg")
                                 return df_concat
                             df = pd.read_csv(filename)
                             if "evaluate" in file:
@@ -142,6 +162,261 @@ class Varying_Shared_layers:
         print("Concatenado: ", df_concat.to_string())
 
         return df_concat
+
+    def evaluate_client_norm_analysis_nt(self, alpha):
+
+        df = self.df_concat_norm.query("""Alpha == {}""".format(alpha))
+        unique_nt_filter = [1, 4, 8, 12]
+        print("filtro: ", unique_nt_filter)
+        nt = df['nt'].tolist()
+        for i in range(len(nt)):
+            if nt[i] not in unique_nt_filter:
+                nt[i] = -1
+        df['nt'] = np.array(nt)
+        df = df[df['nt'] != -1]
+        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
+            self.experiment, str(self.dataset), self.num_clients, self.num_rounds, self.fraction_fit,
+            str(self.model_name),
+            str(self.alpha), self.comment)
+
+        if len(self.dataset) == 2 and len(self.model_name) == 2 and -2 in self.layer_selection_evaluate:
+            fig, ax = plt.subplots(2, 2, sharex='all', sharey='all', figsize=(6, 6))
+            y_max = 2
+            x_column = 'Round'
+            y_column = 'Norm'
+            hue = 'nt'
+
+            model_name_index = 0
+            dataset_name_index = 0
+            title = """{}; {}""".format(self.model_name[model_name_index], self.dataset[dataset_name_index])
+            line_plot(
+                        ax=ax[model_name_index, dataset_name_index],
+                        df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[dataset_name_index], self.model_name[model_name_index])),
+                      base_dir=base_dir,
+                      file_name="",
+                      x_column=x_column,
+                      y_column=y_column,
+                      title=title,
+                      hue=hue,
+                      type=1,
+                      y_lim=True,
+                      y_max=y_max,
+                      y_min=0)
+            ax[model_name_index, dataset_name_index].get_legend().remove()
+            ax[model_name_index, dataset_name_index].set_xlabel('')
+            ax[model_name_index, dataset_name_index].set_ylabel('')
+
+            model_name_index = 0
+            dataset_name_index = 1
+            title = """{}; {}""".format(self.model_name[model_name_index], self.dataset[dataset_name_index])
+            line_plot(
+                ax=ax[model_name_index, dataset_name_index],
+                df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[dataset_name_index], self.model_name[model_name_index])),
+                base_dir=base_dir,
+                file_name="",
+                x_column=x_column,
+                y_column=y_column,
+                title=title,
+                hue=hue,
+                type=1,
+                y_lim=True,
+                y_max=y_max,
+                y_min=0)
+            ax[model_name_index, dataset_name_index].get_legend().remove()
+            ax[model_name_index, dataset_name_index].set_xlabel('')
+            ax[model_name_index, dataset_name_index].set_ylabel('')
+
+            model_name_index = 1
+            dataset_name_index = 0
+            title = """{}; {}""".format(self.model_name[model_name_index], self.dataset[dataset_name_index])
+            line_plot(
+                ax=ax[model_name_index, dataset_name_index],
+                df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[dataset_name_index], self.model_name[model_name_index])),
+                base_dir=base_dir,
+                file_name="",
+                x_column=x_column,
+                y_column=y_column,
+                title=title,
+                hue=hue,
+                type=1,
+                y_lim=True,
+                y_max=y_max,
+                y_min=0)
+            ax[model_name_index, dataset_name_index].get_legend().remove()
+            ax[model_name_index, dataset_name_index].set_xlabel('')
+            ax[model_name_index, dataset_name_index].set_ylabel('')
+
+            model_name_index = 1
+            dataset_name_index = 1
+            title = """{}; {}""".format(self.model_name[model_name_index], self.dataset[dataset_name_index])
+            line_plot(
+                ax=ax[model_name_index, dataset_name_index],
+                df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[dataset_name_index], self.model_name[model_name_index])),
+                base_dir=base_dir,
+                file_name="",
+                x_column=x_column,
+                y_column=y_column,
+                title=title,
+                hue=hue,
+                type=1,
+                y_lim=True,
+                y_max=y_max,
+                y_min=0)
+            ax[model_name_index, dataset_name_index].get_legend().remove()
+            ax[model_name_index, dataset_name_index].set_xlabel('')
+            ax[model_name_index, dataset_name_index].set_ylabel('')
+
+            fig.suptitle("", fontsize=16)
+            fig.supxlabel(x_column, y=-0.02)
+            fig.supylabel(y_column, x=-0.005)
+            # plt.tight_layout(pad=0.5)
+
+            plt.subplots_adjust(wspace=0.07, hspace=0.14)
+            lines_labels = [ax[0, 0].get_legend_handles_labels()]
+            lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
+            fig.legend(lines, labels, title="""nt""".format(alpha), loc='upper center', ncol=4, bbox_to_anchor=(0.5, 1.04))
+            figure = fig.get_figure()
+            Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
+            Path(base_dir + "svg/").mkdir(parents=True, exist_ok=True)
+            filename = """norm_nt_round_{}_{}_alpha_{}""".format(
+                self.experiment, str(self.dataset), alpha)
+            figure.savefig(base_dir + "png/" + filename + ".png", bbox_inches='tight', dpi=400)
+            figure.savefig(base_dir + "svg/" + filename + ".svg", bbox_inches='tight', dpi=400)
+
+    def evaluate_client_norm_analysis(self):
+
+        df = self.df_concat_norm
+        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
+            self.experiment, str(self.dataset), self.num_clients, self.num_rounds, self.fraction_fit,
+            str(self.model_name),
+            str(self.alpha), self.comment)
+
+        if len(self.dataset) == 2 and len(self.model_name) == 2 and -2 in self.layer_selection_evaluate:
+            fig, ax = plt.subplots(2, 2, sharex='all', sharey='all', figsize=(6, 6))
+            y_max = 1
+            x_column = 'Round'
+            y_column = 'Norm'
+            hue = 'Alpha'
+            hue_order = df[hue].unique().tolist().sort(reverse=False)
+
+            model_name_index = 0
+            dataset_name_index = 0
+            title = """{}; {}""".format(self.model_name[model_name_index], self.dataset[dataset_name_index])
+            print("agrupou")
+            print("colunas: ", df.columns)
+            print(df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[dataset_name_index],
+                                                                           self.model_name[model_name_index])).groupby(["Round", "Alpha"]).mean().reset_index()[[x_column, y_column, hue]])
+            line_plot(
+                ax=ax[model_name_index, dataset_name_index],
+                df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[dataset_name_index],
+                                                                           self.model_name[model_name_index])).groupby(["Round", "Alpha"]).mean().reset_index()[[x_column, y_column, hue]],
+                base_dir=base_dir,
+                file_name="teste",
+                x_column=x_column,
+                y_column=y_column,
+                hue=hue,
+                hue_order=hue_order,
+                style=hue_order,
+                title=title,
+                type=1,
+                y_lim=True,
+                y_max=y_max,
+                y_min=0)
+            # exit()
+            ax[model_name_index, dataset_name_index].get_legend().remove()
+            ax[model_name_index, dataset_name_index].set_xlabel('')
+            ax[model_name_index, dataset_name_index].set_ylabel('')
+
+            model_name_index = 0
+            dataset_name_index = 1
+            title = """{}; {}""".format(self.model_name[model_name_index], self.dataset[dataset_name_index])
+            line_plot(
+                ax=ax[model_name_index, dataset_name_index],
+                df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[dataset_name_index],
+                                                                           self.model_name[model_name_index])).groupby(
+                    ["Round", "Alpha"]).mean().reset_index()[[x_column, y_column, hue]],
+                base_dir=base_dir,
+                file_name="teste",
+                x_column=x_column,
+                y_column=y_column,
+                hue=hue,
+                hue_order=hue_order,
+                style=hue_order,
+                title=title,
+                type=1,
+                y_lim=True,
+                y_max=y_max,
+                y_min=0)
+            ax[model_name_index, dataset_name_index].get_legend().remove()
+            ax[model_name_index, dataset_name_index].set_xlabel('')
+            ax[model_name_index, dataset_name_index].set_ylabel('')
+
+            model_name_index = 1
+            dataset_name_index = 0
+            title = """{}; {}""".format(self.model_name[model_name_index], self.dataset[dataset_name_index])
+            line_plot(
+                ax=ax[model_name_index, dataset_name_index],
+                df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[dataset_name_index],
+                                                                           self.model_name[model_name_index])).groupby(
+                    ["Round", "Alpha"]).mean().reset_index()[[x_column, y_column, hue]],
+                base_dir=base_dir,
+                file_name="teste",
+                x_column=x_column,
+                y_column=y_column,
+                hue=hue,
+                hue_order=hue_order,
+                style=hue_order,
+                title=title,
+                type=1,
+                y_lim=True,
+                y_max=y_max,
+                y_min=0)
+            ax[model_name_index, dataset_name_index].get_legend().remove()
+            ax[model_name_index, dataset_name_index].set_xlabel('')
+            ax[model_name_index, dataset_name_index].set_ylabel('')
+
+            model_name_index = 1
+            dataset_name_index = 1
+            title = """{}; {}""".format(self.model_name[model_name_index], self.dataset[dataset_name_index])
+            line_plot(
+                ax=ax[model_name_index, dataset_name_index],
+                df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[dataset_name_index],
+                                                                           self.model_name[model_name_index])).groupby(
+                    ["Round", "Alpha"]).mean().reset_index()[[x_column, y_column, hue]],
+                base_dir=base_dir,
+                file_name="teste",
+                x_column=x_column,
+                y_column=y_column,
+                hue=hue,
+                hue_order=hue_order,
+                style=hue_order,
+                title=title,
+                type=1,
+                y_lim=True,
+                y_max=y_max,
+                y_min=0)
+            ax[model_name_index, dataset_name_index].get_legend().remove()
+            ax[model_name_index, dataset_name_index].set_xlabel('')
+            ax[model_name_index, dataset_name_index].set_ylabel('')
+
+            fig.suptitle("", fontsize=16)
+            fig.supxlabel(x_column, y=-0.02)
+            fig.supylabel(y_column, x=-0.005)
+            # plt.tight_layout(pad=0.5)
+
+            plt.subplots_adjust(wspace=0.07, hspace=0.14)
+            lines_labels = [ax[0, 0].get_legend_handles_labels()]
+            lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
+            fig.legend(lines, labels, title="""Alpha""".format(), loc='upper center', ncol=4,
+                       bbox_to_anchor=(0.5, 1.06))
+            figure = fig.get_figure()
+            Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
+            Path(base_dir + "svg/").mkdir(parents=True, exist_ok=True)
+            filename = """norm_round_{}_{}_alpha_{}""".format(
+                self.experiment, str(self.dataset), alpha)
+            figure.savefig(base_dir + "png/" + filename + ".png", bbox_inches='tight', dpi=400)
+            figure.savefig(base_dir + "svg/" + filename + ".svg", bbox_inches='tight', dpi=400)
+
 
     def evaluate_client_joint_parameter_reduction(self, df):
 
@@ -350,7 +625,7 @@ class Varying_Shared_layers:
         if -1 in self.layer_selection_evaluate:
             layer_selection_evaluate = ['FedPredict (with ALS)', '100% of the layers', 'FedAvg']
         else:
-            layer_selection_evaluate = ['FedPredict (with ALS + Compredict)', '100% of the layers']
+            layer_selection_evaluate = ['FedPredict (with ALS + Compredict)', '100% of the layers', 'FedAvg']
 
         if len(self.dataset) >= 2:
             fig, ax = plt.subplots(2, 2, sharex='all', sharey='all', figsize=(6, 6))
@@ -666,7 +941,7 @@ class Varying_Shared_layers:
             plt.subplots_adjust(wspace=0.07, hspace=0.14)
             lines_labels = [ax[0, 0].get_legend_handles_labels()]
             lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-            fig.legend(lines, labels, title=hue, loc='upper center', ncol=3, bbox_to_anchor=(0.5, 1.06))
+            fig.legend(lines, labels, title=hue, loc='upper center', ncol=4, bbox_to_anchor=(0.5, 1.03))
 
 
             figure = fig.get_figure()
@@ -1069,15 +1344,15 @@ if __name__ == '__main__':
     aggregation_method = "None"
     fraction_fit = 0.3
     num_clients = 20
-    model_name = ["CNN_1", "CNN_2"]
+    model_name = ["CNN_2", "CNN_3"]
     dataset = ["EMNIST", "CIFAR10"]
     alpha = [0.1, 1.0, 2.0, 5.0]
-    num_rounds = 20
+    num_rounds = 50
     epochs = 1
     # layer_selection_evaluate = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
     #layer_selection_evaluate = [1, 12, 123, 1234]
     # layer_selection_evaluate = [4, 34, 234, 1234]
-    layer_selection_evaluate = [-1, 10]
+    layer_selection_evaluate = [-2, 10]
     comment = "set"
 
     Varying_Shared_layers(tp=type_model, strategy_name=strategy, fraction_fit=fraction_fit, aggregation_method=aggregation_method, new_clients=False, new_clients_train=False, num_clients=num_clients,

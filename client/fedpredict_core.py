@@ -218,7 +218,7 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
     print("global: ", num_layers)
     similarity_per_layer = {i: {} for i in clients_ids}
     # interest_layers = [0, 1, int(num_layers/2)-2, int(num_layers/2)-1, num_layers-2, num_layers-1]
-    interest_layers = [0, 1, num_layers - 2, num_layers - 1]
+    interest_layers = [0, num_layers - 2]
     difference_per_layer = {i: {j: {'min': [], 'max': []} for j in range(num_layers)} for i in clients_ids}
     difference_per_layer_vector = {j: [] for j in range(num_layers)}
     mean_similarity_per_layer = {i: {'mean': 0, 'ci': 0} for i in range(num_layers)}

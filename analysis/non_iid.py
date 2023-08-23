@@ -137,7 +137,7 @@ class NonIid:
         print("achei", df_server.columns)
 
 
-        title = """Communication cost in {}; Model={}""".format(self.dataset_name, self.model_name)
+        title = """{}; {}""".format(self.dataset_name, self.model_name)
         x_column = 'Round'
         y_column = 'Norm'
         print("norma: ")

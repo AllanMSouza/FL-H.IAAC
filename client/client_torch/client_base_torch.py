@@ -429,7 +429,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			size_of_config = self._get_size_of_dict(config)
 			loss, accuracy, test_num, predictions, labels = self.model_eval()
 			data = [config['round'], self.cid, size_of_parameters, size_of_config, loss, accuracy]
-
+			print("arquivo escrita cliente: ", self.evaluate_client_filename)
 			self._write_output(filename=self.evaluate_client_filename,
 							   data=data)
 
