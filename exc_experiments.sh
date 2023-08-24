@@ -90,8 +90,8 @@ python3 exec_experiments.py --experiment_id=26 --type="torch" > execution_log/ex
 echo "Executing experiment 30..."
 python3 exec_experiments.py --experiment_id=30 --type="torch" > execution_log/experiment_30.txt 2>&1
 
-#echo "Executing experiment 31..."
-#python3 exec_experiments.py --experiment_id=31 --type="torch" > execution_log/experiment_31.txt 2>&1
+echo "Executing experiment 31..."
+python3 exec_experiments.py --experiment_id=31 --type="torch" > execution_log/experiment_31.txt 2>&1
 
 
 #shutdown -P +1

@@ -155,8 +155,10 @@ class ManageDatasets():
             urllib.request.install_opener(opener)
 
             # Get EMNIST data
+            #
             transform = transforms.Compose([transforms.ToTensor(), transforms.RandomRotation(10),
-                                             transforms.Normalize([0.5], [0.5])])
+                                            transforms.Normalize([0.5], [0.5])])
+            transform = transforms.Compose([transforms.ToTensor()])
 
             training_dataset = datasets.EMNIST(
                 root=dir_path, train=True, download=False, transform=transform, split='balanced')

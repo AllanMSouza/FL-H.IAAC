@@ -6,7 +6,7 @@ import time
 import sys
 
 from dataset_utils_torch import ManageDatasets
-from models.torch import DNN, Logistic, CNN, MobileNet, resnet20, CNN_EMNIST, MobileNetV2, CNN_X, CNN_5, CNN_2
+from models.torch import DNN, Logistic, CNN, MobileNet, resnet20, CNN_EMNIST, MobileNetV2, CNN_X, CNN_5, CNN_2, CNN_3
 import csv
 import torch.nn as nn
 import warnings
@@ -172,6 +172,12 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			# 	else:
 			# 		mid_dim = 36
 			# 	return  CNN_2(input_shape=input_shape, mid_dim=mid_dim, num_classes=self.num_classes)
+			elif self.model_name == 'CNN_3' and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10']:
+				if self.dataset == 'CIFAR10':
+					mid_dim = 32
+				else:
+					mid_dim = 32
+				return  CNN_3(input_shape=input_shape, mid_dim=mid_dim, num_classes=self.num_classes)
 			elif self.model_name == 'CNN'  and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10']:
 				if self.dataset in ['EMNIST', 'MNIST']:
 					mid_dim = 256
@@ -321,6 +327,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 							x[0] = x[0].to(self.device)
 						else:
 							x = x.to(self.device)
+						# if self.dataset == 'EMNIST':
+						# 	x = x.view(-1, 28 * 28)
 						y = y.to(self.device)
 						train_num += y.shape[0]
 
@@ -390,6 +398,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 						x[0] = x[0].to(self.device)
 					else:
 						x = x.to(self.device)
+					# if self.dataset == 'EMNIST':
+					# 	x = x.view(-1, 28 * 28)
 					self.optimizer.zero_grad()
 					y = y.to(self.device)
 					y = torch.tensor(y)
