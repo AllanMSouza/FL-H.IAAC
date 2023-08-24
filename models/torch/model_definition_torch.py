@@ -171,11 +171,11 @@ class CNN_3(torch.nn.Module):
             torch.nn.MaxPool2d(kernel_size=2),
 
             # Input = 64 x 8 x 8, Output = 64 x 8 x 8
-            torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=2, padding=1),
+            torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1),
             torch.nn.ReLU(),
             # Input = 64 x 8 x 8, Output = 64 x 4 x 4
             torch.nn.MaxPool2d(kernel_size=2),
-            torch.nn.Conv2d(in_channels=64, out_channels=128, kernel_size=2, padding=1),
+            torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1),
             torch.nn.ReLU(),
             # Input = 64 x 8 x 8, Output = 64 x 4 x 4
             torch.nn.MaxPool2d(kernel_size=2),

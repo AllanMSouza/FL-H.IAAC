@@ -166,17 +166,17 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				model =  Logistic(input_shape=input_shape, num_classes=self.num_classes)
 			elif self.model_name == 'DNN':
 				model =  DNN(input_shape=input_shape, num_classes=self.num_classes)
-			# elif self.model_name == 'CNN_2' and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10']:
-			# 	if self.dataset == 'CIFAR10':
-			# 		mid_dim = 64
-			# 	else:
-			# 		mid_dim = 36
-			# 	return  CNN_2(input_shape=input_shape, mid_dim=mid_dim, num_classes=self.num_classes)
+			elif self.model_name == 'CNN_2' and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10']:
+				if self.dataset == 'CIFAR10':
+					mid_dim = 64
+				else:
+					mid_dim = 36
+				return  CNN_2(input_shape=input_shape, mid_dim=mid_dim, num_classes=self.num_classes)
 			elif self.model_name == 'CNN_3' and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10']:
 				if self.dataset == 'CIFAR10':
-					mid_dim = 32
+					mid_dim = 16
 				else:
-					mid_dim = 32
+					mid_dim = 4
 				return  CNN_3(input_shape=input_shape, mid_dim=mid_dim, num_classes=self.num_classes)
 			elif self.model_name == 'CNN'  and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10']:
 				if self.dataset in ['EMNIST', 'MNIST']:
