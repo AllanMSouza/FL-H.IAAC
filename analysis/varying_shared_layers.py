@@ -55,8 +55,8 @@ class Varying_Shared_layers:
         for alpha in alphas:
             self.evaluate_client_joint_accuracy(self.build_filename_fedavg(df_concat), alpha)
             pass
-        for alpha in alphas:
-            self.evaluate_client_joint_accuracy(df_concat, alpha)
+        # for alpha in alphas:
+        #     self.evaluate_client_joint_accuracy(df_concat, alpha)
         self.similarity()
         for alpha in alphas:
             self.evaluate_client_norm_analysis_nt(alpha)
@@ -151,8 +151,7 @@ class Varying_Shared_layers:
                                     return pd.DataFrame({'Accuracy (%)': [acc]})
 
                                 df = df.groupby(
-                                    ['Dataset', 'Model', 'Alpha', 'Strategy', 'Shared layers', 'Round']).apply(
-                                    summary).reset_index()
+                                    ['Dataset', 'Model', 'Alpha', 'Strategy', 'Shared layers', 'Round']).mean().reset_index()
 
                                 if df_concat is None:
                                     df_concat = df
@@ -461,30 +460,8 @@ class Varying_Shared_layers:
             ax[0, 0].set_xlabel('')
             ax[0, 0].set_ylabel('')
             title = """{}; {}""".format(self.dataset[1], self.model_name[0])
-            line_plot(ax=ax[1, 0],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[1], self.model_name[0])),
-                      base_dir=base_dir,
-                      file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
-                      x_column=x_column,
-                      y_column=y_column,
-                      title=title,
-                      hue=hue,
-                      style=style,
-                      # hue_order=layer_selection_evaluate,
-                      type=1,
-                      log_scale=False,
-                      y_lim=True,
-                      y_max=100,
-                      y_min=20,
-                      n=1)
-
-            ax[1, 0].get_legend().remove()
-            ax[1, 0].set_xlabel('')
-            ax[1, 0].set_ylabel('')
-
-            title = """{}; {}""".format(self.dataset[0], self.model_name[1])
             line_plot(ax=ax[0, 1],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[1])),
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[1], self.model_name[0])),
                       base_dir=base_dir,
                       file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
                       x_column=x_column,
@@ -503,6 +480,28 @@ class Varying_Shared_layers:
             ax[0, 1].get_legend().remove()
             ax[0, 1].set_xlabel('')
             ax[0, 1].set_ylabel('')
+
+            title = """{}; {}""".format(self.dataset[0], self.model_name[1])
+            line_plot(ax=ax[1, 0],
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[1])),
+                      base_dir=base_dir,
+                      file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
+                      x_column=x_column,
+                      y_column=y_column,
+                      title=title,
+                      hue=hue,
+                      style=style,
+                      # hue_order=layer_selection_evaluate,
+                      type=1,
+                      log_scale=False,
+                      y_lim=True,
+                      y_max=100,
+                      y_min=20,
+                      n=1)
+
+            ax[1, 0].get_legend().remove()
+            ax[1, 0].set_xlabel('')
+            ax[1, 0].set_ylabel('')
 
             title = """{}; {}""".format(self.dataset[1], self.model_name[1])
             line_plot(ax=ax[1, 1],
@@ -1352,7 +1351,7 @@ if __name__ == '__main__':
     # layer_selection_evaluate = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
     #layer_selection_evaluate = [1, 12, 123, 1234]
     # layer_selection_evaluate = [4, 34, 234, 1234]
-    layer_selection_evaluate = [-2, 10]
+    layer_selection_evaluate = [-1, 10]
     comment = "set"
 
     Varying_Shared_layers(tp=type_model, strategy_name=strategy, fraction_fit=fraction_fit, aggregation_method=aggregation_method, new_clients=False, new_clients_train=False, num_clients=num_clients,
