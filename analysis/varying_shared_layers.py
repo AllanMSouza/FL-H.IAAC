@@ -1345,7 +1345,7 @@ if __name__ == '__main__':
     num_clients = 20
     model_name = ["CNN_2", "CNN_3"]
     dataset = ["EMNIST", "CIFAR10"]
-    alpha = [0.1, 1.0, 2.0, 5.0]
+    alpha = [0.1, 5.0]
     num_rounds = 50
     epochs = 1
     # layer_selection_evaluate = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]

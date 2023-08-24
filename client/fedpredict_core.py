@@ -126,7 +126,7 @@ def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_sim
             # eq1 = (-update_level - evolution_level - df)  # v5 cai demais e invertido
             # eq1 = (-update_level - evolution_level + sm) # v6 cai demais
             # eq1 = (-update_level**(1/2) - evolution_level - sm) # v7 cai demais
-            eq1 = (-update_level - evolution_level - df)/3  # v8 ótimo
+            eq1 = (-update_level*evolution_level*df)  # v8 ótimo
             # eq1 = (-update_level - evolution_level - df) # v9
             # eq1 = (-update_level - evolution_level - df/3)  # v10 reduz bem mas acurácia ruim para alpha 2 e 5
             # eq1 = (-update_level - evolution_level - df**2)  # v11 reduz bem mas acurácia ruim para alpha 2 e 5
