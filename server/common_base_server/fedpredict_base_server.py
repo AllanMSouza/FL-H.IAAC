@@ -232,8 +232,15 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		else:
 			global_parameter = self.previous_global_parameters[server_round]
 
-		self.similarity_between_layers_per_round_and_client[server_round], self.similarity_between_layers_per_round[server_round], self.mean_similarity_per_round[server_round], self.similarity_list_per_layer = fedpredict_layerwise_similarity(global_parameter, clients_parameters, clients_ids, server_round, self.dataset, str(self.alpha), self.similarity_list_per_layer)
-		self.df = max(0, abs(np.mean(self.similarity_list_per_layer[0]) - np.mean(self.similarity_list_per_layer[self.model_size - 2])))
+		if self.layer_selection_evaluate in [-1, -2]:
+			self.similarity_between_layers_per_round_and_client[server_round], self.similarity_between_layers_per_round[server_round], self.mean_similarity_per_round[server_round], self.similarity_list_per_layer = fedpredict_layerwise_similarity(global_parameter, clients_parameters, clients_ids, server_round, self.dataset, str(self.alpha), self.similarity_list_per_layer)
+			self.df = max(0, abs(np.mean(self.similarity_list_per_layer[0]) - np.mean(self.similarity_list_per_layer[self.model_size - 2])))
+		else:
+			self.similarity_between_layers_per_round[server_round] = []
+			self.mean_similarity_per_round[server_round] = 0
+			self.similarity_between_layers_per_round_and_client[server_round] = []
+			self.df = 1
+
 		print("df médio: ", self.df, " rodada: ", server_round)
 
 		self.parameters_aggregated_checkpoint[server_round] = parameters_to_ndarrays(parameters_aggregated)
@@ -277,11 +284,11 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			print("Tamanho parametros antes: ", sum([i.nbytes for i in parameters]))
 			# print("olha: ", self.similarity_between_layers_per_round[server_round])
 			client_similarity_per_layer = self.get_client_similarity_per_layer(client_id, server_round)
-			parameters_to_send, M = self._select_layers(client_similarity_per_layer, mean_similarity_per_layer, mean_similarity, parameters, server_round, nt, size_of_parameters, client_id, self.comment)
+			parameters_to_send, M = self._select_layers(mean_similarity_per_layer, mean_similarity, parameters, server_round, nt, size_of_parameters, client_id, self.comment)
 			# M = [i for i in range(len(parameters))]
 			# parameters_to_send = ndarrays_to_parameters(parameter_svd_write(parameters_to_ndarrays(parameters_to_send), self.n_rate))
 			print("Tamanho parametros als: ", sum(i.nbytes for i in parameters_to_ndarrays(parameters_to_send)))
-			if int(self.layer_selection_evaluate) == -2:
+			if int(self.layer_selection_evaluate) in [-2, -3]:
 				print("igual")
 				config['decompress'] = True
 				parameters_to_send = self._compredict(client_id, server_round, len(M), parameters_to_send)
@@ -294,7 +301,8 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			config['M'] = M
 			config['df'] = self.df
 			evaluate_ins = fl.common.EvaluateIns(parameters_to_send, config)
-			print("Evaluate enviar: ", client_id, [i.shape for i in parameters_to_ndarrays(parameters_to_send)])
+			# print("Evaluate enviar: ", client_id, [i.shape for i in parameters_to_ndarrays(parameters_to_send)])
+			# print("enviar referencia: ", len(parameters), len(parameters_to_ndarrays(parameters_to_send)))
 			client_evaluate_list_fedpredict.append((client, evaluate_ins))
 
 		return client_evaluate_list_fedpredict
@@ -319,6 +327,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 					norm = np.linalg.norm(gradient)
 					gradient_norm.append(norm)
 					compression_range = self.layers_comppression_range[i]
+					print("valor da norma: ", norm)
 					if compression_range > 0:
 						n_components = fedpredict_core_compredict(server_round, self.num_rounds, nt, layer, norm, compression_range)
 					else:
@@ -327,6 +336,8 @@ class FedPredictBaseServer(FedAvgBaseServer):
 					n_components = None
 
 				n_components_list.append(n_components)
+
+			print("Vetor de componentes: ", n_components_list)
 
 			parameter = parameter_svd_write(parameter, n_components_list)
 
@@ -350,7 +361,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 
 		return  ndarrays_to_parameters(parameter)
 
-	def _select_layers(self, client_similarity_per_layer, mean_similarity_per_layer, mean_similarity, parameters, server_round, nt, size_of_layers, client_id, comment):
+	def _select_layers(self, mean_similarity_per_layer, mean_similarity, parameters, server_round, nt, size_of_layers, client_id, comment):
 
 		try:
 			M = [i for i in range(len(parameters))]
@@ -385,10 +396,13 @@ class FedPredictBaseServer(FedAvgBaseServer):
 							M = [i for i in range(len(parameters))]
 						elif layer == '50':
 							M = [i for i in range(len(parameters)//2)]
-					else:
+					elif self.layer_selection_evaluate in [-1, -2]:
+						print("fazer")
 						# self.similarity_between_layers_per_round[1][len(parameters)-2]['mean']
 						M = fedpredict_core_layer_selection(t=server_round, T=self.num_rounds, nt=nt, n_layers=n_layers, size_per_layer=size_of_layers, mean_similarity_per_layer=mean_similarity_per_layer, df=self.df)
 						# print("quantidade compartilhadas: ", M)
+					else:
+						M = [i for i in range(len(parameters))]
 				new_parameters = []
 				for i in range(len(parameters)):
 					if i in M:

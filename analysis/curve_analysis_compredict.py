@@ -23,7 +23,7 @@ class Verify:
         self.server_analysis(0)
         self.server_analysis(1)
 
-    def curve(self, server_round, rounds_without_fit, start_round):
+    def curve(self, norm, rounds_without_fit, start_round):
         # 0
         # max_rounds_without_fit = 3
         # alpha = 1.2
@@ -162,7 +162,7 @@ class Verify:
             # evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
             # normalizar dentro de 0 e 1
 
-            eq1 = (-rounds_without_fit)
+            eq1 = (-norm)
             eq2 = round(np.exp(eq1), 6)
             global_model_weight = eq2
             updated_level = 0
@@ -174,11 +174,11 @@ class Verify:
 
     def server_analysis(self, index):
 
-        rounds = 100
+        rounds = 1
         rounds_without_fit = 0.1
         rounds_without_fit_list = []
         start_round = 0
-        x = [i for i in range(1, rounds + 1)]
+        x = [0.1*i for i in range(0, 11)]
         rounds_without_fit_list = rounds_without_fit_list + [rounds_without_fit] * len(x)
         y0 = [self.curve(i, rounds_without_fit, start_round)[index] for i in x]
         rounds_without_fit = 0.3
@@ -194,17 +194,17 @@ class Verify:
         rounds_without_fit_list = rounds_without_fit_list + [rounds_without_fit] * len(x)
         y4 = [self.curve(i, rounds_without_fit, start_round)[index] for i in x]
 
-        x = x*5
-        y = y0 + y1 + y2 + y3 + y4
-        x_column = 'Round (t)'
+        x = x
+        y = y0
+        x_column = '$Norm_l$'
         if index == 0:
-            y_column = 'fc'
+            y_column = '$fs_l$'
         else:
             y_column = 'Updated level (ul)'
-        hue = 'norm'
+        hue = 'Norm'
         hue_order = [0.1, 0.3, 0.5, 0.8, 1]
         print(len(x), len(y), len(rounds_without_fit_list))
-        df = pd.DataFrame({x_column: x, y_column: y, hue: rounds_without_fit_list})
+        df = pd.DataFrame({x_column: x, y_column: y})
         title = ""
         if index == 1:
             print(df.drop_duplicates(subset=[y_column, hue]))
@@ -223,9 +223,9 @@ class Verify:
                      x_column=x_column,
                      y_column=y_column,
                      title=title,
-                        hue=hue,
+                        hue=None,
                       type=2,
-                      hue_order=hue_order)
+                      hue_order=None)
 
 if __name__ == '__main__':
 

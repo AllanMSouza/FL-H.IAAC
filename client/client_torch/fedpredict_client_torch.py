@@ -105,7 +105,7 @@ class FedPredictClientTorch(FedAvgClientTorch):
 			local_model_weights, global_model_weight = fedpredict_core(t, T, nt, df)
 
 			# Load global parameters into 'self.clone_model' (global model)
-			global_parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
+			# global_parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
 			local_layer_count = 0
 			global_layer_count = 0
 			# parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
@@ -122,6 +122,7 @@ class FedPredictClientTorch(FedAvgClientTorch):
 			count = 0
 			for new_param, old_param in zip(self.global_model.parameters(), self.model.parameters()):
 				if count in self.m_combining_layers:
+					# print("novo param shape: ", new_param.data.clone().shape, " antigo param shape: ", old_param.data.clone().shape, "pesos: ", global_model_weight, local_model_weights)
 					old_param.data = (global_model_weight*new_param.data.clone() + local_model_weights*old_param.data.clone())
 				count += 1
 
@@ -135,6 +136,7 @@ class FedPredictClientTorch(FedAvgClientTorch):
 			if decompress and len(compressed_global_model_gradients) > 0:
 				decompressed_gradients = inverse_parameter_svd_reading(compressed_global_model_gradients, [i.shape for i in self.get_parameters({})], len(M))
 				parameters = [Parameter(torch.Tensor(i.tolist())) for i in decompressed_gradients]
+				# print("descomprimidos shapes: ", [i.shape for i in parameters])
 			else:
 				parameters = [Parameter(torch.Tensor(i.tolist())) for i in compressed_global_model_gradients]
 

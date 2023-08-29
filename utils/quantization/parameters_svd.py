@@ -148,7 +148,7 @@ def inverse_parameter_svd(u, v, layer_index, sigma=None, sig_ind=None):
             # print("u4")
             for i in range(len(u)):
                 layers_j = []
-                print("u shape: ", u.shape, " v shape: ", v.shape)
+                # print("u shape: ", u.shape, " v shape: ", v.shape)
                 for j in range(len(u[i])):
                     layers_j.append(np.matmul(u[i][j] * sigma[i][j], v[i][j]))
                 layers_l.append(layers_j)

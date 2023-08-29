@@ -170,9 +170,10 @@ def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_
 
     # plt.xticks(np.arange(min(x), max(x) + 1, max(x)//10))
     if type == 2:
+        pass
     #     plt.legend(bbox_to_anchor=(0.5, 1), loc='upper left', borderaxespad=0, title='Rounds since the last training (nt)')
-        plt.xticks(np.arange(0, max(x)+1, 50))
-        plt.legend(bbox_to_anchor=(1.05, 1.15), loc='right', borderaxespad=0, ncol=4, title='')
+    #     plt.xticks(np.arange(0, max(x)+1, 50))
+    #     plt.legend(bbox_to_anchor=(1.05, 1.15), loc='right', borderaxespad=0, ncol=4, title='')
         # lines_labels = [["100"], ["10"], ["5"], ["2"], ["1"]]
         # lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
         # plt.legend([3, 2, 1], label='Line 1', loc='upper left', ncol=3, bbox_to_anchor=(0.2, 1))

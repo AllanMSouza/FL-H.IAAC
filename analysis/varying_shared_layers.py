@@ -29,7 +29,9 @@ class Varying_Shared_layers:
         self.epochs = epochs
         self.comment = comment
         self.layer_selection_evaluate = layer_selection_evaluate
-        if -1 in self.layer_selection_evaluate:
+        if -1 in self.layer_selection_evaluate and -2 in self.layer_selection_evaluate:
+            self.experiment = "als_compredict"
+        elif -1 in self.layer_selection_evaluate:
             self.experiment = "als"
         elif -2 in self.layer_selection_evaluate:
             self.experiment = "compredict"
@@ -432,6 +434,10 @@ class Varying_Shared_layers:
         y_column = 'Parameters reduction (%)'
         hue = 'Shared layers'
         style = 'Alpha'
+        if 'FedPredict (with ALS + Compredict)' not in df['Shared layers'].tolist():
+            y_max = 60
+        else:
+            y_max = 100
 
         if len(self.dataset) >= 2:
             fig, ax = plt.subplots(2, 2, sharex='all', sharey='all', figsize=(6, 6))
@@ -452,7 +458,7 @@ class Varying_Shared_layers:
                       type=1,
                       log_scale=False,
                       y_lim=True,
-                      y_max=100,
+                      y_max=y_max,
                       y_min=20,
                       n=1)
 
@@ -473,7 +479,7 @@ class Varying_Shared_layers:
                       type=1,
                       log_scale=False,
                       y_lim=True,
-                      y_max=100,
+                      y_max=y_max,
                       y_min=20,
                       n=1)
 
@@ -495,7 +501,7 @@ class Varying_Shared_layers:
                       type=1,
                       log_scale=False,
                       y_lim=True,
-                      y_max=100,
+                      y_max=y_max,
                       y_min=20,
                       n=1)
 
@@ -517,7 +523,7 @@ class Varying_Shared_layers:
                       type=1,
                       log_scale=False,
                       y_lim=True,
-                      y_max=100,
+                      y_max=y_max,
                       y_min=20,
                       n=1)
 
@@ -621,7 +627,9 @@ class Varying_Shared_layers:
 
         df = df.query("""Alpha == {}""".format(alpha))
 
-        if -1 in self.layer_selection_evaluate:
+        if self.experiment == "als_compredict":
+            layer_selection_evaluate = ['FedPredict (with ALS + Compredict)', 'FedPredict (with ALS)', '100% of the layers', 'FedAvg']
+        elif -1 in self.layer_selection_evaluate:
             layer_selection_evaluate = ['FedPredict (with ALS)', '100% of the layers', 'FedAvg']
         else:
             layer_selection_evaluate = ['FedPredict (with ALS + Compredict)', '100% of the layers', 'FedAvg']
@@ -1227,12 +1235,12 @@ class Varying_Shared_layers:
         df.to_csv(filename, index=False)
 
         def comparison_with_shared_layers(df, df_aux):
-            print("fr: ", df.columns)
+
             round = int(df['Round'].values[0])
             dataset = str(df['Dataset'].values[0])
             alpha = float(df['Alpha'].values[0])
             model = str(df['Model'].values[0])
-
+            print("interes: ", round, dataset, alpha, model)
             df_copy = copy.deepcopy(df_aux.query("""Round == {} and Dataset == '{}' and Alpha == {} and Model == '{}'""".format(round, dataset, alpha, model)))
             print("apos: ", df_copy.columns)
             target = df_copy[df_copy['Shared layers'] == "100% of the layers"]
@@ -1346,12 +1354,12 @@ if __name__ == '__main__':
     model_name = ["CNN_2", "CNN_3"]
     dataset = ["EMNIST", "CIFAR10"]
     alpha = [0.1, 5.0]
-    num_rounds = 50
+    num_rounds = 100
     epochs = 1
     # layer_selection_evaluate = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
     #layer_selection_evaluate = [1, 12, 123, 1234]
     # layer_selection_evaluate = [4, 34, 234, 1234]
-    layer_selection_evaluate = [-1, 10]
+    layer_selection_evaluate = [-1, -2, 10]
     comment = "set"
 
     Varying_Shared_layers(tp=type_model, strategy_name=strategy, fraction_fit=fraction_fit, aggregation_method=aggregation_method, new_clients=False, new_clients_train=False, num_clients=num_clients,

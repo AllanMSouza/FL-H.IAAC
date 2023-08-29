@@ -143,7 +143,7 @@ def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_sim
         return shared_layers
 
     except Exception as e:
-        print("fedpredict core server")
+        print("fedpredict core server layer selection")
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 def fedpredict_core_compredict(t, T, nt, layer, layer_norm, compression_range):
@@ -159,7 +159,6 @@ def fedpredict_core_compredict(t, T, nt, layer, layer_norm, compression_range):
         # updated_level = max(-last_global_accuracy + acc_of_last_evaluate, 0)
         # else:
         norm = min(layer_norm, 1)
-        update_level = 1 / nt
         # evolutionary_level = (server_round / 50)
         # print("client id: ", self.cid, " primeiro round", self.first_round)
         evolution_level = t / T
@@ -181,13 +180,15 @@ def fedpredict_core_compredict(t, T, nt, layer, layer_norm, compression_range):
         # eq1 = (update_level - evolution_level + (1 - sm) * 0.2)
         eq2 = round(np.exp(eq1), 6)
         # eq2 = (update_level + reference_similarity)/2
-        n_components = int(np.ceil((1-eq2) * compression_range))
-        print("fracao: ", 1 - eq2)
+        n_components = int(np.ceil((eq2) * compression_range))
+        print("fracao: ", eq2)
+        if n_components == 0:
+            n_components = None
 
         return n_components
 
     except Exception as e:
-        print("fedpredict core server")
+        print("fedpredict core server compredict")
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 

@@ -119,7 +119,7 @@ class NonIid:
         self.server_analysis(title)
         self.evaluate_client_analysis()
         print("chamar")
-        if "FedPredict" in self.strategy_name_list:
+        if "FedPredict" in self.strategy_name_list and (-1 == self.layer_selection_evaluate or -2 == self.layer_selection_evaluate):
             print("entrou")
             self.similarity_analysis("Alpha=" + str(self.alpha))
             print("selecao de camadas: ", self.layer_selection_evaluate)
