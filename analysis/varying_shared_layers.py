@@ -434,6 +434,7 @@ class Varying_Shared_layers:
         y_column = 'Parameters reduction (%)'
         hue = 'Shared layers'
         style = 'Alpha'
+        y_min = 0
         if 'FedPredict (with ALS + Compredict)' not in df['Shared layers'].tolist():
             y_max = 60
         else:
@@ -459,7 +460,7 @@ class Varying_Shared_layers:
                       log_scale=False,
                       y_lim=True,
                       y_max=y_max,
-                      y_min=20,
+                      y_min=y_min,
                       n=1)
 
             ax[0, 0].get_legend().remove()
@@ -480,7 +481,7 @@ class Varying_Shared_layers:
                       log_scale=False,
                       y_lim=True,
                       y_max=y_max,
-                      y_min=20,
+                      y_min=y_min,
                       n=1)
 
             ax[0, 1].get_legend().remove()
@@ -502,7 +503,7 @@ class Varying_Shared_layers:
                       log_scale=False,
                       y_lim=True,
                       y_max=y_max,
-                      y_min=20,
+                      y_min=y_min,
                       n=1)
 
             ax[1, 0].get_legend().remove()
@@ -524,7 +525,7 @@ class Varying_Shared_layers:
                       log_scale=False,
                       y_lim=True,
                       y_max=y_max,
-                      y_min=20,
+                      y_min=y_min,
                       n=1)
 
             ax[1, 1].get_legend().remove()
@@ -628,7 +629,7 @@ class Varying_Shared_layers:
         df = df.query("""Alpha == {}""".format(alpha))
 
         if self.experiment == "als_compredict":
-            layer_selection_evaluate = ['FedPredict (with ALS + Compredict)', 'FedPredict (with ALS)', '100% of the layers', 'FedAvg']
+            layer_selection_evaluate = ['FedPredict (with ALS + Compredict)', 'FedPredict (with Compredict)', 'FedPredict (with ALS)', '100% of the layers', 'FedAvg']
         elif -1 in self.layer_selection_evaluate:
             layer_selection_evaluate = ['FedPredict (with ALS)', '100% of the layers', 'FedAvg']
         else:
@@ -1150,6 +1151,10 @@ class Varying_Shared_layers:
                 shared_layers_list[i] = "FedPredict (with ALS + Compredict)"
                 sort[shared_layer] = shared_layers_list[i]
                 continue
+            if "-3" in shared_layer:
+                shared_layers_list[i] = "FedPredict (with Compredict)"
+                sort[shared_layer] = shared_layers_list[i]
+                continue
             new_shared_layer = "{"
             for layer in shared_layer:
                 if len(new_shared_layer) == 1:
@@ -1359,7 +1364,7 @@ if __name__ == '__main__':
     # layer_selection_evaluate = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
     #layer_selection_evaluate = [1, 12, 123, 1234]
     # layer_selection_evaluate = [4, 34, 234, 1234]
-    layer_selection_evaluate = [-1, -2, 10]
+    layer_selection_evaluate = [-1, -2, -3, 10]
     comment = "set"
 
     Varying_Shared_layers(tp=type_model, strategy_name=strategy, fraction_fit=fraction_fit, aggregation_method=aggregation_method, new_clients=False, new_clients_train=False, num_clients=num_clients,

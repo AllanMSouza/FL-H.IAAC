@@ -98,7 +98,7 @@ class FedPredictClientTorch(FedAvgClientTorch):
 			print("save parameters global model")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def _fedpredict_plugin(self, global_parameters, t, T, nt, M, df):
+	def _fedpredict_plugin(self, global_parameters, t, T, nt, M, df, layers_fraction):
 
 		try:
 
@@ -121,6 +121,9 @@ class FedPredictClientTorch(FedAvgClientTorch):
 			# Combine models
 			count = 0
 			for new_param, old_param in zip(self.global_model.parameters(), self.model.parameters()):
+				# fraction = 1
+				# if len(layers_fraction) > 0:
+				# 	fraction = layers_fraction[i]
 				if count in self.m_combining_layers:
 					# print("novo param shape: ", new_param.data.clone().shape, " antigo param shape: ", old_param.data.clone().shape, "pesos: ", global_model_weight, local_model_weights)
 					old_param.data = (global_model_weight*new_param.data.clone() + local_model_weights*old_param.data.clone())
@@ -184,6 +187,7 @@ class FedPredictClientTorch(FedAvgClientTorch):
 			M = config['M']
 			df = config['df']
 			decompress = config['decompress']
+			layers_fraction = config['layers_fraction']
 			local_layer_count = 0
 			global_layer_count = 0
 			print("decompress client: ", self.cid)
@@ -197,7 +201,7 @@ class FedPredictClientTorch(FedAvgClientTorch):
 			if os.path.exists(self.filename):
 				# Load local parameters to 'self.model'
 				self.model.load_state_dict(torch.load(self.filename))
-				self._fedpredict_plugin(global_parameters, t, T, nt, M, df)
+				self._fedpredict_plugin(global_parameters, t, T, nt, M, df, layers_fraction)
 			else:
 				for old_param , new_param in zip(self.model.parameters(), self.global_model.parameters()):
 					old_param.data = new_param.data.clone()

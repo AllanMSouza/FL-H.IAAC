@@ -159,6 +159,8 @@ def fedpredict_core_compredict(t, T, nt, layer, layer_norm, compression_range):
         # updated_level = max(-last_global_accuracy + acc_of_last_evaluate, 0)
         # else:
         norm = min(layer_norm, 1)
+        columns = layer.shape[-1]
+        fraction = compression_range/columns
         # evolutionary_level = (server_round / 50)
         # print("client id: ", self.cid, " primeiro round", self.first_round)
         evolution_level = t / T
@@ -176,14 +178,24 @@ def fedpredict_core_compredict(t, T, nt, layer, layer_norm, compression_range):
         # eq1 = (-update_level - evolution_level)/2  # v2 ótimo
         # eq1 = (-update_level - evolution_level - norm) / 3  # v3 mesma coisa para alpha 0.1
         # eq1 = (- evolution_level - norm) / 2  # v4 melhor até o momento
-        eq1 = (- norm) # v5
+
+        # ============================= v1 pessimo
+        # eq1 = (- norm) # v5
+        # # eq1 = (update_level - evolution_level + (1 - sm) * 0.2)
+        # lamda = 0.5
+        # eq2 = round(np.exp(eq1), 6)*lamda
+        # # eq2 = (update_level + reference_similarity)/2
+        # n_components = int(np.ceil((eq2) * compression_range))
+        # ============================ v2
+        eq1 = - norm  # v5
         # eq1 = (update_level - evolution_level + (1 - sm) * 0.2)
-        eq2 = round(np.exp(eq1), 6)
+        lamda = 0.5
+        fc_l = round(np.exp(eq1), 6)
         # eq2 = (update_level + reference_similarity)/2
-        n_components = int(np.ceil((eq2) * compression_range))
-        print("fracao: ", eq2)
-        if n_components == 0:
-            n_components = None
+        n_components = int(np.ceil((fc_l) * compression_range))
+        print("fracao: ", fc_l, " fraction: ", fraction, " nomra: ", norm, " componentes: ", n_components, " de ", compression_range)
+        # if n_components == 0 or (fc_l <= (1-t/T) and len(layer.shape) >= 3):
+        #     n_components = None
 
         return n_components
 

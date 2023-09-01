@@ -162,8 +162,15 @@ class Verify:
             # evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
             # normalizar dentro de 0 e 1
 
-            eq1 = (-norm)
-            eq2 = round(np.exp(eq1), 6)
+            # ========================= v1 ruim. Cai a acurácia
+            # eq1 = (-norm)
+            # eq2 = round(np.exp(eq1), 6)*0.5
+            # global_model_weight = eq2
+            # ========================= v2
+            lamda = 0.9
+            norm = min(norm, 1)
+            eq1 = round(np.exp(-norm/100), 6)
+            eq2 = eq1
             global_model_weight = eq2
             updated_level = 0
 
@@ -178,7 +185,7 @@ class Verify:
         rounds_without_fit = 0.1
         rounds_without_fit_list = []
         start_round = 0
-        x = [0.1*i for i in range(0, 11)]
+        x = [0.1*i for i in range(0, 16)]
         rounds_without_fit_list = rounds_without_fit_list + [rounds_without_fit] * len(x)
         y0 = [self.curve(i, rounds_without_fit, start_round)[index] for i in x]
         rounds_without_fit = 0.3

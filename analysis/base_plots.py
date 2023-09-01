@@ -218,13 +218,64 @@ def stacked_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, l
     x = df[x_column].tolist()
     # args =
     # plt.stackplot(x, df[y_column].tolist(), labels=df[hue].tolist())
+    # total_y = df.groupby(x_column)[y_column].sum()
+    # df[y_column] = df[y_column]/total_y
+    palette = sns.color_palette()
 
-    (
-        so.Plot(df, x_column, y_column, color=hue)
-        .add(so.Area(alpha=.1), so.Stack()).save(loc=base_dir + "png/" + file_name + log + ".png", bbox_inches='tight', dpi=400).save(loc=base_dir + "svg/" + file_name + log + ".svg", bbox_inches='tight', dpi=400)
-    )
+    # (
+    #     so.Plot(df, x_column, y_column, color=hue)
+    #     .add(so.Area(alpha=.1), so.Stack()).save(loc=base_dir + "png/" + file_name + log + ".png", bbox_inches='tight', dpi=400).save(loc=base_dir + "svg/" + file_name + log + ".svg", bbox_inches='tight', dpi=400)
+    # )
+    # df = df.set_index(x_column)
+    def group(df, x_column, hue):
+
+        alphas = df[x_column].unique().tolist()
+        classes = df[hue].unique().tolist()
+        classes = sorted(classes, reverse=True)
+        n = len(classes)
+        labels = {10:[[10, 8], [7, 4], [3, 1]], 47: [[47, 40], [39, 30], [29, 20], [19, 1]]}
+        labels_str = {k1: ["""[{}, {}]""".format(str(labels[k1][i][0]), str(labels[k1][i][1])) for i in range(len(labels[k1]))] for k1 in labels}
+        print("labels str")
+        print(labels_str)
+        classes_curves = []
+        for i in range(len(labels[n])):
+            curve = []
+            start = labels[n][i][0]
+            end = labels[n][i][1]
+
+            for alpha in alphas:
+                print("pergunta")
+                query = """Alpha=={} and (Unique_classes<={} and Unique_classes>={})""".format(alpha, start, end)
+                print(query)
+                print("resultado")
+                print(df.query(query)['Total_of_clients_(%)'].sum().tolist())
+                curve.append(df.query(query)['Total_of_clients_(%)'].sum().tolist())
+
+            classes_curves.append(curve)
+
+        print("curvas")
+        print(classes_curves)
+
+        return alphas, classes_curves, labels_str[n]
+
+    x_data, curves, classes = group(df, x_column, hue)
+
+    print("indice")
+    print(df)
+    # plt.stackplot(x_data, curves, labels=classes, alpha=0.8)
+    for i in range(len(classes)):
+        # print("metricas")
+        # print(len(classes))
+        # print(len(curves))
+        # print(len(labels))
+        # print(len(x_data))
+        plt.plot(x_data, curves[i], label=classes[i])
+    plt.legend(loc='right', fontsize='large', title=hue.replace("_", " "))
+    plt.xlabel(x_column)
+    plt.ylabel('Total of clients (%)')
+    plt.title(title)
     #
-    # plt.show()
+    plt.show()
 
     # plt.xticks(np.arange(min(x), max(x) + 1, max(x)//10))
     if type == 2:
@@ -251,6 +302,8 @@ def stacked_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, l
         Path(base_dir + "svg/").mkdir(parents=True, exist_ok=True)
         # so.Plot().save(loc=base_dir + "png/" + file_name + log + ".png", bbox_inches='tight', dpi=400)
         # so.Plot().save(loc=base_dir + "svg/" + file_name + log + ".svg", bbox_inches='tight', dpi=400)
+        plt.savefig(base_dir + "png/" + file_name + log + ".png", bbox_inches='tight', dpi=400)
+        plt.savefig(base_dir + "svg/" + file_name + log + ".svg", bbox_inches='tight', dpi=400)
 
 def hist_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_scale=False, ax=None, type=None, hue_order=None, style=None, y_lim=False, y_min=0, y_max=1, n=None):
     Path(base_dir).mkdir(parents=True, exist_ok=True)

@@ -198,16 +198,26 @@ class Varying_Shared_layers:
             # for alp, clas, coun in zip(alphas_list, classes_list, count):
 
 
-            self.df_summary = pd.DataFrame({'Alpha': alphas_list, 'Unique classes': classes_list, 'Total of clients': count}).groupby('Alpha').mean().reset_index()
-            print("sumario")
+            self.df_summary = pd.DataFrame({'Alpha': alphas_list, 'Unique_classes': classes_list, 'Total of clients': count})
+            self.df_summary['Total_of_clients_(%)'] = (self.df_summary['Total of clients']/20)*100
+            print("sumario antes: ")
             print(self.df_summary)
-            # stacked_plot(df=self.df_summary, base_dir=self.base_dir, file_name="""unique_classes_{}""".format(dataset), x_column='Alpha', y_column='Total of clients', title="""{}""".format(dataset), hue='Unique classes')
 
-            line_plot(df=self.df_summary, base_dir=self.base_dir, file_name="""unique_classes_{}""".format(dataset), x_column='Alpha', y_column='Unique classes', title="""{}""".format(dataset))
 
-    def summary_alphas_clients_unique_classes(self):
+            # self.df_summary = self.df_summary.groupby('Alpha').mean().reset_index()
+            # print("sumario")
+            # print(self.df_summary)
+            stacked_plot(df=self.df_summary, base_dir=self.base_dir, file_name="""unique_classes_{}""".format(dataset), x_column='Alpha', y_column='Total_of_clients_(%)', title="""{}""".format(dataset), hue='Unique_classes')
 
-        self.un
+            line_plot(df=self.df_summary, base_dir=self.base_dir, file_name="""unique_classes_{}""".format(dataset), x_column='Alpha', y_column='Total_of_clients_(%)', hue='Unique_classes', title="""{}""".format(dataset))
+
+    # def summary_alphas_clients_unique_classes(self):
+    #
+    #     self.un
+
+    # def rotate_df(self, df):
+
+
 
 
     def plot(self, ax, df, dataset, alpha, x_column, y_column, base_dir, hue, i, j, y_max=100):

@@ -288,10 +288,11 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			# M = [i for i in range(len(parameters))]
 			# parameters_to_send = ndarrays_to_parameters(parameter_svd_write(parameters_to_ndarrays(parameters_to_send), self.n_rate))
 			print("Tamanho parametros als: ", sum(i.nbytes for i in parameters_to_ndarrays(parameters_to_send)))
-			if int(self.layer_selection_evaluate) in [-2, -3]:
+			layers_fraction = []
+			if int(self.layer_selection_evaluate) in [-2, -3] and self.fedpredict_clients_metrics[client_id]['first_round'] != -1:
 				print("igual")
 				config['decompress'] = True
-				parameters_to_send = self._compredict(client_id, server_round, len(M), parameters_to_send)
+				parameters_to_send, layers_fraction = self._compredict(client_id, server_round, len(M), parameters_to_send)
 			else:
 				config['decompress'] = False
 				print("nao igual")
@@ -300,6 +301,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			self.fedpredict_clients_metrics[str(client.cid)]['acc_bytes_rate'] = size_of_parameters
 			config['M'] = M
 			config['df'] = self.df
+			config['layers_fraction'] = layers_fraction
 			evaluate_ins = fl.common.EvaluateIns(parameters_to_send, config)
 			# print("Evaluate enviar: ", client_id, [i.shape for i in parameters_to_ndarrays(parameters_to_send)])
 			# print("enviar referencia: ", len(parameters), len(parameters_to_ndarrays(parameters_to_send)))
@@ -314,6 +316,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		nt = server_round - self.fedpredict_clients_metrics[str(client_id)]['round_of_last_fit']
 		current_global_model = self.previous_global_parameters[-1]
 		round_of_last_fit = self.fedpredict_clients_metrics[str(client_id)]['round_of_last_fit']
+		layers_fraction = []
 		if round_of_last_fit >= 1:
 			last_trained_global_model = self.previous_global_parameters[self.fedpredict_clients_metrics[str(client_id)]['round_of_last_fit']-1]
 			gradients = []
@@ -325,15 +328,31 @@ class FedPredictBaseServer(FedAvgBaseServer):
 				if len(layer.shape) >= 2:
 					gradient = current_global_model[i] - last_trained_global_model[i]
 					norm = np.linalg.norm(gradient)
-					gradient_norm.append(norm)
+					# gradient_norm.append(norm)
 					compression_range = self.layers_comppression_range[i]
-					print("valor da norma: ", norm)
+					if int(client_id) <= 3:
+						if norm > 0.6:
+							print("Norma do cliente: ", client_id, " norma maior: ", norm)
+							print(gradient)
+						if norm < 0.14:
+							print("Norma do cliente: ", client_id, " norma menor: ", norm)
+							print(gradient)
+						print("compression range: ", compression_range)
+					gradient_norm.append(norm)
 					if compression_range > 0:
 						n_components = fedpredict_core_compredict(server_round, self.num_rounds, nt, layer, norm, compression_range)
 					else:
 						n_components = None
 				else:
 					n_components = None
+
+				# if server_round <= 20 and len(layer.shape) == 4:
+				# 	n_components = None
+
+				if n_components is None:
+					layers_fraction.append(1)
+				else:
+					layers_fraction.append(n_components/layer.shape[-1])
 
 				n_components_list.append(n_components)
 
@@ -358,8 +377,10 @@ class FedPredictBaseServer(FedAvgBaseServer):
 
 			parameter = new_parameter
 
+			layers_fraction = [1] * len(parameter)
 
-		return  ndarrays_to_parameters(parameter)
+
+		return  ndarrays_to_parameters(parameter), layers_fraction
 
 	def _select_layers(self, mean_similarity_per_layer, mean_similarity, parameters, server_round, nt, size_of_layers, client_id, comment):
 
