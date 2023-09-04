@@ -153,7 +153,7 @@ def fedpredict_core_compredict(t, T, nt, layer, layer_norm, compression_range):
         layers_n_components = []
         # evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
         # normalizar dentro de 0 e 1
-        # updated_level = 1/rounds_without_fit
+        updated_level = 1/nt
         # updated_level = 1 - max(0, -acc_of_last_fit+self.accuracy_of_last_round_of_evalute)
         # if acc_of_last_evaluate < last_global_accuracy:
         # updated_level = max(-last_global_accuracy + acc_of_last_evaluate, 0)
@@ -187,12 +187,15 @@ def fedpredict_core_compredict(t, T, nt, layer, layer_norm, compression_range):
         # # eq2 = (update_level + reference_similarity)/2
         # n_components = int(np.ceil((eq2) * compression_range))
         # ============================ v2
-        eq1 = - norm  # v5
+        # eq1 = - evolution_level  # v5
+        eq1 = - evolution_level # v5
         # eq1 = (update_level - evolution_level + (1 - sm) * 0.2)
         lamda = 0.5
-        fc_l = round(np.exp(eq1), 6)
+        fc_l = round(np.exp(eq1), 6) # bom
+        # fc_l = pow(evolution_level, 1/2) - updated_level # rum
+        # fc_l = eq1+1
         # eq2 = (update_level + reference_similarity)/2
-        n_components = int(np.ceil((fc_l) * compression_range))
+        n_components = max(round(fc_l * compression_range), 1)
         print("fracao: ", fc_l, " fraction: ", fraction, " nomra: ", norm, " componentes: ", n_components, " de ", compression_range)
         # if n_components == 0 or (fc_l <= (1-t/T) and len(layer.shape) >= 3):
         #     n_components = None

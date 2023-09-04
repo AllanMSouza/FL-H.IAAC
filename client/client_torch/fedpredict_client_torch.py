@@ -120,7 +120,7 @@ class FedPredictClientTorch(FedAvgClientTorch):
 			# self.clone_model.load_state_dict(torch.load(filename))
 			# Combine models
 			count = 0
-			for new_param, old_param in zip(self.global_model.parameters(), self.model.parameters()):
+			for new_param, old_param in zip(global_parameters, self.model.parameters()):
 				# fraction = 1
 				# if len(layers_fraction) > 0:
 				# 	fraction = layers_fraction[i]
@@ -153,13 +153,16 @@ class FedPredictClientTorch(FedAvgClientTorch):
 					if local_layer_count in M:
 						new_param = parameters[global_layer_count]
 						# print("chegou new param: ", new_param.shape, " count: ", global_layer_count, " old param: ", old_param.shape, " count: ", local_layer_count)
-						old_param.data = old_param.data.clone() + new_param.data.clone()
+						# old_param.data = old_param.data.clone() + new_param.data.clone()
+						old_param.data = new_param.data.clone()
 						global_layer_count += 1
 					local_layer_count += 1
 
 			else:
 				for new_param, old_param in zip(parameters, self.global_model.parameters()):
 					old_param.data = new_param.data.clone()
+
+			return parameters
 
 		except Exception as e:
 			print("decompress")
@@ -191,7 +194,7 @@ class FedPredictClientTorch(FedAvgClientTorch):
 			local_layer_count = 0
 			global_layer_count = 0
 			print("decompress client: ", self.cid)
-			self._decompress(global_parameters, M, decompress)
+			global_parameters = self._decompress(global_parameters, M, decompress)
 			parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
 			# print("parametros locais: ", [i.shape for i in self.model.parameters()])
 			if len(parameters) != len(M):
@@ -203,7 +206,7 @@ class FedPredictClientTorch(FedAvgClientTorch):
 				self.model.load_state_dict(torch.load(self.filename))
 				self._fedpredict_plugin(global_parameters, t, T, nt, M, df, layers_fraction)
 			else:
-				for old_param , new_param in zip(self.model.parameters(), self.global_model.parameters()):
+				for old_param , new_param in zip(self.model.parameters(), global_parameters):
 					old_param.data = new_param.data.clone()
 
 		except Exception as e:

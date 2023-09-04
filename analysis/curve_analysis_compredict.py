@@ -159,6 +159,7 @@ class Verify:
             global_model_weight = 0
             updated_level = 1
         else:
+            ul = 1/rounds_without_fit
             # evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
             # normalizar dentro de 0 e 1
 
@@ -168,8 +169,9 @@ class Verify:
             # global_model_weight = eq2
             # ========================= v2
             lamda = 0.9
-            norm = min(norm, 1)
+            # norm = min(norm, 1)
             eq1 = round(np.exp(-norm/100), 6)
+            # eq1 = pow(norm/100, 1/2)
             eq2 = eq1
             global_model_weight = eq2
             updated_level = 0
@@ -183,9 +185,9 @@ class Verify:
 
         rounds = 1
         rounds_without_fit = 0.1
-        rounds_without_fit_list = []
+        rounds_without_fit_list = [1, 2, 3, 5, 10, 100]
         start_round = 0
-        x = [0.1*i for i in range(0, 16)]
+        x = [1, 20, 40, 60, 80, 100]
         rounds_without_fit_list = rounds_without_fit_list + [rounds_without_fit] * len(x)
         y0 = [self.curve(i, rounds_without_fit, start_round)[index] for i in x]
         rounds_without_fit = 0.3
@@ -203,7 +205,7 @@ class Verify:
 
         x = x
         y = y0
-        x_column = '$Norm_l$'
+        x_column = 'Round'
         if index == 0:
             y_column = '$fs_l$'
         else:
@@ -214,13 +216,13 @@ class Verify:
         df = pd.DataFrame({x_column: x, y_column: y})
         title = ""
         if index == 1:
-            print(df.drop_duplicates(subset=[y_column, hue]))
+            print(df.drop_duplicates(subset=[y_column, x_column]))
             print("Ola")
             df = df.round(4)
             bar_plot(df=df,
                       base_dir=self.base_dir,
                       file_name="bar_norm" + str(index),
-                      x_column=hue,
+                      x_column=x_column,
                       y_column=y_column,
                       title=title)
         else:

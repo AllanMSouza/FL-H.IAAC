@@ -263,13 +263,24 @@ def stacked_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, l
     print("indice")
     print(df)
     # plt.stackplot(x_data, curves, labels=classes, alpha=0.8)
+    classes_new = []
     for i in range(len(classes)):
         # print("metricas")
         # print(len(classes))
         # print(len(curves))
         # print(len(labels))
         # print(len(x_data))
-        plt.plot(x_data, curves[i], label=classes[i])
+        # plt.bar(x_data, curves[i], label=classes[i])
+        classes_new += [classes[i]] * len(curves[i])
+        pass
+
+    curves = np.array(curves).flatten()
+    # classes = np.array(classes).flatten().tolist() * int(len(curves)/len(classes))
+    n = len(curves)
+    x_data = x_data * int(n/len(x_data))
+    print(len(x_data), len(curves), len(classes_new))
+    df = pd.DataFrame({x_column: x_data, hue: classes_new, y_column: curves})
+    sns.barplot(df, x=x_column, y=y_column, hue=hue)
     plt.legend(loc='right', fontsize='large', title=hue.replace("_", " "))
     plt.xlabel(x_column)
     plt.ylabel('Total of clients (%)')

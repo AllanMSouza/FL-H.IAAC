@@ -54,15 +54,51 @@ class Varying_Shared_layers:
         self.evaluate_client_analysis_differnt_models(df_concat)
         self.evaluate_client_joint_parameter_reduction(df_concat)
         alphas = df_concat['Alpha'].unique().tolist()
+        models = df_concat['Model'].unique().tolist()
+        df_concat = self.build_filename_fedavg(df_concat)
         for alpha in alphas:
-            self.evaluate_client_joint_accuracy(self.build_filename_fedavg(df_concat), alpha)
-            pass
+            self.evaluate_client_joint_accuracy(df_concat, alpha)
+            # self.joint_table(self.build_filename_fedavg(self.df_concat, use_mean=False), alpha=alpha, models=models)
+
         # for alpha in alphas:
         #     self.evaluate_client_joint_accuracy(df_concat, alpha)
         self.similarity()
         for alpha in alphas:
             self.evaluate_client_norm_analysis_nt(alpha)
         self.evaluate_client_norm_analysis()
+
+    def convert_shared_layers(self, df):
+
+        shared_layers_list = df['Shared layers'].tolist()
+        for i in range(len(shared_layers_list)):
+            shared_layer = str(shared_layers_list[i])
+            if "-1" in shared_layer:
+                shared_layers_list[i] = "$FedPredict_{d}$"
+                continue
+            if "-2" in shared_layer:
+                shared_layers_list[i] = "$FedPredict_{dc}$"
+                continue
+            if "-3" in shared_layer:
+                shared_layers_list[i] = "$FedPredict_{c}$"
+                continue
+            new_shared_layer = "{"
+            for layer in shared_layer:
+                if len(new_shared_layer) == 1:
+                    new_shared_layer += layer
+                else:
+                    new_shared_layer += ", " + layer
+
+            new_shared_layer += "}"
+            if shared_layer == "10":
+                new_shared_layer = "$FedPredict$"
+            if shared_layer == "50":
+                new_shared_layer = "50% of the layers"
+
+            shared_layers_list[i] = new_shared_layer
+
+        df['Shared layers'] = np.array(shared_layers_list)
+
+        return df
 
     def build_filenames(self):
 
@@ -83,6 +119,7 @@ class Varying_Shared_layers:
                                 df['Alpha'] = np.array([a]*len(df))
                                 df['Model'] = np.array([model]*len(df))
                                 df['Dataset'] = np.array([dataset]*len(df))
+                                df['Accuracy (%)'] = df['Accuracy'].to_numpy() * 100
                                 if df_concat is None:
                                     df_concat = df
                                 else:
@@ -117,13 +154,13 @@ class Varying_Shared_layers:
 
         print("contruído: ", df_concat.columns)
 
-        self.df_concat = df_concat
+        self.df_concat = self.convert_shared_layers(df_concat)
         self.df_concat_similarity = df_concat_similarity
         self.df_concat_norm = df_concat_norm
         # print("Leu similaridade", df_concat_similarity[['Round', 'Alpha', 'Similarity', 'Dataset', 'Model', 'Layer']].drop_duplicates().to_string())
         # exit()
 
-    def build_filename_fedavg(self, df_concat):
+    def build_filename_fedavg(self, df_concat, use_mean=True):
 
         files = ["evaluate_client.csv"]
         df_concat_similarity = None
@@ -140,7 +177,7 @@ class Varying_Shared_layers:
                             if "evaluate" in file:
                                 df['Shared layers'] = np.array([layers] * len(df))
                                 df['Strategy'] = np.array(['FedAvg'] * len(df))
-                                df['Shared layers'] = np.array(['FedAvg'] * len(df))
+                                df['Shared layers'] = np.array(["$FedAvg$"] * len(df))
                                 df['Alpha'] = np.array([a]*len(df))
                                 df['Model'] = np.array([model]*len(df))
                                 df['Dataset'] = np.array([dataset]*len(df))
@@ -152,8 +189,9 @@ class Varying_Shared_layers:
 
                                     return pd.DataFrame({'Accuracy (%)': [acc]})
 
-                                df = df.groupby(
-                                    ['Dataset', 'Model', 'Alpha', 'Strategy', 'Shared layers', 'Round']).mean().reset_index()
+                                if use_mean:
+                                    df = df.groupby(
+                                        ['Dataset', 'Model', 'Alpha', 'Strategy', 'Shared layers', 'Round']).mean().reset_index()
 
                                 if df_concat is None:
                                     df_concat = df
@@ -421,8 +459,8 @@ class Varying_Shared_layers:
 
     def evaluate_client_joint_parameter_reduction(self, df):
 
-        # df = df[df['Shared layers'] == "FedPredict (with ALS)"]
-        df = df[df['Shared layers'] != '100% of the layers']
+        # df = df[df['Shared layers'] == "$FedPredict_d$"]
+        df = df[df['Shared layers'] != "$FedPredict$"]
         fig, ax = plt.subplots(2, 2,  sharex='all', sharey='all', figsize=(6, 6))
 
         base_dir = """analysis/output/torch/varying_shared_layers/{}/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
@@ -435,7 +473,14 @@ class Varying_Shared_layers:
         hue = 'Shared layers'
         style = 'Alpha'
         y_min = 0
-        if 'FedPredict (with ALS + Compredict)' not in df['Shared layers'].tolist():
+        if self.experiment == "als_compredict":
+            layer_selection_evaluate = ["$FedPredict_{dc}$", "$FedPredict_{d}$", "$FedPredict_{c}$"]
+        elif -1 in self.layer_selection_evaluate:
+            layer_selection_evaluate = ["$FedPredict_{d}$", 'FedPredict', 'FedAvg']
+        else:
+            layer_selection_evaluate = ["$FedPredict_{c}$", 'FedPredict', 'FedAvg']
+
+        if "$FedPredict_{dc}$" not in df['Shared layers'].tolist():
             y_max = 60
         else:
             y_max = 100
@@ -455,7 +500,7 @@ class Varying_Shared_layers:
                       title=title,
                       hue=hue,
                       style=style,
-                      # hue_order=layer_selection_evaluate,
+                      hue_order=layer_selection_evaluate,
                       type=1,
                       log_scale=False,
                       y_lim=True,
@@ -476,7 +521,7 @@ class Varying_Shared_layers:
                       title=title,
                       hue=hue,
                       style=style,
-                      # hue_order=layer_selection_evaluate,
+                      hue_order=layer_selection_evaluate,
                       type=1,
                       log_scale=False,
                       y_lim=True,
@@ -498,7 +543,7 @@ class Varying_Shared_layers:
                       title=title,
                       hue=hue,
                       style=style,
-                      # hue_order=layer_selection_evaluate,
+                      hue_order=layer_selection_evaluate,
                       type=1,
                       log_scale=False,
                       y_lim=True,
@@ -506,7 +551,8 @@ class Varying_Shared_layers:
                       y_min=y_min,
                       n=1)
 
-            ax[1, 0].get_legend().remove()
+            # ax[1, 0].get_legend().remove()
+            ax[1, 0].legend(fontsize=7, ncol=2)
             ax[1, 0].set_xlabel('')
             ax[1, 0].set_ylabel('')
 
@@ -520,7 +566,7 @@ class Varying_Shared_layers:
                       title=title,
                       hue=hue,
                       style=style,
-                      # hue_order=layer_selection_evaluate,
+                      hue_order=layer_selection_evaluate,
                       type=1,
                       log_scale=False,
                       y_lim=True,
@@ -540,7 +586,7 @@ class Varying_Shared_layers:
             plt.subplots_adjust(wspace=0.07, hspace=0.14)
             lines_labels = [ax[0, 0].get_legend_handles_labels()]
             lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-            fig.legend(lines, labels, loc='upper center', ncol=4, bbox_to_anchor=(0.5, 1.06))
+            # fig.legend(lines, labels, loc='upper center', ncol=4, bbox_to_anchor=(0.5, 1.06))
             figure = fig.get_figure()
             Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
             Path(base_dir + "svg/").mkdir(parents=True, exist_ok=True)
@@ -604,7 +650,7 @@ class Varying_Shared_layers:
             plt.subplots_adjust(wspace=0.07, hspace=0.14)
             lines_labels = [ax[0].get_legend_handles_labels()]
             lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-            fig.legend(lines, labels, loc='upper center', ncol=4, bbox_to_anchor=(0.5, 1.06))
+            # fig.legend(lines, labels, loc='upper center', ncol=4, bbox_to_anchor=(0.5, 1.06))
             figure = fig.get_figure()
             Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
             Path(base_dir + "svg/").mkdir(parents=True, exist_ok=True)
@@ -612,9 +658,148 @@ class Varying_Shared_layers:
             figure.savefig(base_dir + "png/" + filename + ".png", bbox_inches='tight', dpi=400)
             figure.savefig(base_dir + "svg/" + filename + ".svg", bbox_inches='tight', dpi=400)
 
+    def t_distribution(self, data, ci):
+
+        min_ = st.t.interval(alpha=ci, df=len(data) - 1,
+                      loc=np.mean(data),
+                      scale=st.sem(data))[0]
+
+        mean = np.mean(data)
+        average_variation = (mean - min_).round(1)
+        mean = mean.round(1)
+
+        return str(mean) + u"\u00B1" + str(average_variation)
+
+    def joint_table(self, df, alpha, models):
+
+        shared_layers = df['Shared layers'].unique().tolist()
+
+        model_report = {i: {} for i in shared_layers}
+
+        # df = df[df['Round'] == 100]
+        print("receb: ", df.columns)
+        df_test = df[
+            ['Round', 'Size of parameters', 'Shared layers', 'Accuracy (%)', 'Alpha', 'Dataset', 'Model']]
+
+        # df_test = df_test.query("""Round in [10, 100]""")
+        print("agrupou table")
+        print(df_test)
+        convert_dict = {0.1: 5, 0.2: 10, 0.3: 15, 0.4: 20}
+        # df_test['Fraction fit'] = np.array([convert_dict[i] for i in df_test['Fraction fit'].tolist()])
+
+        columns = models
+
+        index = [np.array(['EMNIST'] * len(columns) + ['CIFAR-10'] * len(columns)), np.array(columns * 2)]
+
+        models_dict = {}
+        ci = 0.95
+        for shared_layer in model_report:
+
+            mnist_acc = {}
+            cifar10_acc = {}
+            for column in columns:
+
+                # mnist_acc[column] = (self.filter(df_test, experiment, 'MNIST', float(column), strategy=model_name)['Accuracy (%)']*100).mean().round(6)
+                # cifar10_acc[column] = (self.filter(df_test, experiment, 'CIFAR10', float(column), strategy=model_name)['Accuracy (%)']*100).mean().round(6)
+                mnist_acc[column] = self.t_distribution((self.filter(df_test, model=column, dataset='EMNIST', alpha=alpha, shared_layer=shared_layer)[
+                                         'Accuracy (%)']).tolist(), ci)
+                cifar10_acc[column] = self.t_distribution((self.filter(df_test,model=column, dataset='CIFAR10', alpha=alpha, shared_layer=shared_layer)[
+                                           'Accuracy (%)']).tolist(), ci)
+
+            model_metrics = []
+
+            for column in columns:
+                model_metrics.append(mnist_acc[column])
+            for column in columns:
+                model_metrics.append(cifar10_acc[column])
+
+            models_dict[shared_layer] = model_metrics
+
+        df_table = pd.DataFrame(models_dict, index=index).round(4)
+        print(df_table.to_string())
+
+
+
+        max_values = self.idmax(df_table)
+        print("max values", max_values)
+
+        for max_value in max_values:
+            row_index = max_value[0]
+            column = max_value[1]
+            column_values = df_table[column].tolist()
+            column_values[row_index] = "textbf{" + str(column_values[row_index]) + "}"
+
+            df_table[column] = np.array(column_values)
+
+        print(df_table)
+        df_table.columns = np.array(["$FedPredict_{dc}$", "$FedPredict_{d}$", "$FedPredict_{c}$", "$FedPredict$", "$FedAvg$"])
+        print(df_table.columns)
+
+        latex = df_table.to_latex().replace("\\\nMNIST", "\\\n\hline\nMNIST").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}")
+
+        base_dir = """analysis/output/torch/varying_shared_layers/{}/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/csv/""".format(
+            self.experiment, str(self.dataset), self.num_clients, self.num_rounds, self.fraction_fit,
+            str(self.model_name),
+            str(self.alpha), self.comment)
+        filename = """{}latex_{}.txt""".format(base_dir, str(alpha))
+        pd.DataFrame({'latex': [latex]}).to_csv(filename, header=False, index=False)
+
+    def idmax(self, df):
+
+        df_indexes = []
+        columns = df.columns.tolist()
+        print("colunas", columns)
+        for i in range(len(df)):
+
+            row = df.iloc[i].tolist()
+            print("ddd", row)
+            indexes = self.select_mean(i, row, columns)
+            df_indexes += indexes
+
+        return df_indexes
+
+    def select_mean(self, index, values, columns):
+
+        list_of_means = []
+        indexes = []
+        print("ola: ", values, "ola0")
+
+        for i in range(len(values)):
+
+            print("valor: ", values[i])
+            value = float(str(values[i])[:4])
+            list_of_means.append(value)
+
+        max_value = max(list_of_means)
+        print("maximo: ", max_value)
+        for i in range(len(list_of_means)):
+
+            if list_of_means[i] == max_value:
+                indexes.append([index, columns[i]])
+
+        return indexes
+
+    def filter(self, df, model, dataset, alpha, shared_layer=None):
+
+        # df['Accuracy (%)'] = df['Accuracy (%)']*100
+        if strategy is not None:
+            df = df.query(
+                """Dataset=='{}' and Model=='{}'""".format(str(dataset), model))
+            df = df[df['Alpha'] == alpha]
+            df = df[df['Shared layers'] == shared_layer]
+        else:
+            df = df.query(
+                """Dataset=='{}' and Model=='{}'""".format(dataset), model)
+            df = df[df['Alpha'] == alpha]
+
+        print("filtrou: ", df)
+
+        return df
+
+
     def evaluate_client_joint_accuracy(self, df, alpha):
 
-        # df = df[df['Shared layers'] == "FedPredict (with ALS)"]
+        # df = df[df['Shared layers'] == "$FedPredict_d$"]
 
         base_dir = """analysis/output/torch/varying_shared_layers/{}/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
             self.experiment, str(self.dataset), self.num_clients, self.num_rounds, self.fraction_fit,
@@ -627,15 +812,20 @@ class Varying_Shared_layers:
         style = None
 
         df = df.query("""Alpha == {}""".format(alpha))
+        print("strategias unicas: ", df['Shared layers'].unique().tolist())
 
         if self.experiment == "als_compredict":
-            layer_selection_evaluate = ['FedPredict (with ALS + Compredict)', 'FedPredict (with Compredict)', 'FedPredict (with ALS)', '100% of the layers', 'FedAvg']
+            layer_selection_evaluate = ["$FedPredict_{dc}$", "$FedPredict_{d}$", "$FedPredict_{c}$", "$FedPredict$", "$FedAvg$"]
         elif -1 in self.layer_selection_evaluate:
-            layer_selection_evaluate = ['FedPredict (with ALS)', '100% of the layers', 'FedAvg']
+            layer_selection_evaluate = ["$FedPredict_{d}$", 'FedPredict', 'FedAvg']
         else:
-            layer_selection_evaluate = ['FedPredict (with ALS + Compredict)', '100% of the layers', 'FedAvg']
+            layer_selection_evaluate = ["$FedPredict_{c}$", 'FedPredict', 'FedAvg']
 
         if len(self.dataset) >= 2:
+
+            print("testar1")
+            print(df[df['Shared layers'] == "$FedPredict_{d}$"])
+
             fig, ax = plt.subplots(2, 2, sharex='all', sharey='all', figsize=(6, 6))
             title = """{}; {}""".format(self.dataset[0], self.model_name[0])
             x = df[x_column].tolist()
@@ -710,7 +900,8 @@ class Varying_Shared_layers:
                       y_min=0,
                       n=1)
 
-            ax[1, 0].get_legend().remove()
+            # ax[1, 0].get_legend().remove()
+            ax[1, 0].legend(fontsize=7)
             ax[1, 0].set_xlabel('')
             ax[1, 0].set_ylabel('')
             # ax[1, 0].set_xticks([])
@@ -751,7 +942,8 @@ class Varying_Shared_layers:
             plt.subplots_adjust(wspace=0.07, hspace=0.14)
             lines_labels = [ax[0, 0].get_legend_handles_labels()]
             lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-            fig.legend(lines, labels, loc='upper center', ncol=4, title="""Alpha={}""".format(alpha), bbox_to_anchor=(0.5, 1.05))
+            # fig.legend(lines, labels, loc='upper center', ncol=4, title="""Alpha={}""".format(alpha), bbox_to_anchor=(0.5, 1.05))
+            fig.suptitle("""Alpha={}""".format(alpha))
             # plt.xticks(np.arange(min(x), max(x) + 1, max(x) // 5))
             figure = fig.get_figure()
             Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
@@ -846,15 +1038,15 @@ class Varying_Shared_layers:
             model = ag['Model'].tolist()[0]
             max_layer = int(ag.query("""Model == '{}'""".format(model))['Layer'].max()) - 1
             round = ag['Round'].tolist()[0]
-            print("pergunta: ", """Round <= {} and Model == '{}' and Alpha == {} and Dataset == '{}' and Layer == {}""".format(round, model, alpha, dataset, 0))
+            # print("pergunta: ", """Round <= {} and Model == '{}' and Alpha == {} and Dataset == '{}' and Layer == {}""".format(round, model, alpha, dataset, 0))
             similarities_0 = np.mean(d_f.query("""Round <= {} and Model == '{}' and Alpha == {} and Dataset == '{}' and Layer == {}""".format(round, model, alpha, dataset, 0))['Similarity'].to_numpy())
             similarities_last = np.mean(d_f.query("""Round <= {} and Model == '{}' and Alpha == {} and Dataset == '{}' and Layer == {}""".format(round, model, alpha, dataset, max_layer))['Similarity'].to_numpy())
-            print("resultado: ", similarities_0, similarities_last, " maximo: ", max_layer)
+            # print("resultado: ", similarities_0, similarities_last, " maximo: ", max_layer)
             if deno == 0:
                 deno = 1
             # print("rodar:")
             # print(df)
-            print("olha: ", similarities_0, similarities_last)
+            # print("olha: ", similarities_0, similarities_last)
 
             # df = df.query("""Layer == 0 or Layer == {}""".format(max_layer))
             # layer_0 = df.query("Layer == 0")
@@ -872,7 +1064,7 @@ class Varying_Shared_layers:
             return pd.DataFrame({'df': [dif]})
 
         print("simi: ", max_layer)
-        print(df.to_string())
+        # print(df.to_string())
         df = df.groupby(['Round', 'Dataset', 'Alpha', 'Model']).apply(lambda e: summary(ag=e, d_f=df)).reset_index()
 
         base_dir = """analysis/output/torch/varying_shared_layers/{}/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
@@ -1137,48 +1329,49 @@ class Varying_Shared_layers:
         else:
             comment = 'set'
 
-        df['Shared layers'] = df['Shared layers'].astype(int)
-        sort = {i: "" for i in df['Shared layers'].sort_values().unique().tolist()}
-        shared_layers_list = df['Shared layers'].tolist()
-        print("Lista: ", shared_layers_list)
-        for i in range(len(shared_layers_list)):
-            shared_layer = str(shared_layers_list[i])
-            if "-1" in shared_layer:
-                shared_layers_list[i] = "FedPredict (with ALS)"
-                sort[shared_layer] = shared_layers_list[i]
-                continue
-            if "-2" in shared_layer:
-                shared_layers_list[i] = "FedPredict (with ALS + Compredict)"
-                sort[shared_layer] = shared_layers_list[i]
-                continue
-            if "-3" in shared_layer:
-                shared_layers_list[i] = "FedPredict (with Compredict)"
-                sort[shared_layer] = shared_layers_list[i]
-                continue
-            new_shared_layer = "{"
-            for layer in shared_layer:
-                if len(new_shared_layer) == 1:
-                    new_shared_layer += layer
-                else:
-                    new_shared_layer += ", " + layer
-
-            new_shared_layer += "}"
-            if shared_layer == "10":
-                new_shared_layer = "100% of the layers"
-            if shared_layer == "50":
-                new_shared_layer = "50% of the layers"
-
-            shared_layers_list[i] = new_shared_layer
-            sort[shared_layer] = shared_layers_list[i]
-
-        df['Shared layers'] = np.array(shared_layers_list)
-        layer_selection_evaluate = list(sort.values())
-        sort = []
-        for i in layer_selection_evaluate:
-            if len(i) > 0:
-                sort.append(i)
-        layer_selection_evaluate = sort
-        print("ord: ", layer_selection_evaluate)
+        # df['Shared layers'] = df['Shared layers'].astype(int)
+        # sort = {i: "" for i in df['Shared layers'].sort_values().unique().tolist()}
+        # shared_layers_list = df['Shared layers'].tolist()
+        # print("Lista: ", shared_layers_list)
+        # for i in range(len(shared_layers_list)):
+        #     shared_layer = str(shared_layers_list[i])
+        #     if "-1" in shared_layer:
+        #         shared_layers_list[i] = "$FedPredict_{d}$"
+        #         sort[shared_layer] = shared_layers_list[i]
+        #         continue
+        #     if "-2" in shared_layer:
+        #         shared_layers_list[i] = "$FedPredict_{dc}$"
+        #         sort[shared_layer] = shared_layers_list[i]
+        #         continue
+        #     if "-3" in shared_layer:
+        #         shared_layers_list[i] = "$FedPredict_{c}$"
+        #         sort[shared_layer] = shared_layers_list[i]
+        #         continue
+        #     new_shared_layer = "{"
+        #     for layer in shared_layer:
+        #         if len(new_shared_layer) == 1:
+        #             new_shared_layer += layer
+        #         else:
+        #             new_shared_layer += ", " + layer
+        #
+        #     new_shared_layer += "}"
+        #     if shared_layer == "10":
+        #         new_shared_layer = "$FedPredict$"
+        #     if shared_layer == "50":
+        #         new_shared_layer = "50% of the layers"
+        #
+        #     shared_layers_list[i] = new_shared_layer
+        #     sort[shared_layer] = shared_layers_list[i]
+        #
+        # df['Shared layers'] = np.array(shared_layers_list)
+        # layer_selection_evaluate = list(sort.values())
+        # sort = []
+        # for i in layer_selection_evaluate:
+        #     if len(i) > 0:
+        #         sort.append(i)
+        # layer_selection_evaluate = sort
+        # print("ord: ", layer_selection_evaluate)
+        layer_selection_evaluate  = ["$FedPredict_{dc}$", "$FedPredict_{d}$", "$FedPredict_{c}$", "$FedPredict$", "$FedAvg$"]
         style = 'Alpha'
 
         title = """Accuracy in {}; Model={}""".format(dataset, model)
@@ -1245,10 +1438,10 @@ class Varying_Shared_layers:
             dataset = str(df['Dataset'].values[0])
             alpha = float(df['Alpha'].values[0])
             model = str(df['Model'].values[0])
-            print("interes: ", round, dataset, alpha, model)
+            # print("interes: ", round, dataset, alpha, model)
             df_copy = copy.deepcopy(df_aux.query("""Round == {} and Dataset == '{}' and Alpha == {} and Model == '{}'""".format(round, dataset, alpha, model)))
-            print("apos: ", df_copy.columns)
-            target = df_copy[df_copy['Shared layers'] == "100% of the layers"]
+            # print("apos: ", df_copy.columns)
+            target = df_copy[df_copy['Shared layers'] == "$FedPredict$"]
             target_acc = target['Accuracy (%)'].tolist()[0]
             target_size = target['Size of parameters (MB)'].tolist()[0]
             acc = df['Accuracy (%)'].tolist()[0]
@@ -1276,10 +1469,10 @@ class Varying_Shared_layers:
 
         df_preprocessed = copy.deepcopy(df)
 
-        df = df[df['Shared layers'] != "100% of the layers"]
+        df = df[df['Shared layers'] != "$FedPredict$"]
         df = df[df['Shared layers'] != "{1}"]
         # layer_selection_evaluate =  ['FedPredict (with ALS)']
-        layer_selection_evaluate = ['FedPredict (with ALS + Compredict)']
+        layer_selection_evaluate = ["$FedPredict_{dc}$"]
         print("menor: ", df['Accuracy reduction (%)'].min())
         print("Fed", df[df['Shared layers'] == 'FedPredict (with ALS)'][['Accuracy reduction (%)', 'Round']])
         print("tra: ", df['Shared layers'].unique().tolist())

@@ -114,6 +114,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		self.gradient_norm = []
 		self.gradient_norm_round = []
 		self.gradient_norm_nt = []
+		self.max_norm = None
 		self.T = int(args.T)
 
 	def calculate_initial_similarity(self, server_round, rate=0.1):
@@ -212,6 +213,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		parameters_aggregated, metrics_aggregated = super().aggregate_fit(server_round, results, failures)
 		if server_round == 1:
 			self.model_shape = [i.shape for i in parameters_to_ndarrays(parameters_aggregated)]
+			self.max_norm = {i: 1 for i in range(len(self.model_shape))}
 			self.model_size = len(self.model_shape)
 			self.similarity_list_per_layer = {i: [] for i in range(self.model_size)}
 			self._layer_compression_range()
@@ -326,17 +328,21 @@ class FedPredictBaseServer(FedAvgBaseServer):
 				# if i % 2 == 0:
 				layer = parameter[i]
 				if len(layer.shape) >= 2:
-					gradient = current_global_model[i] - last_trained_global_model[i]
+					# gradient = current_global_model[i] - last_trained_global_model[i]
+					gradient = current_global_model[i]
 					norm = np.linalg.norm(gradient)
+					if norm > self.max_norm[i]:
+						self.max_norm[i] = norm
+						print("maior: ", norm, " camadaa: ", i)
+					norm = norm/self.max_norm[i]
+					print("norma calculada: ", norm)
 					# gradient_norm.append(norm)
 					compression_range = self.layers_comppression_range[i]
 					if int(client_id) <= 3:
 						if norm > 0.6:
 							print("Norma do cliente: ", client_id, " norma maior: ", norm)
-							print(gradient)
 						if norm < 0.14:
 							print("Norma do cliente: ", client_id, " norma menor: ", norm)
-							print(gradient)
 						print("compression range: ", compression_range)
 					gradient_norm.append(norm)
 					if compression_range > 0:

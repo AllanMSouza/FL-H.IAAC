@@ -209,7 +209,7 @@ class Varying_Shared_layers:
             # print(self.df_summary)
             stacked_plot(df=self.df_summary, base_dir=self.base_dir, file_name="""unique_classes_{}""".format(dataset), x_column='Alpha', y_column='Total_of_clients_(%)', title="""{}""".format(dataset), hue='Unique_classes')
 
-            line_plot(df=self.df_summary, base_dir=self.base_dir, file_name="""unique_classes_{}""".format(dataset), x_column='Alpha', y_column='Total_of_clients_(%)', hue='Unique_classes', title="""{}""".format(dataset))
+            bar_plot(df=self.df_summary, base_dir=self.base_dir, file_name="""unique_classes_{}""".format(dataset), x_column='Alpha', y_column='Total_of_clients_(%)', hue='Unique_classes', title="""{}""".format(dataset))
 
     # def summary_alphas_clients_unique_classes(self):
     #
@@ -296,7 +296,7 @@ if __name__ == '__main__':
     fraction_fit = 0.3
     num_clients = 20
     dataset = ["CIFAR10", "EMNIST"]
-    alpha = [0.1, 1.0, 2.0, 3.0, 4.0, 5.0]
+    alpha = [0.1, 1.0, 3.0, 5.0]
     num_rounds = 50
 
     Varying_Shared_layers(tp=type_model, num_clients=num_clients,  dataset=dataset, class_per_client=2, alpha=alpha).start()
