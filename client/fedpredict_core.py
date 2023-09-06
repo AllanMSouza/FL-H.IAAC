@@ -239,8 +239,6 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
     difference_per_layer_vector = {j: [] for j in range(num_layers)}
     mean_similarity_per_layer = {i: {'mean': 0, 'ci': 0} for i in range(num_layers)}
     mean_difference_per_layer = {i: {'min': 0, 'max': 0} for i in range(num_layers)}
-    # print("primeira: ", num_layers)
-
 
     for client_id in range(num_clients):
 
@@ -248,7 +246,6 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
         client_id = clients_ids[client_id]
 
         for layer_index in range(num_layers):
-            # print("tamanho maximo: ", num_layers)
             client_layer = client[layer_index]
             global_layer = global_parameter[layer_index]
             if np.ndim(global_layer) == 1:
@@ -273,7 +270,6 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
                         similarity = cka.linear_CKA(global_layer_k, client_layer_k)
                         difference = global_layer_k - client_layer_k
                         if np.isnan(similarity):
-                            print("entr: ", global_layer_k, client_layer_k)
                             if np.sum(global_layer_k) == 0 or np.sum(client_layer_k) == 0:
                                 similarity = 1
 
@@ -281,7 +277,7 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
                     client_difference['min'].append(abs(difference.min()))
                     client_difference['max'].append(abs(difference.max()))
                     difference_per_layer_vector[layer_index] += np.absolute(difference).flatten().tolist()
-                # print("Diferença max: ", i, k, j, client_difference['max'])
+
                 if layer_index not in similarity_per_layer[client_id]:
                     similarity_per_layer[client_id][layer_index] = []
                     difference_per_layer[client_id][layer_index]['min'] = []
