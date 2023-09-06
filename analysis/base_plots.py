@@ -245,7 +245,7 @@ def stacked_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, l
 
             for alpha in alphas:
                 print("pergunta")
-                query = """Alpha=={} and (Unique_classes<={} and Unique_classes>={})""".format(alpha, start, end)
+                query = """\u03B1=={} and (Unique_classes<={} and Unique_classes>={})""".format(alpha, start, end)
                 print(query)
                 print("resultado")
                 print(df.query(query)['Total_of_clients_(%)'].sum().tolist())
@@ -281,10 +281,10 @@ def stacked_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, l
     print(len(x_data), len(curves), len(classes_new))
     df = pd.DataFrame({x_column: x_data, hue: classes_new, y_column: curves})
     sns.barplot(df, x=x_column, y=y_column, hue=hue)
-    plt.legend(loc='right', fontsize='large', title=hue.replace("_", " "))
+    plt.legend(loc='upper right', fontsize='large', title=hue.replace("_", " "), bbox_to_anchor=(1.2, 1.1))
     plt.xlabel(x_column)
     plt.ylabel('Total of clients (%)')
-    plt.title(title)
+    plt.title(title.replace("CIFAR10", "CIFAR-10"))
     #
     plt.show()
 

@@ -29,6 +29,8 @@ class Varying_Shared_layers:
         self.epochs = epochs
         self.comment = comment
         self.layer_selection_evaluate = layer_selection_evaluate
+        self.model_name_list = [model.replace("CNN_2", "CNN-a").replace("CNN_3", "CNN-b") for model in self.model_name]
+        self.dataset_name_list = [dataset.replace("CIFAR10", "CIFAR-10") for dataset in self.dataset]
         if -1 in self.layer_selection_evaluate and -2 in self.layer_selection_evaluate:
             self.experiment = "als_compredict"
         elif -1 in self.layer_selection_evaluate:
@@ -44,7 +46,9 @@ class Varying_Shared_layers:
 
         for model in self.model_name:
             for dataset in self.dataset:
-                df = self.evaluate_client_analysis_shared_layers(model, dataset)
+                model_name = model.replace("CNN_2", "CNN-a").replace("CNN_3", "CNN-b")
+                dataset_name = dataset.replace("CIFAR10", "CIFAR-10")
+                df = self.evaluate_client_analysis_shared_layers(model_name, dataset_name)
                 if df_concat is None:
                     df_concat = df
                 else:
@@ -53,23 +57,23 @@ class Varying_Shared_layers:
         print(df_concat)
         self.evaluate_client_analysis_differnt_models(df_concat)
         self.evaluate_client_joint_parameter_reduction(df_concat)
-        alphas = df_concat['Alpha'].unique().tolist()
+        alphas = df_concat['\u03B1'].unique().tolist()
         models = df_concat['Model'].unique().tolist()
         df_concat = self.build_filename_fedavg(df_concat)
         for alpha in alphas:
             self.evaluate_client_joint_accuracy(df_concat, alpha)
-            # self.joint_table(self.build_filename_fedavg(self.df_concat, use_mean=False), alpha=alpha, models=models)
+            self.joint_table(self.build_filename_fedavg(self.df_concat, use_mean=False), alpha=alpha, models=models)
 
         # for alpha in alphas:
         #     self.evaluate_client_joint_accuracy(df_concat, alpha)
         self.similarity()
-        for alpha in alphas:
-            self.evaluate_client_norm_analysis_nt(alpha)
-        self.evaluate_client_norm_analysis()
+        # for alpha in alphas:
+        #     self.evaluate_client_norm_analysis_nt(alpha)
+        # self.evaluate_client_norm_analysis()
 
     def convert_shared_layers(self, df):
 
-        shared_layers_list = df['Shared layers'].tolist()
+        shared_layers_list = df['Solution'].tolist()
         for i in range(len(shared_layers_list)):
             shared_layer = str(shared_layers_list[i])
             if "-1" in shared_layer:
@@ -96,7 +100,7 @@ class Varying_Shared_layers:
 
             shared_layers_list[i] = new_shared_layer
 
-        df['Shared layers'] = np.array(shared_layers_list)
+        df['Solution'] = np.array(shared_layers_list)
 
         return df
 
@@ -113,12 +117,18 @@ class Varying_Shared_layers:
                         for file in files:
                             filename = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/" + f"logs/{self.type}/{self.strategy_name}-{self.aggregation_method}-{self.fraction_fit}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{model}/{dataset}/classes_per_client_{self.class_per_client}/alpha_{a}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(layers)}_layer_selection_evaluate/{file}"
                             df = pd.read_csv(filename)
+
+                            # model_name = model.replace("CNN_2", "CNN-a").replace("CNN_3", "CNN-b")
+                            # dataset_name = dataset.replace("CIFAR10", "CIFAR-10")
+                            model_name = model.replace("CNN_2", "CNN-a").replace("CNN_3", "CNN-b")
+                            dataset_name = dataset.replace("CIFAR10", "CIFAR-10")
+                            print("olar: ", model_name, dataset_name, model, dataset)
                             if "evaluate" in file:
-                                df['Shared layers'] = np.array([layers] * len(df))
+                                df['Solution'] = np.array([layers] * len(df))
                                 df['Strategy'] = np.array([self.strategy_name] * len(df))
-                                df['Alpha'] = np.array([a]*len(df))
-                                df['Model'] = np.array([model]*len(df))
-                                df['Dataset'] = np.array([dataset]*len(df))
+                                df['\u03B1'] = np.array([a]*len(df))
+                                df['Model'] = np.array([model_name]*len(df))
+                                df['Dataset'] = np.array([dataset_name]*len(df))
                                 df['Accuracy (%)'] = df['Accuracy'].to_numpy() * 100
                                 if df_concat is None:
                                     df_concat = df
@@ -127,11 +137,11 @@ class Varying_Shared_layers:
                             elif "similarity" in file:
                                 if layers not in [-1, -2]:
                                     continue
-                                df['Alpha'] = np.array([a] * len(df))
+                                df['\u03B1'] = np.array([a] * len(df))
                                 df['Round'] = np.array(df['Server round'].tolist())
-                                df['Dataset'] = np.array([dataset] * len(df))
-                                df['Model'] = np.array([model] * len(df))
-                                df['Shared layers'] = np.array([layers] * len(df))
+                                df['Dataset'] = np.array([dataset_name] * len(df))
+                                df['Model'] = np.array([model_name] * len(df))
+                                df['Solution'] = np.array([layers] * len(df))
                                 df['Strategy'] = np.array([self.strategy_name] * len(df))
                                 if df_concat_similarity is None:
                                     df_concat_similarity = df
@@ -140,11 +150,11 @@ class Varying_Shared_layers:
                             elif "norm" in file:
                                 if layers not in [-1, -2]:
                                     continue
-                                df['Alpha'] = np.array([a] * len(df))
+                                df['\u03B1'] = np.array([a] * len(df))
                                 df['Server round'] = np.array(df['Round'].tolist())
-                                df['Dataset'] = np.array([dataset] * len(df))
-                                df['Model'] = np.array([model] * len(df))
-                                df['Shared layers'] = np.array([layers] * len(df))
+                                df['Dataset'] = np.array([dataset_name] * len(df))
+                                df['Model'] = np.array([model_name] * len(df))
+                                df['Solution'] = np.array([layers] * len(df))
                                 df['Strategy'] = np.array([self.strategy_name] * len(df))
                                 if df_concat_norm is None:
                                     df_concat_norm = df
@@ -157,7 +167,7 @@ class Varying_Shared_layers:
         self.df_concat = self.convert_shared_layers(df_concat)
         self.df_concat_similarity = df_concat_similarity
         self.df_concat_norm = df_concat_norm
-        # print("Leu similaridade", df_concat_similarity[['Round', 'Alpha', 'Similarity', 'Dataset', 'Model', 'Layer']].drop_duplicates().to_string())
+        # print("Leu similaridade", df_concat_similarity[['Round', '\u03B1', 'Similarity', 'Dataset', 'Model', 'Layer']].drop_duplicates().to_string())
         # exit()
 
     def build_filename_fedavg(self, df_concat, use_mean=True):
@@ -174,13 +184,15 @@ class Varying_Shared_layers:
                                 print("não achou fedavg")
                                 return df_concat
                             df = pd.read_csv(filename)
+                            model_name = model.replace("CNN_2", "CNN-a").replace("CNN_3", "CNN-b")
+                            dataset_name = dataset.replace("CIFAR10", "CIFAR-10")
                             if "evaluate" in file:
-                                df['Shared layers'] = np.array([layers] * len(df))
+                                df['Solution'] = np.array([layers] * len(df))
                                 df['Strategy'] = np.array(['FedAvg'] * len(df))
-                                df['Shared layers'] = np.array(["$FedAvg$"] * len(df))
-                                df['Alpha'] = np.array([a]*len(df))
-                                df['Model'] = np.array([model]*len(df))
-                                df['Dataset'] = np.array([dataset]*len(df))
+                                df['Solution'] = np.array(["$FedAvg$"] * len(df))
+                                df['\u03B1'] = np.array([a]*len(df))
+                                df['Model'] = np.array([model_name]*len(df))
+                                df['Dataset'] = np.array([dataset_name]*len(df))
                                 df['Accuracy (%)'] = df['Accuracy'].to_numpy() * 100
 
                                 def summary(df):
@@ -191,7 +203,7 @@ class Varying_Shared_layers:
 
                                 if use_mean:
                                     df = df.groupby(
-                                        ['Dataset', 'Model', 'Alpha', 'Strategy', 'Shared layers', 'Round']).mean().reset_index()
+                                        ['Dataset', 'Model', '\u03B1', 'Strategy', 'Solution', 'Round']).mean().reset_index()
 
                                 if df_concat is None:
                                     df_concat = df
@@ -204,7 +216,7 @@ class Varying_Shared_layers:
 
     def evaluate_client_norm_analysis_nt(self, alpha):
 
-        df = self.df_concat_norm.query("""Alpha == {}""".format(alpha))
+        df = self.df_concat_norm.query("""\u03B1 == {}""".format(alpha))
         unique_nt_filter = [1, 4, 8, 12]
         print("filtro: ", unique_nt_filter)
         nt = df['nt'].tolist()
@@ -227,10 +239,10 @@ class Varying_Shared_layers:
 
             model_name_index = 0
             dataset_name_index = 0
-            title = """{}; {}""".format(self.model_name[model_name_index], self.dataset[dataset_name_index])
+            title = """{}; {}""".format(self.model_name_list[model_name_index], self.dataset_name_list[dataset_name_index])
             line_plot(
                         ax=ax[model_name_index, dataset_name_index],
-                        df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[dataset_name_index], self.model_name[model_name_index])),
+                        df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[dataset_name_index], self.model_name_list[model_name_index])),
                       base_dir=base_dir,
                       file_name="",
                       x_column=x_column,
@@ -247,10 +259,10 @@ class Varying_Shared_layers:
 
             model_name_index = 0
             dataset_name_index = 1
-            title = """{}; {}""".format(self.model_name[model_name_index], self.dataset[dataset_name_index])
+            title = """{}; {}""".format(self.model_name_list[model_name_index], self.dataset_name_list[dataset_name_index])
             line_plot(
                 ax=ax[model_name_index, dataset_name_index],
-                df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[dataset_name_index], self.model_name[model_name_index])),
+                df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[dataset_name_index], self.model_name_list[model_name_index])),
                 base_dir=base_dir,
                 file_name="",
                 x_column=x_column,
@@ -267,10 +279,10 @@ class Varying_Shared_layers:
 
             model_name_index = 1
             dataset_name_index = 0
-            title = """{}; {}""".format(self.model_name[model_name_index], self.dataset[dataset_name_index])
+            title = """{}; {}""".format(self.model_name_list[model_name_index], self.dataset_name_list[dataset_name_index])
             line_plot(
                 ax=ax[model_name_index, dataset_name_index],
-                df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[dataset_name_index], self.model_name[model_name_index])),
+                df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[dataset_name_index], self.model_name_list[model_name_index])),
                 base_dir=base_dir,
                 file_name="",
                 x_column=x_column,
@@ -287,10 +299,10 @@ class Varying_Shared_layers:
 
             model_name_index = 1
             dataset_name_index = 1
-            title = """{}; {}""".format(self.model_name[model_name_index], self.dataset[dataset_name_index])
+            title = """{}; {}""".format(self.model_name_list[model_name_index], self.dataset_name_list[dataset_name_index])
             line_plot(
                 ax=ax[model_name_index, dataset_name_index],
-                df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[dataset_name_index], self.model_name[model_name_index])),
+                df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[dataset_name_index], self.model_name_list[model_name_index])),
                 base_dir=base_dir,
                 file_name="",
                 x_column=x_column,
@@ -313,7 +325,7 @@ class Varying_Shared_layers:
             plt.subplots_adjust(wspace=0.07, hspace=0.14)
             lines_labels = [ax[0, 0].get_legend_handles_labels()]
             lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-            fig.legend(lines, labels, title="""nt""".format(alpha), loc='upper center', ncol=4, bbox_to_anchor=(0.5, 1.04))
+            fig.legend(lines, labels, title="""nt""".format(alpha), loc='upper center', ncol=4, bbox_to_anchor=(0.5, 0.5))
             figure = fig.get_figure()
             Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
             Path(base_dir + "svg/").mkdir(parents=True, exist_ok=True)
@@ -335,20 +347,20 @@ class Varying_Shared_layers:
             y_max = 1
             x_column = 'Round'
             y_column = 'Norm'
-            hue = 'Alpha'
+            hue = '\u03B1'
             hue_order = df[hue].unique().tolist().sort(reverse=False)
 
             model_name_index = 0
             dataset_name_index = 0
-            title = """{}; {}""".format(self.model_name[model_name_index], self.dataset[dataset_name_index])
+            title = """{}; {}""".format(self.model_name_list[model_name_index], self.dataset_name_list[dataset_name_index])
             print("agrupou")
             print("colunas: ", df.columns)
-            print(df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[dataset_name_index],
-                                                                           self.model_name[model_name_index])).groupby(["Round", "Alpha"]).mean().reset_index()[[x_column, y_column, hue]])
+            print(df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[dataset_name_index],
+                                                                           self.model_name_list[model_name_index])).groupby(["Round", "\u03B1"]).mean().reset_index()[[x_column, y_column, hue]])
             line_plot(
                 ax=ax[model_name_index, dataset_name_index],
-                df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[dataset_name_index],
-                                                                           self.model_name[model_name_index])).groupby(["Round", "Alpha"]).mean().reset_index()[[x_column, y_column, hue]],
+                df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[dataset_name_index],
+                                                                           self.model_name_list[model_name_index])).groupby(["Round", "\u03B1"]).mean().reset_index()[[x_column, y_column, hue]],
                 base_dir=base_dir,
                 file_name="teste",
                 x_column=x_column,
@@ -368,12 +380,12 @@ class Varying_Shared_layers:
 
             model_name_index = 0
             dataset_name_index = 1
-            title = """{}; {}""".format(self.model_name[model_name_index], self.dataset[dataset_name_index])
+            title = """{}; {}""".format(self.model_name_list[model_name_index], self.dataset_name_list[dataset_name_index])
             line_plot(
                 ax=ax[model_name_index, dataset_name_index],
-                df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[dataset_name_index],
-                                                                           self.model_name[model_name_index])).groupby(
-                    ["Round", "Alpha"]).mean().reset_index()[[x_column, y_column, hue]],
+                df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[dataset_name_index],
+                                                                           self.model_name_list[model_name_index])).groupby(
+                    ["Round", "\u03B1"]).mean().reset_index()[[x_column, y_column, hue]],
                 base_dir=base_dir,
                 file_name="teste",
                 x_column=x_column,
@@ -392,12 +404,12 @@ class Varying_Shared_layers:
 
             model_name_index = 1
             dataset_name_index = 0
-            title = """{}; {}""".format(self.model_name[model_name_index], self.dataset[dataset_name_index])
+            title = """{}; {}""".format(self.model_name_list[model_name_index], self.dataset_name_list[dataset_name_index])
             line_plot(
                 ax=ax[model_name_index, dataset_name_index],
-                df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[dataset_name_index],
-                                                                           self.model_name[model_name_index])).groupby(
-                    ["Round", "Alpha"]).mean().reset_index()[[x_column, y_column, hue]],
+                df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[dataset_name_index],
+                                                                           self.model_name_list[model_name_index])).groupby(
+                    ["Round", "\u03B1"]).mean().reset_index()[[x_column, y_column, hue]],
                 base_dir=base_dir,
                 file_name="teste",
                 x_column=x_column,
@@ -416,12 +428,12 @@ class Varying_Shared_layers:
 
             model_name_index = 1
             dataset_name_index = 1
-            title = """{}; {}""".format(self.model_name[model_name_index], self.dataset[dataset_name_index])
+            title = """{}; {}""".format(self.model_name_list[model_name_index], self.dataset_name_list[dataset_name_index])
             line_plot(
                 ax=ax[model_name_index, dataset_name_index],
-                df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[dataset_name_index],
-                                                                           self.model_name[model_name_index])).groupby(
-                    ["Round", "Alpha"]).mean().reset_index()[[x_column, y_column, hue]],
+                df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[dataset_name_index],
+                                                                           self.model_name_list[model_name_index])).groupby(
+                    ["Round", "\u03B1"]).mean().reset_index()[[x_column, y_column, hue]],
                 base_dir=base_dir,
                 file_name="teste",
                 x_column=x_column,
@@ -446,7 +458,7 @@ class Varying_Shared_layers:
             plt.subplots_adjust(wspace=0.07, hspace=0.14)
             lines_labels = [ax[0, 0].get_legend_handles_labels()]
             lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-            fig.legend(lines, labels, title="""Alpha""".format(), loc='upper center', ncol=4,
+            fig.legend(lines, labels, title="""\u03B1""".format(), loc='upper center', ncol=4,
                        bbox_to_anchor=(0.5, 1.06))
             figure = fig.get_figure()
             Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
@@ -459,8 +471,8 @@ class Varying_Shared_layers:
 
     def evaluate_client_joint_parameter_reduction(self, df):
 
-        # df = df[df['Shared layers'] == "$FedPredict_d$"]
-        df = df[df['Shared layers'] != "$FedPredict$"]
+        # df = df[df['Solution'] == "$FedPredict_d$"]
+        df = df[df['Solution'] != "$FedPredict$"]
         fig, ax = plt.subplots(2, 2,  sharex='all', sharey='all', figsize=(6, 6))
 
         base_dir = """analysis/output/torch/varying_shared_layers/{}/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
@@ -470,8 +482,8 @@ class Varying_Shared_layers:
 
         x_column = 'Round'
         y_column = 'Parameters reduction (%)'
-        hue = 'Shared layers'
-        style = 'Alpha'
+        hue = 'Solution'
+        style = '\u03B1'
         y_min = 0
         if self.experiment == "als_compredict":
             layer_selection_evaluate = ["$FedPredict_{dc}$", "$FedPredict_{d}$", "$FedPredict_{c}$"]
@@ -480,19 +492,19 @@ class Varying_Shared_layers:
         else:
             layer_selection_evaluate = ["$FedPredict_{c}$", 'FedPredict', 'FedAvg']
 
-        if "$FedPredict_{dc}$" not in df['Shared layers'].tolist():
+        if "$FedPredict_{dc}$" not in df['Solution'].tolist():
             y_max = 60
         else:
             y_max = 100
 
         if len(self.dataset) >= 2:
             fig, ax = plt.subplots(2, 2, sharex='all', sharey='all', figsize=(6, 6))
-            title = """{}; {}""".format(self.dataset[0], self.model_name[0])
+            title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[0])
             x = df[x_column].tolist()
             y = df[y_column].tolist()
-            print("jointplot: \n", df.query("""Dataset == '{}'""".format(self.dataset[0])))
+            print("jointplot: \n", df.query("""Dataset == '{}'""".format(self.dataset_name_list[0])))
             line_plot(ax=ax[0, 0],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[0])),
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[0])),
                       base_dir=base_dir,
                       file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
                       x_column=x_column,
@@ -511,9 +523,9 @@ class Varying_Shared_layers:
             ax[0, 0].get_legend().remove()
             ax[0, 0].set_xlabel('')
             ax[0, 0].set_ylabel('')
-            title = """{}; {}""".format(self.dataset[1], self.model_name[0])
+            title = """{}; {}""".format(self.dataset_name_list[1], self.model_name_list[0])
             line_plot(ax=ax[0, 1],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[1], self.model_name[0])),
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[1], self.model_name_list[0])),
                       base_dir=base_dir,
                       file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
                       x_column=x_column,
@@ -533,9 +545,9 @@ class Varying_Shared_layers:
             ax[0, 1].set_xlabel('')
             ax[0, 1].set_ylabel('')
 
-            title = """{}; {}""".format(self.dataset[0], self.model_name[1])
+            title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[1])
             line_plot(ax=ax[1, 0],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[1])),
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[1])),
                       base_dir=base_dir,
                       file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
                       x_column=x_column,
@@ -556,9 +568,9 @@ class Varying_Shared_layers:
             ax[1, 0].set_xlabel('')
             ax[1, 0].set_ylabel('')
 
-            title = """{}; {}""".format(self.dataset[1], self.model_name[1])
+            title = """{}; {}""".format(self.dataset_name_list[1], self.model_name_list[1])
             line_plot(ax=ax[1, 1],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[1], self.model_name[1])),
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[1], self.model_name_list[1])),
                       base_dir=base_dir,
                       file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
                       x_column=x_column,
@@ -596,12 +608,12 @@ class Varying_Shared_layers:
 
         else:
             fig, ax = plt.subplots(1, 2, sharex='all', sharey='all', figsize=(8, 6))
-            title = """{}; {}""".format(self.dataset[0], self.model_name[0])
+            title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[0])
             x = df[x_column].tolist()
             y = df[y_column].tolist()
-            print("jointplot: \n", df.query("""Dataset == '{}'""".format(self.dataset[0])))
+            print("jointplot: \n", df.query("""Dataset == '{}'""".format(self.dataset_name_list[0])))
             line_plot(ax=ax[0],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[0])),
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[0])),
                       base_dir=base_dir,
                       file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
                       x_column=x_column,
@@ -620,9 +632,9 @@ class Varying_Shared_layers:
             ax[0].get_legend().remove()
             ax[0].set_xlabel('')
             ax[0].set_ylabel('')
-            title = """{}; {}""".format(self.dataset[0], self.model_name[1])
+            title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[1])
             line_plot(ax=ax[1],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[1])),
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[1])),
                       base_dir=base_dir,
                       file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
                       x_column=x_column,
@@ -672,14 +684,14 @@ class Varying_Shared_layers:
 
     def joint_table(self, df, alpha, models):
 
-        shared_layers = df['Shared layers'].unique().tolist()
+        shared_layers = df['Solution'].unique().tolist()
 
         model_report = {i: {} for i in shared_layers}
 
         # df = df[df['Round'] == 100]
         print("receb: ", df.columns)
         df_test = df[
-            ['Round', 'Size of parameters', 'Shared layers', 'Accuracy (%)', 'Alpha', 'Dataset', 'Model']]
+            ['Round', 'Size of parameters', 'Solution', 'Accuracy (%)', '\u03B1', 'Dataset', 'Model']]
 
         # df_test = df_test.query("""Round in [10, 100]""")
         print("agrupou table")
@@ -703,7 +715,7 @@ class Varying_Shared_layers:
                 # cifar10_acc[column] = (self.filter(df_test, experiment, 'CIFAR10', float(column), strategy=model_name)['Accuracy (%)']*100).mean().round(6)
                 mnist_acc[column] = self.t_distribution((self.filter(df_test, model=column, dataset='EMNIST', alpha=alpha, shared_layer=shared_layer)[
                                          'Accuracy (%)']).tolist(), ci)
-                cifar10_acc[column] = self.t_distribution((self.filter(df_test,model=column, dataset='CIFAR10', alpha=alpha, shared_layer=shared_layer)[
+                cifar10_acc[column] = self.t_distribution((self.filter(df_test,model=column, dataset='CIFAR-10', alpha=alpha, shared_layer=shared_layer)[
                                            'Accuracy (%)']).tolist(), ci)
 
             model_metrics = []
@@ -785,12 +797,12 @@ class Varying_Shared_layers:
         if strategy is not None:
             df = df.query(
                 """Dataset=='{}' and Model=='{}'""".format(str(dataset), model))
-            df = df[df['Alpha'] == alpha]
-            df = df[df['Shared layers'] == shared_layer]
+            df = df[df['\u03B1'] == alpha]
+            df = df[df['Solution'] == shared_layer]
         else:
             df = df.query(
                 """Dataset=='{}' and Model=='{}'""".format(dataset), model)
-            df = df[df['Alpha'] == alpha]
+            df = df[df['\u03B1'] == alpha]
 
         print("filtrou: ", df)
 
@@ -799,7 +811,7 @@ class Varying_Shared_layers:
 
     def evaluate_client_joint_accuracy(self, df, alpha):
 
-        # df = df[df['Shared layers'] == "$FedPredict_d$"]
+        # df = df[df['Solution'] == "$FedPredict_d$"]
 
         base_dir = """analysis/output/torch/varying_shared_layers/{}/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
             self.experiment, str(self.dataset), self.num_clients, self.num_rounds, self.fraction_fit,
@@ -808,11 +820,11 @@ class Varying_Shared_layers:
 
         x_column = 'Round'
         y_column = 'Accuracy (%)'
-        hue = 'Shared layers'
+        hue = 'Solution'
         style = None
 
-        df = df.query("""Alpha == {}""".format(alpha))
-        print("strategias unicas: ", df['Shared layers'].unique().tolist())
+        df = df.query("""\u03B1 == {}""".format(alpha))
+        print("strategias unicas: ", df['Solution'].unique().tolist())
 
         if self.experiment == "als_compredict":
             layer_selection_evaluate = ["$FedPredict_{dc}$", "$FedPredict_{d}$", "$FedPredict_{c}$", "$FedPredict$", "$FedAvg$"]
@@ -824,15 +836,15 @@ class Varying_Shared_layers:
         if len(self.dataset) >= 2:
 
             print("testar1")
-            print(df[df['Shared layers'] == "$FedPredict_{d}$"])
+            print(df[df['Solution'] == "$FedPredict_{d}$"])
 
             fig, ax = plt.subplots(2, 2, sharex='all', sharey='all', figsize=(6, 6))
-            title = """{}; {}""".format(self.dataset[0], self.model_name[0])
+            title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[0])
             x = df[x_column].tolist()
             y = df[y_column].tolist()
-            print("jointplot: \n", df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[0])))
+            print("jointplot: \n", df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[0])))
             line_plot(ax=ax[0, 0],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[0])),
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[0])),
                       base_dir=base_dir,
                       file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
                       x_column=x_column,
@@ -854,9 +866,9 @@ class Varying_Shared_layers:
             # ax[0, 0].set_xticks([])
             # ax[0, 0].set_yticks(np.arange(0, 101, 10))
 
-            title = """{}; {}""".format(self.dataset[1], self.model_name[0])
+            title = """{}; {}""".format(self.dataset_name_list[1], self.model_name_list[0])
             line_plot(ax=ax[0, 1],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[1], self.model_name[0])),
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[1], self.model_name_list[0])),
                       base_dir=base_dir,
                       file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
                       x_column=x_column,
@@ -882,9 +894,9 @@ class Varying_Shared_layers:
             # ax[0, 1].set_xticks([])
             # plt.tight_layout(pad=0.5)
 
-            title = """{}; {}""".format(self.dataset[0], self.model_name[1])
+            title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[1])
             line_plot(ax=ax[1, 0],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[1])),
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[1])),
                       base_dir=base_dir,
                       file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
                       x_column=x_column,
@@ -908,9 +920,9 @@ class Varying_Shared_layers:
             # ax[1, 0].set_yticks(np.arange(0, 101, 10))
             # ax[1, 0].set_xticks(np.arange(0, max(x) + 1, 5))
 
-            title = """{}; {}""".format(self.dataset[1], self.model_name[1])
+            title = """{}; {}""".format(self.dataset_name_list[1], self.model_name_list[1])
             line_plot(ax=ax[1, 1],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[1], self.model_name[1])),
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[1], self.model_name_list[1])),
                       base_dir=base_dir,
                       file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
                       x_column=x_column,
@@ -942,8 +954,8 @@ class Varying_Shared_layers:
             plt.subplots_adjust(wspace=0.07, hspace=0.14)
             lines_labels = [ax[0, 0].get_legend_handles_labels()]
             lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-            # fig.legend(lines, labels, loc='upper center', ncol=4, title="""Alpha={}""".format(alpha), bbox_to_anchor=(0.5, 1.05))
-            fig.suptitle("""Alpha={}""".format(alpha))
+            # fig.legend(lines, labels, loc='upper center', ncol=4, title="""\u03B1={}""".format(alpha), bbox_to_anchor=(0.5, 1.05))
+            fig.suptitle("""\u03B1={}""".format(alpha))
             # plt.xticks(np.arange(min(x), max(x) + 1, max(x) // 5))
             figure = fig.get_figure()
             Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
@@ -955,13 +967,13 @@ class Varying_Shared_layers:
 
         else:
             fig, ax = plt.subplots(1, 2, sharex='all', sharey='all', figsize=(10, 6))
-            title = """{}; {}""".format(self.dataset[0], self.model_name[0])
+            title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[0])
             x = df[x_column].tolist()
             y = df[y_column].tolist()
             print("jointplot: \n",
-                  df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[0])))
+                  df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[0])))
             line_plot(ax=ax[0],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[0])),
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[0])),
                       base_dir=base_dir,
                       file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
                       x_column=x_column,
@@ -983,9 +995,9 @@ class Varying_Shared_layers:
             # ax[0, 0].set_xticks([])
             # ax[0, 0].set_yticks(np.arange(0, 101, 10))
 
-            title = """{}; {}""".format(self.dataset[0], self.model_name[1])
+            title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[1])
             line_plot(ax=ax[1],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[1])),
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[1])),
                       base_dir=base_dir,
                       file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
                       x_column=x_column,
@@ -1011,7 +1023,7 @@ class Varying_Shared_layers:
             plt.subplots_adjust(wspace=0.07, hspace=0.14)
             lines_labels = [ax[0].get_legend_handles_labels()]
             lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-            fig.legend(lines, labels, loc='upper center', ncol=4, title="""Alpha={}""".format(alpha),
+            fig.legend(lines, labels, loc='upper center', ncol=4, title="""\u03B1={}""".format(alpha),
                        bbox_to_anchor=(0.5, 1.05))
             # plt.xticks(np.arange(min(x), max(x) + 1, max(x) // 5))
             figure = fig.get_figure()
@@ -1034,13 +1046,13 @@ class Varying_Shared_layers:
 
             deno = ag['Similarity'].tolist()[0]
             dataset = ag['Dataset'].tolist()[0]
-            alpha = ag['Alpha'].tolist()[0]
+            alpha = ag['\u03B1'].tolist()[0]
             model = ag['Model'].tolist()[0]
             max_layer = int(ag.query("""Model == '{}'""".format(model))['Layer'].max()) - 1
             round = ag['Round'].tolist()[0]
-            # print("pergunta: ", """Round <= {} and Model == '{}' and Alpha == {} and Dataset == '{}' and Layer == {}""".format(round, model, alpha, dataset, 0))
-            similarities_0 = np.mean(d_f.query("""Round <= {} and Model == '{}' and Alpha == {} and Dataset == '{}' and Layer == {}""".format(round, model, alpha, dataset, 0))['Similarity'].to_numpy())
-            similarities_last = np.mean(d_f.query("""Round <= {} and Model == '{}' and Alpha == {} and Dataset == '{}' and Layer == {}""".format(round, model, alpha, dataset, max_layer))['Similarity'].to_numpy())
+            # print("pergunta: ", """Round <= {} and Model == '{}' and \u03B1 == {} and Dataset == '{}' and Layer == {}""".format(round, model, alpha, dataset, 0))
+            similarities_0 = np.mean(d_f.query("""Round <= {} and Model == '{}' and \u03B1 == {} and Dataset == '{}' and Layer == {}""".format(round, model, alpha, dataset, 0))['Similarity'].to_numpy())
+            similarities_last = np.mean(d_f.query("""Round <= {} and Model == '{}' and \u03B1 == {} and Dataset == '{}' and Layer == {}""".format(round, model, alpha, dataset, max_layer))['Similarity'].to_numpy())
             # print("resultado: ", similarities_0, similarities_last, " maximo: ", max_layer)
             if deno == 0:
                 deno = 1
@@ -1065,7 +1077,7 @@ class Varying_Shared_layers:
 
         print("simi: ", max_layer)
         # print(df.to_string())
-        df = df.groupby(['Round', 'Dataset', 'Alpha', 'Model']).apply(lambda e: summary(ag=e, d_f=df)).reset_index()
+        df = df.groupby(['Round', 'Dataset', '\u03B1', 'Model']).apply(lambda e: summary(ag=e, d_f=df)).reset_index()
 
         base_dir = """analysis/output/torch/varying_shared_layers/{}/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
             self.experiment, str(self.dataset), self.num_clients, self.num_rounds, self.fraction_fit,
@@ -1081,12 +1093,12 @@ class Varying_Shared_layers:
             print(df.iloc[0])
             x_column = 'Round'
             y_column = 'df'
-            hue = 'Alpha'
+            hue = '\u03B1'
             order = sorted(self.alpha)
             sci = True
             filename = """df_similarity_{}""".format(str(self.dataset))
 
-            title = """{}; {}""".format(self.dataset[0], self.model_name[0])
+            title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[0])
 
             fig, ax = plt.subplots(2, 2,  sharex='all', sharey='all', figsize=(6, 6))
             print("endereco: ", base_dir)
@@ -1094,8 +1106,8 @@ class Varying_Shared_layers:
             x = df[x_column].tolist()
             y = df[y_column].tolist()
             print("filtrado:")
-            print(df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[0])).to_string())
-            line_plot(ax=ax[0, 0], base_dir=base_dir, file_name=filename, title=title, df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[0])),
+            print(df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[0])).to_string())
+            line_plot(ax=ax[0, 0], base_dir=base_dir, file_name=filename, title=title, df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[0])),
                      x_column=x_column, y_column=y_column, y_lim=True, y_max=1,
                      y_min=0, hue=hue, hue_order=order, type=1)
             ax[0, 0].get_legend().remove()
@@ -1103,18 +1115,18 @@ class Varying_Shared_layers:
             ax[0, 0].set_ylabel('')
             # ax[0, 0].set_xticks([])
             # ax[0, 0].set_yticks(np.arange(0, 0.6, 0.1))
-            title = """{}; {}""".format(self.dataset[1], self.model_name[0])
+            title = """{}; {}""".format(self.dataset_name_list[1], self.model_name_list[0])
 
-            line_plot(ax=ax[0, 1], base_dir=base_dir, file_name=filename, title=title, df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[1], self.model_name[0])),
+            line_plot(ax=ax[0, 1], base_dir=base_dir, file_name=filename, title=title, df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[1], self.model_name_list[0])),
                       x_column=x_column, y_column=y_column, y_lim=True, y_max=1,
                       y_min=0, hue=hue, hue_order=order, type=1)
             ax[0, 1].get_legend().remove()
             ax[0, 1].set_xlabel('')
             ax[0, 1].set_ylabel('')
 
-            title = """{}; {}""".format(self.dataset[0], self.model_name[1])
+            title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[1])
             line_plot(ax=ax[1, 0], base_dir=base_dir, file_name=filename, title=title,
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[1])),
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[1])),
                       x_column=x_column, y_column=y_column, y_lim=True, y_max=1,
                       y_min=0, hue=hue, hue_order=order, type=1)
             ax[1, 0].get_legend().remove()
@@ -1122,10 +1134,10 @@ class Varying_Shared_layers:
             ax[1, 0].set_ylabel('')
             # ax[0, 0].set_xticks([])
             # ax[0, 0].set_yticks(np.arange(0, 0.6, 0.1))
-            title = """{}; {}""".format(self.dataset[1], self.model_name[1])
+            title = """{}; {}""".format(self.dataset_name_list[1], self.model_name_list[1])
 
             line_plot(ax=ax[1, 1], base_dir=base_dir, file_name=filename, title=title,
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[1], self.model_name[1])),
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[1], self.model_name_list[1])),
                       x_column=x_column, y_column=y_column, y_lim=True, y_max=1,
                       y_min=0, hue=hue, hue_order=order, type=1)
             ax[1, 1].get_legend().remove()
@@ -1158,12 +1170,12 @@ class Varying_Shared_layers:
             print(df.iloc[0])
             x_column = 'Round'
             y_column = 'df'
-            hue = 'Alpha'
+            hue = '\u03B1'
             order = sorted(self.alpha)
             sci = True
             filename = """df_similarity_{}""".format(str(self.dataset))
 
-            title = """{}; {}""".format(self.dataset[0], self.model_name[0])
+            title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[0])
 
             fig, ax = plt.subplots(1, 2, sharex='all', sharey='all', figsize=(6, 6))
             print("endereco: ", base_dir)
@@ -1172,9 +1184,9 @@ class Varying_Shared_layers:
             y = df[y_column].tolist()
             print("filtrado:")
             print(df.query(
-                """Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[0])).to_string())
+                """Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[0])).to_string())
             line_plot(ax=ax[0], base_dir=base_dir, file_name=filename, title=title,
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[0])),
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[0])),
                       x_column=x_column, y_column=y_column, y_lim=True, y_max=1,
                       y_min=0, hue=hue, hue_order=order, type=1)
             ax[0].get_legend().remove()
@@ -1182,10 +1194,10 @@ class Varying_Shared_layers:
             ax[0].set_ylabel('')
             # ax[0, 0].set_xticks([])
             # ax[0, 0].set_yticks(np.arange(0, 0.6, 0.1))
-            title = """{}; {}""".format(self.dataset[0], self.model_name[1])
+            title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[1])
 
             line_plot(ax=ax[1], base_dir=base_dir, file_name=filename, title=title,
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset[0], self.model_name[1])),
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[1])),
                       x_column=x_column, y_column=y_column, y_lim=True, y_max=1,
                       y_min=0, hue=hue, hue_order=order, type=1)
             ax[1].get_legend().remove()
@@ -1219,13 +1231,13 @@ class Varying_Shared_layers:
 
             return pd.DataFrame({'Parameters reduction (%)': [parameters], 'Accuracy reduction (%)': [accuracy_reduction], 'Accuracy (%)': [acc]})
 
-        df = df.groupby(['Dataset', 'Model', 'Alpha', 'Strategy', 'Shared layers', 'Round']).apply(summary).reset_index()
+        df = df.groupby(['Dataset', 'Model', '\u03B1', 'Strategy', 'Solution', 'Round']).apply(summary).reset_index()
 
         base_dir = """analysis/output/torch/varying_shared_layers/{}/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
             self.experiment, str(self.dataset), self.num_clients, self.num_rounds, self.fraction_fit,
             str(self.model_name),
             str(self.alpha), self.comment)
-        dataset = self.dataset[0]
+        dataset = self.dataset_name_list[0]
         os.makedirs(base_dir + "png/", exist_ok=True)
         os.makedirs(base_dir + "svg/", exist_ok=True)
         os.makedirs(base_dir + "csv/", exist_ok=True)
@@ -1233,7 +1245,7 @@ class Varying_Shared_layers:
         print(df.iloc[0])
         x_column = 'Model'
         y_column = 'Accuracy reduction (%)'
-        hue = 'Alpha'
+        hue = '\u03B1'
         order = ['CNN_6', 'CNN_10']
         sci = True
         filename = """evaluate_client_acc_reduction_alpha_model_{}""".format(dataset)
@@ -1249,8 +1261,8 @@ class Varying_Shared_layers:
         # filename = """evaluate_client_acc_alpha_model_lineplot"""
         # y_column = "Accuracy (%)"
         # x_column = "Round"
-        # hue = "Shared layers"
-        # style = "Alpha"
+        # hue = "Solution"
+        # style = "\u03B1"
         # line_plot(df=df,
         #           base_dir=base_dir,
         #           file_name=filename,
@@ -1268,7 +1280,7 @@ class Varying_Shared_layers:
 
         x_column = 'Model'
         y_column = 'Parameters reduction (%)'
-        hue = 'Alpha'
+        hue = '\u03B1'
         order = ['CNN_6', 'CNN_10']
         sci = True
         filename = """evaluate_client_parameters_reduction_alpha_model_{}""".format(dataset)
@@ -1282,8 +1294,8 @@ class Varying_Shared_layers:
         # filename = """evaluate_client_parameters_alpha_model_lineplot"""
         # x_column = "Round"
         # y_column = "Parameters reduction (%)"
-        # hue = "Shared layers"
-        # style = "Alpha"
+        # hue = "Solution"
+        # style = "\u03B1"
         # line_plot(df=df,
         #           base_dir=base_dir,
         #           file_name=filename,
@@ -1312,13 +1324,13 @@ class Varying_Shared_layers:
             total_size = parameters + config
 
             return pd.DataFrame({'Size of parameters (MB)': [parameters], 'Communication cost (MB)': [total_size], 'Accuracy': [acc], 'Accuracy gain per MB': [acc_gain_per_byte]})
-        df = df[['Accuracy', 'Round', 'Size of parameters', 'Size of config', 'Strategy', 'Shared layers', 'Alpha', 'Dataset', 'Model']].groupby(by=['Strategy', 'Shared layers', 'Round', 'Alpha', 'Dataset', 'Model']).apply(lambda e: strategy(e)).reset_index()[['Accuracy', 'Size of parameters (MB)', 'Communication cost (MB)', 'Strategy', 'Shared layers', 'Round', 'Accuracy gain per MB', 'Alpha', 'Dataset', 'Model']]
+        df = df[['Accuracy', 'Round', 'Size of parameters', 'Size of config', 'Strategy', 'Solution', '\u03B1', 'Dataset', 'Model']].groupby(by=['Strategy', 'Solution', 'Round', '\u03B1', 'Dataset', 'Model']).apply(lambda e: strategy(e)).reset_index()[['Accuracy', 'Size of parameters (MB)', 'Communication cost (MB)', 'Strategy', 'Solution', 'Round', 'Accuracy gain per MB', '\u03B1', 'Dataset', 'Model']]
         # print("Com alpha: ", alpha, "\n", df)
         df['Accuracy (%)'] = df['Accuracy'] * 100
         df['Accuracy (%)'] = df['Accuracy (%)'].round(4)
         x_column = 'Round'
         y_column = 'Accuracy (%)'
-        hue = 'Shared layers'
+        hue = 'Solution'
         comment = self.comment
         if comment == '':
             comment = 'bottom up'
@@ -1329,9 +1341,9 @@ class Varying_Shared_layers:
         else:
             comment = 'set'
 
-        # df['Shared layers'] = df['Shared layers'].astype(int)
-        # sort = {i: "" for i in df['Shared layers'].sort_values().unique().tolist()}
-        # shared_layers_list = df['Shared layers'].tolist()
+        # df['Solution'] = df['Solution'].astype(int)
+        # sort = {i: "" for i in df['Solution'].sort_values().unique().tolist()}
+        # shared_layers_list = df['Solution'].tolist()
         # print("Lista: ", shared_layers_list)
         # for i in range(len(shared_layers_list)):
         #     shared_layer = str(shared_layers_list[i])
@@ -1363,7 +1375,7 @@ class Varying_Shared_layers:
         #     shared_layers_list[i] = new_shared_layer
         #     sort[shared_layer] = shared_layers_list[i]
         #
-        # df['Shared layers'] = np.array(shared_layers_list)
+        # df['Solution'] = np.array(shared_layers_list)
         # layer_selection_evaluate = list(sort.values())
         # sort = []
         # for i in layer_selection_evaluate:
@@ -1372,7 +1384,7 @@ class Varying_Shared_layers:
         # layer_selection_evaluate = sort
         # print("ord: ", layer_selection_evaluate)
         layer_selection_evaluate  = ["$FedPredict_{dc}$", "$FedPredict_{d}$", "$FedPredict_{c}$", "$FedPredict$", "$FedAvg$"]
-        style = 'Alpha'
+        style = '\u03B1'
 
         title = """Accuracy in {}; Model={}""".format(dataset, model)
         base_dir = """analysis/output/torch/varying_shared_layers/{}/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(self.experiment, dataset, self.num_clients, self.num_rounds, self.fraction_fit, model, alpha, self.comment)
@@ -1392,11 +1404,11 @@ class Varying_Shared_layers:
                   y_lim=True,
                   y_min=0,
                   y_max=100)
-        # print("Custo {1}", df[df['Shared layers']=='{1}'])
+        # print("Custo {1}", df[df['Solution']=='{1}'])
         title = """Communication cost in {}; Model={}""".format(dataset, model)
         x_column = 'Round'
         y_column = 'Communication cost (MB)'
-        hue = 'Shared layers'
+        hue = 'Solution'
         line_plot(df=df,
                   base_dir=base_dir,
                   file_name="evaluate_client_communication_cost_round_varying_shared_layers_lineplot" + "_ " + dataset + "_" + "_alpha" + str(alpha) + "_model_" + model,
@@ -1412,12 +1424,12 @@ class Varying_Shared_layers:
                   y_min=0)
 
         if comment == "bottom up":
-            # df = df[df["Shared layers"] > 1]
+            # df = df[df["Solution"] > 1]
             pass
-        print("Com alpha: ", alpha, "\n", df[['Accuracy', 'Shared layers', 'Round', 'Accuracy gain per MB']])
+        print("Com alpha: ", alpha, "\n", df[['Accuracy', 'Solution', 'Round', 'Accuracy gain per MB']])
         x_column = 'Round'
         y_column = 'Accuracy gain per MB'
-        hue = 'Shared layers'
+        hue = 'Solution'
         line_plot(df=df,
                   base_dir=base_dir,
                   file_name="evaluate_client_accuracy_gain_per_MB_varying_shared_layers_lineplot" + "_ " + dataset + "_" + "_alpha" + str(alpha) + "_model_" + model,
@@ -1436,12 +1448,12 @@ class Varying_Shared_layers:
 
             round = int(df['Round'].values[0])
             dataset = str(df['Dataset'].values[0])
-            alpha = float(df['Alpha'].values[0])
+            alpha = float(df['\u03B1'].values[0])
             model = str(df['Model'].values[0])
             # print("interes: ", round, dataset, alpha, model)
-            df_copy = copy.deepcopy(df_aux.query("""Round == {} and Dataset == '{}' and Alpha == {} and Model == '{}'""".format(round, dataset, alpha, model)))
+            df_copy = copy.deepcopy(df_aux.query("""Round == {} and Dataset == '{}' and \u03B1 == {} and Model == '{}'""".format(round, dataset, alpha, model)))
             # print("apos: ", df_copy.columns)
-            target = df_copy[df_copy['Shared layers'] == "$FedPredict$"]
+            target = df_copy[df_copy['Solution'] == "$FedPredict$"]
             target_acc = target['Accuracy (%)'].tolist()[0]
             target_size = target['Size of parameters (MB)'].tolist()[0]
             acc = df['Accuracy (%)'].tolist()[0]
@@ -1455,7 +1467,7 @@ class Varying_Shared_layers:
             # acc_score = acc_score *acc_weight
             # size_reduction = size_reduction * size_weight
             # score = 2*(acc_score * size_reduction)/(acc_score + size_reduction)
-            # if df['Shared layers'].tolist()[0] == "{1, 2, 3, 4}":
+            # if df['Solution'].tolist()[0] == "{1, 2, 3, 4}":
             #     acc_reduction = 0.0001
             #     size_reduction = 0.0001
 
@@ -1464,22 +1476,22 @@ class Varying_Shared_layers:
 
         print("antes: ", df.columns)
         aux = copy.deepcopy(df)
-        df = df[['Accuracy (%)', 'Size of parameters (MB)', 'Communication cost (MB)', 'Strategy', 'Shared layers', 'Round', 'Accuracy gain per MB', 'Alpha', 'Dataset', 'Model']].groupby(
-            by=['Strategy', 'Round', 'Shared layers', 'Dataset', 'Alpha', 'Model']).apply(lambda e: comparison_with_shared_layers(df=e, df_aux=aux)).reset_index()[['Strategy', 'Round', 'Shared layers', 'Alpha', 'Accuracy (%)', 'Accuracy reduction (%)', 'Parameters reduction (MB)', 'Parameters reduction (%)', 'Dataset', 'Model']]
+        df = df[['Accuracy (%)', 'Size of parameters (MB)', 'Communication cost (MB)', 'Strategy', 'Solution', 'Round', 'Accuracy gain per MB', '\u03B1', 'Dataset', 'Model']].groupby(
+            by=['Strategy', 'Round', 'Solution', 'Dataset', '\u03B1', 'Model']).apply(lambda e: comparison_with_shared_layers(df=e, df_aux=aux)).reset_index()[['Strategy', 'Round', 'Solution', '\u03B1', 'Accuracy (%)', 'Accuracy reduction (%)', 'Parameters reduction (MB)', 'Parameters reduction (%)', 'Dataset', 'Model']]
 
         df_preprocessed = copy.deepcopy(df)
 
-        df = df[df['Shared layers'] != "$FedPredict$"]
-        df = df[df['Shared layers'] != "{1}"]
+        df = df[df['Solution'] != "$FedPredict$"]
+        df = df[df['Solution'] != "{1}"]
         # layer_selection_evaluate =  ['FedPredict (with ALS)']
         layer_selection_evaluate = ["$FedPredict_{dc}$"]
         print("menor: ", df['Accuracy reduction (%)'].min())
-        print("Fed", df[df['Shared layers'] == 'FedPredict (with ALS)'][['Accuracy reduction (%)', 'Round']])
-        print("tra: ", df['Shared layers'].unique().tolist())
+        print("Fed", df[df['Solution'] == 'FedPredict (with ALS)'][['Accuracy reduction (%)', 'Round']])
+        print("tra: ", df['Solution'].unique().tolist())
 
         x_column = 'Round'
         y_column = 'Accuracy reduction (%)'
-        hue = 'Shared layers'
+        hue = 'Solution'
         line_plot(df=df,
                   base_dir=base_dir,
                   file_name="evaluate_client_accuracy_reduction_varying_shared_layers_lineplot" + "_ " + dataset + "_" + "_alpha" + str(alpha) + "_model_" + model,
@@ -1496,8 +1508,8 @@ class Varying_Shared_layers:
 
         x_column = 'Round'
         y_column = 'Parameters reduction (MB)'
-        hue = 'Shared layers'
-        style = 'Alpha'
+        hue = 'Solution'
+        style = '\u03B1'
         line_plot(df=df,
                   base_dir=base_dir,
                   file_name="evaluate_client_Parameters_reduction_varying_shared_layers_lineplot" + "_ " + dataset + "_" + "_alpha" + str(alpha) + "_model_" + model,
@@ -1516,8 +1528,8 @@ class Varying_Shared_layers:
 
         x_column = 'Round'
         y_column = 'Parameters reduction (%)'
-        hue = 'Shared layers'
-        style = 'Alpha'
+        hue = 'Solution'
+        style = '\u03B1'
         line_plot(df=df,
                   base_dir=base_dir,
                   file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot" + "_ " + dataset + "_" + "_alpha" + str(

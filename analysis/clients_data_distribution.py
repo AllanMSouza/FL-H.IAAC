@@ -185,7 +185,7 @@ class Varying_Shared_layers:
 
 
 
-        # df = pd.DataFrame({'Client': clients, 'Samples (%)': percentages, 'Class': classes, 'Dataset': datasets, 'Alpha': alphas})
+        # df = pd.DataFrame({'Client': clients, 'Samples (%)': percentages, 'Class': classes, 'Dataset': datasets, '\u03B1': alphas})
         # print(df)
         # print("Unico: ", unique_classes_count)
         # self.df = df
@@ -198,18 +198,18 @@ class Varying_Shared_layers:
             # for alp, clas, coun in zip(alphas_list, classes_list, count):
 
 
-            self.df_summary = pd.DataFrame({'Alpha': alphas_list, 'Unique_classes': classes_list, 'Total of clients': count})
+            self.df_summary = pd.DataFrame({'\u03B1': alphas_list, 'Unique_classes': classes_list, 'Total of clients': count})
             self.df_summary['Total_of_clients_(%)'] = (self.df_summary['Total of clients']/20)*100
             print("sumario antes: ")
             print(self.df_summary)
 
 
-            # self.df_summary = self.df_summary.groupby('Alpha').mean().reset_index()
+            # self.df_summary = self.df_summary.groupby('\u03B1').mean().reset_index()
             # print("sumario")
             # print(self.df_summary)
-            stacked_plot(df=self.df_summary, base_dir=self.base_dir, file_name="""unique_classes_{}""".format(dataset), x_column='Alpha', y_column='Total_of_clients_(%)', title="""{}""".format(dataset), hue='Unique_classes')
+            stacked_plot(df=self.df_summary, base_dir=self.base_dir, file_name="""unique_classes_{}""".format(dataset), x_column='\u03B1', y_column='Total_of_clients_(%)', title="""{}""".format(dataset), hue='Unique_classes')
 
-            bar_plot(df=self.df_summary, base_dir=self.base_dir, file_name="""unique_classes_{}""".format(dataset), x_column='Alpha', y_column='Total_of_clients_(%)', hue='Unique_classes', title="""{}""".format(dataset))
+            bar_plot(df=self.df_summary, base_dir=self.base_dir, file_name="""unique_classes_{}""".format(dataset), x_column='\u03B1', y_column='Total_of_clients_(%)', hue='Unique_classes', title="""{}""".format(dataset))
 
     # def summary_alphas_clients_unique_classes(self):
     #
@@ -222,13 +222,13 @@ class Varying_Shared_layers:
 
     def plot(self, ax, df, dataset, alpha, x_column, y_column, base_dir, hue, i, j, y_max=100):
 
-        df = df.query("""Dataset == '{}' and Alpha == {}""".format(self.dataset[i],
+        df = df.query("""Dataset == '{}' and \u03B1 == {}""".format(self.dataset[i],
                                                                        self.alpha[j]))
 
-        # print("filtro: ", """Dataset == '{}' and Alpha == {}""".format(self.dataset[i],
+        # print("filtro: ", """Dataset == '{}' and \u03B1 == {}""".format(self.dataset[i],
         #                                                                self.alpha[j]))
         # print("filtrado: ", df)
-        title = """Alpha={}""".format(self.alpha[j])
+        title = """\u03B1={}""".format(self.alpha[j])
         bar_plot(
             ax=ax[j],
             df=df,
@@ -263,7 +263,7 @@ class Varying_Shared_layers:
                 dataset = self.dataset[i]
                 for j in range(len(self.alpha)):
                     a = self.alpha[j]
-                    # df = self.df.query("""Alpha == {} and Dataset == '{}'""".format(a, dataset))
+                    # df = self.df.query("""\u03B1 == {} and Dataset == '{}'""".format(a, dataset))
                     self.plot(ax, self.df, dataset, a, x_column, y_column, self.base_dir, hue, i, j, y_max=100)
 
 
@@ -276,7 +276,7 @@ class Varying_Shared_layers:
             lines_labels = [ax[0].get_legend_handles_labels()]
             # lines_labels = [ax[0, 0].get_legend_handles_labels()]
             lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-            fig.legend(lines, labels, title="""Alpha={}""".format(alpha), loc='upper center', ncol=4, bbox_to_anchor=(0.5, 1.06))
+            fig.legend(lines, labels, title="""\u03B1={}""".format(alpha), loc='upper center', ncol=4, bbox_to_anchor=(0.5, 1.06))
             figure = fig.get_figure()
             Path(self.base_dir + "png/").mkdir(parents=True, exist_ok=True)
             Path(self.base_dir + "svg/").mkdir(parents=True, exist_ok=True)
