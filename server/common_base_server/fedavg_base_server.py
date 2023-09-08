@@ -1,3 +1,4 @@
+import copy
 import flwr as fl
 import numpy as np
 import math
@@ -222,10 +223,11 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 				if client_['count'] < client_['max_rounds']:
 					clients_ids.append(i)
 					# 0 rounds since last training
-					self.fedpredict_clients_metrics[i]['nt'] = 0
+					# self.fedpredict_clients_metrics[i]['nt'] = 0
 				else:
 					# Adds 1 more round without training
-					self.fedpredict_clients_metrics[i]['nt'] += 1
+					# self.fedpredict_clients_metrics[i]['nt'] += 1
+					pass
 			# available_clients = self._get_valid_clients_for_fit()
 			# ====================================================================================
 			available_clients = clients_ids
@@ -271,15 +273,16 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		else:
 			selected_clients_id = clients
 			self.selected_clients = [client.cid for client in clients]
+		for client in available_clients:
+			self.fedpredict_clients_metrics[client]['nt'] += 1
 		for client in selected_clients_id:
 			self.clients_metrics[client.cid]['count'] += 1
 			self.clients_fit_rounds_history[client.cid] = server_round
 			# For FedPredict
 			self.fedpredict_clients_metrics[client.cid]['round_of_last_fit'] = server_round
+			self.fedpredict_clients_metrics[client.cid]['nt'] = 0
 			if self.fedpredict_clients_metrics[client.cid]['first_round'] == -1:
 				self.fedpredict_clients_metrics[client.cid]['first_round'] = server_round
-		for client in self.fedpredict_clients_metrics:
-			self.fedpredict_clients_metrics[str(client)]['nt'] = server_round - self.fedpredict_clients_metrics[str(client)]['round_of_last_fit']
 
 		if server_round == self.num_rounds:
 			print("=======")
@@ -394,7 +397,20 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 				if self.clients_metrics[client.cid]['count'] == 0:
 					print("Cliente: ", client.cid, " nunca treinado")
 			# Return client/config pairs
-		return [(client, evaluate_ins) for client in selected_clients]
+		client_config = []
+
+
+		for client in selected_clients:
+			c = copy.copy(config)
+			config = {
+				'round': server_round,
+				'n_rounds': self.num_rounds,
+				'nt': self.fedpredict_clients_metrics[str(client.cid)]['nt']
+			}
+			print("tte", config['nt'])
+			client_config.append((client, fl.common.EvaluateIns(parameters, config)))
+
+		return client_config
 
 	def aggregate_evaluate(
         self,
@@ -577,7 +593,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 		server_header = self._get_server_header()
 		train_header = ["Round", "Cid", "Selected", "Total time", "Size of parameters", "Avg loss train", "Avg accuracy train"]
-		evaluate_header = ["Round", "Cid", "Size of parameters", "Size of config", "Loss", "Accuracy"]
+		evaluate_header = ["Round", "Cid", "Size of parameters", "Size of config", "Loss", "Accuracy", "nt"]
 		server_nt_acc_header = ["Round", "Accuracy (%)", "nt"]
 		predictions_header = ["Cid", "Round", "Prediction", "Label"]
 
@@ -591,7 +607,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self._write_header(self.server_filename, server_header)
 		self._write_header(self.train_filename, train_header)
 		self._write_header(self.evaluate_filename, evaluate_header)
-		self._write_header(self.server_nt_acc_filename, server_nt_acc_header)
+		# self._write_header(self.server_nt_acc_filename, server_nt_acc_header)
 		self._write_header(self.predictions_client_filename, predictions_header)
 
 	def _get_server_header(self):

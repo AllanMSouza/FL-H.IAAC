@@ -1,6 +1,6 @@
 from client.client_torch import FedAvgClientTorch
 from client.client_torch.fedper_client_torch import FedPerClientTorch
-from ..fedpredict_core import fedpredict_core
+from ..fedpredict_core import fedpredict_core, decompress_global_parameters, fedpredict_combine_models, fedpredict_client
 from utils.quantization.parameters_svd import inverse_parameter_svd_reading
 from torch.nn.parameter import Parameter
 import torch
@@ -98,117 +98,12 @@ class FedPredictClientTorch(FedAvgClientTorch):
 			print("save parameters global model")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def _fedpredict_plugin(self, global_parameters, t, T, nt, M, df, layers_fraction):
-
-		try:
-
-			local_model_weights, global_model_weight = fedpredict_core(t, T, nt, df)
-
-			# Load global parameters into 'self.clone_model' (global model)
-			# global_parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
-			local_layer_count = 0
-			global_layer_count = 0
-			# parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
-			#
-			# for old_param in self.clone_model.parameters():
-			# 	if local_layer_count in M:
-			# 		new_param = parameters[global_layer_count]
-			# 		old_param.data = new_param.data.clone()
-			# 		global_layer_count += 1
-			# 	local_layer_count += 1
-
-			# self.clone_model.load_state_dict(torch.load(filename))
-			# Combine models
-			count = 0
-			for new_param, old_param in zip(global_parameters, self.model.parameters()):
-				# fraction = 1
-				# if len(layers_fraction) > 0:
-				# 	fraction = layers_fraction[i]
-				if count in self.m_combining_layers:
-					# print("novo param shape: ", new_param.data.clone().shape, " antigo param shape: ", old_param.data.clone().shape, "pesos: ", global_model_weight, local_model_weights)
-					old_param.data = (global_model_weight*new_param.data.clone() + local_model_weights*old_param.data.clone())
-				count += 1
-
-		except Exception as e:
-			print("merge models")
-			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
-
-	def _decompress(self, compressed_global_model_gradients, M, decompress):
-
-		try:
-			if decompress and len(compressed_global_model_gradients) > 0:
-				decompressed_gradients = inverse_parameter_svd_reading(compressed_global_model_gradients, [i.shape for i in self.get_parameters({})], len(M))
-				parameters = [Parameter(torch.Tensor(i.tolist())) for i in decompressed_gradients]
-				# print("descomprimidos shapes: ", [i.shape for i in parameters])
-			else:
-				parameters = [Parameter(torch.Tensor(i.tolist())) for i in compressed_global_model_gradients]
-
-			if os.path.exists(self.global_model_filename):
-				# Load local parameters to 'self.model'
-				self.global_model_filename.load_state_dict(torch.load(self.global_model_filename))
-
-				local_layer_count = 0
-				global_layer_count = 0
-				for old_param in self.global_model.parameters():
-					if local_layer_count in M:
-						new_param = parameters[global_layer_count]
-						# print("chegou new param: ", new_param.shape, " count: ", global_layer_count, " old param: ", old_param.shape, " count: ", local_layer_count)
-						# old_param.data = old_param.data.clone() + new_param.data.clone()
-						old_param.data = new_param.data.clone()
-						global_layer_count += 1
-					local_layer_count += 1
-
-			else:
-				for new_param, old_param in zip(parameters, self.global_model.parameters()):
-					old_param.data = new_param.data.clone()
-
-			return parameters
-
-		except Exception as e:
-			print("decompress")
-			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
-
 	def set_parameters_to_model_evaluate(self, global_parameters, config={}):
 		# Using 'torch.load'
 		try:
-			# filename = """./fedpredict_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
-			t = int(config['round'])
-			T = int(config['total_server_rounds'])
-			if self.T != 0:
-				T = self.T
-			client_metrics = config['metrics']
-			# Client's metrics
-			nt = client_metrics['nt']
-			round_of_last_fit = client_metrics['round_of_last_fit']
-			round_of_last_evaluate = client_metrics['round_of_last_evaluate']
-			first_round = client_metrics['first_round']
-			acc_of_last_fit = client_metrics['acc_of_last_fit']
-			acc_of_last_evaluate = client_metrics['acc_of_last_evaluate']
-			# Server's metrics
-			last_global_accuracy = config['last_global_accuracy']
-			# print("chegou")
-			M = config['M']
-			df = config['df']
-			decompress = config['decompress']
-			layers_fraction = config['layers_fraction']
-			local_layer_count = 0
-			global_layer_count = 0
-			print("decompress client: ", self.cid)
-			global_parameters = self._decompress(global_parameters, M, decompress)
-			parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
-			# print("parametros locais: ", [i.shape for i in self.model.parameters()])
-			if len(parameters) != len(M):
-				print("diferente", len(parameters), len(M))
-			# print("M:", M)
-
-			if os.path.exists(self.filename):
-				# Load local parameters to 'self.model'
-				self.model.load_state_dict(torch.load(self.filename))
-				self._fedpredict_plugin(global_parameters, t, T, nt, M, df, layers_fraction)
-			else:
-				for old_param , new_param in zip(self.model.parameters(), global_parameters):
-					old_param.data = new_param.data.clone()
+			self.model = fedpredict_client(self.filename, self.model, global_parameters, config)
 
 		except Exception as e:
 			print("Set parameters to model")
 			print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, self.cid), type(e).__name__, e)
+

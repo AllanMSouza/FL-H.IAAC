@@ -1,6 +1,10 @@
 import sys
+import copy
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
+from utils.quantization.parameters_svd import parameter_svd_write, inverse_parameter_svd_reading, if_reduces_size
+import os
+from torch.nn.parameter import Parameter
 import scipy.stats as st
 # from torch_cka import CKA
 import pandas as pd
@@ -9,6 +13,19 @@ import math
 import torch
 import numpy as np
 from analysis.base_plots import line_plot, box_plot, ecdf_plot
+
+from flwr.common import (
+    EvaluateIns,
+    EvaluateRes,
+    FitIns,
+    FitRes,
+    MetricsAggregationFn,
+    NDArrays,
+    Parameters,
+    Scalar,
+    ndarrays_to_parameters,
+    parameters_to_ndarrays,
+)
 
 
 class CKA(object):
@@ -61,21 +78,9 @@ def fedpredict_core(t, T, nt, sm):
         if nt == 0:
             global_model_weight = 0
         else:
-            # evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
-            # normalizar dentro de 0 e 1
-            # updated_level = 1/rounds_without_fit
-            # updated_level = 1 - max(0, -acc_of_last_fit+self.accuracy_of_last_round_of_evalute)
-            # if acc_of_last_evaluate < last_global_accuracy:
-            # updated_level = max(-last_global_accuracy + acc_of_last_evaluate, 0)
-            # else:
             update_level = 1 / nt
-            # evolutionary_level = (server_round / 50)
-            # print("client id: ", self.cid, " primeiro round", self.first_round)
             evolution_level = t / 100
-
-            # print("el servidor: ", el, " el local: ", evolutionary_level)
             eq1 = (-update_level - evolution_level) # v1 pior
-            # eq1 = (-update_level - evolution_level - sm) # v3 melhor
             eq2 = round(np.exp(eq1), 6)
             global_model_weight = eq2
 
@@ -97,43 +102,11 @@ def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_sim
         if nt == 0:
             shared_layers = 0
         else:
-            # reference_similarity = (mean_similarity_per_layer[int(n_layers*2-2)]['mean'] + mean_similarity_per_layer[int(n_layers*2-1)]['mean'])/2
-            # reference_similarity = min([mean_similarity_per_layer[int(n_layers * 2 - 2)]['mean'],
-            #                         mean_similarity_per_layer[int(n_layers * 2 - 1)]['mean']])
-            # # reference_similarity = mean_similarity_per_layer[int(n_layers * 2 - 2)]['mean']
-            # penalty = abs(mean_similarity_per_layer[int(n_layers * 2 - 2)]['mean'] -
-            #                         mean_similarity_per_layer[int(n_layers * 2 - 1)]['mean'])
             print("similaridade layer selection: ", df)
-            # evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
-            # normalizar dentro de 0 e 1
-            # updated_level = 1/rounds_without_fit
-            # updated_level = 1 - max(0, -acc_of_last_fit+self.accuracy_of_last_round_of_evalute)
-            # if acc_of_last_evaluate < last_global_accuracy:
-            # updated_level = max(-last_global_accuracy + acc_of_last_evaluate, 0)
-            # else:
             update_level = 1 / nt
-            # evolutionary_level = (server_round / 50)
-            # print("client id: ", self.cid, " primeiro round", self.first_round)
-            evolution_level = t / 100
-
-            # print("el servidor: ", el, " el local: ", evolutionary_level)
-
-            # eq1 = (update_level - evolution_level+reference_similarity) #v2
-
-            lamda = 0.2
-            # eq1 = (update_level - evolution_level - (1-sm)* lamda) # v3
-            # eq1 = (update_level - evolution_level - (1-sm) * lamda)  # v4 bom mas invertido
-            # eq1 = (-update_level - evolution_level - df)  # v5 cai demais e invertido
-            # eq1 = (-update_level - evolution_level + sm) # v6 cai demais
-            # eq1 = (-update_level**(1/2) - evolution_level - sm) # v7 cai demais
+            evolution_level = t / T
             eq1 = (-update_level*evolution_level*df)  # v8 ótimo
-            # eq1 = (-update_level - evolution_level - df) # v9
-            # eq1 = (-update_level - evolution_level - df/3)  # v10 reduz bem mas acurácia ruim para alpha 2 e 5
-            # eq1 = (-update_level - evolution_level - df**2)  # v11 reduz bem mas acurácia ruim para alpha 2 e 5
-            # eq1 = (-update_level - evolution_level - df ** 3)  # v12 reduz bem mas acurácia ruim para alpha 2 e 5
-            # eq1 = (update_level - evolution_level + (1 - sm) * 0.2)
             eq2 = round(np.exp(eq1), 6)
-            # eq2 = (update_level + reference_similarity)/2
             shared_layers = int(np.ceil(eq2 * n_layers))
 
         shared_layers = [i for i in range(shared_layers*2)]
@@ -146,28 +119,12 @@ def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_sim
         print("fedpredict core server layer selection")
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-def fedpredict_core_compredict(t, T, nt, layer, layer_norm, compression_range):
+def fedpredict_core_compredict(t, T, nt, layer, compression_range):
     try:
-
-        # 9
-        layers_n_components = []
-        # evitar que um modelo que treinou na rodada atual não utilize parâmetros globais pois esse foi atualizado após o seu treinamento
-        # normalizar dentro de 0 e 1
         updated_level = 1/nt
-        # updated_level = 1 - max(0, -acc_of_last_fit+self.accuracy_of_last_round_of_evalute)
-        # if acc_of_last_evaluate < last_global_accuracy:
-        # updated_level = max(-last_global_accuracy + acc_of_last_evaluate, 0)
-        # else:
-        norm = min(layer_norm, 1)
         columns = layer.shape[-1]
         fraction = compression_range/columns
-        # evolutionary_level = (server_round / 50)
-        # print("client id: ", self.cid, " primeiro round", self.first_round)
         evolution_level = t / T
-
-        # print("el servidor: ", el, " el local: ", evolutionary_level)
-
-        # eq1 = (update_level - evolution_level+reference_similarity) #v2
 
         lamda = 0.2
         # eq1 = (update_level - evolution_level - (1-sm)* lamda) # v3
@@ -196,7 +153,7 @@ def fedpredict_core_compredict(t, T, nt, layer, layer_norm, compression_range):
         # fc_l = eq1+1
         # eq2 = (update_level + reference_similarity)/2
         n_components = max(round(fc_l * compression_range), 1)
-        print("fracao: ", fc_l, " fraction: ", fraction, " nomra: ", norm, " componentes: ", n_components, " de ", compression_range)
+        print("fracao: ", fc_l, " fraction: ", fraction, " componentes: ", n_components, " de ", compression_range)
         # if n_components == 0 or (fc_l <= (1-t/T) and len(layer.shape) >= 3):
         #     n_components = None
 
@@ -288,15 +245,13 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
                 difference_per_layer[client_id][layer_index]['min'].append(abs(np.mean(client_difference['min'])))
                 difference_per_layer[client_id][layer_index]['max'].append(abs(np.mean(client_difference['max'])))
             else:
-            # for x, y in zip(global_layer, client_layer):
+
                 if layer_index not in interest_layers:
                     similarity = 0
                     difference = np.array([0])
                 else:
                     cka = CKA()
-                    # client_layer = global_layer - client_layer
                     similarity = cka.linear_CKA(global_layer, client_layer)
-                    # print("par: ", len(global_layer), len(client_layer), layer_index)
                     difference = global_layer - client_layer
 
                 similarity_per_layer[client_id][layer_index] = similarity
@@ -306,7 +261,6 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
                 client_difference['min'].append(abs(difference.min()))
                 client_difference['max'].append(abs(difference.max()))
                 difference_per_layer_vector[layer_index] += np.absolute(difference).flatten().tolist()
-                # print("Diferença max: ", i, k, j, client_difference['max'])
                 if layer_index not in similarity_per_layer[client_id]:
                     similarity_per_layer[client_id][layer_index] = []
                     difference_per_layer[client_id][layer_index]['min'] = []
@@ -316,8 +270,6 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
 
     layers_mean_similarity = []
     for layer_index in interest_layers:
-        # if layer_index % 2 != 0:
-        #     continue
         similarities = []
         min_difference = []
         max_difference = []
@@ -326,29 +278,19 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
             min_difference += difference_per_layer[client_id][layer_index]['min']
             max_difference += difference_per_layer[client_id][layer_index]['max']
 
-        print("si list: ", similarities)
         mean = np.mean(similarities)
         similarity_per_layer_list[layer_index].append(mean)
         layers_mean_similarity.append(mean)
         mean_similarity_per_layer[layer_index]['mean'] = mean
-        mean_similarity_per_layer[layer_index]['ci'] = st.norm.interval(alpha=0.95, loc=np.mean(similarities), scale=st.sem(similarities))[1] - np.mean(similarities)
-        mean_difference_per_layer[layer_index]['min'] = np.mean(min_difference)
-        mean_difference_per_layer[layer_index]['max'] = np.mean(max_difference)
+        # mean_similarity_per_layer[layer_index]['ci'] = st.norm.interval(alpha=0.95, loc=np.mean(similarities), scale=st.sem(similarities))[1] - np.mean(similarities)
+        # mean_difference_per_layer[layer_index]['min'] = np.mean(min_difference)
+        # mean_difference_per_layer[layer_index]['max'] = np.mean(max_difference)
         print("""similaridade (camada {}): {}""".format(layer_index, mean_similarity_per_layer[layer_index]))
     for layer in difference_per_layer_vector:
         if np.sum(difference_per_layer_vector[layer]) == 0:
             continue
-        df = pd.DataFrame({'Difference': difference_per_layer_vector[layer], 'x': [i for i in range(len(difference_per_layer_vector[layer]))]})
-        # line_plot(df=df, base_dir='', file_name="""lineplot_difference_layer_{}_round_{}_dataset_{}_alpha_{}""".format(str(layer), str(server_round), dataset, alpha), x_column='x', y_column='Difference', title='Difference between global and local parameters', y_lim=True, y_max=0.065)
-        box_plot(df=df, base_dir='', file_name="""boxplot_difference_layer_{}_round_{}_dataset_{}_alpha_{}""".format(str(layer), str(server_round), dataset, alpha), x_column=None, y_column='Difference', title='Difference between global and local parameters', y_lim=True, y_max=0.065)
-        # ecdf_plot(df=df, base_dir='', file_name="""ecdf_difference_layer_{}_round_dataset_{}_alpha_{}""".format(str(layer), str(server_round), dataset, alpha), x_column='Difference', y_column=None, title='Difference between global and local parameters', y_lim=True, y_max=0.065)
-        # print("Camada: ", layer, " Diferença média: ", pd.Series(difference_per_layer_vector[layer]).describe()['mean'])
-
-
-
-    # decimals_layer = decimals_per_layer(mean_difference_per_layer)
-    # print("Diferença por camada: ", mean_difference_per_layer)
-    # print("Decimals layer: ", decimals_layer)
+        # df = pd.DataFrame({'Difference': difference_per_layer_vector[layer], 'x': [i for i in range(len(difference_per_layer_vector[layer]))]})
+        # box_plot(df=df, base_dir='', file_name="""boxplot_difference_layer_{}_round_{}_dataset_{}_alpha_{}""".format(str(layer), str(server_round), dataset, alpha), x_column=None, y_column='Difference', title='Difference between global and local parameters', y_lim=True, y_max=0.065)
 
     return similarity_per_layer, mean_similarity_per_layer, np.mean(layers_mean_similarity), similarity_per_layer_list
 
@@ -380,3 +322,282 @@ def decimals_per_layer(mean_difference_per_layer):
             precisions[layer] = 9
 
     return precisions
+
+# ===========================================================================================
+
+# FedPredict server
+
+def get_size(parameter):
+	try:
+		return parameter.nbytes
+	except Exception as e:
+		print("get_size")
+		print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+def fedpredict_server(parameters, client_evaluate_list, fedpredict_clients_metrics, evaluate_config, similarity_between_layers_per_round, mean_similarity_per_round, server_round, num_rounds, comment, layer_selection_evaluate, df, layers_compression_range):
+    client_evaluate_list_fedpredict = []
+    accuracy = 0
+    mean_similarity_per_layer = similarity_between_layers_per_round[server_round]
+    mean_similarity = mean_similarity_per_round[server_round]
+    # if len(self.accuracy_history) > 0:
+    # 	accuracy = self.accuracy_history[len(self.accuracy_history)]
+    size_of_parameters = []
+    parameters = parameters_to_ndarrays(parameters)
+    # if server_round >= 4:
+    # 	self.calculate_current_similarity(server_round)
+    for i in range(1, len(parameters)):
+        size_of_parameters.append(get_size(parameters[i]))
+    for client_tuple in client_evaluate_list:
+        client = client_tuple[0]
+        client_id = str(client.cid)
+        config = copy.copy(evaluate_config)
+        client_config = fedpredict_clients_metrics[str(client.cid)]
+        nt = client_config['nt']
+        config['nt'] = nt
+        config['metrics'] = client_config
+        config['last_global_accuracy'] = accuracy
+        config['total_server_rounds'] = num_rounds
+        try:
+            config['total_server_rounds'] = int(comment)
+        except:
+            pass
+
+        print("Tamanho parametros antes: ", sum([i.nbytes for i in parameters]))
+        parameters_to_send, M = dls(fedpredict_clients_metrics[client_id]['first_round'],
+                                    layer_selection_evaluate, mean_similarity_per_layer, mean_similarity,
+                                    parameters, server_round, nt, num_rounds, df, size_of_parameters,
+                                    client_id, comment)
+        print("Tamanho parametros als: ", sum(i.nbytes for i in parameters_to_ndarrays(parameters_to_send)))
+        layers_fraction = []
+        if int(layer_selection_evaluate) in [-2, -3] and fedpredict_clients_metrics[client_id][
+            'first_round'] != -1:
+            print("igual")
+            config['decompress'] = True
+            parameters_to_send, layers_fraction = compredict(
+                fedpredict_clients_metrics[str(client_id)]['round_of_last_fit'], layers_compression_range,
+                num_rounds, client_id, server_round, len(M), parameters_to_send)
+        else:
+            config['decompress'] = False
+            print("nao igual")
+
+        print("Tamanho parametros compredict: ", sum(i.nbytes for i in parameters_to_ndarrays(parameters_to_send)))
+        fedpredict_clients_metrics[str(client.cid)]['acc_bytes_rate'] = size_of_parameters
+        config['M'] = M
+        config['df'] = df
+        config['layers_fraction'] = layers_fraction
+        evaluate_ins = EvaluateIns(parameters_to_send, config)
+        # print("Evaluate enviar: ", client_id, [i.shape for i in parameters_to_ndarrays(parameters_to_send)])
+        # print("enviar referencia: ", len(parameters), len(parameters_to_ndarrays(parameters_to_send)))
+        client_evaluate_list_fedpredict.append((client, evaluate_ins))
+
+    return client_evaluate_list_fedpredict
+
+
+def compredict(round_of_last_fit, layers_comppression_range, num_rounds, client_id, server_round, M, parameter):
+    parameter = parameters_to_ndarrays(parameter)
+
+    nt = server_round - round_of_last_fit
+    layers_fraction = []
+    if round_of_last_fit >= 1:
+        n_components_list = []
+        for i in range(M):
+            # if i % 2 == 0:
+            layer = parameter[i]
+            if len(layer.shape) >= 2:
+
+                compression_range = layers_comppression_range[i]
+                if compression_range > 0:
+                    n_components = fedpredict_core_compredict(server_round, num_rounds, nt, layer, compression_range)
+                else:
+                    n_components = None
+            else:
+                n_components = None
+
+            if n_components is None:
+                layers_fraction.append(1)
+            else:
+                layers_fraction.append(n_components / layer.shape[-1])
+
+            n_components_list.append(n_components)
+
+        print("Vetor de componentes: ", n_components_list)
+
+        parameter = parameter_svd_write(parameter, n_components_list)
+
+        # print("Client: ", client_id, " round: ", server_round, " nt: ", nt, " norm: ", np.mean(gradient_norm), " camadas: ", M, " todos: ", gradient_norm)
+        print("modelo compredict: ", [i.shape for i in parameter])
+
+    else:
+        new_parameter = []
+        for param in parameter:
+            new_parameter.append(param)
+            new_parameter.append(np.array([]))
+            new_parameter.append(np.array([]))
+
+        parameter = new_parameter
+
+        layers_fraction = [1] * len(parameter)
+
+    return ndarrays_to_parameters(parameter), layers_fraction
+
+def layer_compression_range(model_shape):
+
+    layers_range = []
+    for shape in model_shape:
+
+        layer_range = 0
+        if len(shape) >= 2:
+            shape = shape[-2:]
+
+            col = shape[1]
+            for n_components in range(1, col+1):
+                if if_reduces_size(shape, n_components):
+                    layer_range = n_components
+                else:
+                    break
+
+        layers_range.append(layer_range)
+
+    return layers_range
+
+def dls(first_round, layer_selection_evaluate, mean_similarity_per_layer, mean_similarity, parameters,
+        server_round, nt, num_rounds, df, size_of_layers, client_id, comment):
+    try:
+        M = [i for i in range(len(parameters))]
+        n_layers = len(parameters) / 2
+
+        size_list = []
+        for i in range(len(parameters)):
+            tamanho = get_size(parameters[i])
+            # print("inicio camada: ", i, " tamanho: ", tamanho, " shape: ", parameters[i].shape)
+            size_list.append(tamanho)
+        # print("Tamanho total parametros original: ", sum(size_list), sys.getsizeof(fl.common.ndarrays_to_parameters(parameters)))
+
+        # print("quantidade de camadas: ", len(parameters), [i.shape for i in parameters], " comment: ", comment)
+        # print("layer selection evaluate: ", self.layer_selection_evaluate, self.comment)
+        if first_round != -1:
+            # baixo-cima
+            if comment == "":
+                M = M[-layer_selection_evaluate * 2:]
+            elif comment == "inverted":
+                M = M[:layer_selection_evaluate * 2]
+            elif comment == "individual":
+                M = [M[layer_selection_evaluate - 1], M[layer_selection_evaluate]]
+            elif comment == 'set':
+                if layer_selection_evaluate > 0:
+                    layer = str(layer_selection_evaluate)
+                    M = []
+                    for i in layer:
+                        i = int(i) * 2
+                        M.append(int(i) - 2)
+                        M.append(int(i) - 1)
+                    if layer == '10':
+                        M = [i for i in range(len(parameters))]
+                    elif layer == '50':
+                        M = [i for i in range(len(parameters) // 2)]
+                elif layer_selection_evaluate in [-1, -2]:
+                    M = fedpredict_core_layer_selection(t=server_round, T=num_rounds, nt=nt, n_layers=n_layers,
+                                                        size_per_layer=size_of_layers,
+                                                        mean_similarity_per_layer=mean_similarity_per_layer, df=df)
+                else:
+                    M = [i for i in range(len(parameters))]
+            new_parameters = []
+            for i in range(len(parameters)):
+                if i in M:
+                    new_parameters.append(parameters[i])
+            parameters = new_parameters
+
+        size_list = []
+        for i in range(len(parameters)):
+            tamanho = parameters[i].nbytes
+            size_list.append(tamanho)
+
+        parameters = ndarrays_to_parameters(parameters)
+
+        return parameters, M
+
+    except Exception as e:
+        print("_select_layers")
+        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+
+# ===========================================================================================
+
+# FedPredict client
+
+
+def fedpredict_client( filename, model, global_parameters, config={}):
+    # Using 'torch.load'
+    try:
+        # filename = """./fedpredict_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
+        t = int(config['round'])
+        T = int(config['total_server_rounds'])
+        client_metrics = config['metrics']
+        # Client's metrics
+        nt = client_metrics['nt']
+        round_of_last_fit = client_metrics['round_of_last_fit']
+        round_of_last_evaluate = client_metrics['round_of_last_evaluate']
+        first_round = client_metrics['first_round']
+        acc_of_last_fit = client_metrics['acc_of_last_fit']
+        acc_of_last_evaluate = client_metrics['acc_of_last_evaluate']
+        # Server's metrics
+        last_global_accuracy = config['last_global_accuracy']
+        # print("chegou")
+        M = config['M']
+        df = config['df']
+
+        decompress = config['decompress']
+        layers_fraction = config['layers_fraction']
+        model_shape = [i.detach().cpu().numpy().shape for i in model.parameters()]
+        global_parameters = decompress_global_parameters(global_parameters, model_shape, M, decompress)
+        parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
+        if len(parameters) != len(M):
+            print("diferente", len(parameters), len(M))
+            raise Exception("Lenght of parameters is different from M")
+
+        if os.path.exists(filename):
+            # Load local parameters to 'self.model'
+            model.load_state_dict(torch.load(filename))
+            model = fedpredict_combine_models(global_parameters, model, t, T, nt, M, df)
+        else:
+            for old_param, new_param in zip(model.parameters(), global_parameters):
+                old_param.data = new_param.data.clone()
+
+        return model
+
+    except Exception as e:
+        print("FedPredict client")
+        print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+def decompress_global_parameters(compressed_global_model_gradients, model_shape, M, decompress):
+    try:
+        if decompress and len(compressed_global_model_gradients) > 0:
+            decompressed_gradients = inverse_parameter_svd_reading(compressed_global_model_gradients, model_shape,
+                                                                   len(M))
+            parameters = [Parameter(torch.Tensor(i.tolist())) for i in decompressed_gradients]
+        # print("descomprimidos shapes: ", [i.shape for i in parameters])
+        else:
+            parameters = [Parameter(torch.Tensor(i.tolist())) for i in compressed_global_model_gradients]
+
+        return parameters
+
+    except Exception as e:
+        print("decompress")
+        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+def fedpredict_combine_models(global_parameters, model, t, T, nt, M, df):
+    try:
+
+        local_model_weights, global_model_weight = fedpredict_core(t, T, nt, df)
+        count = 0
+        for new_param, old_param in zip(global_parameters, model.parameters()):
+            if count in M:
+                old_param.data = (
+                            global_model_weight * new_param.data.clone() + local_model_weights * old_param.data.clone())
+            count += 1
+
+        return model
+
+    except Exception as e:
+        print("FedPredict combine models")
+        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
