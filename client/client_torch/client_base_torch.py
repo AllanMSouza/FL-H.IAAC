@@ -269,7 +269,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		for param, new_param in zip(model.parameters(), new_params):
 			param.data = new_param.data.clone()
 
-	def set_parameters_to_model(self, parameters):
+	def set_parameters_to_model(self, parameters, config={}):
 		try:
 			parameters = [Parameter(torch.Tensor(i.tolist())) for i in parameters]
 			for new_param, old_param in zip(parameters, self.model.parameters()):
@@ -287,7 +287,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 	def set_parameters_to_model_evaluate(self, parameters, config={}):
 		try:
-			self.set_parameters_to_model(parameters)
+			self.set_parameters_to_model(parameters, config)
 		except Exception as e:
 			print("set parameters to model")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)

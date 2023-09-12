@@ -239,8 +239,8 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
                     similarity_per_layer[client_id][layer_index] = []
                     difference_per_layer[client_id][layer_index]['min'] = []
                     difference_per_layer[client_id][layer_index]['max'] = []
-                if layer_index == 0:
-                    print("do cliente: ", client_similarity, len(client_similarity))
+                # if layer_index == 0:
+                #     print("do cliente: ", client_similarity, len(client_similarity))
                 similarity_per_layer[client_id][layer_index].append(np.mean(client_similarity))
                 difference_per_layer[client_id][layer_index]['min'].append(abs(np.mean(client_difference['min'])))
                 difference_per_layer[client_id][layer_index]['max'].append(abs(np.mean(client_difference['max'])))
@@ -347,6 +347,7 @@ def fedpredict_server(parameters, client_evaluate_list, fedpredict_clients_metri
     # 	self.calculate_current_similarity(server_round)
     for i in range(1, len(parameters)):
         size_of_parameters.append(get_size(parameters[i]))
+    f = True
     for client_tuple in client_evaluate_list:
         client = client_tuple[0]
         client_id = str(client.cid)
@@ -385,6 +386,9 @@ def fedpredict_server(parameters, client_evaluate_list, fedpredict_clients_metri
         config['M'] = M
         config['df'] = df
         config['layers_fraction'] = layers_fraction
+        if f:
+            print("config enviado client: ", client_id, config)
+            f = False
         evaluate_ins = EvaluateIns(parameters_to_send, config)
         # print("Evaluate enviar: ", client_id, [i.shape for i in parameters_to_ndarrays(parameters_to_send)])
         # print("enviar referencia: ", len(parameters), len(parameters_to_ndarrays(parameters_to_send)))
@@ -567,7 +571,7 @@ def fedpredict_client( filename, model, global_parameters, config={}):
 
     except Exception as e:
         print("FedPredict client")
-        print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 def decompress_global_parameters(compressed_global_model_gradients, model_shape, M, decompress):
     try:

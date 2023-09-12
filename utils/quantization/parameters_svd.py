@@ -128,7 +128,6 @@ def inverse_parameter_svd_reading(arrays, model_shape, M=0):
 
 def inverse_parameter_svd(u, v, layer_index, sigma=None, sig_ind=None):
     try:
-        print("no inverse parameter svd: ", layer_index)
         if len(v) == 0:
             return u
         if len(layer_index) == 1:

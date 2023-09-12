@@ -10,6 +10,7 @@ import warnings
 
 warnings.simplefilter("ignore")
 from client.client_torch.client_base_torch import ClientBaseTorch
+from models.torch import DNN, Logistic, CNN, MobileNet, resnet20, CNN_EMNIST, MobileNetV2, CNN_X, CNN_5, CNN_2, CNN_3_proto
 # logging.getLogger("torch").setLevel(logging.ERROR)
 from torch.nn.parameter import Parameter
 import torch
@@ -66,25 +67,85 @@ class FedProtoClientTorch(ClientBaseTorch):
 	def create_model(self):
 
 		try:
+			# print("tamanho: ", self.input_shape, " dispositivo: ", self.device)
 			input_shape = self.input_shape
-			if self.dataset in ['MNIST', 'CIFAR10']:
-				input_shape = self.input_shape[1] * self.input_shape[2]
+			model = None
+			if self.dataset in ['MNIST', 'EMNIST']:
+				input_shape = 1
+			elif self.dataset in ['CIFAR10']:
+				input_shape = 3
 			elif self.dataset in ['MotionSense', 'UCIHAR']:
 				input_shape = self.input_shape[1]
-			if self.dataset in ['MNIST', 'CIFAR10']:
-				input_shape = self.input_shape[1] * self.input_shape[2]
 			if self.model_name == 'Logist Regression':
-				return Logistic_Proto(input_shape, self.num_classes)
+				model = Logistic(input_shape=input_shape, num_classes=self.num_classes)
 			elif self.model_name == 'DNN':
-				return DNN_proto(input_shape=input_shape, num_classes=self.num_classes)
-			elif self.model_name == 'CNN':
-				if self.dataset == 'MNIST':
+				model = DNN(input_shape=input_shape, num_classes=self.num_classes)
+			elif self.model_name == 'CNN_2' and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10']:
+				if self.dataset == 'CIFAR10':
+					mid_dim = 64
+				else:
+					mid_dim = 36
+				return CNN_2(input_shape=input_shape, mid_dim=mid_dim, num_classes=self.num_classes)
+			elif self.model_name == 'CNN_3' and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10']:
+				if self.dataset == 'CIFAR10':
+					mid_dim = 16
+				else:
+					mid_dim = 4
+				return CNN_3_proto(input_shape=input_shape, mid_dim=mid_dim, num_classes=self.num_classes)
+			elif self.model_name == 'CNN' and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10']:
+				if self.dataset in ['EMNIST', 'MNIST']:
+					mid_dim = 256
+				else:
+					mid_dim = 400
+				model = CNN(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim)
+			elif self.dataset in ['EMNIST', 'CIFAR10'] and self.model_name in ['CNN_1', 'CNN_2', 'CNN_3', 'CNN_6',
+																			   'CNN_8', 'CNN_10', 'CNN_12']:
+				model = CNN_EMNIST(dataset=self.dataset, model_code=self.model_name, in_channels=input_shape,
+								   out_dim=self.num_classes, act='relu', use_bn=True, dropout=0.3)
+			elif self.model_name == 'Resnet20' and self.dataset in ['MNIST', 'CIFAR10']:
+				if self.dataset in ['MNIST']:
 					input_shape = 1
 					mid_dim = 256
 				else:
 					input_shape = 3
 					mid_dim = 400
-				return CNN_proto(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim)
+				model = resnet20()
+			elif self.model_name == 'Mobilenet':
+				model = MobileNet(num_classes=self.num_classes, input_size=input_shape)
+			elif self.model_name == 'CNN_X':
+				if self.dataset in ["EMNIST", "MNIST"]:
+					mid_dim = 144
+				else:
+					mid_dim = 256
+				model = CNN_X(num_classes=self.num_classes, mid_dim=mid_dim, input_size=input_shape)
+				self.learning_rate = 0.001 if self.dataset == "CIFAR10" else 0.01
+				self.optimizer = torch.optim.Adam(model.parameters(),
+												  lr=self.learning_rate) if self.model_name == "Mobilenet" else torch.optim.SGD(
+					model.parameters(), lr=self.learning_rate, momentum=0.9)
+			elif self.model_name == 'CNN_5':
+				if self.dataset in ["EMNIST", "MNIST"]:
+					mid_dim = 256
+				else:
+					mid_dim = 400
+				model = CNN_5(num_classes=self.num_classes, mid_dim=mid_dim, input_shape=input_shape)
+				self.learning_rate = 0.0008 if self.dataset == "CIFAR10" else 0.0008
+				self.optimizer = torch.optim.Adam(model.parameters(),
+												  lr=self.learning_rate) if self.model_name == "Mobilenet" else torch.optim.SGD(
+					model.parameters(), lr=self.learning_rate, momentum=0.9)
+			elif self.dataset in ['Tiny-ImageNet']:
+				# return AlexNet(num_classes=self.num_classes)
+				# model = models.resnet18(pretrained=True, num_classes=self.num_classes).to(self.device)
+				# model = CNN(input_shape=3, num_classes=self.num_classes, mid_dim=int(179776/4)).to(self.device)
+				# model.avgpool = nn.AdaptiveAvgPool2d(1)
+				model = resnet20(num_classes=self.num_classes)
+				# num_ftrs = model.fc.in_features
+				# model.fc = nn.Linear(num_ftrs, 200)
+				print("Quantidade de camadas: ", len([i.shape for i in model.parameters()]))
+			# model = torch.nn.DataParallel(model).cuda()
+
+			if model is not None:
+				model.to(self.device)
+				return model
 			else:
 				raise Exception("Wrong model name")
 		except Exception as e:

@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from base_plots import bar_plot, line_plot, ecdf_plot
+from base_plots import bar_plot, line_plot, ecdf_plot, box_plot
 import matplotlib.pyplot as plt
 import seaborn as sns
 import scipy.stats as st
@@ -30,7 +30,7 @@ class JointAnalysis():
 
                         for layer_selection_evaluate in layer_selection_evaluate_list:
 
-                            if layer_selection_evaluate == 10:
+                            if layer_selection_evaluate == 10 and strategy != "FedPredict":
                                 continue
                             filename = """{}/{}/{}-None-{}/new_clients_{}_train_{}/{}/{}/{}/{}/alpha_{}/{}_rounds/{}/{}_comment/{}_layer_selection_evaluate/{}""".format(os.path.abspath(os.path.join(os.getcwd(),
                                                                                                                     os.pardir)) + "/FL-H.IAAC/logs",
@@ -72,14 +72,14 @@ class JointAnalysis():
         # self.joint_plot_acc_two_plots(df=df_concat, experiment=1, pocs=pocs)
         # self.joint_plot_acc_two_plots(df=df_concat, experiment=1, pocs=pocs)
         self.joint_plot_acc_four_plots(df=df_concat, experiment=1, fractions_fit=fractions_fit)
-        self.joint_plot_acc_four_plots(df=df_concat, experiment=2, fractions_fit=fractions_fit)
+        # self.joint_plot_acc_four_plots(df=df_concat, experiment=2, fractions_fit=fractions_fit)
         # self.joint_plot_acc_four_plots(df=df_concat, experiment=3, fractions_fit=fractions_fit)
         # self.joint_plot_acc_four_plots(df=df_concat, experiment=4, fractions_fit=fractions_fit)
 
         # table
-        strategies = [i.replace("FedAVG", "FedAvg") for i in df_concat['Strategy'].unique().tolist()]
-        self.joint_table(df_concat, fractions_fit, strategies, experiment=1)
-        self.joint_table(df_concat, fractions_fit, strategies, experiment=2)
+        strategies = [i.replace("FedAVG", "FedAvg") for i in strategies]
+        # self.joint_table(df_concat, fractions_fit, strategies, experiment=1)
+        # self.joint_table(df_concat, fractions_fit, strategies, experiment=2)
         # self.joint_table(df_concat, fractions_fit, strategies, experiment=3)
         # self.joint_table(df_concat, fractions_fit, strategies, experiment=4)
 
@@ -212,24 +212,27 @@ class JointAnalysis():
 
         return df
 
-    def filter_and_plot(self, ax, base_dir, filename, title, df, experiment, dataset, fraction_fit, x_column, y_column, hue, hue_order=None):
+    def filter_and_plot(self, ax, base_dir, filename, title, df, experiment, dataset, fraction_fit, x_column, y_column, hue, hue_order=None, style=None):
 
         df = self.filter(df, experiment, dataset, fraction_fit)
 
         print("filtrado: ", df, df[hue].unique().tolist())
-        line_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, type='1', hue_order=hue_order)
+        box_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, tipo='1', hue_order=hue_order)
 
     def joint_plot_acc_four_plots(self, df, experiment, fractions_fit):
         print("Joint plot exeprimento: ", experiment)
 
-        df_test = df[['Round (t)', 'Loss', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset']].groupby(['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset']).apply(lambda e: self.groupb_by_plot(e)).reset_index()[['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)', 'Loss']]
+        df = df[df['nt'].isin([1, 10])]
+        df = df[df['Round (t)'] > 50]
+        df['nt'] = df['nt'].astype(int)
+        df_test = df[['Round (t)', 'Loss', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset', 'nt']].groupby(['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'nt']).apply(lambda e: self.groupb_by_plot(e)).reset_index()[['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)', 'Loss', 'nt']]
         print("agrupou plot")
         print(df_test)
         # figsize=(12, 9),
         sns.set(style='whitegrid')
-        fig, axs = plt.subplots(2, 2,  sharex='all', sharey='all', figsize=(6, 6))
+        fig, axs = plt.subplots(1, 2,  sharex='all', sharey='all', figsize=(6, 6))
 
-        x_column = 'Round (t)'
+        x_column = 'nt'
         y_column = 'Accuracy (%)'
         plt.xlabel(x_column)
         plt.ylabel(y_column)
@@ -237,65 +240,28 @@ class JointAnalysis():
         # ====================================================================
         fraction_fit = fractions_fit[0]
         dataset = 'EMNIST'
-        title = """{} (C={})""".format(dataset, float(fraction_fit))
-        filename = ''
+        title = """{}""".format(dataset)
+        filename = 'nt'
         i = 0
-        j = 0
         hue_order = ['$FedPredict_{dc}$', "$FedPredict$", 'FedClassAvg', 'FedAvg']
-        self.filter_and_plot(ax=axs[i,j], base_dir=base_dir, filename=filename, title=title, df=df_test,
+        hue = 'nt'
+        self.filter_and_plot(ax=axs[i], base_dir=base_dir, filename=filename, title=title, df=df_test,
                              experiment=experiment, dataset=dataset, fraction_fit=fraction_fit, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order)
-        axs[i,j].get_legend().remove()
-        axs[i,j].set_xlabel('')
-        axs[i,j].set_ylabel('')
-        # sort both labels and handles by labels
-        # order = ['FedPredict', 'FedClassAvg', 'FedPer', 'FedAvg', 'FedProto']
-        # order = {k: f for k, f in zip(order, handles)}
-
-        # handles, labels = plt.gca().get_legend_handles_labels()
-        #
-        # # specify order of items in legend
-        # order = [1, 2, 0, 4, 3]
-        #
-        # # add legend to plot
-        # plt.legend([handles[idx] for idx in order], [labels[idx] for idx in order])
-        # ====================================================================
-        fraction_fit = fractions_fit[1]
-        dataset = 'EMNIST'
-        title = """{} (C={})""".format(dataset, float(fraction_fit))
-        i = 0
-        j = 1
-        self.filter_and_plot(ax=axs[i,j], base_dir=base_dir, filename=filename, title=title, df=df_test,
-                             experiment=experiment, dataset=dataset, fraction_fit=fraction_fit, x_column=x_column, y_column=y_column,
-                             hue='Strategy', hue_order=hue_order)
-        axs[i,j].get_legend().remove()
-        # axs[i].set_xlabel('')
-        # axs[i].set_ylabel('')
+        axs[i].get_legend().remove()
+        axs[i].set_xlabel('')
+        axs[i].set_ylabel('')
         # ====================================================================
         fraction_fit = fractions_fit[0]
         dataset = 'CIFAR10'
-        title = """CIFAR-10 (C={})""".format(float(fraction_fit))
+        title = """CIFAR-10""".format()
         i = 1
-        j = 0
-        self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df_test,
+        self.filter_and_plot(ax=axs[i], base_dir=base_dir, filename=filename, title=title, df=df_test,
                              experiment=experiment, dataset=dataset, fraction_fit=fraction_fit, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order)
-        axs[i, j].get_legend().remove()
-        axs[i, j].set_xlabel('')
-        axs[i, j].set_ylabel('')
-        # ====================================================================
-        fraction_fit = fractions_fit[1]
-        dataset = 'CIFAR10'
-        title = """CIFAR-10 (C={})""".format(float(fraction_fit))
-        i = 1
-        j = 1
-        self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df_test,
-                             experiment=experiment, dataset=dataset, fraction_fit=fraction_fit, x_column=x_column, y_column=y_column,
-                             hue='Strategy', hue_order=hue_order)
-        axs[i, j].get_legend().remove()
-        axs[i, j].set_xlabel('')
-        axs[i, j].set_ylabel('')
-        # ====================================================================
+        axs[i].get_legend().remove()
+        axs[i].set_xlabel('')
+        axs[i].set_ylabel('')
         # poc = pocs[2]
         # dataset = 'CIFAR10'
         # title = """CIFAR-10 ({})""".format(poc)
@@ -336,11 +302,11 @@ class JointAnalysis():
         fig.supylabel(y_column, x=-0.01)
 
 
-        lines_labels = [axs[0, 0].get_legend_handles_labels()]
+        lines_labels = [axs[0].get_legend_handles_labels()]
         lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
         fig.legend(lines, labels, loc='upper center', ncol=3, bbox_to_anchor=(0.5, 1.06))
-        fig.savefig("""{}joint_plot_four_plot_{}.png""".format(base_dir, str(experiment)), bbox_inches='tight', dpi=400)
-        fig.savefig("""{}joint_plot_four_plot_{}.svg""".format(base_dir, str(experiment)), bbox_inches='tight', dpi=400)
+        fig.savefig("""{}joint_plot_four_plot_{}_nt.png""".format(base_dir, str(experiment)), bbox_inches='tight', dpi=400)
+        fig.savefig("""{}joint_plot_four_plot_{}_nt.svg""".format(base_dir, str(experiment)), bbox_inches='tight', dpi=400)
 
     def idmax(self, df):
 
@@ -400,13 +366,11 @@ if __name__ == '__main__':
     #               3: {'new_clients': 'new_clients_True_train_True', 'local_epochs': '1_local_epochs'},
     #               4: {'new_clients': 'new_clients_True_train_True', 'local_epochs': '2_local_epochs'}}
     experiments = {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'layer_selection_evaluate': -2, 'local_epochs': '1_local_epochs'},
-                   2: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'False', 'class_per_client': 2,
          'comment': 'set', 'layer_selection_evaluate': -2, 'local_epochs': '1_local_epochs'}}
 
     strategies = ['FedPredict', 'FedAVG', 'FedClassAvg']
     # pocs = [0.1, 0.2, 0.3]
-    fractions_fit = [0.2, 0.3]
+    fractions_fit = [0.2]
     # datasets = ['MNIST', 'CIFAR10']
     datasets = ['EMNIST', 'CIFAR10']
     alpha = 0.1

@@ -190,6 +190,75 @@ class CNN_3(torch.nn.Module):
     def forward(self, x):
         return self.model(x)
 
+class CNN_3_proto(torch.nn.Module):
+    def __init__(self, input_shape, mid_dim=64, num_classes=10):
+        super().__init__()
+
+            # queda para asl
+            # nn.Conv2d(input_shape, 32, kernel_size=3, padding=1),
+            # nn.ReLU(),
+            # nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
+            # nn.ReLU(),
+            # nn.MaxPool2d(2, 2),  # output: 64 x 16 x 16
+            #
+            # nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
+            # nn.ReLU(),
+            # nn.MaxPool2d(2, 2),  # output: 128 x 8 x 8
+            # nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
+            # nn.ReLU(),
+            # nn.MaxPool2d(2, 2),  # output: 128 x 8 x 8
+            #
+            # nn.Flatten(),
+            # nn.Linear(mid_dim,512),
+            # nn.ReLU(),
+            # nn.Linear(512, num_classes))
+
+            # nn.Linear(28*28, 392),
+            # nn.ReLU(),
+            # nn.Dropout(0.5),
+            # nn.Linear(392, 196),
+            # nn.ReLU(),
+            # nn.Linear(196, 98),
+            # nn.ReLU(),
+            # nn.Dropout(0.3),
+            # nn.Linear(98, num_classes)
+
+        self.conv1 = torch.nn.Conv2d(in_channels=input_shape, out_channels=32, kernel_size=3, padding=1),
+        self.act1 = torch.nn.ReLU(),
+        # Input = 32 x 32 x 32, Output = 32 x 16 x 16
+        self.pool1 = torch.nn.MaxPool2d(kernel_size=2),
+
+        # Input = 32 x 16 x 16, Output = 64 x 16 x 16
+        self.conv2 = torch.nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1),
+        self.act2 = torch.nn.ReLU(),
+        # Input = 64 x 16 x 16, Output = 64 x 8 x 8
+        self.pool2 = torch.nn.MaxPool2d(kernel_size=2),
+
+        # Input = 64 x 8 x 8, Output = 64 x 8 x 8
+        self.conv3 = torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1),
+        self.act3 = torch.nn.ReLU(),
+        # Input = 64 x 8 x 8, Output = 64 x 4 x 4
+        self.pool3 = torch.nn.MaxPool2d(kernel_size=2),
+        self.conv4 = torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1),
+
+        self.act4 = torch.nn.ReLU(),
+        # Input = 64 x 8 x 8, Output = 64 x 4 x 4
+        self.pool4 = torch.nn.MaxPool2d(kernel_size=2)
+
+
+        self.fc1 = torch.nn.Linear(mid_dim * 4 * 4, 512)
+
+        self.fc = torch.nn.Linear(512, num_classes)
+
+    def forward(self, x):
+        out = self.pool1(self.act1(self.conv1(x)))
+        out = self.pool2(self.act2(self.conv2(out)))
+        out = self.pool3(self.act3(self.conv3(out)))
+        out = torch.flatten(self.pool4(self.act4(self.conv4(out))))
+        proto = self.fc1(out)
+        out = self.fc(proto)
+        return out, proto
+
 
 # bom para alpha 2
 # class CNN_2(nn.Module):

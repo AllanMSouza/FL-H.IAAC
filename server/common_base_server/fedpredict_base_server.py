@@ -114,7 +114,6 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		self.gradient_norm = []
 		self.gradient_norm_round = []
 		self.gradient_norm_nt = []
-		self.max_norm = None
 		self.T = int(args.T)
 
 	def calculate_initial_similarity(self, server_round, rate=0.1):
@@ -213,7 +212,6 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		parameters_aggregated, metrics_aggregated = super().aggregate_fit(server_round, results, failures)
 		if server_round == 1:
 			self.model_shape = [i.shape for i in parameters_to_ndarrays(parameters_aggregated)]
-			self.max_norm = {i: 1 for i in range(len(self.model_shape))}
 			self.model_size = len(self.model_shape)
 			self.similarity_list_per_layer = {i: [] for i in range(self.model_size)}
 			self.layers_compression_range = layer_compression_range(self.model_shape)
@@ -234,9 +232,21 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		else:
 			global_parameter = self.previous_global_parameters[server_round]
 
-		if self.layer_selection_evaluate in [-1, -2]:
+		np.random.seed()
+		flag = bool(int(np.random.binomial(1, 0.2, 1)))
+		np.random.seed(0)
+		if server_round == 1:
+			flag = True
+		print("Flag: ", flag)
+		if self.layer_selection_evaluate in [-1, -2] and flag:
 			self.similarity_between_layers_per_round_and_client[server_round], self.similarity_between_layers_per_round[server_round], self.mean_similarity_per_round[server_round], self.similarity_list_per_layer = fedpredict_layerwise_similarity(global_parameter, clients_parameters, clients_ids, server_round, self.dataset, str(self.alpha), self.similarity_list_per_layer)
 			self.df = max(0, abs(np.mean(self.similarity_list_per_layer[0]) - np.mean(self.similarity_list_per_layer[self.model_size - 2])))
+		elif self.layer_selection_evaluate in [-1, -2]:
+			self.similarity_between_layers_per_round_and_client[server_round], self.similarity_between_layers_per_round[
+				server_round], self.mean_similarity_per_round[
+				server_round], self.similarity_list_per_layer = self.similarity_between_layers_per_round_and_client[server_round-1], self.similarity_between_layers_per_round[
+				server_round-1], self.mean_similarity_per_round[
+				server_round-1], self.similarity_list_per_layer
 		else:
 			self.similarity_between_layers_per_round[server_round] = []
 			self.mean_similarity_per_round[server_round] = 0
@@ -245,7 +255,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 
 		print("df médio: ", self.df, " rodada: ", server_round)
 
-		self.parameters_aggregated_checkpoint[server_round] = parameters_to_ndarrays(parameters_aggregated)
+		# self.parameters_aggregated_checkpoint[server_round] = parameters_to_ndarrays(parameters_aggregated)
 
 
 

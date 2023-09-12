@@ -233,7 +233,7 @@ def stacked_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, l
         classes = df[hue].unique().tolist()
         classes = sorted(classes, reverse=True)
         n = len(classes)
-        labels = {10:[[10, 8], [7, 4], [3, 1]], 47: [[47, 40], [39, 30], [29, 20], [19, 1]]}
+        labels = {10:[[9, 10], [7, 8], [5, 6], [3, 4], [1, 2]], 47: [[40, 47], [30, 39], [20, 29], [10, 19], [1, 9]]}
         labels_str = {k1: ["""[{}, {}]""".format(str(labels[k1][i][0]), str(labels[k1][i][1])) for i in range(len(labels[k1]))] for k1 in labels}
         print("labels str")
         print(labels_str)
@@ -245,7 +245,7 @@ def stacked_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, l
 
             for alpha in alphas:
                 print("pergunta")
-                query = """\u03B1=={} and (Unique_classes<={} and Unique_classes>={})""".format(alpha, start, end)
+                query = """\u03B1=={} and (Unique_classes>={} and Unique_classes<={})""".format(alpha, start, end)
                 print(query)
                 print("resultado")
                 print(df.query(query)['Total_of_clients_(%)'].sum().tolist())

@@ -64,7 +64,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.average_accuracy   = 0
 		self.last_accuracy      = 0
 		self.current_accuracy   = 0
-		self.server_learning_rate = 1 if fraction_fit == 0.3 else 1
+		self.server_learning_rate = 1
 
 		self.non_iid = non_iid
 
@@ -231,9 +231,13 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			# available_clients = self._get_valid_clients_for_fit()
 			# ====================================================================================
 			available_clients = clients_ids
-			print("disponiveis: ", available_clients)
+
 			print("Rodada inicial de novos clientes: ", int(self.num_rounds * self.round_threshold))
 
+			if self.new_clients and server_round >= int(self.num_rounds * self.round_threshold):
+				available_clients = list(self.clients_metrics.keys())
+
+			print("disponiveis para treino: ", len(available_clients))
 			self.clients2select = int(len(available_clients) * self.fraction_fit)
 			if len(available_clients) == 0 and server_round != 1:
 				print("Erro na rodada: ", server_round)
@@ -390,7 +394,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 					selected_clients.append(client)
 		else:
 			selected_clients = clients
-		print("selecionar (evaluate): ", [client.cid for client in selected_clients])
+		print("selecionar (evaluate): ", len([client.cid for client in selected_clients]))
 		print("Parametros para enviar evaluate: ", len(fl.common.parameters_to_ndarrays(parameters)), " tamanho: ", sum([i.nbytes for i in parameters_to_ndarrays(parameters)]))
 		if selected_clients:
 			for client in selected_clients:
@@ -407,7 +411,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 				'n_rounds': self.num_rounds,
 				'nt': self.fedpredict_clients_metrics[str(client.cid)]['nt']
 			}
-			print("tte", config['nt'])
+
 			client_config.append((client, fl.common.EvaluateIns(parameters, config)))
 
 		return client_config

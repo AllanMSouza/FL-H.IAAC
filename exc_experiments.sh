@@ -63,8 +63,8 @@
 #echo "Executing experiment 21..."
 #python3 exec_experiments.py --experiment_id=21 --type="torch" > execution_log/experiment_21.txt 2>&1
 #
-#echo "Executing experiment 22..."
-#python3 exec_experiments.py --experiment_id=22 --type="torch" > execution_log/experiment_22.txt 2>&1
+echo "Executing experiment 22..."
+python3 exec_experiments.py --experiment_id=22 --type="torch" > execution_log/experiment_22.txt 2>&1
 #
 #echo "Executing experiment 23..."
 #python3 exec_experiments.py --experiment_id=23 --type="torch" > execution_log/experiment_23.txt 2>&1
@@ -90,13 +90,13 @@
 #echo "Executing experiment 30..."
 #python3 exec_experiments.py --experiment_id=30 --type="torch" > execution_log/experiment_30.txt 2>&1
 
-echo "Executing experiment 31..."
-python3 exec_experiments.py --experiment_id=31 --type="torch" > execution_log/experiment_31.txt 2>&1
-
-echo "Executing experiment 32..."
-python3 exec_experiments.py --experiment_id=32 --type="torch" > execution_log/experiment_32.txt 2>&1
-
-
+#echo "Executing experiment 31..."
+#python3 exec_experiments.py --experiment_id=31 --type="torch" > execution_log/experiment_31.txt 2>&1
+#
+#echo "Executing experiment 32..."
+#python3 exec_experiments.py --experiment_id=32 --type="torch" > execution_log/experiment_32.txt 2>&1
+#
+#
 shutdown -P +1
 #hostname=$(hostname)
 #if [[ $hostname == "claudio-Predator-PH315-52" ]]

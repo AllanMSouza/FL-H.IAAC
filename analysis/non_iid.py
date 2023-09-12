@@ -100,11 +100,14 @@ class NonIid:
         for i in range(len(self.strategy_name_list)):
             strategy_name = self.strategy_name_list[i]
 
+
+
             for j in self.base_files_names:
+                print("arquivos pass: ", j)
                 file_name = self.base_files_names[j]
                 if 'similarity' in file_name and strategy_name != 'FedPredict':
                     continue
-                if 'norm' in file_name and strategy_name != 'FedPredict' and self.layer_selection_evaluate != -2:
+                if 'norm' in file_name:
                     continue
                 df = pd.read_csv(models_directories[strategy_name]+file_name)
                 df['Strategy'] = np.array([strategy_name]*len(df))
@@ -115,7 +118,7 @@ class NonIid:
                     self.df_files_names[j] = pd.concat([self.df_files_names[j], df], ignore_index=True)
 
         print("teste: ", self.df_files_names['evaluate_client'])
-        self.server_nt_acc_analysis()
+        # self.server_nt_acc_analysis()
         self.server_analysis(title)
         self.evaluate_client_analysis()
         print("chamar")
@@ -124,7 +127,8 @@ class NonIid:
             self.similarity_analysis("Alpha=" + str(self.alpha))
             print("selecao de camadas: ", self.layer_selection_evaluate)
             if -2 == self.layer_selection_evaluate:
-                self.norm_analysis()
+                pass
+                # self.norm_analysis()
 
 
     def norm_analysis(self):

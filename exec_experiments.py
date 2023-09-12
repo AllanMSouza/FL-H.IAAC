@@ -48,7 +48,7 @@ TYPE = 'torch'
 # DATASETS      				= ['MNIST', 'CIFAR10', 'Tiny-ImageNet']
 DATASETS = ['EMNIST', 'CIFAR10']
 # DATASETS      					= ['UCIHAR', 'MotionSense']
-MODELS = ['CNN_3', 'CNN_2']
+MODELS = ['CNN_3']
 ALGORITHMS = ['None', 'POC', 'FedLTA']
 EPOCHS = {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2], '6': [1], '7': [1], '8': [1], '9': [1], '10': [1],
           '11': [1], '12': [1], '13': [1], '14': [1], '15': [1], '16': [1], '17': [1], '18': [1], '19': [1], '20': [1],
@@ -58,12 +58,14 @@ EPOCHS = {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2], '6': [1], '7': [1], 
 CLASSES = {'MNIST': 10, 'CIFAR10': 10, 'Tiny-ImageNet': 200, 'EMNIST': 47}
 CLIENTS = {'MNIST': [8], 'CIFAR10': [20], 'EMNIST': [20], 'CIFAR100': [50], 'MotionSense': [24], 'UCIHAR': [30],
            'Tiny-ImageNet': [2]}
-ALPHA = [5.0, 0.1]
+ALPHA = [0.1]
 # ALPHA = [1]
-FRACTION_FIT = {'None': [0.3], 'POC': [0], 'FedLTA': [0]}
+FRACTION_FIT = {'None': [0.2, 0.3], 'POC': [0], 'FedLTA': [0]}
 SPECIFIC_PARAMETERS = {'FedAVG': {'use_gradient': 'True', 'bits': 8}, 'FedKD': {'use_gradient': 'True', 'bits': 8},
                        'FedPAQ': {'use_gradient': 'True', 'bits': 8}, 'FedDistill': {'use_gradient': '', 'bits': 8},
-                       'FedPredict': {'use_gradient': 'True', 'bits': 8}}
+                       'FedPredict': {'use_gradient': 'True', 'bits': 8}, 'FedPer_with_FedPredict': {'use_gradient': 'True', 'bits': 8},
+                       'FedPer': {'use_gradient': '', 'bits': 8}, 'FedAvgM': {'use_gradient': '', 'bits': 8},
+                       'FedYogi': {'use_gradient': 'True', 'bits': 8}, 'FedProto': {'use_gradient': '', 'bits': 8}, 'FedClassAvg': {'use_gradient': '', 'bits': 8}}
 POC = {'None': [0], 'POC': [0.2], 'FedLTA': [0]}
 DECAY = {'None': 0, 'POC': 0, 'FedLTA': 0.1}
 NEW_CLIENTS = {'None': ['FALSE'], 'POC': ['FALSE', 'TRUE']}
@@ -73,18 +75,17 @@ ROUNDS = 100
 # STRATEGIES 					= ('FedPredict', 'FedPer', 'FedClassAvg', 'FedAVG', 'FedClassAvg_with_FedPredict', 'FedPer_with_FedPredict', 'FedProto', 'FedYogi', 'FedLocal',)
 # STRATEGIES_FOR_ANALYSIS = ['FedKD', 'FedAVG', 'FedPAQ']
 # STRATEGIES_TO_EXECUTE = ['FedKD', 'FedAVG']
-STRATEGIES_FOR_ANALYSIS = {'26': ['FedPredict'], '30': ['FedPredict'], '31': ['FedPredict'], '32': ['FedPredict']}
-STRATEGIES_TO_EXECUTE = {'26': ['FedPredict'], '30': ['FedPredict'], '31': ['FedPredict'], '32': ['FedPredict']}
+STRATEGIES_FOR_ANALYSIS = {'2': ['FedPredict', 'FedClassAvg', 'FedProto', 'FedAVG'], '3': ['FedClassAvg', 'FedAVG', 'FedPredict'], '22': ['FedPredict'], '26': ['FedPredict'], '30': ['FedPredict'], '31': ['FedPredict'], '32': ['FedPredict']}
+STRATEGIES_TO_EXECUTE = {'2': ['FedPredict', 'FedClassAvg', 'FedProto', 'FedAVG'],'3': ['FedPredict'],  '22': ['FedPredict'], '26': ['FedPredict'], '30': ['FedPredict'], '31': ['FedPredict'], '32': ['FedPredict']}
 
 EXPERIMENTS = {
     1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '',
         'layer_selection_evaluate': 4},
-    2: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '',
-        'layer_selection_evaluate': 4},
+    2: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
+         'comment': 'set', 'layer_selection_evaluate': -2},
     3: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'False',
         'class_per_client': 2,
-        'comment': """apos a rodada {}, apenas novos clientes sao testados""".format(int(ROUNDS * 0.7)),
-        'layer_selection_evaluate': 4},
+        'comment': 'set', 'layer_selection_evaluate': -2},
     4: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'True',
         'class_per_client': 2,
         'comment': """apos a rodada {}, apenas novos clientes sao testados - novos clientes treinam apenas 1 vez (um round) - """.format(
@@ -123,8 +124,8 @@ EXPERIMENTS = {
          'comment': 'set', 'layer_selection_evaluate': 13},
     21: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
          'comment': 'set', 'layer_selection_evaluate': 14},
-    22: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'layer_selection_evaluate': 23},
+    22: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'False', 'class_per_client': 2,
+         'comment': 'set', 'layer_selection_evaluate': 10},
     23: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
          'comment': 'set', 'layer_selection_evaluate': 24},
     24: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
@@ -167,9 +168,9 @@ def execute_experiment(experiment, algorithm, new_client, new_client_train, comm
                                     decay = DECAY[algorithm]
                                     for strategy in STRATEGIES_TO_EXECUTE[experiment]:
                                         use_gradient = SPECIFIC_PARAMETERS[strategy]['use_gradient']
-                                        # if dataset == 'EMNIST' and alpha == 5.0:
-                                        #     continue
-
+                                        if strategy == 'FedPredict' and fraction_fit == 0.3 and new_client == 'False':
+                                            print("Pulou ", strategy, fraction_fit)
+                                            continue
                                         print(
                                             f'Starting {strategy} fraction_fit-{fraction_fit} simulation for {dataset} clients with {model} model ...',
                                             os.getcwd())

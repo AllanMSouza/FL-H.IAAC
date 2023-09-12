@@ -1,6 +1,6 @@
-from server.common_base_server import FedPredictBaseServer, FedAvgMBaseServer
-from pathlib import Path
-import shutil
+import copy
+
+import flwr as fl
 from flwr.common import (
     FitRes,
     MetricsAggregationFn,
@@ -15,9 +15,12 @@ import torch
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
 
 from typing import Callable, Dict, List, Optional, Tuple, Union
-import copy
+from flwr.server.client_manager import ClientManager
 
-class FedAvgM_FedPredictServerTorch(FedAvgMBaseServer, FedPredictBaseServer):
+from server.common_base_server import FedAvgBaseServer
+from abc import abstractmethod
+
+class FedAvgMBaseServer(FedAvgBaseServer):
 
     def __init__(self,
                  aggregation_method,
@@ -28,12 +31,13 @@ class FedAvgM_FedPredictServerTorch(FedAvgMBaseServer, FedPredictBaseServer):
                  args,
                  num_epochs,
                  model,
-                 server_learning_rate=1,
+                 strategy_name='FedAvgM',
                  server_momentum=1,
+                 server_learning_rate=1,
                  decay=0,
                  perc_of_clients=0,
                  dataset='',
-                 strategy_name='FedPredict',
+                 non_iid=False,
                  model_name='',
                  new_clients=False,
                  new_clients_train=False):
@@ -46,22 +50,21 @@ class FedAvgM_FedPredictServerTorch(FedAvgMBaseServer, FedPredictBaseServer):
                          args=args,
                          num_epochs=num_epochs,
                          decay=decay,
-                         model=model,
-                         server_learning_rate=server_learning_rate,
-                         server_momentum=server_momentum,
                          perc_of_clients=perc_of_clients,
                          dataset=dataset,
-                         strategy_name='FedAvgM_FedPredict',
+                         strategy_name=strategy_name,
+                         non_iid=non_iid,
                          model_name=model_name,
                          new_clients=new_clients,
                          new_clients_train=new_clients_train,
                          type='torch')
 
+        self.initial_parameters = None
 
-    # def set_initial_parameters(
-    #         self
+    # def initialize_parameters(
+    #         self, client_manager: ClientManager
     # ) -> Optional[Parameters]:
     #     """Initialize global model parameters."""
-    #     model_parameters = [i.detach().numpy() for i in self.model.parameters()]
-    #     self.server_model_parameters = copy.deepcopy(model_parameters)
-    #     return model_parameters
+    #     initial_parameters = self.initial_parameters
+    #     self.initial_parameters = None  # Don't keep initial parameters in memory
+    #     return initial_parameters
