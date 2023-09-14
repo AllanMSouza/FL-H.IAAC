@@ -306,7 +306,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			original_parameters = copy.deepcopy(parameters)
 			if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
 				self.set_parameters_to_model_fit(parameters)
-				self.save_parameters_global_model(parameters)
+				# self.save_parameters_global_model(parameters)
 				self.round_of_last_fit = server_round
 
 				selected = 1
@@ -425,7 +425,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			server_round = int(config['round'])
 			n_rounds = int(config['n_rounds'])
 			nt = int(config['nt'])
-			print("p recebidos: ", len(parameters), " round: ", server_round, " nt: ", nt)
+			config['cid'] = self.cid
+			print("p recebidos: ", len(parameters), " round: ", server_round, " nt: ", nt, " cid: ", self.cid)
 			self.set_parameters_to_model_evaluate(parameters, config)
 			# loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
 

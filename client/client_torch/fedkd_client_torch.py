@@ -167,7 +167,7 @@ class FedKDClientTorch(FedAvgClientTorch):
 				return Logistic(input_shape=input_shape, num_classes=self.num_classes)
 			elif self.model_name == 'DNN':
 				return DNN_teacher(input_shape=input_shape, num_classes=self.num_classes), DNN_student(input_shape=input_shape, num_classes=self.num_classes)
-			elif self.model_name in ['CNN', 'CNN_EMNIST']  and self.dataset in ['MNIST', 'CIFAR10', 'EMNIST']:
+			elif self.model_name in ['CNN_2', 'CNN_3']  and self.dataset in ['MNIST', 'CIFAR10', 'EMNIST']:
 				if self.dataset in ['MNIST', 'EMNIST']:
 					input_shape = 1
 					mid_dim_teacher = 256

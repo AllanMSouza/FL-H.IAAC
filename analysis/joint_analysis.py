@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import scipy.stats as st
 import os
+from matplotlib.lines import Line2D
 
 class JointAnalysis():
     def __int__(self):
@@ -14,6 +15,7 @@ class JointAnalysis():
 
         df_concat = None
         count = 0
+        version_dict = {"FedPredict": {-2: "$FedPredict_{dc}"}}
         for i in experiments:
             experiment = experiments[i]
             new_clients = experiment['new_client']
@@ -30,8 +32,11 @@ class JointAnalysis():
 
                         for layer_selection_evaluate in layer_selection_evaluate_list:
 
-                            if layer_selection_evaluate == 10:
+                            if layer_selection_evaluate == 10 and "FedPredict" not in strategy:
                                 continue
+                            # if strategy == "FedYogi_with_FedPredict" and (not(i == 2 and dataset == "CIFAR10") and not (i == 2 and fraction_fit in [0.2, 0.3] and dataset == "EMNIST")):
+                            #     continue
+
                             filename = """{}/{}/{}-None-{}/new_clients_{}_train_{}/{}/{}/{}/{}/alpha_{}/{}_rounds/{}/{}_comment/{}_layer_selection_evaluate/{}""".format(os.path.abspath(os.path.join(os.getcwd(),
                                                                                                                     os.pardir)) + "/FL-H.IAAC/logs",
                                                                                                                     type,
@@ -50,22 +55,33 @@ class JointAnalysis():
                                                                                                                     layer_selection_evaluate,
                                                                                                                     file_type)
 
-                        df = pd.read_csv(filename)
-                        df['Strategy'] = np.array([strategy] * len(df))
-                        df['Experiment'] = np.array([i] * len(df))
-                        df['Fraction fit'] = np.array([fraction_fit] * len(df))
-                        df['Dataset'] = np.array([dataset] * len(df))
-                        df['Solution'] = np.array([layer_selection_evaluate] * len(df))
-                        df['Strategy'] = np.array(['FedAvg' if i=='FedAVG' else i for i in df['Strategy'].tolist()])
-                        if count == 0:
-                            df_concat = df
-                        else:
-                            df_concat = pd.concat([df_concat, df], ignore_index=True)
+                            df = pd.read_csv(filename)
+                            if strategy == "FedPredict" and layer_selection_evaluate == -2:
+                                strategy = "FedAvg"
+                                s = "$+FP_{dc}$"
+                            elif strategy == "FedYogi_with_FedPredict" and layer_selection_evaluate == -2:
+                                strategy = "FedYogi"
+                                s = "$+FP_{dc}$"
+                            else:
+                                s = "Original"
 
-                        count += 1
 
-        df_concat = self.convert_shared_layers(df_concat)
-        print(df_concat)
+                            df['Strategy'] = np.array([strategy] * len(df))
+                            df['Version'] = np.array([s] * len(df))
+                            df['Experiment'] = np.array([i] * len(df))
+                            df['Fraction fit'] = np.array([fraction_fit] * len(df))
+                            df['Dataset'] = np.array([dataset] * len(df))
+                            df['Solution'] = np.array([layer_selection_evaluate] * len(df))
+                            df['Strategy'] = np.array(['FedAvg' if i=='FedAVG' else i for i in df['Strategy'].tolist()])
+                            if count == 0:
+                                df_concat = df
+                            else:
+                                df_concat = pd.concat([df_concat, df], ignore_index=True)
+
+                            count += 1
+
+        # df_concat = self.convert_shared_layers(df_concat)
+
         df_concat['Accuracy (%)'] = df_concat['Accuracy'] * 100
         df_concat['Round (t)'] = df_concat['Round']
         # plots
@@ -75,13 +91,32 @@ class JointAnalysis():
         self.joint_plot_acc_four_plots(df=df_concat, experiment=2, fractions_fit=fractions_fit)
         # self.joint_plot_acc_four_plots(df=df_concat, experiment=3, fractions_fit=fractions_fit)
         # self.joint_plot_acc_four_plots(df=df_concat, experiment=4, fractions_fit=fractions_fit)
-
         # table
+
+        df_concat = self.convert(df_concat)
         strategies = [i.replace("FedAVG", "FedAvg") for i in df_concat['Strategy'].unique().tolist()]
+        print(strategies)
         self.joint_table(df_concat, fractions_fit, strategies, experiment=1)
         self.joint_table(df_concat, fractions_fit, strategies, experiment=2)
         # self.joint_table(df_concat, fractions_fit, strategies, experiment=3)
         # self.joint_table(df_concat, fractions_fit, strategies, experiment=4)
+
+    def convert(self, df):
+
+        versions = df['Version'].tolist()
+        strategies = df['Strategy'].tolist()
+
+        for i in range(len(versions)):
+            version = versions[i]
+            strategy = strategies[i]
+
+            if version == "$+FP_{dc}$":
+                strategy = "$" + strategy + "+FP_{dc}$"
+                strategies[i] = strategy
+
+        df['Strategy'] = np.array(strategies)
+
+        return df
 
     def convert_shared_layers(self, df):
 
@@ -178,7 +213,7 @@ class JointAnalysis():
             df_table[column] = np.array(column_values)
 
         print(df_table)
-        df_table.columns = np.array(['$FedPredict_{dc}$', 'FedAvg', 'FedClassAvg'])
+        df_table.columns = np.array(strategies)
         print(df_table.columns)
 
         latex = df_table.to_latex().replace("\\\nEMNIST", "\\\n\hline\nEMNIST").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}")
@@ -212,19 +247,19 @@ class JointAnalysis():
 
         return df
 
-    def filter_and_plot(self, ax, base_dir, filename, title, df, experiment, dataset, fraction_fit, x_column, y_column, hue, hue_order=None):
+    def filter_and_plot(self, ax, base_dir, filename, title, df, experiment, dataset, fraction_fit, x_column, y_column, hue, hue_order=None, style=None, markers=None, size=None, sizes=None):
 
         df = self.filter(df, experiment, dataset, fraction_fit)
 
         print("filtrado: ", df, df[hue].unique().tolist())
-        line_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, type='1', hue_order=hue_order)
+        line_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, type='1', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes)
 
     def joint_plot_acc_four_plots(self, df, experiment, fractions_fit):
         print("Joint plot exeprimento: ", experiment)
 
-        df_test = df[['Round (t)', 'Loss', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset']].groupby(['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset']).apply(lambda e: self.groupb_by_plot(e)).reset_index()[['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)', 'Loss']]
+        df_test = df[['Round (t)', 'Loss', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset', 'Version']].groupby(['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Version']).apply(lambda e: self.groupb_by_plot(e)).reset_index()[['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)', 'Loss', 'Version']]
         print("agrupou plot")
-        print(df_test)
+        print(df_test[df_test['Round (t)']==100])
         # figsize=(12, 9),
         sns.set(style='whitegrid')
         fig, axs = plt.subplots(2, 2,  sharex='all', sharey='all', figsize=(6, 6))
@@ -241,11 +276,18 @@ class JointAnalysis():
         filename = ''
         i = 0
         j = 0
-        hue_order = ['$FedPredict_{dc}$', "$FedPredict$", 'FedClassAvg', 'FedAvg']
+        # hue_order = ['$FedPredict_{dc}$', "$FedPredict$", 'FedClassAvg', 'FedAvg']
+        hue_order = ['FedAvg', 'FedYogi', 'FedClassAvg']
+        style = None
+        # markers = [',', '.'
+        markers = None
+        size = "Version"
+        sizes = (1, 1.8)
         self.filter_and_plot(ax=axs[i,j], base_dir=base_dir, filename=filename, title=title, df=df_test,
                              experiment=experiment, dataset=dataset, fraction_fit=fraction_fit, x_column=x_column, y_column=y_column,
-                             hue='Strategy', hue_order=hue_order)
-        axs[i,j].get_legend().remove()
+                             hue='Strategy', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes)
+        # axs[i,j].get_legend().remove()
+        axs[i,j].legend(fontsize=7)
         axs[i,j].set_xlabel('')
         axs[i,j].set_ylabel('')
         # sort both labels and handles by labels
@@ -267,7 +309,7 @@ class JointAnalysis():
         j = 1
         self.filter_and_plot(ax=axs[i,j], base_dir=base_dir, filename=filename, title=title, df=df_test,
                              experiment=experiment, dataset=dataset, fraction_fit=fraction_fit, x_column=x_column, y_column=y_column,
-                             hue='Strategy', hue_order=hue_order)
+                             hue='Strategy', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes)
         axs[i,j].get_legend().remove()
         # axs[i].set_xlabel('')
         # axs[i].set_ylabel('')
@@ -279,7 +321,7 @@ class JointAnalysis():
         j = 0
         self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df_test,
                              experiment=experiment, dataset=dataset, fraction_fit=fraction_fit, x_column=x_column, y_column=y_column,
-                             hue='Strategy', hue_order=hue_order)
+                             hue='Strategy', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes)
         axs[i, j].get_legend().remove()
         axs[i, j].set_xlabel('')
         axs[i, j].set_ylabel('')
@@ -291,7 +333,7 @@ class JointAnalysis():
         j = 1
         self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df_test,
                              experiment=experiment, dataset=dataset, fraction_fit=fraction_fit, x_column=x_column, y_column=y_column,
-                             hue='Strategy', hue_order=hue_order)
+                             hue='Strategy', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes)
         axs[i, j].get_legend().remove()
         axs[i, j].set_xlabel('')
         axs[i, j].set_ylabel('')
@@ -336,9 +378,16 @@ class JointAnalysis():
         fig.supylabel(y_column, x=-0.01)
 
 
-        lines_labels = [axs[0, 0].get_legend_handles_labels()]
-        lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-        fig.legend(lines, labels, loc='upper center', ncol=3, bbox_to_anchor=(0.5, 1.06))
+        # lines_labels = [axs[0, 0].get_legend_handles_labels()]
+        # lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
+        # lines = [i.set_marker('o') for i in lines]
+        # Line2D().set_ma
+        # print("linhas")
+        # print(lines)
+        # print("rotulos")
+        # print(labels)
+        # # exit()
+        # fig.legend(lines, labels, loc='upper center', ncol=3, bbox_to_anchor=(0.5, 1.06))
         fig.savefig("""{}joint_plot_four_plot_{}.png""".format(base_dir, str(experiment)), bbox_inches='tight', dpi=400)
         fig.savefig("""{}joint_plot_four_plot_{}.svg""".format(base_dir, str(experiment)), bbox_inches='tight', dpi=400)
 
@@ -404,7 +453,7 @@ if __name__ == '__main__':
                    2: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'False', 'class_per_client': 2,
          'comment': 'set', 'layer_selection_evaluate': -2, 'local_epochs': '1_local_epochs'}}
 
-    strategies = ['FedPredict', 'FedAVG', 'FedClassAvg']
+    strategies = ['FedPredict', 'FedYogi', 'FedYogi_with_FedPredict', 'FedAVG', 'FedClassAvg']
     # pocs = [0.1, 0.2, 0.3]
     fractions_fit = [0.2, 0.3]
     # datasets = ['MNIST', 'CIFAR10']

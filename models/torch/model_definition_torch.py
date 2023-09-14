@@ -604,12 +604,16 @@ class CNNDistillation(nn.Module):
     def __init__(self, input_shape=1, mid_dim=256, num_classes=10, dataset='CIFAR10'):
         try:
             super(CNNDistillation, self).__init__()
-            if dataset == "CIFAR10":
-                self.student = CNN(input_shape=input_shape, mid_dim=mid_dim, num_classes=num_classes)
-                self.teacher = CNN(input_shape=input_shape, mid_dim=mid_dim, num_classes=num_classes)
-            elif dataset == "EMNIST":
-                self.student = resnet20(num_classes, [3, 1, 1])
-                self.teacher = resnet20(num_classes)
+            if self.dataset == 'CIFAR10':
+                mid_dim = 64
+            else:
+                mid_dim = 36
+            self.student = CNN_2(input_shape=input_shape, mid_dim=mid_dim, num_classes=num_classes)
+            if self.dataset == 'CIFAR10':
+                mid_dim = 16
+            else:
+                mid_dim = 4
+            self.teacher = CNN_3(input_shape=input_shape, mid_dim=mid_dim, num_classes=num_classes)
         except Exception as e:
             print("CNNDistillation")
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)

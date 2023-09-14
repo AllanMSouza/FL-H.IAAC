@@ -52,7 +52,7 @@ class FedPerClientTorch(ClientBaseTorch):
 						 new_clients_train=new_clients_train,
 						 args=args)
 
-		self.n_personalized_layers = n_personalized_layers * 2
+		self.n_personalized_layers = 1 * 2
 
 	def get_parameters_of_model(self):
 		try:
@@ -91,7 +91,7 @@ class FedPerClientTorch(ClientBaseTorch):
 		# 	print("save parameters")
 		# 	print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def set_parameters_to_model(self, parameters):
+	def set_parameters_to_model(self, parameters, config={}):
 		# usando json
 		try:
 			filename = """./fedper_saved_weights/{}/{}/{}.json""".format( self.model_name, self.cid, self.cid)

@@ -256,6 +256,7 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 
 	def evaluate(self, parameters, config):
 		try:
+			nt = int(config['nt'])
 			self.set_parameters_to_model_evaluate(parameters, config)
 			# loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
 			self.model.eval()
@@ -292,7 +293,7 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 			loss = test_loss/test_num
 			accuracy = test_acc/test_num
 			size_of_config = sys.getsizeof(config)
-			data = [config['round'], self.cid, size_of_parameters, size_of_config, loss, accuracy]
+			data = [config['round'], self.cid, size_of_parameters, size_of_config, loss, accuracy, nt]
 
 			self._write_output(filename=self.evaluate_client_filename,
 							   data=data)

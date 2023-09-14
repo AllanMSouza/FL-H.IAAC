@@ -238,7 +238,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 				available_clients = list(self.clients_metrics.keys())
 
 			print("disponiveis para treino: ", len(available_clients))
-			self.clients2select = int(len(available_clients) * self.fraction_fit)
+			self.clients2select = int(self.num_clients * self.fraction_fit)
 			if len(available_clients) == 0 and server_round != 1:
 				print("Erro na rodada: ", server_round)
 				exit()
@@ -277,7 +277,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		else:
 			selected_clients_id = clients
 			self.selected_clients = [client.cid for client in clients]
-		for client in available_clients:
+		for client in list(self.clients_metrics.keys()):
 			self.fedpredict_clients_metrics[client]['nt'] += 1
 		for client in selected_clients_id:
 			self.clients_metrics[client.cid]['count'] += 1

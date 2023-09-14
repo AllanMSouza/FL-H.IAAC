@@ -77,6 +77,8 @@ def fedpredict_core(t, T, nt, sm):
         # 9
         if nt == 0:
             global_model_weight = 0
+        elif nt == t:
+            global_model_weight = 1
         else:
             update_level = 1 / nt
             evolution_level = t / 100
@@ -348,12 +350,17 @@ def fedpredict_server(parameters, client_evaluate_list, fedpredict_clients_metri
     for i in range(1, len(parameters)):
         size_of_parameters.append(get_size(parameters[i]))
     f = True
+    previously_reduced_parameters = {}
     for client_tuple in client_evaluate_list:
         client = client_tuple[0]
         client_id = str(client.cid)
         config = copy.copy(evaluate_config)
         client_config = fedpredict_clients_metrics[str(client.cid)]
         nt = client_config['nt']
+        if nt in previously_reduced_parameters:
+            process_parameters = False
+        else:
+            process_parameters = True
         config['nt'] = nt
         config['metrics'] = client_config
         config['last_global_accuracy'] = accuracy
@@ -364,22 +371,30 @@ def fedpredict_server(parameters, client_evaluate_list, fedpredict_clients_metri
             pass
 
         print("Tamanho parametros antes: ", sum([i.nbytes for i in parameters]))
-        parameters_to_send, M = dls(fedpredict_clients_metrics[client_id]['first_round'],
-                                    layer_selection_evaluate, mean_similarity_per_layer, mean_similarity,
-                                    parameters, server_round, nt, num_rounds, df, size_of_parameters,
-                                    client_id, comment)
-        print("Tamanho parametros als: ", sum(i.nbytes for i in parameters_to_ndarrays(parameters_to_send)))
+        if process_parameters:
+            parameters_to_send, M = dls(fedpredict_clients_metrics[client_id]['first_round'],
+                                        layer_selection_evaluate, mean_similarity_per_layer, mean_similarity,
+                                        parameters, server_round, nt, num_rounds, df, size_of_parameters,
+                                        client_id, comment)
+            print("Tamanho parametros als: ", sum(i.nbytes for i in parameters_to_ndarrays(parameters_to_send)))
         layers_fraction = []
         if int(layer_selection_evaluate) in [-2, -3] and fedpredict_clients_metrics[client_id][
             'first_round'] != -1:
-            print("igual")
             config['decompress'] = True
-            parameters_to_send, layers_fraction = compredict(
-                fedpredict_clients_metrics[str(client_id)]['round_of_last_fit'], layers_compression_range,
-                num_rounds, client_id, server_round, len(M), parameters_to_send)
+            if process_parameters:
+                parameters_to_send, layers_fraction = compredict(
+                    fedpredict_clients_metrics[str(client_id)]['round_of_last_fit'], layers_compression_range,
+                    num_rounds, client_id, server_round, len(M), parameters_to_send)
         else:
             config['decompress'] = False
             print("nao igual")
+
+        if process_parameters:
+            print("Novos parametros para nt: ", nt)
+            previously_reduced_parameters[nt] = [parameters_to_send, M, layers_fraction]
+        else:
+            print("Reutilizou parametros de nt: ", nt)
+            parameters_to_send, M, layers_fraction = previously_reduced_parameters[nt]
 
         print("Tamanho parametros compredict: ", sum(i.nbytes for i in parameters_to_ndarrays(parameters_to_send)))
         fedpredict_clients_metrics[str(client.cid)]['acc_bytes_rate'] = size_of_parameters
@@ -538,7 +553,8 @@ def fedpredict_client( filename, model, global_parameters, config={}):
         T = int(config['total_server_rounds'])
         client_metrics = config['metrics']
         # Client's metrics
-        nt = client_metrics['nt']
+        nt = int(client_metrics['nt'])
+        cid = int(config['cid'])
         round_of_last_fit = client_metrics['round_of_last_fit']
         round_of_last_evaluate = client_metrics['round_of_last_evaluate']
         first_round = client_metrics['first_round']
@@ -564,6 +580,7 @@ def fedpredict_client( filename, model, global_parameters, config={}):
             model.load_state_dict(torch.load(filename))
             model = fedpredict_combine_models(global_parameters, model, t, T, nt, M, df)
         else:
+            print("usar modelo global: ", cid)
             for old_param, new_param in zip(model.parameters(), global_parameters):
                 old_param.data = new_param.data.clone()
 
