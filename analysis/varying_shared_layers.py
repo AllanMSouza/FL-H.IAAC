@@ -77,13 +77,13 @@ class Varying_Shared_layers:
         for i in range(len(shared_layers_list)):
             shared_layer = str(shared_layers_list[i])
             if "-1" in shared_layer:
-                shared_layers_list[i] = "$FedPredict_{d}$"
+                shared_layers_list[i] = "$FedAvg+FP_{d}$"
                 continue
             if "-2" in shared_layer:
-                shared_layers_list[i] = "$FedPredict_{dc}$"
+                shared_layers_list[i] = "$FedAvg+FP_{dc}$"
                 continue
             if "-3" in shared_layer:
-                shared_layers_list[i] = "$FedPredict_{c}$"
+                shared_layers_list[i] = "$FedAvg+FP_{c}$"
                 continue
             new_shared_layer = "{"
             for layer in shared_layer:
@@ -94,7 +94,7 @@ class Varying_Shared_layers:
 
             new_shared_layer += "}"
             if shared_layer == "10":
-                new_shared_layer = "$FedPredict$"
+                new_shared_layer = "$FedAvg+FP$"
             if shared_layer == "50":
                 new_shared_layer = "50% of the layers"
 
@@ -471,8 +471,8 @@ class Varying_Shared_layers:
 
     def evaluate_client_joint_parameter_reduction(self, df):
 
-        # df = df[df['Solution'] == "$FedPredict_d$"]
-        df = df[df['Solution'] != "$FedPredict$"]
+        # df = df[df['Solution'] == "$FedAvg+FP_d$"]
+        df = df[df['Solution'] != "$FedAvg+FP$"]
         fig, ax = plt.subplots(2, 2,  sharex='all', sharey='all', figsize=(6, 6))
 
         base_dir = """analysis/output/torch/varying_shared_layers/{}/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
@@ -486,13 +486,13 @@ class Varying_Shared_layers:
         style = '\u03B1'
         y_min = 0
         if self.experiment == "als_compredict":
-            layer_selection_evaluate = ["$FedPredict_{dc}$", "$FedPredict_{d}$", "$FedPredict_{c}$"]
+            layer_selection_evaluate = ["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$"]
         elif -1 in self.layer_selection_evaluate:
-            layer_selection_evaluate = ["$FedPredict_{d}$", 'FedPredict', 'FedAvg']
+            layer_selection_evaluate = ["$FedAvg+FP_{d}$", 'FedPredict', 'FedAvg']
         else:
-            layer_selection_evaluate = ["$FedPredict_{c}$", 'FedPredict', 'FedAvg']
+            layer_selection_evaluate = ["$FedAvg+FP_{c}$", 'FedPredict', 'FedAvg']
 
-        if "$FedPredict_{dc}$" not in df['Solution'].tolist():
+        if "$FedAvg+FP_{dc}$" not in df['Solution'].tolist():
             y_max = 60
         else:
             y_max = 100
@@ -744,7 +744,7 @@ class Varying_Shared_layers:
             df_table[column] = np.array(column_values)
 
         print(df_table)
-        df_table.columns = np.array(["$FedPredict_{dc}$", "$FedPredict_{d}$", "$FedPredict_{c}$", "$FedPredict$", "$FedAvg$"])
+        df_table.columns = np.array(["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$", "$FedAvg+FP$", "$FedAvg$"])
         print(df_table.columns)
 
         latex = df_table.to_latex().replace("\\\nMNIST", "\\\n\hline\nMNIST").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}")
@@ -811,7 +811,7 @@ class Varying_Shared_layers:
 
     def evaluate_client_joint_accuracy(self, df, alpha):
 
-        # df = df[df['Solution'] == "$FedPredict_d$"]
+        # df = df[df['Solution'] == "$FedAvg+FP_d$"]
 
         base_dir = """analysis/output/torch/varying_shared_layers/{}/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
             self.experiment, str(self.dataset), self.num_clients, self.num_rounds, self.fraction_fit,
@@ -827,16 +827,16 @@ class Varying_Shared_layers:
         print("strategias unicas: ", df['Solution'].unique().tolist())
 
         if self.experiment == "als_compredict":
-            layer_selection_evaluate = ["$FedPredict_{dc}$", "$FedPredict_{d}$", "$FedPredict_{c}$", "$FedPredict$", "$FedAvg$"]
+            layer_selection_evaluate = ["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$", "$FedAvg+FP$", "$FedAvg$"]
         elif -1 in self.layer_selection_evaluate:
-            layer_selection_evaluate = ["$FedPredict_{d}$", 'FedPredict', 'FedAvg']
+            layer_selection_evaluate = ["$FedAvg+FP_{d}$", 'FedPredict', 'FedAvg']
         else:
-            layer_selection_evaluate = ["$FedPredict_{c}$", 'FedPredict', 'FedAvg']
+            layer_selection_evaluate = ["$FedAvg+FP_{c}$", 'FedPredict', 'FedAvg']
 
         if len(self.dataset) >= 2:
 
             print("testar1")
-            print(df[df['Solution'] == "$FedPredict_{d}$"])
+            print(df[df['Solution'] == "$FedAvg+FP_{d}$"])
 
             fig, ax = plt.subplots(2, 2, sharex='all', sharey='all', figsize=(6, 6))
             title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[0])
@@ -1348,15 +1348,15 @@ class Varying_Shared_layers:
         # for i in range(len(shared_layers_list)):
         #     shared_layer = str(shared_layers_list[i])
         #     if "-1" in shared_layer:
-        #         shared_layers_list[i] = "$FedPredict_{d}$"
+        #         shared_layers_list[i] = "$FedAvg+FP_{d}$"
         #         sort[shared_layer] = shared_layers_list[i]
         #         continue
         #     if "-2" in shared_layer:
-        #         shared_layers_list[i] = "$FedPredict_{dc}$"
+        #         shared_layers_list[i] = "$FedAvg+FP_{dc}$"
         #         sort[shared_layer] = shared_layers_list[i]
         #         continue
         #     if "-3" in shared_layer:
-        #         shared_layers_list[i] = "$FedPredict_{c}$"
+        #         shared_layers_list[i] = "$FedAvg+FP_{c}$"
         #         sort[shared_layer] = shared_layers_list[i]
         #         continue
         #     new_shared_layer = "{"
@@ -1368,7 +1368,7 @@ class Varying_Shared_layers:
         #
         #     new_shared_layer += "}"
         #     if shared_layer == "10":
-        #         new_shared_layer = "$FedPredict$"
+        #         new_shared_layer = "$FedAvg+FP$"
         #     if shared_layer == "50":
         #         new_shared_layer = "50% of the layers"
         #
@@ -1383,7 +1383,7 @@ class Varying_Shared_layers:
         #         sort.append(i)
         # layer_selection_evaluate = sort
         # print("ord: ", layer_selection_evaluate)
-        layer_selection_evaluate  = ["$FedPredict_{dc}$", "$FedPredict_{d}$", "$FedPredict_{c}$", "$FedPredict$", "$FedAvg$"]
+        layer_selection_evaluate  = ["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$", "$FedAvg+FP$", "$FedAvg$"]
         style = '\u03B1'
 
         title = """Accuracy in {}; Model={}""".format(dataset, model)
@@ -1453,7 +1453,7 @@ class Varying_Shared_layers:
             # print("interes: ", round, dataset, alpha, model)
             df_copy = copy.deepcopy(df_aux.query("""Round == {} and Dataset == '{}' and \u03B1 == {} and Model == '{}'""".format(round, dataset, alpha, model)))
             # print("apos: ", df_copy.columns)
-            target = df_copy[df_copy['Solution'] == "$FedPredict$"]
+            target = df_copy[df_copy['Solution'] == "$FedAvg+FP$"]
             target_acc = target['Accuracy (%)'].tolist()[0]
             target_size = target['Size of parameters (MB)'].tolist()[0]
             acc = df['Accuracy (%)'].tolist()[0]
@@ -1481,10 +1481,10 @@ class Varying_Shared_layers:
 
         df_preprocessed = copy.deepcopy(df)
 
-        df = df[df['Solution'] != "$FedPredict$"]
+        df = df[df['Solution'] != "$FedAvg+FP$"]
         df = df[df['Solution'] != "{1}"]
         # layer_selection_evaluate =  ['FedPredict (with ALS)']
-        layer_selection_evaluate = ["$FedPredict_{dc}$"]
+        layer_selection_evaluate = ["$FedAvg+FP_{dc}$"]
         print("menor: ", df['Accuracy reduction (%)'].min())
         print("Fed", df[df['Solution'] == 'FedPredict (with ALS)'][['Accuracy reduction (%)', 'Round']])
         print("tra: ", df['Solution'].unique().tolist())

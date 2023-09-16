@@ -53,11 +53,13 @@ class JointAnalysis():
                         if strategy == "FedPredict" and layer_selection_evaluate == -2:
                             strategy = "FedAvg"
                             s = "$+FP_{dc}$"
-                        elif strategy == "FedYogy_with_FedPredict" and layer_selection_evaluate == -2:
+                        elif strategy == "FedYogi_with_FedPredict" and layer_selection_evaluate == -2:
                             strategy = "FedYogi"
                             s = "$+FP_{dc}$"
                         else:
                             s = "Original"
+
+
 
                         df = pd.read_csv(filename)
                         df['Strategy'] = np.array([strategy] * len(df))
@@ -251,7 +253,8 @@ class JointAnalysis():
         print("Joint plot exeprimento: ", experiment)
 
         df = df[df['nt'].isin([1, 10])]
-        # df = df[df['Round (t)'] <= 40]
+        # df = df[df['Round (t)'] > 70]
+        # df = df[df['Round (t)'] < 30]
         df['nt'] = df['nt'].astype(int)
         df_test = df[['Round (t)', 'Loss', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset', 'nt']].groupby(['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'nt']).apply(lambda e: self.groupb_by_plot(e)).reset_index()[['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)', 'Loss', 'nt']]
         print("agrupou plot")
@@ -271,7 +274,8 @@ class JointAnalysis():
         title = """{}""".format(dataset)
         filename = 'nt'
         i = 0
-        hue_order = ['$FedAvg+FP_{dc}$', "FedYogi", 'FedAvg']
+        hue_order = ['$FedAvg+FP_{dc}$', '$FedYogi+FP_{dc}$', "FedClassAvg", "FedYogi", 'FedAvg']
+        print(df_test['Strategy'].unique().tolist())
         hue = 'nt'
         self.filter_and_plot(ax=axs[i], base_dir=base_dir, filename=filename, title=title, df=df_test,
                              experiment=experiment, dataset=dataset, fraction_fit=fraction_fit, x_column=x_column, y_column=y_column,
@@ -396,7 +400,7 @@ if __name__ == '__main__':
     experiments = {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
          'comment': 'set', 'layer_selection_evaluate': -2, 'local_epochs': '1_local_epochs'}}
 
-    strategies = ['FedPredict', 'FedAVG', 'FedYogi']
+    strategies = ['FedPredict', 'FedYogi_with_FedPredict', 'FedClassAvg', 'FedAVG', 'FedYogi']
     # pocs = [0.1, 0.2, 0.3]
     fractions_fit = [0.3]
     # datasets = ['MNIST', 'CIFAR10']
