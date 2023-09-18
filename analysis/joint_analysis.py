@@ -34,6 +34,9 @@ class JointAnalysis():
 
                             if layer_selection_evaluate == 10 and "FedPredict" not in strategy:
                                 continue
+
+                            # if new_clients == 'True' and alpha == 5.0 and ("FedAVG" in strategy):
+                            #     continue
                             # if strategy == "FedYogi_with_FedPredict" and (not(i == 2 and dataset == "CIFAR10") and not (i == 2 and fraction_fit in [0.2, 0.3] and dataset == "EMNIST")):
                             #     continue
 
@@ -156,7 +159,7 @@ class JointAnalysis():
 
     def joint_table(self, df, pocs, strategies, experiment):
 
-        model_report = {i: {} for i in strategies}
+        model_report = {i: {} for i in df['Alpha'].unique().tolist()}
         df = df[df['Round (t)'] == 100]
         # df_test = df[['Round (t)', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset']].groupby(
         #     ['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset']).apply(
@@ -171,7 +174,7 @@ class JointAnalysis():
         convert_dict = {0.1: 5, 0.2: 10, 0.3: 15, 0.4: 20}
         # df_test['Fraction fit'] = np.array([convert_dict[i] for i in df_test['Fraction fit'].tolist()])
 
-        columns = ['0.1', '1.0']
+        columns = strategies
 
         index = [np.array(['EMNIST'] * len(columns) + ['CIFAR-10'] * len(columns)), np.array(columns * 2)]
 
@@ -185,9 +188,9 @@ class JointAnalysis():
 
                 # mnist_acc[column] = (self.filter(df_test, experiment, 'MNIST', float(column), strategy=model_name)['Accuracy (%)']*100).mean().round(6)
                 # cifar10_acc[column] = (self.filter(df_test, experiment, 'CIFAR10', float(column), strategy=model_name)['Accuracy (%)']*100).mean().round(6)
-                mnist_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'EMNIST', float(column), strategy=model_name)[
+                mnist_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'EMNIST', float(model_name), strategy=column)[
                                          'Accuracy (%)']).tolist(), ci)
-                cifar10_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'CIFAR10', float(column), strategy=model_name)[
+                cifar10_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'CIFAR10', float(model_name), strategy=column)[
                                            'Accuracy (%)']).tolist(), ci)
 
             model_metrics = []
@@ -216,7 +219,7 @@ class JointAnalysis():
             df_table[column] = np.array(column_values)
 
         print(df_table)
-        df_table.columns = np.array(strategies)
+        df_table.columns = np.array(list(model_report.keys()))
         print(df_table.columns)
 
         latex = df_table.to_latex().replace("\\\nEMNIST", "\\\n\hline\nEMNIST").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}")
@@ -265,7 +268,7 @@ class JointAnalysis():
         print(df_test[df_test['Round (t)']==100])
         # figsize=(12, 9),
         sns.set(style='whitegrid')
-        fig, axs = plt.subplots(2, 2,  sharex='all', sharey='all', figsize=(6, 6))
+        fig, axs = plt.subplots(2, 3,  sharex='all', sharey='all', figsize=(9, 6))
 
         x_column = 'Round (t)'
         y_column = 'Accuracy (%)'
@@ -316,6 +319,19 @@ class JointAnalysis():
         axs[i,j].get_legend().remove()
         # axs[i].set_xlabel('')
         # axs[i].set_ylabel('')
+
+        # ====================================================================
+        alpha = alphas[2]
+        dataset = 'EMNIST'
+        title = """{}; \u03B1={}""".format(dataset, float(alpha))
+        i = 0
+        j = 2
+        self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df_test,
+                             experiment=experiment, dataset=dataset, alpha=alpha, x_column=x_column, y_column=y_column,
+                             hue='Strategy', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes)
+        axs[i, j].get_legend().remove()
+        # axs[i].set_xlabel('')
+        # axs[i].set_ylabel('')
         # ====================================================================
         alpha = alphas[0]
         dataset = 'CIFAR10'
@@ -334,6 +350,18 @@ class JointAnalysis():
         title = """CIFAR-10; \u03B1={}""".format(alpha)
         i = 1
         j = 1
+        self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df_test,
+                             experiment=experiment, dataset=dataset, alpha=alpha, x_column=x_column, y_column=y_column,
+                             hue='Strategy', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes)
+        axs[i, j].get_legend().remove()
+        axs[i, j].set_xlabel('')
+        axs[i, j].set_ylabel('')
+        # ====================================================================
+        alpha = alphas[2]
+        dataset = 'CIFAR10'
+        title = """CIFAR-10; \u03B1={}""".format(alpha)
+        i = 1
+        j = 2
         self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df_test,
                              experiment=experiment, dataset=dataset, alpha=alpha, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes)
@@ -456,12 +484,12 @@ if __name__ == '__main__':
                    2: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'False', 'class_per_client': 2,
          'comment': 'set', 'layer_selection_evaluate': -2, 'local_epochs': '1_local_epochs'}}
 
-    strategies = ['FedPredict', 'FedAVG', 'FedClassAvg']
+    strategies = ['FedPredict', 'FedYogi_with_FedPredict', 'FedAVG', 'FedYogi', 'FedClassAvg']
     # pocs = [0.1, 0.2, 0.3]
     fractions_fit = [0.3]
     # datasets = ['MNIST', 'CIFAR10']
     datasets = ['EMNIST', 'CIFAR10']
-    alpha = [0.1, 1.0]
+    alpha = [0.1, 1.0, 5.0]
     rounds = 100
     clients = '20'
     model = 'CNN_3'
