@@ -427,9 +427,10 @@ class JointAnalysis():
         df_indexes = []
         columns = df.columns.tolist()
         print("colunas", columns)
-        for i in range(len(df)):
+        for i in range(len(columns)):
 
-            row = df.iloc[i].tolist()
+            column = columns[i]
+            row = df[column].tolist()
             print("ddd", row)
             indexes = self.select_mean(i, row, columns)
             df_indexes += indexes
@@ -450,10 +451,14 @@ class JointAnalysis():
 
         max_value = max(list_of_means)
         print("maximo: ", max_value)
-        for i in range(len(list_of_means)):
+        for i in range(0, len(list_of_means), 5):
 
-            if list_of_means[i] == max_value:
-                indexes.append([index, columns[i]])
+            dataset_values = list_of_means[i: i+5]
+            max_value = max(dataset_values)
+
+            for j in range(len(list_of_means)):
+                if list_of_means[j] == max_value:
+                    indexes.append([j, columns[index]])
 
         return indexes
 
