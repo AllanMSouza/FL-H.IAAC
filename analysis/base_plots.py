@@ -147,9 +147,6 @@ def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_
     Path(base_dir).mkdir(parents=True, exist_ok=True)
     file_name = """{}_lineplot""".format(file_name)
 
-    if ax is None:
-        # fig, ax = plt.subplots()
-        figure = plt.figure()
     sns.set(style='whitegrid')
     log = ""
     if log_scale:

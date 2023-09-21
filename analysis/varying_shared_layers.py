@@ -55,18 +55,18 @@ class Varying_Shared_layers:
                     df_concat = pd.concat([df_concat, df], ignore_index=True)
 
         print(df_concat)
-        self.evaluate_client_analysis_differnt_models(df_concat)
-        self.evaluate_client_joint_parameter_reduction(df_concat)
+        # self.evaluate_client_analysis_differnt_models(df_concat)
+        # self.evaluate_client_joint_parameter_reduction(df_concat)
         alphas = df_concat['\u03B1'].unique().tolist()
         models = df_concat['Model'].unique().tolist()
-        df_concat = self.build_filename_fedavg(df_concat)
+        # df_concat = self.build_filename_fedavg(df_concat)
         for alpha in alphas:
-            self.evaluate_client_joint_accuracy(df_concat, alpha)
+            # self.evaluate_client_joint_accuracy(df_concat, alpha)
             self.joint_table(self.build_filename_fedavg(self.df_concat, use_mean=False), alpha=alpha, models=models)
 
         # for alpha in alphas:
         #     self.evaluate_client_joint_accuracy(df_concat, alpha)
-        self.similarity()
+        # self.similarity()
         # for alpha in alphas:
         #     self.evaluate_client_norm_analysis_nt(alpha)
         # self.evaluate_client_norm_analysis()
@@ -686,9 +686,9 @@ class Varying_Shared_layers:
 
         shared_layers = df['Solution'].unique().tolist()
 
-        model_report = {i: {} for i in shared_layers}
+        model_report = {i: {} for i in df['Model'].unique().tolist()}
 
-        # df = df[df['Round'] == 100]
+        df = df[df['Round'] == 100]
         print("receb: ", df.columns)
         df_test = df[
             ['Round', 'Size of parameters', 'Solution', 'Accuracy (%)', '\u03B1', 'Dataset', 'Model']]
@@ -699,7 +699,7 @@ class Varying_Shared_layers:
         convert_dict = {0.1: 5, 0.2: 10, 0.3: 15, 0.4: 20}
         # df_test['Fraction fit'] = np.array([convert_dict[i] for i in df_test['Fraction fit'].tolist()])
 
-        columns = models
+        columns = shared_layers
 
         index = [np.array(['EMNIST'] * len(columns) + ['CIFAR-10'] * len(columns)), np.array(columns * 2)]
 
@@ -713,9 +713,9 @@ class Varying_Shared_layers:
 
                 # mnist_acc[column] = (self.filter(df_test, experiment, 'MNIST', float(column), strategy=model_name)['Accuracy (%)']*100).mean().round(6)
                 # cifar10_acc[column] = (self.filter(df_test, experiment, 'CIFAR10', float(column), strategy=model_name)['Accuracy (%)']*100).mean().round(6)
-                mnist_acc[column] = self.t_distribution((self.filter(df_test, model=column, dataset='EMNIST', alpha=alpha, shared_layer=shared_layer)[
+                mnist_acc[column] = self.t_distribution((self.filter(df_test, model=shared_layer, dataset='EMNIST', alpha=alpha, shared_layer=column)[
                                          'Accuracy (%)']).tolist(), ci)
-                cifar10_acc[column] = self.t_distribution((self.filter(df_test,model=column, dataset='CIFAR-10', alpha=alpha, shared_layer=shared_layer)[
+                cifar10_acc[column] = self.t_distribution((self.filter(df_test,model=shared_layer, dataset='CIFAR-10', alpha=alpha, shared_layer=column)[
                                            'Accuracy (%)']).tolist(), ci)
 
             model_metrics = []
@@ -744,7 +744,7 @@ class Varying_Shared_layers:
             df_table[column] = np.array(column_values)
 
         print(df_table)
-        df_table.columns = np.array(["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$", "$FedAvg+FP$", "$FedAvg$"])
+        # df_table.columns = np.array(columns)
         print(df_table.columns)
 
         latex = df_table.to_latex().replace("\\\nMNIST", "\\\n\hline\nMNIST").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}")
@@ -761,9 +761,9 @@ class Varying_Shared_layers:
         df_indexes = []
         columns = df.columns.tolist()
         print("colunas", columns)
-        for i in range(len(df)):
-
-            row = df.iloc[i].tolist()
+        for i in range(len(columns)):
+            column = columns[i]
+            row = df[column].tolist()
             print("ddd", row)
             indexes = self.select_mean(i, row, columns)
             df_indexes += indexes
@@ -777,17 +777,20 @@ class Varying_Shared_layers:
         print("ola: ", values, "ola0")
 
         for i in range(len(values)):
-
             print("valor: ", values[i])
             value = float(str(values[i])[:4])
             list_of_means.append(value)
 
         max_value = max(list_of_means)
         print("maximo: ", max_value)
-        for i in range(len(list_of_means)):
+        for i in range(0, len(list_of_means), 5):
 
-            if list_of_means[i] == max_value:
-                indexes.append([index, columns[i]])
+            dataset_values = list_of_means[i: i + 5]
+            max_value = max(dataset_values)
+
+            for j in range(len(list_of_means)):
+                if list_of_means[j] == max_value:
+                    indexes.append([j, columns[index]])
 
         return indexes
 
