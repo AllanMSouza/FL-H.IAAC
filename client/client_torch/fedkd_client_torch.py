@@ -176,7 +176,7 @@ class FedKDClientTorch(FedAvgClientTorch):
 					input_shape = 3
 					mid_dim_teacher = 400
 					mid_dim_student = 100
-				return CNNDistillation(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim_teacher)
+				return CNNDistillation(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim_teacher, dataset=self.dataset)
 			elif self.dataset in ['Tiny-ImageNet']:
 				# return AlexNet(num_classes=self.num_classes)
 				model = models.resnet18(pretrained=True)
@@ -228,7 +228,7 @@ class FedKDClientTorch(FedAvgClientTorch):
 					# print("professor: ", output_teacher[0])
 					# print("estudante: ", output_student[0])
 					# print("valor da loss student: ", kl_loss(output_student, F.softmax(output_teacher))/(loss_teacher + loss_student))
-					print("valor da loss normal student: ", loss)
+
 					# loss_student += kl_loss(output_student, F.softmax(output_teacher))/(loss_teacher + loss_student)
 					train_loss_student += loss.item()
 
@@ -242,11 +242,26 @@ class FedKDClientTorch(FedAvgClientTorch):
 			print("rodada: ", server_round)
 			print("acc student: ", train_acc_student / train_num)
 			print("acc teacher: ", train_acc_teacher / train_num)
+			print("valor da loss normal student: ", train_loss_student)
 			return train_loss_student, train_acc_student, train_num
 
 		except Exception as e:
 			print("train student")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+	def compress(self, server_round, parameters):
+		n_components_list = []
+		for i in range(len(parameters)):
+			compression_range = self.layers_compression_range[i]
+			if compression_range > 0:
+				frac = 1 - server_round / self.num_rounds
+				compression_range = max(round(frac * compression_range), 1)
+			else:
+				compression_range = None
+			n_components_list.append(compression_range)
+
+		parameters_to_send = parameter_svd_write(parameters, n_components_list)
+		return parameters_to_send
 
 	def fit(self, parameters, config):
 		try:
@@ -259,7 +274,9 @@ class FedKDClientTorch(FedAvgClientTorch):
 
 			start_time = time.process_time()
 			server_round = int(config['round'])
-			parameters = inverse_parameter_svd_reading(parameters, [i.detach().numpy().shape for i in
+
+			if server_round > 1:
+				parameters = inverse_parameter_svd_reading(parameters, [i.detach().numpy().shape for i in
 																	self.model.student.parameters()])
 			original_parameters = copy.deepcopy(parameters)
 
@@ -302,7 +319,7 @@ class FedKDClientTorch(FedAvgClientTorch):
 
 			if self.use_gradient:
 				trained_parameters = [trained - original for trained, original in zip(trained_parameters, original_parameters)]
-			trained_parameters = parameter_svd_write(trained_parameters, self.n_rate)
+			trained_parameters = self.compress(server_round, trained_parameters)
 			return trained_parameters, train_num, fit_response
 		except Exception as e:
 			print("fit fedkd")

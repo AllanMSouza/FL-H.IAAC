@@ -221,6 +221,7 @@ class JointAnalysis():
         print(df_table)
         df_table.columns = np.array(list(model_report.keys()))
         print(df_table.columns)
+        print(df_table.index)
 
         latex = df_table.to_latex().replace("\\\nEMNIST", "\\\n\hline\nEMNIST").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}")
 
@@ -228,7 +229,36 @@ class JointAnalysis():
         filename = """{}latex_{}.txt""".format(base_dir, str(experiment))
         pd.DataFrame({'latex': [latex]}).to_csv(filename, header=False, index=False)
 
+        self.improvements(df_table, experiment + 1)
+
         #  df.to_latex().replace("\}", "}").replace("\{", "{").replace("\\\nRecall", "\\\n\hline\nRecall").replace("\\\nF-score", "\\\n\hline\nF1-score")
+
+    def improvements(self, df, experiment):
+
+        strategies = {"$FedAvg+FP_{dc}$": "FedAvg", "$FedYogi+FP_{dc}$": "FedYogi"}
+        datasets = ['EMNIST', 'CIFAR-10']
+        columns = df.columns.tolist()
+        improvements_dict = {'Dataset': [], 'Strategy': [], 'Original strategy': [], 'Alpha': [], 'Accuracy (%)': []}
+        df_improvements = pd.DataFrame(improvements_dict)
+
+        for dataset in datasets:
+            for strategy in strategies:
+                original_strategy = strategies[strategy]
+
+                for j in range(len(columns)):
+
+                    index = (dataset, strategy)
+                    index_original = (dataset, original_strategy)
+
+                    acc = float(df.loc[index].tolist()[j].replace("textbf{", "")[:4])
+                    acc_original = float(df.loc[index_original].tolist()[j].replace("textbf{", "")[:4])
+
+                    row = {'Dataset': dataset, 'Strategy': strategy, 'Original strategy': original_strategy, 'Alpha': columns[j], 'Accuracy (%)': acc - acc_original}
+
+                    df_improvements = df_improvements.append(row, ignore_index=True)
+
+        print("Experiment: ", experiment + 1)
+        print(df_improvements)
 
     def groupb_by_plot(self, df):
         parameters = int(df['Size of parameters'].mean())

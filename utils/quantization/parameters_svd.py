@@ -92,7 +92,7 @@ def if_reduces_size(shape, n_components, dtype=np.float64):
 
 def inverse_parameter_svd_reading(arrays, model_shape, M=0):
     try:
-        print("recebidos aki: ", [i.shape for i in arrays])
+        # print("recebidos aki: ", [i.shape for i in arrays])
         if M == 0:
             M = len(model_shape)
         sketched_paramters = []

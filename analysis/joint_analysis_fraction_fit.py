@@ -59,8 +59,12 @@ class JointAnalysis():
                                                                                                                         comment,
                                                                                                                         layer_selection_evaluate,
                                                                                                                         file_type)
-
-                                df = pd.read_csv(filename)
+                                try:
+                                    df = pd.read_csv(filename)
+                                except:
+                                    print("arquivo vario")
+                                    print(filename)
+                                    continue
                                 if strategy == "FedPredict" and layer_selection_evaluate == -2:
                                     st = "FedAvg"
                                     s = "$+FP_{dc}$"
@@ -299,36 +303,60 @@ class JointAnalysis():
         axs[i,j].set_xlabel('')
         axs[i,j].set_ylabel('')
         # ====================================================================
-        # alpha = alphas[1]
-        # dataset = 'EMNIST'
-        # title = """{}; \u03B1={}""".format(dataset, float(alpha))
-        # i = 0
-        # j = 1
-        # self.filter_and_plot(ax=axs[i,j], base_dir=base_dir, filename=filename, title=title, df=df_test,
-        #                      experiment=experiment, dataset=dataset, alpha=alpha, x_column=x_column, y_column=y_column,
-        #                      hue='Strategy', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes)
-        # axs[i,j].get_legend().remove()
-        # # axs[i].set_xlabel('')
-        # # axs[i].set_ylabel('')
-
-        # ====================================================================
-        # alpha = alphas[2]
-        # dataset = 'EMNIST'
-        # title = """{}; \u03B1={}""".format(dataset, float(alpha))
-        # i = 0
-        # j = 2
-        # self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df_test,
-        #                      experiment=experiment, dataset=dataset, alpha=alpha, x_column=x_column, y_column=y_column,
-        #                      hue='Strategy', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes)
-        # axs[i, j].get_legend().remove()
-        # # axs[i].set_xlabel('')
-        # # axs[i].set_ylabel('')
-        # ====================================================================
         alpha = alphas[0]
         dataset = 'CIFAR10'
         title = """CIFAR-10; \u03B1={}""".format(float(alpha))
         i = 1
         j = 0
+        self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df_test,
+                             experiment=experiment, dataset=dataset, alpha=alpha, x_column=x_column, y_column=y_column,
+                             hue='Strategy', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes)
+        axs[i, j].get_legend().remove()
+        axs[i, j].set_xlabel('')
+        axs[i, j].set_ylabel('')
+        # ====================================================================
+        alpha = alphas[1]
+        dataset = 'EMNIST'
+        title = """{}; \u03B1={}""".format(dataset, float(alpha))
+        i = 0
+        j = 1
+        self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df_test,
+                             experiment=experiment, dataset=dataset, alpha=alpha, x_column=x_column, y_column=y_column,
+                             hue='Strategy', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes)
+        axs[i,j].get_legend().remove()
+        axs[i,j].set_xlabel('')
+        axs[i,j].set_ylabel('')
+
+        # ====================================================================
+        alpha = alphas[1]
+        dataset = 'EMNIST'
+        title = """{}; \u03B1={}""".format(dataset, float(alpha))
+        i = 1
+        j = 1
+        self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df_test,
+                             experiment=experiment, dataset=dataset, alpha=alpha, x_column=x_column, y_column=y_column,
+                             hue='Strategy', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes)
+        axs[i, j].get_legend().remove()
+        axs[i,j].set_xlabel('')
+        axs[i,j].set_ylabel('')
+        # ====================================================================
+        alpha = alphas[2]
+        dataset = 'EMNIST'
+        title = """{}; \u03B1={}""".format(dataset, float(alpha))
+        i = 0
+        j = 2
+        self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df_test,
+                             experiment=experiment, dataset=dataset, alpha=alpha, x_column=x_column, y_column=y_column,
+                             hue='Strategy', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes)
+        axs[i, j].get_legend().remove()
+        axs[i, j].set_xlabel('')
+        axs[i, j].set_ylabel('')
+        # ====================================================================
+        alpha = alphas[2]
+        dataset = 'CIFAR10'
+        title = """CIFAR-10; \u03B1={}""".format(float(alpha))
+        i = 1
+        j = 2
         self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df_test,
                              experiment=experiment, dataset=dataset, alpha=alpha, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes)
@@ -431,7 +459,7 @@ if __name__ == '__main__':
     fractions_fit = [0.3, 0.5, 0.7, 0.9]
     # datasets = ['MNIST', 'CIFAR10']
     datasets = ['EMNIST', 'CIFAR10']
-    alpha = [1.0]
+    alpha = [0.1, 1.0, 5.0]
     rounds = 100
     clients = '20'
     model = 'CNN_3'

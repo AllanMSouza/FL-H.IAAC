@@ -603,12 +603,13 @@ class LeNet(nn.Module):
 class CNNDistillation(nn.Module):
     def __init__(self, input_shape=1, mid_dim=256, num_classes=10, dataset='CIFAR10'):
         try:
+            self.dataset = dataset
             super(CNNDistillation, self).__init__()
-            if self.dataset == 'CIFAR10':
-                mid_dim = 64
+            if self.dataset in ['EMNIST', 'MNIST']:
+                mid_dim = 256
             else:
-                mid_dim = 36
-            self.student = CNN_2(input_shape=input_shape, mid_dim=mid_dim, num_classes=num_classes)
+                mid_dim = 400
+            self.student = CNN(input_shape=input_shape, mid_dim=mid_dim, num_classes=num_classes)
             if self.dataset == 'CIFAR10':
                 mid_dim = 16
             else:
@@ -730,6 +731,51 @@ class CNN_X(nn.Module):
 
 # ====================================================================================================================
 # melhor 3
+# class CNN(nn.Module):
+#     def __init__(self, input_shape=1, mid_dim=256, num_classes=10):
+#         try:
+#             super(CNN, self).__init__()
+#             self.conv1 = nn.Sequential(
+#                 nn.Conv2d(input_shape,
+#                           32,
+#                           kernel_size=5,
+#                           padding=0,
+#                           stride=1,
+#                           bias=True),
+#                 nn.ReLU(inplace=True),
+#                 nn.MaxPool2d(kernel_size=(2, 2))
+#             )
+#             self.conv2 = nn.Sequential(
+#                 nn.Conv2d(32,
+#                           64,
+#                           kernel_size=5,
+#                           padding=0,
+#                           stride=1,
+#                           bias=True),
+#                 nn.ReLU(inplace=True),
+#                 nn.MaxPool2d(kernel_size=(2, 2))
+#             )
+#             self.fc1 = nn.Sequential(
+#                 nn.Linear(mid_dim*4, 512),
+#                 nn.ReLU(inplace=True)
+#             )
+#             self.fc = nn.Linear(512, num_classes)
+#         except Exception as e:
+#             print("CNN")
+#             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+#
+#     def forward(self, x):
+#         try:
+#             out = self.conv1(x)
+#             out = self.conv2(out)
+#             out = torch.flatten(out, 1)
+#             out = self.fc1(out)
+#             out = self.fc(out)
+#             return out
+#         except Exception as e:
+#             print("CNN forward")
+#             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
 class CNN(nn.Module):
     def __init__(self, input_shape=1, mid_dim=256, num_classes=10):
         try:
@@ -742,9 +788,7 @@ class CNN(nn.Module):
                           stride=1,
                           bias=True),
                 nn.ReLU(inplace=True),
-                nn.MaxPool2d(kernel_size=(2, 2))
-            )
-            self.conv2 = nn.Sequential(
+                nn.MaxPool2d(kernel_size=(2, 2)),
                 nn.Conv2d(32,
                           64,
                           kernel_size=5,
@@ -752,13 +796,11 @@ class CNN(nn.Module):
                           stride=1,
                           bias=True),
                 nn.ReLU(inplace=True),
-                nn.MaxPool2d(kernel_size=(2, 2))
-            )
-            self.fc1 = nn.Sequential(
+                nn.MaxPool2d(kernel_size=(2, 2)),
+                nn.Flatten(),
                 nn.Linear(mid_dim*4, 512),
-                nn.ReLU(inplace=True)
-            )
-            self.fc = nn.Linear(512, num_classes)
+                nn.ReLU(inplace=True),
+                nn.Linear(512, num_classes))
         except Exception as e:
             print("CNN")
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
@@ -766,10 +808,6 @@ class CNN(nn.Module):
     def forward(self, x):
         try:
             out = self.conv1(x)
-            out = self.conv2(out)
-            out = torch.flatten(out, 1)
-            out = self.fc1(out)
-            out = self.fc(out)
             return out
         except Exception as e:
             print("CNN forward")

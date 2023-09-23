@@ -25,10 +25,49 @@ from flwr.common import (
     parameters_to_ndarrays,
 )
 
+import sys
+
 from server.common_base_server import FedAvgBaseServer
 
 from pathlib import Path
 import shutil
+
+def if_reduces_size(shape, n_components, dtype=np.float64):
+
+    try:
+        size = np.array([1], dtype=dtype)
+        p = shape[0]
+        q = shape[1]
+        k = n_components
+
+        if p*k + k*k + k*q < p*q:
+            return True
+        else:
+            return False
+
+    except Exception as e:
+        print("svd")
+        print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, 0), type(e).__name__, e)
+
+def layer_compression_range(model_shape):
+
+    layers_range = []
+    for shape in model_shape:
+
+        layer_range = 0
+        if len(shape) >= 2:
+            shape = shape[-2:]
+
+            col = shape[1]
+            for n_components in range(1, col+1):
+                if if_reduces_size(shape, n_components):
+                    layer_range = n_components
+                else:
+                    break
+
+        layers_range.append(layer_range)
+
+    return layers_range
 
 class FedKDBaseServer(FedAvgBaseServer):
 
@@ -103,8 +142,18 @@ class FedKDBaseServer(FedAvgBaseServer):
 				pass
 
 			parameters_to_send = ndarrays_to_parameters(parameters)
-			if server_round >= 1:
-				parameters_to_send = ndarrays_to_parameters(parameter_svd_write(parameters, self.n_rate))
+			n_components_list = []
+			if server_round > 1:
+				for i in range(len(parameters)):
+					compression_range = self.layers_compression_range[i]
+					if compression_range > 0:
+						frac = 1-server_round/self.num_rounds
+						compression_range = max(round(frac * compression_range), 1)
+					else:
+						compression_range = None
+					n_components_list.append(compression_range)
+
+				parameters_to_send = ndarrays_to_parameters(parameter_svd_write(parameters, n_components_list))
 			fit_ins = fl.common.FitIns(parameters_to_send, config)
 			client_fit_list_fedkd.append((client, fit_ins))
 
@@ -135,6 +184,7 @@ class FedKDBaseServer(FedAvgBaseServer):
 		metrics_aggregated = {}
 		if server_round == 1:
 			print("treinados rodada 1: ", self.clients_metrics)
+			self.layers_compression_range = layer_compression_range(self.model_shape)
 
 		return parameters_aggregated, metrics_aggregated
 
