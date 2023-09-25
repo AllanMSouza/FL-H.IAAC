@@ -18,6 +18,23 @@ warnings.simplefilter("ignore")
 
 # logging.getLogger("torch").setLevel(logging.ERROR)
 
+def if_reduces_size(shape, n_components, dtype=np.float64):
+
+    try:
+        size = np.array([1], dtype=dtype)
+        p = shape[0]
+        q = shape[1]
+        k = n_components
+
+        if p*k + k*k + k*q < p*q:
+            return True
+        else:
+            return False
+
+    except Exception as e:
+        print("svd")
+        print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, 0), type(e).__name__, e)
+
 def get_size(parameter):
 	try:
 		# #print("recebeu: ", parameter.shape, parameter.ndim)
@@ -243,25 +260,52 @@ class FedKDClientTorch(FedAvgClientTorch):
 			print("acc student: ", train_acc_student / train_num)
 			print("acc teacher: ", train_acc_teacher / train_num)
 			print("valor da loss normal student: ", train_loss_student)
-			return train_loss_student, train_acc_student, train_num
+			return train_loss_student, train_acc_teacher, train_num
 
 		except Exception as e:
 			print("train student")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def compress(self, server_round, parameters):
-		n_components_list = []
-		for i in range(len(parameters)):
-			compression_range = self.layers_compression_range[i]
-			if compression_range > 0:
-				frac = 1 - server_round / self.num_rounds
-				compression_range = max(round(frac * compression_range), 1)
-			else:
-				compression_range = None
-			n_components_list.append(compression_range)
+	def layer_compression_range(drlg, model_shape):
 
-		parameters_to_send = parameter_svd_write(parameters, n_components_list)
-		return parameters_to_send
+		layers_range = []
+		for shape in model_shape:
+
+			layer_range = 0
+			if len(shape) >= 2:
+				shape = shape[-2:]
+
+				col = shape[1]
+				for n_components in range(1, col + 1):
+					if if_reduces_size(shape, n_components):
+						layer_range = n_components
+					else:
+						break
+
+			layers_range.append(layer_range)
+
+		return layers_range
+
+	def compress(self, server_round, parameters):
+
+		try:
+			layers_compression_range = self.layer_compression_range([i.shape for i in parameters])
+			n_components_list = []
+			for i in range(len(parameters)):
+				compression_range = layers_compression_range[i]
+				if compression_range > 0:
+					frac = 1 - server_round / self.n_rounds
+					compression_range = max(round(frac * compression_range), 1)
+				else:
+					compression_range = None
+				n_components_list.append(compression_range)
+
+			parameters_to_send = parameter_svd_write(parameters, n_components_list)
+			return parameters_to_send
+
+		except Exception as e:
+			print("compress")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def fit(self, parameters, config):
 		try:
@@ -281,8 +325,9 @@ class FedKDClientTorch(FedAvgClientTorch):
 			original_parameters = copy.deepcopy(parameters)
 
 			if self.cid in selected_clients or self.client_selection == False or server_round == 1:
-				self.set_parameters_to_model_fit(parameters)
 				self.load_parameters_to_model()
+				self.set_parameters_to_model_fit(original_parameters)
+
 				self.round_of_last_fit = server_round
 
 				selected = 1

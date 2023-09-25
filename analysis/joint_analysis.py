@@ -313,11 +313,11 @@ class JointAnalysis():
         i = 0
         j = 0
         # hue_order = ['$FedPredict_{dc}$', "$FedPredict$", 'FedClassAvg', 'FedAvg']
-        hue_order = ['FedAvg', 'FedYogi', 'FedClassAvg']
-        style = None
+        hue_order = ['FedAvg', 'FedYogi', 'FedClassAvg', 'FedProto']
+        style = "Version"
         # markers = [',', '.'
         markers = None
-        size = "Version"
+        size = None
         sizes = (1, 1.8)
         self.filter_and_plot(ax=axs[i,j], base_dir=base_dir, filename=filename, title=title, df=df_test,
                              experiment=experiment, dataset=dataset, alpha=alpha, x_column=x_column, y_column=y_column,
@@ -439,16 +439,28 @@ class JointAnalysis():
         fig.supylabel(y_column, x=-0.01)
 
 
-        # lines_labels = [axs[0, 0].get_legend_handles_labels()]
-        # lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-        # lines = [i.set_marker('o') for i in lines]
-        # Line2D().set_ma
-        # print("linhas")
-        # print(lines)
-        # print("rotulos")
-        # print(labels)
+        lines_labels = [axs[0, 0].get_legend_handles_labels()]
+        lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
+        print("linhas")
+        print(lines)
+        print(lines[0].get_color(), lines[0].get_ls())
+        print("rotulos")
+        print(labels)
         # # exit()
-        # fig.legend(lines, labels, loc='upper center', ncol=3, bbox_to_anchor=(0.5, 1.06))
+        colors = []
+        markers = []
+        for i in range(len(lines)):
+            color = lines[i].get_color()
+            colors.append(color)
+            ls = lines[i].get_ls()
+            if ls not in ["o"]:
+                ls = "o"
+        markers = ["", "-", "--"]
+
+        f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
+        handles = [f("o", colors[i]) for i in range(5)]
+        handles += [plt.Line2D([], [], linestyle=markers[i], color="k") for i in range(3)]
+        axs[0, 0].legend(handles, labels, fontsize=7)
         fig.savefig("""{}joint_plot_four_plot_{}.png""".format(base_dir, str(experiment)), bbox_inches='tight', dpi=400)
         fig.savefig("""{}joint_plot_four_plot_{}.svg""".format(base_dir, str(experiment)), bbox_inches='tight', dpi=400)
 
@@ -481,9 +493,9 @@ class JointAnalysis():
 
         max_value = max(list_of_means)
         print("maximo: ", max_value)
-        for i in range(0, len(list_of_means), 5):
+        for i in range(0, len(list_of_means), 6):
 
-            dataset_values = list_of_means[i: i+5]
+            dataset_values = list_of_means[i: i+6]
             max_value = max(dataset_values)
 
             for j in range(len(list_of_means)):
@@ -519,7 +531,7 @@ if __name__ == '__main__':
                    2: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'False', 'class_per_client': 2,
          'comment': 'set', 'layer_selection_evaluate': -2, 'local_epochs': '1_local_epochs'}}
 
-    strategies = ['FedPredict', 'FedYogi_with_FedPredict', 'FedAVG', 'FedYogi', 'FedClassAvg']
+    strategies = ['FedPredict', 'FedYogi_with_FedPredict', 'FedAVG', 'FedYogi', 'FedClassAvg', 'FedProto']
     # pocs = [0.1, 0.2, 0.3]
     fractions_fit = [0.3]
     # datasets = ['MNIST', 'CIFAR10']

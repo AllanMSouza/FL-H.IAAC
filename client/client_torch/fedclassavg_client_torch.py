@@ -1,3 +1,5 @@
+import pandas as pd
+
 from client.client_torch.client_base_torch import ClientBaseTorch
 from client.client_torch.fedper_client_torch import FedPerClientTorch
 from torch.nn.parameter import Parameter
@@ -205,6 +207,7 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 				train_acc = 0
 				train_loss = 0
 				train_num = 0
+				classes = []
 				for step in range(max_local_steps):
 					for i, (x, y) in enumerate(self.trainloader):
 						if type(x) == type([]):
@@ -212,6 +215,7 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 						else:
 							x = x.to(self.device)
 						y = y.to(self.device)
+						classes += list(y.detach().cpu().numpy())
 						train_num += y.shape[0]
 
 						self.optimizer.zero_grad()
@@ -247,6 +251,10 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 			fit_response = {
 				'cid' : self.cid
 			}
+
+			# print("Classes unicas: ", pd.Series(classes).unique().tolist())
+			# print("Parameteros: ")
+			print(self.get_parameters(config)[-1:][0].std())
 
 			return trained_parameters, train_num, fit_response
 		except Exception as e:

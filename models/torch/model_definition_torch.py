@@ -192,72 +192,77 @@ class CNN_3(torch.nn.Module):
 
 class CNN_3_proto(torch.nn.Module):
     def __init__(self, input_shape, mid_dim=64, num_classes=10):
-        super().__init__()
 
-            # queda para asl
-            # nn.Conv2d(input_shape, 32, kernel_size=3, padding=1),
-            # nn.ReLU(),
-            # nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
-            # nn.ReLU(),
-            # nn.MaxPool2d(2, 2),  # output: 64 x 16 x 16
-            #
-            # nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
-            # nn.ReLU(),
-            # nn.MaxPool2d(2, 2),  # output: 128 x 8 x 8
-            # nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
-            # nn.ReLU(),
-            # nn.MaxPool2d(2, 2),  # output: 128 x 8 x 8
-            #
-            # nn.Flatten(),
-            # nn.Linear(mid_dim,512),
-            # nn.ReLU(),
-            # nn.Linear(512, num_classes))
+        try:
+            super(CNN_3_proto, self).__init__()
 
-            # nn.Linear(28*28, 392),
-            # nn.ReLU(),
-            # nn.Dropout(0.5),
-            # nn.Linear(392, 196),
-            # nn.ReLU(),
-            # nn.Linear(196, 98),
-            # nn.ReLU(),
-            # nn.Dropout(0.3),
-            # nn.Linear(98, num_classes)
+                # queda para asl
+                # nn.Conv2d(input_shape, 32, kernel_size=3, padding=1),
+                # nn.ReLU(),
+                # nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
+                # nn.ReLU(),
+                # nn.MaxPool2d(2, 2),  # output: 64 x 16 x 16
+                #
+                # nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
+                # nn.ReLU(),
+                # nn.MaxPool2d(2, 2),  # output: 128 x 8 x 8
+                # nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
+                # nn.ReLU(),
+                # nn.MaxPool2d(2, 2),  # output: 128 x 8 x 8
+                #
+                # nn.Flatten(),
+                # nn.Linear(mid_dim,512),
+                # nn.ReLU(),
+                # nn.Linear(512, num_classes))
 
-        self.conv1 = torch.nn.Conv2d(in_channels=input_shape, out_channels=32, kernel_size=3, padding=1),
-        self.act1 = torch.nn.ReLU(),
-        # Input = 32 x 32 x 32, Output = 32 x 16 x 16
-        self.pool1 = torch.nn.MaxPool2d(kernel_size=2),
+                # nn.Linear(28*28, 392),
+                # nn.ReLU(),
+                # nn.Dropout(0.5),
+                # nn.Linear(392, 196),
+                # nn.ReLU(),
+                # nn.Linear(196, 98),
+                # nn.ReLU(),
+                # nn.Dropout(0.3),
+                # nn.Linear(98, num_classes)
 
-        # Input = 32 x 16 x 16, Output = 64 x 16 x 16
-        self.conv2 = torch.nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1),
-        self.act2 = torch.nn.ReLU(),
-        # Input = 64 x 16 x 16, Output = 64 x 8 x 8
-        self.pool2 = torch.nn.MaxPool2d(kernel_size=2),
+            self.conv1 = torch.nn.Sequential(torch.nn.Conv2d(in_channels=input_shape, out_channels=32, kernel_size=3, padding=1),
+            torch.nn.ReLU(),
+            # Input = 32 x 32 x 32, Output = 32 x 16 x 16
+            torch.nn.MaxPool2d(kernel_size=2),
 
-        # Input = 64 x 8 x 8, Output = 64 x 8 x 8
-        self.conv3 = torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1),
-        self.act3 = torch.nn.ReLU(),
-        # Input = 64 x 8 x 8, Output = 64 x 4 x 4
-        self.pool3 = torch.nn.MaxPool2d(kernel_size=2),
-        self.conv4 = torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1),
+            # Input = 32 x 16 x 16, Output = 64 x 16 x 16
+            torch.nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1),
+            torch.nn.ReLU(),
+            # Input = 64 x 16 x 16, Output = 64 x 8 x 8
+            torch.nn.MaxPool2d(kernel_size=2),
 
-        self.act4 = torch.nn.ReLU(),
-        # Input = 64 x 8 x 8, Output = 64 x 4 x 4
-        self.pool4 = torch.nn.MaxPool2d(kernel_size=2)
+            # Input = 64 x 8 x 8, Output = 64 x 8 x 8
+            torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1),
+            torch.nn.ReLU(),
+            # Input = 64 x 8 x 8, Output = 64 x 4 x 4
+            torch.nn.MaxPool2d(kernel_size=2),
+            torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1),
 
+            torch.nn.ReLU(),
+            # Input = 64 x 8 x 8, Output = 64 x 4 x 4
+            torch.nn.MaxPool2d(kernel_size=2),
+            torch.nn.Flatten(),
+            torch.nn.Linear(mid_dim * 4 * 4, 512))
 
-        self.fc1 = torch.nn.Linear(mid_dim * 4 * 4, 512)
+            self.fc = torch.nn.Linear(512, num_classes)
 
-        self.fc = torch.nn.Linear(512, num_classes)
+        except Exception as e:
+            print("CNN_3_proto")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
     def forward(self, x):
-        out = self.pool1(self.act1(self.conv1(x)))
-        out = self.pool2(self.act2(self.conv2(out)))
-        out = self.pool3(self.act3(self.conv3(out)))
-        out = torch.flatten(self.pool4(self.act4(self.conv4(out))))
-        proto = self.fc1(out)
-        out = self.fc(proto)
-        return out, proto
+        try:
+            proto = self.conv1(x)
+            out = self.fc(proto)
+            return out, proto
+        except Exception as e:
+            print("CNN_3_proto")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 
 # bom para alpha 2
@@ -606,10 +611,12 @@ class CNNDistillation(nn.Module):
             self.dataset = dataset
             super(CNNDistillation, self).__init__()
             if self.dataset in ['EMNIST', 'MNIST']:
-                mid_dim = 256
+                # mid_dim = 256
+                mid_dim = 1352
             else:
-                mid_dim = 400
-            self.student = CNN(input_shape=input_shape, mid_dim=mid_dim, num_classes=num_classes)
+                # mid_dim = 400
+                mid_dim = 1800
+            self.student = CNN_student(input_shape=input_shape, mid_dim=mid_dim, num_classes=num_classes)
             if self.dataset == 'CIFAR10':
                 mid_dim = 16
             else:
@@ -817,32 +824,19 @@ class CNN_student(nn.Module):
     def __init__(self, input_shape=1, mid_dim=256, num_classes=10):
         try:
             super(CNN_student, self).__init__()
-            self.mid_dim = mid_dim
             self.conv1 = nn.Sequential(
                 nn.Conv2d(input_shape,
                           32,
-                          kernel_size=5,
+                          kernel_size=3,
                           padding=0,
                           stride=1,
                           bias=True),
                 nn.ReLU(inplace=True),
-                nn.MaxPool2d(kernel_size=(2, 2))
-            )
-            self.conv2 = nn.Sequential(
-                nn.Conv2d(32,
-                          64,
-                          kernel_size=5,
-                          padding=0,
-                          stride=1,
-                          bias=True),
-                nn.ReLU(inplace=True),
-                nn.MaxPool2d(kernel_size=(2, 2))
-            )
-            self.fc1 = nn.Sequential(
+                nn.MaxPool2d(kernel_size=(2, 2)),
+                nn.Flatten(),
                 nn.Linear(mid_dim * 4, 512),
-                nn.ReLU(inplace=True)
-            )
-            self.fc = nn.Linear(512, num_classes)
+                nn.ReLU(inplace=True),
+                nn.Linear(512, num_classes))
         except Exception as e:
             print("CNN student")
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
@@ -850,10 +844,6 @@ class CNN_student(nn.Module):
     def forward(self, x):
         try:
             out = self.conv1(x)
-            out = self.conv2(out)
-            out = torch.flatten(out, 1)
-            out = self.fc1(out)
-            out = self.fc(out)
             return out
         except Exception as e:
             print("CNN student forward")

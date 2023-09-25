@@ -74,74 +74,12 @@ class FedProtoClientTorch(ClientBaseTorch):
 				input_shape = 1
 			elif self.dataset in ['CIFAR10']:
 				input_shape = 3
-			elif self.dataset in ['MotionSense', 'UCIHAR']:
-				input_shape = self.input_shape[1]
-			if self.model_name == 'Logist Regression':
-				model = Logistic(input_shape=input_shape, num_classes=self.num_classes)
-			elif self.model_name == 'DNN':
-				model = DNN(input_shape=input_shape, num_classes=self.num_classes)
-			elif self.model_name == 'CNN_2' and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10']:
-				if self.dataset == 'CIFAR10':
-					mid_dim = 64
-				else:
-					mid_dim = 36
-				return CNN_2(input_shape=input_shape, mid_dim=mid_dim, num_classes=self.num_classes)
-			elif self.model_name == 'CNN_3' and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10']:
+			if self.model_name == 'CNN_3' and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10']:
 				if self.dataset == 'CIFAR10':
 					mid_dim = 16
 				else:
 					mid_dim = 4
 				return CNN_3_proto(input_shape=input_shape, mid_dim=mid_dim, num_classes=self.num_classes)
-			elif self.model_name == 'CNN' and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10']:
-				if self.dataset in ['EMNIST', 'MNIST']:
-					mid_dim = 256
-				else:
-					mid_dim = 400
-				model = CNN(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim)
-			elif self.dataset in ['EMNIST', 'CIFAR10'] and self.model_name in ['CNN_1', 'CNN_2', 'CNN_3', 'CNN_6',
-																			   'CNN_8', 'CNN_10', 'CNN_12']:
-				model = CNN_EMNIST(dataset=self.dataset, model_code=self.model_name, in_channels=input_shape,
-								   out_dim=self.num_classes, act='relu', use_bn=True, dropout=0.3)
-			elif self.model_name == 'Resnet20' and self.dataset in ['MNIST', 'CIFAR10']:
-				if self.dataset in ['MNIST']:
-					input_shape = 1
-					mid_dim = 256
-				else:
-					input_shape = 3
-					mid_dim = 400
-				model = resnet20()
-			elif self.model_name == 'Mobilenet':
-				model = MobileNet(num_classes=self.num_classes, input_size=input_shape)
-			elif self.model_name == 'CNN_X':
-				if self.dataset in ["EMNIST", "MNIST"]:
-					mid_dim = 144
-				else:
-					mid_dim = 256
-				model = CNN_X(num_classes=self.num_classes, mid_dim=mid_dim, input_size=input_shape)
-				self.learning_rate = 0.001 if self.dataset == "CIFAR10" else 0.01
-				self.optimizer = torch.optim.Adam(model.parameters(),
-												  lr=self.learning_rate) if self.model_name == "Mobilenet" else torch.optim.SGD(
-					model.parameters(), lr=self.learning_rate, momentum=0.9)
-			elif self.model_name == 'CNN_5':
-				if self.dataset in ["EMNIST", "MNIST"]:
-					mid_dim = 256
-				else:
-					mid_dim = 400
-				model = CNN_5(num_classes=self.num_classes, mid_dim=mid_dim, input_shape=input_shape)
-				self.learning_rate = 0.0008 if self.dataset == "CIFAR10" else 0.0008
-				self.optimizer = torch.optim.Adam(model.parameters(),
-												  lr=self.learning_rate) if self.model_name == "Mobilenet" else torch.optim.SGD(
-					model.parameters(), lr=self.learning_rate, momentum=0.9)
-			elif self.dataset in ['Tiny-ImageNet']:
-				# return AlexNet(num_classes=self.num_classes)
-				# model = models.resnet18(pretrained=True, num_classes=self.num_classes).to(self.device)
-				# model = CNN(input_shape=3, num_classes=self.num_classes, mid_dim=int(179776/4)).to(self.device)
-				# model.avgpool = nn.AdaptiveAvgPool2d(1)
-				model = resnet20(num_classes=self.num_classes)
-				# num_ftrs = model.fc.in_features
-				# model.fc = nn.Linear(num_ftrs, 200)
-				print("Quantidade de camadas: ", len([i.shape for i in model.parameters()]))
-			# model = torch.nn.DataParallel(model).cuda()
 
 			if model is not None:
 				model.to(self.device)
@@ -153,12 +91,12 @@ class FedProtoClientTorch(ClientBaseTorch):
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def get_parameters(self, config):
-		parameters = [i.detach().numpy() for i in self.model.parameters()]
+		parameters = [i.detach().cpu().numpy() for i in self.model.parameters()]
 		return parameters
 
 		# It does the same of "get_parameters", but using "get_parameters" in outside of the core of Flower is causing errors
 	def get_parameters_of_model(self):
-		parameters = [i.detach().numpy() for i in self.model.parameters()]
+		parameters = [i.detach().cpu().numpy() for i in self.model.parameters()]
 		return parameters
 
 	def initial(self, parameters):
