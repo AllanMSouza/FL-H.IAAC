@@ -56,17 +56,17 @@ class Varying_Shared_layers:
 
         print(df_concat)
         # self.evaluate_client_analysis_differnt_models(df_concat)
-        # self.evaluate_client_joint_parameter_reduction(df_concat)
+        self.evaluate_client_joint_parameter_reduction(df_concat)
         alphas = df_concat['\u03B1'].unique().tolist()
         models = df_concat['Model'].unique().tolist()
         # df_concat = self.build_filename_fedavg(df_concat)
         for alpha in alphas:
-            # self.evaluate_client_joint_accuracy(df_concat, alpha)
+            self.evaluate_client_joint_accuracy(df_concat, alpha)
             self.joint_table(self.build_filename_fedavg(self.df_concat, use_mean=False), alpha=alpha, models=models)
 
         # for alpha in alphas:
         #     self.evaluate_client_joint_accuracy(df_concat, alpha)
-        # self.similarity()
+        self.similarity()
         # for alpha in alphas:
         #     self.evaluate_client_norm_analysis_nt(alpha)
         # self.evaluate_client_norm_analysis()
@@ -563,8 +563,8 @@ class Varying_Shared_layers:
                       y_min=y_min,
                       n=1)
 
-            # ax[1, 0].get_legend().remove()
-            ax[1, 0].legend(fontsize=7, ncol=2)
+            ax[1, 0].get_legend().remove()
+            # ax[1, 0].legend(fontsize=7, ncol=2)
             ax[1, 0].set_xlabel('')
             ax[1, 0].set_ylabel('')
 
@@ -595,10 +595,32 @@ class Varying_Shared_layers:
             fig.supylabel(y_column, x=-0.005)
             # plt.tight_layout(pad=0.5)
 
-            plt.subplots_adjust(wspace=0.07, hspace=0.14)
+            # plt.subplots_adjust(wspace=0.07, hspace=0.14)
+            # lines_labels = [ax[0, 0].get_legend_handles_labels()]
+            # lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
+            # fig.legend(lines, labels, loc='upper center', ncol=4, bbox_to_anchor=(0.5, 1.06))
             lines_labels = [ax[0, 0].get_legend_handles_labels()]
             lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-            # fig.legend(lines, labels, loc='upper center', ncol=4, bbox_to_anchor=(0.5, 1.06))
+            print("linhas")
+            print(lines)
+            print(lines[0].get_color(), lines[0].get_ls())
+            print("rotulos")
+            print(labels)
+            # # exit()
+            colors = []
+            markers = []
+            for i in range(len(lines)):
+                color = lines[i].get_color()
+                colors.append(color)
+                ls = lines[i].get_ls()
+                if ls not in ["o"]:
+                    ls = "o"
+            markers = ["", "-", "--"]
+
+            f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
+            handles = [f("o", colors[i]) for i in range(4)]
+            handles += [plt.Line2D([], [], linestyle=markers[i], color="k") for i in range(3)]
+            ax[1, 0].legend(handles, labels, fontsize=7, ncols=2)
             figure = fig.get_figure()
             Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
             Path(base_dir + "svg/").mkdir(parents=True, exist_ok=True)
@@ -915,8 +937,8 @@ class Varying_Shared_layers:
                       y_min=0,
                       n=1)
 
-            # ax[1, 0].get_legend().remove()
-            ax[1, 0].legend(fontsize=7)
+            ax[1, 0].get_legend().remove()
+            # ax[1, 0].legend(fontsize=7)
             ax[1, 0].set_xlabel('')
             ax[1, 0].set_ylabel('')
             # ax[1, 0].set_xticks([])
@@ -952,11 +974,31 @@ class Varying_Shared_layers:
             # ax[1].set_xticks([])
             # plt.tight_layout(pad=0.5)
 
-
-
-            plt.subplots_adjust(wspace=0.07, hspace=0.14)
             lines_labels = [ax[0, 0].get_legend_handles_labels()]
             lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
+            print("linhas")
+            print(lines)
+            print(lines[0].get_color(), lines[0].get_ls())
+            print("rotulos")
+            print(labels)
+            # # exit()
+            colors = []
+            markers = []
+            for i in range(len(lines)):
+                color = lines[i].get_color()
+                colors.append(color)
+                ls = lines[i].get_ls()
+                if ls not in ["o"]:
+                    ls = "o"
+            markers = ["", "-", "--"]
+
+            f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
+            handles = [f("o", colors[i]) for i in range(5)]
+            ax[0, 0].legend(handles, labels, fontsize=7)
+
+            # plt.subplots_adjust(wspace=0.07, hspace=0.14)
+            # lines_labels = [ax[0, 0].get_legend_handles_labels()]
+            # lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
             # fig.legend(lines, labels, loc='upper center', ncol=4, title="""\u03B1={}""".format(alpha), bbox_to_anchor=(0.5, 1.05))
             fig.suptitle("""\u03B1={}""".format(alpha))
             # plt.xticks(np.arange(min(x), max(x) + 1, max(x) // 5))
@@ -1153,10 +1195,31 @@ class Varying_Shared_layers:
             # ax[0, 1].set_yticks(np.arange(0, 0.6, 0.1))
             # plt.tight_layout(pad=0.5)
             # ax[0, 1].set_xticks(np.arange(min(x), max(x) + 1, max(x) // 10))
-            plt.subplots_adjust(wspace=0.07, hspace=0.14)
+            # plt.subplots_adjust(wspace=0.07, hspace=0.14)
+            # lines_labels = [ax[0, 0].get_legend_handles_labels()]
+            # lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
+            # fig.legend(lines, labels, title=hue, loc='upper center', ncol=4, bbox_to_anchor=(0.5, 1.03))
             lines_labels = [ax[0, 0].get_legend_handles_labels()]
             lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-            fig.legend(lines, labels, title=hue, loc='upper center', ncol=4, bbox_to_anchor=(0.5, 1.03))
+            print("linhas")
+            print(lines)
+            print(lines[0].get_color(), lines[0].get_ls())
+            print("rotulos")
+            print(labels)
+            # # exit()
+            colors = []
+            markers = []
+            for i in range(len(lines)):
+                color = lines[i].get_color()
+                colors.append(color)
+                ls = lines[i].get_ls()
+                if ls not in ["o"]:
+                    ls = "o"
+            markers = ["", "-", "--"]
+
+            f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
+            handles = [f("o", colors[i]) for i in range(2)]
+            ax[0, 0].legend(handles, labels, fontsize=7, ncols=2, title='\u03B1')
 
 
             figure = fig.get_figure()
