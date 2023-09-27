@@ -268,6 +268,13 @@ class JointAnalysis():
         print("Joint plot exeprimento: ", experiment)
 
         df_test = df[['Round (t)', 'Loss', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset', 'Version', 'Alpha']].groupby(['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Version', 'Alpha']).apply(lambda e: self.groupb_by_plot(e)).reset_index()[['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)', 'Loss', 'Version', 'Alpha']]
+        # df_test = df[
+        #     ['Round (t)', 'Loss', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit',
+        #      'Dataset', 'Version', 'Alpha']].groupby(
+        #     ['Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Version', 'Alpha']).apply(
+        #     lambda e: self.groupb_by_plot(e)).reset_index()[
+        #     ['Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)', 'Loss',
+        #      'Version', 'Alpha']]
         print("agrupou plot")
         print(df_test[df_test['Round (t)']==100])
         df_test = df_test[df_test['Round (t)']==100]
