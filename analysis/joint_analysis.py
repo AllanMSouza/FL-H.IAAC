@@ -183,6 +183,8 @@ class JointAnalysis():
 
         models_dict = {}
         ci = 0.95
+        # print(df_test.query("Strategy == 'FedKD'").drop_duplicates(['Strategy', 'Dataset', 'Alpha', 'Experiment', 'Fraction fit']))
+        # exit()
         for model_name in model_report:
 
             mnist_acc = {}
@@ -282,7 +284,7 @@ class JointAnalysis():
                 """Experiment=={} and Dataset=='{}'""".format(str(experiment), (dataset)))
             df = df[df['Alpha'] == alpha]
 
-        print("filtrou: ", df)
+        print("filtrou: ", df, experiment, dataset, alpha, strategy)
 
         return df
 
@@ -316,7 +318,7 @@ class JointAnalysis():
         i = 0
         j = 0
         # hue_order = ['$FedPredict_{dc}$', "$FedPredict$", 'FedClassAvg', 'FedAvg']
-        hue_order = ['FedAvg', 'FedYogi', 'FedClassAvg', 'FedProto', 'FedKD']
+        hue_order = ['FedAvg', 'FedYogi', 'FedClassAvg', 'FedProto']
         style = "Version"
         # markers = [',', '.'
         markers = None
@@ -461,7 +463,7 @@ class JointAnalysis():
         markers = ["", "-", "--"]
 
         f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
-        handles = [f("o", colors[i]) for i in range(6)]
+        handles = [f("o", colors[i]) for i in range(len(hue_order) + 1)]
         handles += [plt.Line2D([], [], linestyle=markers[i], color="k") for i in range(3)]
         axs[0, 0].legend(handles, labels, fontsize=7)
         fig.savefig("""{}joint_plot_four_plot_{}.png""".format(base_dir, str(experiment)), bbox_inches='tight', dpi=400)
@@ -496,9 +498,9 @@ class JointAnalysis():
 
         max_value = max(list_of_means)
         print("maximo: ", max_value)
-        for i in range(0, len(list_of_means), 6):
+        for i in range(0, len(list_of_means), 7):
 
-            dataset_values = list_of_means[i: i+6]
+            dataset_values = list_of_means[i: i+7]
             max_value = max(dataset_values)
 
             for j in range(len(list_of_means)):
@@ -534,7 +536,7 @@ if __name__ == '__main__':
                    2: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'False', 'class_per_client': 2,
          'comment': 'set', 'layer_selection_evaluate': -2, 'local_epochs': '1_local_epochs'}}
 
-    strategies = ['FedPredict', 'FedYogi_with_FedPredict', 'FedAVG', 'FedYogi', 'FedClassAvg', 'FedProto', 'FedKD']
+    strategies = ['FedPredict', 'FedYogi_with_FedPredict', 'FedAVG', 'FedYogi', 'FedClassAvg', 'FedProto']
     # pocs = [0.1, 0.2, 0.3]
     fractions_fit = [0.3]
     # datasets = ['MNIST', 'CIFAR10']

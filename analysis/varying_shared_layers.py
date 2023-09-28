@@ -56,10 +56,12 @@ class Varying_Shared_layers:
 
         print(df_concat)
         # self.evaluate_client_analysis_differnt_models(df_concat)
+        # print(df_concat['Strategy'].unique().tolist())
+        # exit()
         self.evaluate_client_joint_parameter_reduction(df_concat)
         alphas = df_concat['\u03B1'].unique().tolist()
         models = df_concat['Model'].unique().tolist()
-        # df_concat = self.build_filename_fedavg(df_concat)
+        df_concat = self.build_filename_fedavg(df_concat)
         for alpha in alphas:
             self.evaluate_client_joint_accuracy(df_concat, alpha)
             self.joint_table(self.build_filename_fedavg(self.df_concat, use_mean=False), alpha=alpha, models=models)
