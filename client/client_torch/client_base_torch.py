@@ -117,7 +117,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			elif self.aggregation_method == 'None':
 				self.solution_name = f"{solution_name}-{aggregation_method}-{self.fraction_fit}"
 
-			self.base = f"logs/{self.type}/{self.solution_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.n_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.n_rounds}_rounds/{self.local_epochs}_local_epochs/{self.comment}_comment/{str(self.layer_selection_evaluate)}_layer_selection_evaluate"
+			self.base = self._create_base_directory()
 			self.evaluate_client_filename = f"{self.base}/evaluate_client.csv"
 			self.train_client_filename = f"{self.base}/train_client.csv"
 			self.predictions_client_filename = f"{self.base}/predictions_client.csv"
@@ -131,6 +131,10 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		except Exception as e:
 			print("init client")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+	def _create_base_directory(self):
+
+		return f"logs/{self.type}/{self.solution_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.n_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.n_rounds}_rounds/{self.local_epochs}_local_epochs/{self.comment}_comment/{str(self.layer_selection_evaluate)}_layer_selection_evaluate"
 
 	def load_data(self, dataset_name, n_clients, batch_size=32):
 		try:
@@ -184,48 +188,6 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				else:
 					mid_dim = 400
 				model =  CNN(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim)
-			elif self.dataset in ['EMNIST', 'CIFAR10'] and self.model_name in ['CNN_1', 'CNN_2', 'CNN_3', 'CNN_6', 'CNN_8', 'CNN_10', 'CNN_12']:
-				model =  CNN_EMNIST(dataset=self.dataset, model_code=self.model_name, in_channels=input_shape, out_dim=self.num_classes, act='relu', use_bn=True, dropout=0.3)
-			elif self.model_name == 'Resnet20'  and self.dataset in ['MNIST', 'CIFAR10']:
-				if self.dataset in ['MNIST']:
-					input_shape = 1
-					mid_dim = 256
-				else:
-					input_shape = 3
-					mid_dim = 400
-				model =  resnet20()
-			elif self.model_name == 'Mobilenet':
-				model =  MobileNet(num_classes=self.num_classes, input_size=input_shape)
-			elif self.model_name == 'CNN_X':
-				if self.dataset in ["EMNIST", "MNIST"]:
-					mid_dim = 144
-				else:
-					mid_dim = 256
-				model =  CNN_X(num_classes=self.num_classes, mid_dim=mid_dim, input_size=input_shape)
-				self.learning_rate = 0.001 if self.dataset == "CIFAR10" else 0.01
-				self.optimizer = torch.optim.Adam(model.parameters(),
-												  lr=self.learning_rate) if self.model_name == "Mobilenet" else torch.optim.SGD(
-					model.parameters(), lr=self.learning_rate, momentum=0.9)
-			elif self.model_name == 'CNN_5':
-				if self.dataset in ["EMNIST", "MNIST"]:
-					mid_dim = 256
-				else:
-					mid_dim = 400
-				model =  CNN_5(num_classes=self.num_classes, mid_dim=mid_dim, input_shape=input_shape)
-				self.learning_rate = 0.0008 if self.dataset == "CIFAR10" else 0.0008
-				self.optimizer = torch.optim.Adam(model.parameters(),
-												  lr=self.learning_rate) if self.model_name == "Mobilenet" else torch.optim.SGD(
-					model.parameters(), lr=self.learning_rate, momentum=0.9)
-			elif self.dataset in ['Tiny-ImageNet']:
-				# return AlexNet(num_classes=self.num_classes)
-				# model = models.resnet18(pretrained=True, num_classes=self.num_classes).to(self.device)
-				# model = CNN(input_shape=3, num_classes=self.num_classes, mid_dim=int(179776/4)).to(self.device)
-				# model.avgpool = nn.AdaptiveAvgPool2d(1)
-				model = resnet20(num_classes=self.num_classes)
-				# num_ftrs = model.fc.in_features
-				# model.fc = nn.Linear(num_ftrs, 200)
-				print("Quantidade de camadas: ", len([i.shape for i in model.parameters()]))
-				# model = torch.nn.DataParallel(model).cuda()
 
 			if model is not None:
 				model.to(self.device)

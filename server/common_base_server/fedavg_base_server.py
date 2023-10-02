@@ -11,6 +11,7 @@ import random
 from logging import WARNING
 from flwr.common import FitIns
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
+from models.torch import DNN, Logistic, CNN, MobileNet, resnet20, CNN_EMNIST, MobileNetV2, CNN_X, CNN_5, CNN_2, CNN_3
 
 from flwr.common import (
     EvaluateIns,
@@ -183,6 +184,49 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 	def _update_fedpredict_metrics(self, server_round):
 
 		pass
+
+	def create_model(self):
+
+		try:
+			# print("tamanho: ", self.input_shape, " dispositivo: ", self.device)
+			model = None
+			if self.dataset in ['MNIST', 'EMNIST']:
+				input_shape = 1
+			elif self.dataset in ['CIFAR10']:
+				input_shape = 3
+			elif self.dataset in ['MotionSense', 'UCIHAR']:
+				input_shape = self.input_shape[1]
+			if self.model_name == 'Logist Regression':
+				model =  Logistic(input_shape=input_shape, num_classes=self.n_classes)
+			elif self.model_name == 'DNN':
+				model =  DNN(input_shape=input_shape, num_classes=self.n_classes)
+			elif self.model_name == 'CNN_2' and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10']:
+				if self.dataset == 'CIFAR10':
+					mid_dim = 64
+				else:
+					mid_dim = 36
+				return  CNN_2(input_shape=input_shape, mid_dim=mid_dim, num_classes=self.n_classes)
+			elif self.model_name == 'CNN_3' and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10']:
+				if self.dataset == 'CIFAR10':
+					mid_dim = 16
+				else:
+					mid_dim = 4
+				return  CNN_3(input_shape=input_shape, mid_dim=mid_dim, num_classes=self.n_classes)
+			elif self.model_name == 'CNN'  and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10']:
+				if self.dataset in ['EMNIST', 'MNIST']:
+					mid_dim = 256
+				else:
+					mid_dim = 400
+				model =  CNN(input_shape=input_shape, num_classes=self.n_classes, mid_dim=mid_dim)
+
+			if model is not None:
+				model.to(self.device)
+				return model
+			else:
+				raise Exception("Wrong model name")
+		except Exception as e:
+			print("create model")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def configure_fit(self, server_round, parameters, client_manager):
 		"""Configure the next round of training."""
@@ -586,9 +630,13 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			writer = csv.writer(server_log_file)
 			writer.writerow(header)
 
+	def _create_base_directory(self):
+
+		return f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(self.layer_selection_evaluate)}_layer_selection_evaluate"
+
 	def _write_output_files_headers(self):
 
-		self.base = f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(self.layer_selection_evaluate)}_layer_selection_evaluate"
+		self.base = self._create_base_directory()
 		self.server_filename = f"{self.base}/server.csv"
 		self.train_filename = f"{self.base}/train_client.csv"
 		self.evaluate_filename = f"{self.base}/evaluate_client.csv"

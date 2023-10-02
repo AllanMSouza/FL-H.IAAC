@@ -16,6 +16,7 @@ from client.client_torch.fetSGD_client_torch import FetSGDClientTorch
 from client.client_torch.fedkd_client_torch import FedKDClientTorch
 from client.client_torch.feddistill_client_torch import FedDistillClientTorch
 from client.client_torch.fedyogi_with_fedpredict_client_torch import FedYogiWithFedPredictClientTorch
+from client.client_torch.fedclustering_client_torch import FedClusteringClientTorch
 
 __all__ = [
     "ClientBaseTorch",
@@ -35,5 +36,6 @@ __all__ = [
     "FetSGDClientTorch",
     "FedKDClientTorch",
     "FedDistillClientTorch",
-    "FedYogiWithFedPredictClientTorch"
+    "FedYogiWithFedPredictClientTorch",
+    "FedClusteringClientTorch"
 ]

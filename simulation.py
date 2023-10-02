@@ -1,6 +1,6 @@
 import flwr as fl
-from client import FedAvgClientTf, FedPerClientTf, FedProtoClientTf, FedLocalClientTf, FedAvgClientTorch, FedProtoClientTorch, FedPerClientTorch, FedLocalClientTorch, FedAvgMClientTorch, QFedAvgClientTorch, FedYogiClientTorch, FedClassAvgClientTorch, FedPredictClientTorch, FedPer_with_FedPredictClientTorch, FedClassAvg_with_FedPredictClientTorch, FedProxClientTorch, FedPAQClientTorch, FetSGDClientTorch, FedKDClientTorch, FedDistillClientTorch, FedYogiWithFedPredictClientTorch
-from server import FedPerServerTf, FedProtoServerTf, FedAvgServerTf, FedLocalServerTf, FedAvgServerTorch, FedProtoServerTorch, FedPerServerTorch, FedLocalServerTorch, FedAvgMServerTorch, QFedAvgServerTorch, FedYogiServerTorch, FedClassAvgServerTorch, FedPredictServerTorch, FedPer_with_FedPredictServerTorch, FedClassAvg_with_FedPredictServerTorch, FedProxServerTorch, FedPAQServerTorch, FetSGDServerTorch, FedKDServerTorch, FedDistillServerTorch, FedYogiWithFedPredictServerTorch
+from client import FedAvgClientTf, FedPerClientTf, FedProtoClientTf, FedLocalClientTf, FedAvgClientTorch, FedProtoClientTorch, FedPerClientTorch, FedLocalClientTorch, FedAvgMClientTorch, QFedAvgClientTorch, FedYogiClientTorch, FedClassAvgClientTorch, FedPredictClientTorch, FedPer_with_FedPredictClientTorch, FedClassAvg_with_FedPredictClientTorch, FedProxClientTorch, FedPAQClientTorch, FetSGDClientTorch, FedKDClientTorch, FedDistillClientTorch, FedYogiWithFedPredictClientTorch, FedClusteringClientTorch
+from server import FedPerServerTf, FedProtoServerTf, FedAvgServerTf, FedLocalServerTf, FedAvgServerTorch, FedProtoServerTorch, FedPerServerTorch, FedLocalServerTorch, FedAvgMServerTorch, QFedAvgServerTorch, FedYogiServerTorch, FedClassAvgServerTorch, FedPredictServerTorch, FedPer_with_FedPredictServerTorch, FedClassAvg_with_FedPredictServerTorch, FedProxServerTorch, FedPAQServerTorch, FetSGDServerTorch, FedKDServerTorch, FedDistillServerTorch, FedYogiWithFedPredictServerTorch, FedClusteringServerTorch
 
 from optparse import OptionParser
 import tensorflow as tf
@@ -329,6 +329,23 @@ class SimulationFL():
 										  new_clients_train=self.new_clients_train)
 			elif self.strategy_name == "FedYogi":
 				return FedYogiClientTorch(cid=cid,
+										   args=self.args,
+										  n_clients=self.n_clients,
+										  n_classes=self.n_classes,
+										  model_name=self.model_name,
+										  client_selection=self.client_selection,
+										  epochs=self.epochs,
+										  strategy_name=self.strategy_name,
+										  aggregation_method=self.aggregation_method,
+										  dataset=self.dataset,
+										  perc_of_clients=self.poc,
+										  fraction_fit=self.fraction_fit,
+										  decay=self.decay,
+										  non_iid=self.non_iid,
+										  new_clients=self.new_clients,
+										  new_clients_train=self.new_clients_train)
+			elif self.strategy_name == "FedClustering":
+				return FedClusteringClientTorch(cid=cid,
 										   args=self.args,
 										  n_clients=self.n_clients,
 										  n_classes=self.n_classes,
@@ -694,6 +711,22 @@ class SimulationFL():
 										new_clients=self.new_clients,
 										new_clients_train=self.new_clients_train,
 									  args=self.args)
+			elif self.strategy_name == "FedYogi":
+				return FedClusteringServerTorch(aggregation_method=self.aggregation_method,
+										n_classes=self.n_classes,
+										fraction_fit=self.fraction_fit,
+										num_clients=self.n_clients,
+										num_rounds=self.rounds,
+										num_epochs=self.epochs,
+										model=copy.deepcopy(self.create_client(0).create_model()),
+										decay=self.decay,
+										perc_of_clients=self.poc,
+										strategy_name=self.strategy_name,
+										dataset=self.dataset,
+										model_name=self.model_name,
+										new_clients=self.new_clients,
+										new_clients_train=self.new_clients_train,
+									  args=self.args)
 			elif self.strategy_name == "FedYogi_with_FedPredict":
 				return FedYogiWithFedPredictServerTorch(aggregation_method=self.aggregation_method,
 										n_classes=self.n_classes,
@@ -827,6 +860,12 @@ def main():
 	parser.add_option("--n_rate", help="n components rate", default=0.3)
 	parser.add_option("--bits", help="bits for quantization", default=8)
 	parser.add_option("--layer_selection_evaluate", help="", default=0)
+	parser.add_option("", "--n_clusters", dest="n_clusters", default=1, help="")
+	parser.add_option("", "--clustering", dest="clustering", default=3600, help="")
+	parser.add_option("", "--cluster_round", dest="cluster_round", default=20, help="")
+	parser.add_option("", "--cluster_metric", dest="cluster_metric", default=1, help="")
+	parser.add_option("", "--metric_layer", dest="metric_layer", default=1, help="")
+	parser.add_option("", "--cluster_method", dest="cluster_method", default=1, help="")
 
 	(opt, args) = parser.parse_args()
 	# opt.n_rate = float(opt.comment)

@@ -267,17 +267,17 @@ class JointAnalysis():
     def joint_plot_acc_four_plots(self, df, experiment, alphas):
         print("Joint plot exeprimento: ", experiment)
 
-        df_test = df[['Round (t)', 'Loss', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset', 'Version', 'Alpha']].groupby(['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Version', 'Alpha']).apply(lambda e: self.groupb_by_plot(e)).reset_index()[['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)', 'Loss', 'Version', 'Alpha']]
-        # df_test = df[
-        #     ['Round (t)', 'Loss', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit',
-        #      'Dataset', 'Version', 'Alpha']].groupby(
-        #     ['Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Version', 'Alpha']).apply(
-        #     lambda e: self.groupb_by_plot(e)).reset_index()[
-        #     ['Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)', 'Loss',
-        #      'Version', 'Alpha']]
+        # df_test = df[['Round (t)', 'Loss', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset', 'Version', 'Alpha']].groupby(['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Version', 'Alpha']).apply(lambda e: self.groupb_by_plot(e)).reset_index()[['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)', 'Loss', 'Version', 'Alpha']]
+        df_test = df[
+            ['Round (t)', 'Loss', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit',
+             'Dataset', 'Version', 'Alpha']].groupby(
+            ['Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Version', 'Alpha']).apply(
+            lambda e: self.groupb_by_plot(e)).reset_index()[
+            ['Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)', 'Loss',
+             'Version', 'Alpha']]
         print("agrupou plot")
-        print(df_test[df_test['Round (t)']==100])
-        df_test = df_test[df_test['Round (t)']==100]
+        # print(df_test[df_test['Round (t)']==100])
+        # df_test = df_test[df_test['Round (t)']==100]
         # figsize=(12, 9),
         sns.set(style='whitegrid')
         fig, axs = plt.subplots(2, 3,  sharex='all', sharey='all', figsize=(9, 6))
@@ -474,7 +474,7 @@ if __name__ == '__main__':
 
     strategies = ['FedPredict', 'FedYogi_with_FedPredict', 'FedAVG', 'FedYogi']
     # pocs = [0.1, 0.2, 0.3]
-    fractions_fit = [0.3, 0.5, 0.7, 0.9]
+    fractions_fit = [0.1, 0.2, 0.3, 0.5, 0.7, 0.9]
     # datasets = ['MNIST', 'CIFAR10']
     datasets = ['EMNIST', 'CIFAR10']
     alpha = [0.1, 1.0, 5.0]

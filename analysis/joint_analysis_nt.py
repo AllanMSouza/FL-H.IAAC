@@ -253,7 +253,7 @@ class JointAnalysis():
         print("Joint plot exeprimento: ", experiment)
 
         df = df[df['nt'].isin([1, 10])]
-        # df = df[df['Round (t)'] > 70]
+        df = df[df['Round (t)'] > 80]
         # df = df[df['Round (t)'] < 30]
         df['nt'] = df['nt'].astype(int)
         df_test = df[['Round (t)', 'Loss', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset', 'nt']].groupby(['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'nt']).apply(lambda e: self.groupb_by_plot(e)).reset_index()[['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)', 'Loss', 'nt']]
@@ -274,7 +274,7 @@ class JointAnalysis():
         title = """{}""".format(dataset)
         filename = 'nt'
         i = 0
-        hue_order = ['$FedAvg+FP_{dc}$', '$FedYogi+FP_{dc}$', "FedClassAvg", "FedYogi", 'FedAvg']
+        hue_order = ['$FedAvg+FP_{dc}$', 'FedAvg', '$FedYogi+FP_{dc}$', "FedYogi"]
         print(df_test['Strategy'].unique().tolist())
         hue = 'nt'
         self.filter_and_plot(ax=axs[i], base_dir=base_dir, filename=filename, title=title, df=df_test,
@@ -336,9 +336,10 @@ class JointAnalysis():
 
         lines_labels = [axs[0].get_legend_handles_labels()]
         lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-        fig.legend(lines, labels, loc='upper center', ncol=3, bbox_to_anchor=(0.5, 1.06))
-        fig.savefig("""{}joint_plot_four_plot_{}_nt.png""".format(base_dir, str(experiment)), bbox_inches='tight', dpi=400)
-        fig.savefig("""{}joint_plot_four_plot_{}_nt.svg""".format(base_dir, str(experiment)), bbox_inches='tight', dpi=400)
+        fig.legend(lines, labels, loc='upper center', ncol=4, bbox_to_anchor=(0.5, 1.06))
+        print("""{}joint_plot_four_plot_{}_nt.png""".format(base_dir, str(experiment)))
+        fig.savefig("""{}joint_plot_four_plot_{}_nt_{}_alpha.png""".format(base_dir, str(experiment), alpha), bbox_inches='tight', dpi=400)
+        fig.savefig("""{}joint_plot_four_plot_{}_nt_{}_alpha.svg""".format(base_dir, str(experiment), alpha), bbox_inches='tight', dpi=400)
 
     def idmax(self, df):
 
@@ -400,12 +401,12 @@ if __name__ == '__main__':
     experiments = {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
          'comment': 'set', 'layer_selection_evaluate': -2, 'local_epochs': '1_local_epochs'}}
 
-    strategies = ['FedPredict', 'FedYogi_with_FedPredict', 'FedClassAvg', 'FedAVG', 'FedYogi']
+    strategies = ['FedPredict', 'FedYogi_with_FedPredict', 'FedAVG', 'FedYogi']
     # pocs = [0.1, 0.2, 0.3]
     fractions_fit = [0.3]
     # datasets = ['MNIST', 'CIFAR10']
     datasets = ['EMNIST', 'CIFAR10']
-    alpha = 0.1
+    alpha = 5.0
     rounds = 100
     clients = '20'
     model = 'CNN_3'
