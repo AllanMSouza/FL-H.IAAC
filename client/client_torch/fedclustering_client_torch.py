@@ -52,7 +52,7 @@ class FedClusteringClientTorch(ClientBaseTorch):
 				 epochs=1,
 				 model_name='DNN',
 				 client_selection=False,
-				 strategy_name='FedAVG',
+				 strategy_name='FedClustering',
 				 aggregation_method='None',
 				 dataset='',
 				 perc_of_clients=0,
@@ -80,9 +80,9 @@ class FedClusteringClientTorch(ClientBaseTorch):
                          new_clients_train=new_clients_train,
                          args=args)
 
-			self.client_cluster = list(np.zeros(self.num_clients))
+			self.client_cluster = list(np.zeros(self.n_clients))
 			self.clustering = args.clustering
-			self.clustering_round = args.clustering_round
+			self.cluster_round = args.cluster_round
 			self.n_clusters = int(args.n_clusters)
 			self.dataset = dataset
 
@@ -94,6 +94,6 @@ class FedClusteringClientTorch(ClientBaseTorch):
 			print("init client")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def _create_base_directory(self):
+	def _create_base_directory(self, type, strategy_name, new_clients, new_clients_train, n_clients, model_name, dataset, class_per_client, alpha, n_rounds, local_epochs, comment, layer_selection_evaluate, args):
 
-		return f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.n_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.n_rounds}_rounds/{self.local_epochs}_local_epochs/{self.comment}_comment/{str(self.layer_selection_evaluate)}_layer_selection_evaluate/{str(self.n_clusters)}_clusters/{str(self.clustering_round)}_clustering_round/{self.cluster_metric}/{self.selection_method}"
+		return f"logs/{type}/{strategy_name}/new_clients_{new_clients}_train_{new_clients_train}/{n_clients}/{model_name}/{dataset}/classes_per_client_{class_per_client}/alpha_{alpha}/{n_rounds}_rounds/{local_epochs}_local_epochs/{comment}_comment/{str(layer_selection_evaluate)}_layer_selection_evaluate/{str(args.n_clusters)}_clusters/{str(args.cluster_round)}_cluster_round/{args.cluster_metric}"

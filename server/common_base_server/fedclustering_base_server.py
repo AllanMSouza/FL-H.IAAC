@@ -44,7 +44,7 @@ class FedClusteringBaseServer(FedAvgBaseServer):
 				 decay=0,
 				 perc_of_clients=0,
 				 dataset='',
-				 strategy_name='FedPer',
+				 strategy_name='FedClustering',
 				 non_iid=False,
 				 model_name='',
 				 new_clients=False,
@@ -68,15 +68,16 @@ class FedClusteringBaseServer(FedAvgBaseServer):
 
 		self.filename = """{}_saved_weights/{}/""".format(strategy_name.lower(), self.model_name)
 		self.create_folder(strategy_name)
-		self.client_cluster = list(np.zeros(self.num_clients))
+		self.client_cluster = list(np.zeros(self.num_clients + 1))
 		self.clustering = args.clustering
-		self.clustering_round = args.clustering_round
+		self.cluster_round = int(args.cluster_round)
 		self.n_clusters = int(args.n_clusters)
 		self.dataset = dataset
 
 		self.cluster_method = args.cluster_method
 		self.cluster_metric = args.cluster_metric
 		self.metric_layer = int(args.metric_layer)
+		self.previous_cluster_parameters = {i: [] for i in range(self.n_clusters)}
 
 	def create_folder(self, strategy_name):
 
@@ -91,18 +92,18 @@ class FedClusteringBaseServer(FedAvgBaseServer):
 		# select clients
 		client_fit_ins_list = super().configure_fit(server_round, parameters, client_manager)
 
-		config = {"round": server_round}
+		config = client_fit_ins_list[0][1].config
 
 		if server_round == 1:
 			fit_ins = FitIns(parameters, config)
 			return [(client_fit_ins[0], fit_ins) for client_fit_ins in client_fit_ins_list]
 
-		elif server_round <= self.clustering_round:
+		elif server_round <= self.cluster_round:
 			fit_ins = FitIns(parameters['0.0'], config)
 			return [(client_fit_ins[0], fit_ins) for client_fit_ins in client_fit_ins_list]
 
 		else:
-			return [(client_fit_ins[0], FitIns(parameters[str(self.client_cluster[int(client_fit_ins.cid)])], config)) for client_fit_ins in client_fit_ins_list]
+			return [(client_fit_ins[0], FitIns(parameters[str(self.client_cluster[int(client_fit_ins[0].cid)])], config)) for client_fit_ins in client_fit_ins_list]
 
 	def aggregate_fit(self, server_round, results, failures):
 
@@ -117,7 +118,7 @@ class FedClusteringBaseServer(FedAvgBaseServer):
 
 		for _, fit_res in results:
 
-			client_id = str(fit_res.metrics['cliente_id'])
+			client_id = str(fit_res.metrics['cid'])
 			parametros_client = fit_res.parameters
 			initial_clusters['cids'].append(client_id)
 			idx_cluster = self.client_cluster[int(client_id)]
@@ -133,22 +134,23 @@ class FedClusteringBaseServer(FedAvgBaseServer):
 			weights_results[str(idx_cluster)].append((parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples))
 
 			# collect activations and weights of last-layer of clients's model (or any other layer difined in metric_layer)
-			w = initial_clusters['models'][str(idx_cluster)][-1]  #
+			w = initial_clusters['models'][str(idx_cluster)][0][-2]  #
 			# model.set_weights(w)  #
 			# activation_last = self.get_layer_outputs(model, model.layers[self.metric_layer], self.x_servidor, 0)  #
 			# lista_last.append(activation_last)  #
-			last_layer_list.append(model.layers[self.metric_layer].weights[0].numpy().flatten())  #
+			print("shape: ", np.array(w).shape)
+			last_layer_list.append(np.array(w).flatten())  #
 
 		# lista_modelos['actv_last'] = lista_last.copy()
 		initial_clusters['last_layer'] = last_layer_list
 
 		# similarity between clients (construct the similatity matrix)
-		if (server_round == self.clustering_round - 1) or (server_round == self.clustering_round):
-			matrix = calcule_similarity(models=initial_clusters, metric=self.cluster_metric)
+		if (server_round == self.cluster_round - 1) or (server_round == self.cluster_round):
+			matrix = calcule_similarity(models=initial_clusters, metric=self.cluster_metric, n_clients=self.num_clients)
 
 		# use some clustering method in similarity metrix
 		if self.clustering:
-			if (server_round == self.clustering_round - 1) or (server_round == self.clustering_round):
+			if (server_round == self.cluster_round - 1) or (server_round == self.cluster_round):
 				self.client_cluster = make_clusters(matrix=matrix,
 													clustering_method=self.cluster_method,
 													models=last_layer_list,
@@ -156,9 +158,11 @@ class FedClusteringBaseServer(FedAvgBaseServer):
 													n_clients=self.num_clients,
 													n_clusters=self.n_clusters,
 													server_round=server_round,
-													cluster_round=self.clustering_round,
+													cluster_round=self.cluster_round,
 													path=f'local_logs/{self.dataset}/{self.cluster_metric}-({self.metric_layer})-{self.cluster_method}-{self.aggregation_method}-{self.fraction_fit}/')
-
+				print("clus: ", self.client_cluster)
+				print("matriz: ")
+				print(matrix)
 				filename = f"local_logs/{self.dataset}/{self.cluster_metric}-({self.metric_layer})-{self.cluster_method}-{self.aggregation_method}-{self.fraction_fit}/clusters_{self.num_clients}clients_{self.n_clusters}clusters.txt"
 				os.makedirs(os.path.dirname(filename), exist_ok=True)
 				with open(filename, 'a') as arq:
@@ -178,7 +182,7 @@ class FedClusteringBaseServer(FedAvgBaseServer):
 		if self.fraction_evaluate == 0.0:
 			return []
 
-		config = {'round': server_round}
+		config = {'round': server_round, 'n_rounds': self.num_rounds}
 
 		if self.on_evaluate_config_fn is not None:
 			config = self.on_evaluate_config_fn(server_round)
@@ -190,17 +194,32 @@ class FedClusteringBaseServer(FedAvgBaseServer):
 			num_clients=sample_size, min_num_clients=min_num_clients,
 		)
 		if server_round == 1:
-			evaluate_ins = EvaluateIns(parameters['0.0'], config)
-			return [(client, evaluate_ins) for client in clients]
+			result = []
+			for client in clients:
+				config['nt'] = self.fedpredict_clients_metrics[str(client.cid)]['nt']
+				evaluate_ins = EvaluateIns(parameters['0.0'], config)
+				result.append((client, evaluate_ins))
+			return result
 
-		elif server_round == self.clustering_round - 1:
-			evaluate_ins = EvaluateIns(parameters['0.0'], config)
-			return [(client, evaluate_ins) for client in clients]
+		elif server_round == self.cluster_round - 1:
+			result = []
+			for client in clients:
+				config['nt'] = self.fedpredict_clients_metrics[str(client.cid)]['nt']
+				evaluate_ins = EvaluateIns(parameters['0.0'], config)
+				result.append((client, evaluate_ins))
+			return result
 		else:
-			return [(client, EvaluateIns(parameters[str(self.client_cluster[int(client.cid)])], config)) for client in clients]
+			result = []
+			for client in clients:
+				config['nt'] = self.fedpredict_clients_metrics[str(client.cid)]['nt']
+				print("chave: ", parameters.keys())
+				evaluate_ins = EvaluateIns(parameters[str(self.client_cluster[int(client.cid)])], config)
+				result.append((client, evaluate_ins))
+			return result
 
-	def _create_base_directory(self):
-
-		return f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(self.layer_selection_evaluate)}_layer_selection_evaluate/{str(self.n_clusters)}_clusters/{str(self.clustering_round)}_clustering_round/{self.cluster_metric}/{self.selection_method}"
+	def _create_base_directory(self, args):
+		print("criado")
+		print(f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(self.layer_selection_evaluate)}_layer_selection_evaluate/{str(args.n_clusters)}_clusters/{str(args.cluster_round)}_cluster_round/{args.cluster_metric}")
+		return f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(self.layer_selection_evaluate)}_layer_selection_evaluate/{str(args.n_clusters)}_clusters/{str(args.cluster_round)}_cluster_round/{args.cluster_metric}"
 
 

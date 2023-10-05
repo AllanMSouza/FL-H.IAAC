@@ -711,7 +711,7 @@ class SimulationFL():
 										new_clients=self.new_clients,
 										new_clients_train=self.new_clients_train,
 									  args=self.args)
-			elif self.strategy_name == "FedYogi":
+			elif self.strategy_name == "FedClustering":
 				return FedClusteringServerTorch(aggregation_method=self.aggregation_method,
 										n_classes=self.n_classes,
 										fraction_fit=self.fraction_fit,

@@ -202,7 +202,7 @@ class Verify:
             y_column = 'Weight of global parameter (gw)'
         else:
             y_column = 'Updated level (ul)'
-        hue = 'Rounds since the last training (nt)'
+        hue = 'Rounds since the \n last training (nt)'
         hue_order = [100, 10, 5, 2, 1]
         print(len(x), len(y), len(rounds_without_fit_list))
         df = pd.DataFrame({x_column: x, y_column: y, hue: rounds_without_fit_list})
@@ -223,6 +223,7 @@ class Verify:
                      file_name="curve_" + str(index),
                      x_column=x_column,
                      y_column=y_column,
+                    style=hue,
                      title=title,
                         hue=hue,
                       type=2,

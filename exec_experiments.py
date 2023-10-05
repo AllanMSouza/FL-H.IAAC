@@ -58,7 +58,7 @@ EPOCHS = {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2], '6': [1], '7': [1], 
 CLASSES = {'MNIST': 10, 'CIFAR10': 10, 'Tiny-ImageNet': 200, 'EMNIST': 47}
 CLIENTS = {'MNIST': [8], 'CIFAR10': [20], 'EMNIST': [20], 'CIFAR100': [50], 'MotionSense': [24], 'UCIHAR': [30],
            'Tiny-ImageNet': [2]}
-ALPHA = [0.1]
+ALPHA = [5.0]
 # ALPHA = [1]
 FRACTION_FIT = {'None': [0.3], 'POC': [0], 'FedLTA': [0]}
 SPECIFIC_PARAMETERS = {'FedAVG': {'use_gradient': 'True', 'bits': 8}, 'FedKD': {'use_gradient': '', 'bits': 8},
@@ -80,9 +80,9 @@ STRATEGIES_FOR_ANALYSIS = {'2': [], '3': ['FedClassAvg', 'FedAVG', 'FedPredict',
 STRATEGIES_TO_EXECUTE = {'2': ['FedClustering'],'3': ['FedKD'],  '22': ['FedPredict'], '26': ['FedPredict'], '30': ['FedPredict'], '31': ['FedPredict'], '32': ['FedPredict']}
 N_CLUSTERS = [3]
 CLUSTERING = "Yes"
-CLUSTER_ROUND = [3]
+CLUSTER_ROUND = [20]
 CLUSTER_METRIC = ['weights']
-CLUSTER_METHOD = ['Random']
+CLUSTER_METHOD = ['KCenter']
 LAYER_METRIC = [-1]
 
 EXPERIMENTS = {

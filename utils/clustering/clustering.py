@@ -183,27 +183,26 @@ def cka(X, Y):
     return (YTX ** 2).sum() / (np.sqrt((XTX ** 2).sum() * (YTY ** 2).sum()))
 
 
-def calcule_similarity(models, metric):
-    actvs = models['actv_last']
-    if metric == 'CKA':
-        matrix = np.zeros((len(actvs), len(actvs)))
-
-        for i, a in enumerate(actvs):
-            for j, b in enumerate(actvs):
-                x = int(models['cids'][i])
-                y = int(models['cids'][j])
-
-                matrix[x][y] = cka(a, b)
+def calcule_similarity(models, metric, n_clients):
+    # actvs = models['actv_last']
+    # if metric == 'CKA':
+    #     matrix = np.zeros((len(actvs), len(actvs)))
+    #
+    #     for i, a in enumerate(actvs):
+    #         for j, b in enumerate(actvs):
+    #             x = int(models['cids'][i])
+    #             y = int(models['cids'][j])
+    #
+    #             matrix[x][y] = cka(a, b)
 
     last = models['last_layer']
     if metric == 'weights':
-        matrix = np.zeros((len(last), len(last)))
+        matrix = np.zeros((n_clients, n_clients))
 
         for i, a in enumerate(last):
             for j, b in enumerate(last):
                 x = int(models['cids'][i])
                 y = int(models['cids'][j])
-
                 matrix[x][y] = np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))  # cos similarity
     return matrix
 

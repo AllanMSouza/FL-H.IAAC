@@ -199,7 +199,7 @@ class Varying_Shared_layers:
 
 
             self.df_summary = pd.DataFrame({'\u03B1': alphas_list, 'Unique_classes': classes_list, 'Total of clients': count})
-            self.df_summary['Total_of_clients_(%)'] = (self.df_summary['Total of clients']/20)*100
+            self.df_summary['Total_of_clients_(%)'] = (self.df_summary['Total of clients']/40)*100
             print("sumario antes: ")
             print(self.df_summary)
 
@@ -294,7 +294,7 @@ if __name__ == '__main__':
     type_model = "torch"
     aggregation_method = "None"
     fraction_fit = 0.3
-    num_clients = 20
+    num_clients = 40
     dataset = ["CIFAR10", "EMNIST"]
     alpha = [0.1, 1.0, 3.0, 5.0]
     num_rounds = 50

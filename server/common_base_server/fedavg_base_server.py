@@ -116,7 +116,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.evaluate_filename = None
 		self.clients_metrics = self._clients_metrics()
 		self.evaluate_config = {}
-		self._write_output_files_headers()
+		self._write_output_files_headers(args)
 		self.previous_global_parameters = []
 		self.mean_similarity_per_round = {}
 		self.model_shape = []
@@ -228,18 +228,29 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			print("create model")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
+	def parameters_to_ndarrays(self, parameters):
+
+		parameters = copy.deepcopy(parameters)
+		if type(parameters) is not dict:
+			return parameters_to_ndarrays(parameters)
+		else:
+			for key in parameters:
+				parameters[key] = parameters_to_ndarrays(parameters[key])
+			return parameters
+
 	def configure_fit(self, server_round, parameters, client_manager):
 		"""Configure the next round of training."""
 		print("Iniciar configure fit")
 		self.start_time = time.process_time()
 		random.seed(server_round)
-		self.previous_global_parameters.append(fl.common.parameters_to_ndarrays(parameters))
+
+		self.previous_global_parameters.append(self.parameters_to_ndarrays(parameters))
 		# if server_round == 2:
 		# 	for layer in self.previous_global_parameters:
 		# 		print("lat", layer)
 		# 		self.model_shape.append(layer.shape)
 
-		print("começo configure fit: ", len(fl.common.parameters_to_ndarrays(parameters)), server_round)
+		print("começo configure fit: ", len(self.parameters_to_ndarrays(parameters)), server_round)
 
 		random.seed(server_round)
 
@@ -630,13 +641,13 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			writer = csv.writer(server_log_file)
 			writer.writerow(header)
 
-	def _create_base_directory(self):
+	def _create_base_directory(self, args):
 
 		return f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(self.layer_selection_evaluate)}_layer_selection_evaluate"
 
-	def _write_output_files_headers(self):
+	def _write_output_files_headers(self, args):
 
-		self.base = self._create_base_directory()
+		self.base = self._create_base_directory(args)
 		self.server_filename = f"{self.base}/server.csv"
 		self.train_filename = f"{self.base}/train_client.csv"
 		self.evaluate_filename = f"{self.base}/evaluate_client.csv"

@@ -16,10 +16,11 @@ class FedClusteringServerTorch(FedClusteringBaseServer):
                  num_rounds,
                  args,
                  num_epochs,
+                 model=None,
                  decay=0,
                  perc_of_clients=0,
                  dataset='',
-                 strategy_name='FedPer',
+                 strategy_name='FedClustering',
                  model_name='',
                  new_clients=False,
                  new_clients_train=False):
