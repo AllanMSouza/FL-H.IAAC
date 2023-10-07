@@ -26,7 +26,7 @@ from flwr.common import (
 )
 
 from server.common_base_server import FedAvgBaseServer
-from utils.quantization.quantization import parameters_quantization_write, inverse_parameter_quantization_reading
+from utils.compression_methods.quantization import parameters_quantization_write, inverse_parameter_quantization_reading
 
 from pathlib import Path
 import shutil

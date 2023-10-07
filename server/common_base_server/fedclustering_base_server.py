@@ -219,7 +219,7 @@ class FedClusteringBaseServer(FedAvgBaseServer):
 
 	def _create_base_directory(self, args):
 		print("criado")
-		print(f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(self.layer_selection_evaluate)}_layer_selection_evaluate/{str(args.n_clusters)}_clusters/{str(args.cluster_round)}_cluster_round/{args.cluster_metric}")
-		return f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(self.layer_selection_evaluate)}_layer_selection_evaluate/{str(args.n_clusters)}_clusters/{str(args.cluster_round)}_cluster_round/{args.cluster_metric}"
+		print(f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(self.compression)}_compression/{str(args.n_clusters)}_clusters/{str(args.cluster_round)}_cluster_round/{args.cluster_metric}")
+		return f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(self.compression)}_compression/{str(args.n_clusters)}_clusters/{str(args.cluster_round)}_cluster_round/{args.cluster_metric}"
 
 

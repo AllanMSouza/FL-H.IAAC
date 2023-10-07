@@ -10,7 +10,7 @@ def quantize_linear_symmetric(value, bits):
     scale = max(abs(qmin), abs(qmax)) / max(abs(np.min(value)), abs(np.max(value)))
     value = np.round(value * scale)
     value = np.clip(value, qmin, qmax).astype(int)
-    print("Parameters after quantization: ", value)
+    print("Parameters after compression_methods: ", value)
 
     return value
 
@@ -78,7 +78,7 @@ def quantization(layer, bits):
             return [np.array(u, dtype=np.int8), np.array(s, dtype=np.float16), np.array(z, dtype=np.float16)]
 
     except Exception as e:
-        print("quantization")
+        print("compression_methods")
         print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, 0), type(e).__name__, e)
 
 def parameters_quantization_write(parameters, bits):

@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 import flwr
 import json
-from utils.quantization.fetsgd import layers_sketching
+from utils.compression_methods.fetsgd import layers_sketching
 import os
 import sys
 import time

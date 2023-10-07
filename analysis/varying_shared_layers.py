@@ -12,7 +12,7 @@ import os
 class Varying_Shared_layers:
 
     def __init__(self, tp, strategy_name, new_clients, aggregation_method, fraction_fit, new_clients_train, num_clients, model_name, dataset,
-                 class_per_client, alpha, num_rounds, epochs, comment, layer_selection_evaluate):
+                 class_per_client, alpha, num_rounds, epochs, comment, compression):
 
         self.type = tp
         self.strategy_name = strategy_name
@@ -28,14 +28,14 @@ class Varying_Shared_layers:
         self.num_rounds = num_rounds
         self.epochs = epochs
         self.comment = comment
-        self.layer_selection_evaluate = layer_selection_evaluate
+        self.compression = compression
         self.model_name_list = [model.replace("CNN_2", "CNN-a").replace("CNN_3", "CNN-b") for model in self.model_name]
         self.dataset_name_list = [dataset.replace("CIFAR10", "CIFAR-10") for dataset in self.dataset]
-        if -1 in self.layer_selection_evaluate and -2 in self.layer_selection_evaluate:
+        if -1 in self.compression and -2 in self.compression:
             self.experiment = "als_compredict"
-        elif -1 in self.layer_selection_evaluate:
+        elif -1 in self.compression:
             self.experiment = "als"
-        elif -2 in self.layer_selection_evaluate:
+        elif -2 in self.compression:
             self.experiment = "compredict"
 
     def start(self):
@@ -112,12 +112,12 @@ class Varying_Shared_layers:
         df_concat = None
         df_concat_similarity = None
         df_concat_norm = None
-        for layers in self.layer_selection_evaluate:
+        for layers in self.compression:
             for a in self.alpha:
                 for model in self.model_name:
                     for dataset in self.dataset:
                         for file in files:
-                            filename = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/" + f"logs/{self.type}/{self.strategy_name}-{self.aggregation_method}-{self.fraction_fit}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{model}/{dataset}/classes_per_client_{self.class_per_client}/alpha_{a}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(layers)}_layer_selection_evaluate/{file}"
+                            filename = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/" + f"logs/{self.type}/{self.strategy_name}-{self.aggregation_method}-{self.fraction_fit}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{model}/{dataset}/classes_per_client_{self.class_per_client}/alpha_{a}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(layers)}_compression/{file}"
                             df = pd.read_csv(filename)
 
                             # model_name = model.replace("CNN_2", "CNN-a").replace("CNN_3", "CNN-b")
@@ -176,12 +176,12 @@ class Varying_Shared_layers:
 
         files = ["evaluate_client.csv"]
         df_concat_similarity = None
-        for layers in [min(self.layer_selection_evaluate)]:
+        for layers in [min(self.compression)]:
             for a in self.alpha:
                 for model in self.model_name:
                     for dataset in self.dataset:
                         for file in files:
-                            filename = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/" + f"logs/{self.type}/FedAVG-{self.aggregation_method}-{self.fraction_fit}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{model}/{dataset}/classes_per_client_{self.class_per_client}/alpha_{a}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(-1)}_layer_selection_evaluate/{file}"
+                            filename = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/" + f"logs/{self.type}/FedAVG-{self.aggregation_method}-{self.fraction_fit}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{model}/{dataset}/classes_per_client_{self.class_per_client}/alpha_{a}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(-1)}_compression/{file}"
                             if not os.path.exists(filename):
                                 print("não achou fedavg")
                                 return df_concat
@@ -232,7 +232,7 @@ class Varying_Shared_layers:
             str(self.model_name),
             str(self.alpha), self.comment)
 
-        if len(self.dataset) == 2 and len(self.model_name) == 2 and -2 in self.layer_selection_evaluate:
+        if len(self.dataset) == 2 and len(self.model_name) == 2 and -2 in self.compression:
             fig, ax = plt.subplots(2, 2, sharex='all', sharey='all', figsize=(6, 6))
             y_max = 2
             x_column = 'Round'
@@ -344,7 +344,7 @@ class Varying_Shared_layers:
             str(self.model_name),
             str(self.alpha), self.comment)
 
-        if len(self.dataset) == 2 and len(self.model_name) == 2 and -2 in self.layer_selection_evaluate:
+        if len(self.dataset) == 2 and len(self.model_name) == 2 and -2 in self.compression:
             fig, ax = plt.subplots(2, 2, sharex='all', sharey='all', figsize=(6, 6))
             y_max = 1
             x_column = 'Round'
@@ -488,11 +488,11 @@ class Varying_Shared_layers:
         style = '\u03B1'
         y_min = 0
         if self.experiment == "als_compredict":
-            layer_selection_evaluate = ["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$"]
-        elif -1 in self.layer_selection_evaluate:
-            layer_selection_evaluate = ["$FedAvg+FP_{d}$", 'FedPredict', 'FedAvg']
+            compression = ["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$"]
+        elif -1 in self.compression:
+            compression = ["$FedAvg+FP_{d}$", 'FedPredict', 'FedAvg']
         else:
-            layer_selection_evaluate = ["$FedAvg+FP_{c}$", 'FedPredict', 'FedAvg']
+            compression = ["$FedAvg+FP_{c}$", 'FedPredict', 'FedAvg']
 
         if "$FedAvg+FP_{dc}$" not in df['Solution'].tolist():
             y_max = 60
@@ -514,7 +514,7 @@ class Varying_Shared_layers:
                       title=title,
                       hue=hue,
                       style=style,
-                      hue_order=layer_selection_evaluate,
+                      hue_order=compression,
                       type=1,
                       log_scale=False,
                       y_lim=True,
@@ -535,7 +535,7 @@ class Varying_Shared_layers:
                       title=title,
                       hue=hue,
                       style=style,
-                      hue_order=layer_selection_evaluate,
+                      hue_order=compression,
                       type=1,
                       log_scale=False,
                       y_lim=True,
@@ -557,7 +557,7 @@ class Varying_Shared_layers:
                       title=title,
                       hue=hue,
                       style=style,
-                      hue_order=layer_selection_evaluate,
+                      hue_order=compression,
                       type=1,
                       log_scale=False,
                       y_lim=True,
@@ -580,7 +580,7 @@ class Varying_Shared_layers:
                       title=title,
                       hue=hue,
                       style=style,
-                      hue_order=layer_selection_evaluate,
+                      hue_order=compression,
                       type=1,
                       log_scale=False,
                       y_lim=True,
@@ -645,7 +645,7 @@ class Varying_Shared_layers:
                       title=title,
                       hue=hue,
                       style=style,
-                      # hue_order=layer_selection_evaluate,
+                      # hue_order=compression_methods,
                       type=1,
                       log_scale=False,
                       y_lim=True,
@@ -666,7 +666,7 @@ class Varying_Shared_layers:
                       title=title,
                       hue=hue,
                       style=style,
-                      # hue_order=layer_selection_evaluate,
+                      # hue_order=compression_methods,
                       type=1,
                       log_scale=False,
                       y_lim=True,
@@ -854,11 +854,11 @@ class Varying_Shared_layers:
         print("strategias unicas: ", df['Solution'].unique().tolist())
 
         if self.experiment == "als_compredict":
-            layer_selection_evaluate = ["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$", "$FedAvg+FP$", "$FedAvg$"]
-        elif -1 in self.layer_selection_evaluate:
-            layer_selection_evaluate = ["$FedAvg+FP_{d}$", 'FedPredict', 'FedAvg']
+            compression = ["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$", "$FedAvg+FP$", "$FedAvg$"]
+        elif -1 in self.compression:
+            compression = ["$FedAvg+FP_{d}$", 'FedPredict', 'FedAvg']
         else:
-            layer_selection_evaluate = ["$FedAvg+FP_{c}$", 'FedPredict', 'FedAvg']
+            compression = ["$FedAvg+FP_{c}$", 'FedPredict', 'FedAvg']
 
         if len(self.dataset) >= 2:
 
@@ -879,7 +879,7 @@ class Varying_Shared_layers:
                       title=title,
                       hue=hue,
                       style=style,
-                      hue_order=layer_selection_evaluate,
+                      hue_order=compression,
                       type=1,
                       log_scale=False,
                       y_lim=True,
@@ -903,7 +903,7 @@ class Varying_Shared_layers:
                       title=title,
                       hue=hue,
                       style=style,
-                      hue_order=layer_selection_evaluate,
+                      hue_order=compression,
                       type=1,
                       log_scale=False,
                       y_lim=True,
@@ -931,7 +931,7 @@ class Varying_Shared_layers:
                       title=title,
                       hue=hue,
                       style=style,
-                      hue_order=layer_selection_evaluate,
+                      hue_order=compression,
                       type=1,
                       log_scale=False,
                       y_lim=True,
@@ -957,7 +957,7 @@ class Varying_Shared_layers:
                       title=title,
                       hue=hue,
                       style=style,
-                      hue_order=layer_selection_evaluate,
+                      hue_order=compression,
                       type=1,
                       log_scale=False,
                       y_lim=True,
@@ -1028,7 +1028,7 @@ class Varying_Shared_layers:
                       title=title,
                       hue=hue,
                       style=style,
-                      hue_order=layer_selection_evaluate,
+                      hue_order=compression,
                       type=1,
                       log_scale=False,
                       y_lim=True,
@@ -1052,7 +1052,7 @@ class Varying_Shared_layers:
                       title=title,
                       hue=hue,
                       style=style,
-                      hue_order=layer_selection_evaluate,
+                      hue_order=compression,
                       type=1,
                       log_scale=False,
                       y_lim=True,
@@ -1371,7 +1371,7 @@ class Varying_Shared_layers:
         #           y_column=y_column,
         #           title=title,
         #           hue=hue,
-        #           hue_order=layer_selection_evaluate,
+        #           hue_order=compression_methods,
         #           type=1,
         #           log_scale=False,
         #           y_lim=True,
@@ -1444,14 +1444,14 @@ class Varying_Shared_layers:
         #     sort[shared_layer] = shared_layers_list[i]
         #
         # df['Solution'] = np.array(shared_layers_list)
-        # layer_selection_evaluate = list(sort.values())
+        # compression_methods = list(sort.values())
         # sort = []
-        # for i in layer_selection_evaluate:
+        # for i in compression_methods:
         #     if len(i) > 0:
         #         sort.append(i)
-        # layer_selection_evaluate = sort
-        # print("ord: ", layer_selection_evaluate)
-        layer_selection_evaluate  = ["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$", "$FedAvg+FP$", "$FedAvg$"]
+        # compression_methods = sort
+        # print("ord: ", compression_methods)
+        compression  = ["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$", "$FedAvg+FP$", "$FedAvg$"]
         style = '\u03B1'
 
         title = """Accuracy in {}; Model={}""".format(dataset, model)
@@ -1466,7 +1466,7 @@ class Varying_Shared_layers:
                   y_column=y_column,
                   title=title,
                   hue=hue,
-                  hue_order=layer_selection_evaluate,
+                  hue_order=compression,
                   style=style,
                   type=1,
                   y_lim=True,
@@ -1484,7 +1484,7 @@ class Varying_Shared_layers:
                   y_column=y_column,
                   title=title,
                   hue=hue,
-                  hue_order=layer_selection_evaluate,
+                  hue_order=compression,
                   style=style,
                   type=1,
                   y_lim=False,
@@ -1505,7 +1505,7 @@ class Varying_Shared_layers:
                   y_column=y_column,
                   title=title,
                   hue=hue,
-                  hue_order=layer_selection_evaluate,
+                  hue_order=compression,
                   type=1,
                   log_scale=True)
 
@@ -1551,8 +1551,8 @@ class Varying_Shared_layers:
 
         df = df[df['Solution'] != "$FedAvg+FP$"]
         df = df[df['Solution'] != "{1}"]
-        # layer_selection_evaluate =  ['FedPredict (with ALS)']
-        layer_selection_evaluate = ["$FedAvg+FP_{dc}$"]
+        # compression_methods =  ['FedPredict (with ALS)']
+        compression = ["$FedAvg+FP_{dc}$"]
         print("menor: ", df['Accuracy reduction (%)'].min())
         print("Fed", df[df['Solution'] == 'FedPredict (with ALS)'][['Accuracy reduction (%)', 'Round']])
         print("tra: ", df['Solution'].unique().tolist())
@@ -1567,7 +1567,7 @@ class Varying_Shared_layers:
                   y_column=y_column,
                   title=title,
                   hue=hue,
-                  hue_order=layer_selection_evaluate,
+                  hue_order=compression,
                   type=1,
                   log_scale=False,
                   y_lim=False,
@@ -1586,7 +1586,7 @@ class Varying_Shared_layers:
                   title=title,
                   hue=hue,
                   style=style,
-                  hue_order=layer_selection_evaluate,
+                  hue_order=compression,
                   type=1,
                   log_scale=True,
                   y_lim=False,
@@ -1607,7 +1607,7 @@ class Varying_Shared_layers:
                   title=title,
                   hue=hue,
                   style=style,
-                  hue_order=layer_selection_evaluate,
+                  hue_order=compression,
                   type=1,
                   log_scale=False,
                   y_lim=True,
@@ -1634,12 +1634,12 @@ if __name__ == '__main__':
     alpha = [0.1, 5.0]
     num_rounds = 100
     epochs = 1
-    # layer_selection_evaluate = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
-    #layer_selection_evaluate = [1, 12, 123, 1234]
-    # layer_selection_evaluate = [4, 34, 234, 1234]
-    layer_selection_evaluate = [-1, -2, -3, 10]
+    # compression_methods = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
+    #compression_methods = [1, 12, 123, 1234]
+    # compression_methods = [4, 34, 234, 1234]
+    compression = [-1, -2, -3, 10]
     comment = "set"
 
     Varying_Shared_layers(tp=type_model, strategy_name=strategy, fraction_fit=fraction_fit, aggregation_method=aggregation_method, new_clients=False, new_clients_train=False, num_clients=num_clients,
                           model_name=model_name, dataset=dataset, class_per_client=2, alpha=alpha, num_rounds=num_rounds, epochs=epochs,
-                          comment=comment, layer_selection_evaluate=layer_selection_evaluate).start()
+                          comment=comment, compression=compression).start()

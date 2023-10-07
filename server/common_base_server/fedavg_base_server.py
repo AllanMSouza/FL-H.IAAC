@@ -55,7 +55,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.class_per_client = int(args.class_per_client)
 		self.train_perc = float(args.train_perc)
 		self.alpha = float(args.alpha)
-		self.layer_selection_evaluate = int(args.layer_selection_evaluate)
+		self.compression = args.compression_method
 		self.use_gradient = args.use_gradient
 		self.list_of_clients    = []
 		self.list_of_accuracies = []
@@ -508,11 +508,6 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		# Weigh accuracy of each client by number of examples used
 		accuracies = [r.metrics["accuracy"] * r.num_examples for _, r in results]
 		examples   = [r.num_examples for _, r in results]
-		# # For FedPredict
-		# for _, r in results:
-		# 	client_id = r['cid']
-		# 	acc = r['accuracy']
-		# 	self.fedpredict_clients_metrics[str(client_id)]['acc_of_last_evaluate'] = acc
 		# Aggregate and print custom metric
 		accuracy_aggregated = sum(accuracies) / sum(examples)
 		accuracy_std = np.std(accuracies)
@@ -643,7 +638,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 	def _create_base_directory(self, args):
 
-		return f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(self.layer_selection_evaluate)}_layer_selection_evaluate"
+		return f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(self.compression)}_compression"
 
 	def _write_output_files_headers(self, args):
 

@@ -22,7 +22,7 @@ class JointAnalysis():
             new_clients_train = experiment['new_client_train']
             local_epochs = experiment['local_epochs']
             comment = experiment['comment']
-            layer_selection_evaluate_list = [experiment['layer_selection_evaluate']]
+            compression_list = [experiment['compression']]
 
             for dataset in datasets:
 
@@ -30,9 +30,9 @@ class JointAnalysis():
 
                     for strategy in strategies:
 
-                        for layer_selection_evaluate in layer_selection_evaluate_list:
+                        for compression in compression_list:
 
-                            if layer_selection_evaluate == 10 and "FedPredict" not in strategy:
+                            if compression == 10 and "FedPredict" not in strategy:
                                 continue
 
                             # if new_clients == 'True' and alpha == 5.0 and ("FedAVG" in strategy):
@@ -42,7 +42,7 @@ class JointAnalysis():
 
                             for alpha in alphas:
 
-                                filename = """{}/{}/{}-None-{}/new_clients_{}_train_{}/{}/{}/{}/{}/alpha_{}/{}_rounds/{}/{}_comment/{}_layer_selection_evaluate/{}""".format(os.path.abspath(os.path.join(os.getcwd(),
+                                filename = """{}/{}/{}-None-{}/new_clients_{}_train_{}/{}/{}/{}/{}/alpha_{}/{}_rounds/{}/{}_comment/{}_compression/{}""".format(os.path.abspath(os.path.join(os.getcwd(),
                                                                                                                         os.pardir)) + "/FL-H.IAAC/logs",
                                                                                                                         type,
                                                                                                                         strategy,
@@ -57,17 +57,17 @@ class JointAnalysis():
                                                                                                                         rounds,
                                                                                                                         local_epochs,
                                                                                                                         comment,
-                                                                                                                        layer_selection_evaluate,
+                                                                                                                        compression,
                                                                                                                         file_type)
 
                                 try:
                                     df = pd.read_csv(filename)
                                 except:
                                     continue
-                                if strategy == "FedPredict" and layer_selection_evaluate == -2:
+                                if strategy == "FedPredict" and compression == "dls_compredict":
                                     st = "FedAvg"
                                     s = "$+FP_{dc}$"
-                                elif strategy == "FedYogi_with_FedPredict" and layer_selection_evaluate == -2:
+                                elif strategy == "FedYogi_with_FedPredict" and compression == "dls_compredict":
                                     st = "FedYogi"
                                     s = "$+FP_{dc}$"
                                 else:
@@ -80,7 +80,7 @@ class JointAnalysis():
                                 df['Experiment'] = np.array([i] * len(df))
                                 df['Fraction fit'] = np.array([fraction_fit] * len(df))
                                 df['Dataset'] = np.array([dataset] * len(df))
-                                df['Solution'] = np.array([layer_selection_evaluate] * len(df))
+                                df['Solution'] = np.array([compression] * len(df))
                                 df['Alpha'] = np.array([alpha] * len(df))
                                 df['Strategy'] = np.array(['FedAvg' if i=='FedAVG' else i for i in df['Strategy'].tolist()])
                                 if count == 0:
@@ -135,16 +135,16 @@ class JointAnalysis():
             shared_layer = str(shared_layers_list[i])
             strategy = strategies[i]
             if "FedPredict" in strategy:
-                if "-1" in shared_layer:
+                if "dls" in shared_layer:
                     shared_layers_list[i] = "$FedPredict_{d}$"
                     continue
-                elif "-2" in shared_layer:
+                elif "dls_compredict" in shared_layer:
                     shared_layers_list[i] = "$FedPredict_{dc}$"
                     continue
-                elif "-3" in shared_layer:
+                elif "compredict" in shared_layer:
                     shared_layers_list[i] = "$FedPredict_{c}$"
                     continue
-                elif "10" in shared_layer:
+                elif "no" in shared_layer:
                     shared_layers_list[i] = "$FedPredict$"
                     continue
             else:
@@ -466,6 +466,7 @@ class JointAnalysis():
         handles = [f("o", colors[i]) for i in range(len(hue_order) + 1)]
         handles += [plt.Line2D([], [], linestyle=markers[i], color="k") for i in range(3)]
         axs[0, 0].legend(handles, labels, fontsize=7)
+        print("base: ", base_dir)
         fig.savefig("""{}joint_plot_four_plot_{}.png""".format(base_dir, str(experiment)), bbox_inches='tight', dpi=400)
         fig.savefig("""{}joint_plot_four_plot_{}.svg""".format(base_dir, str(experiment)), bbox_inches='tight', dpi=400)
 
@@ -532,9 +533,9 @@ if __name__ == '__main__':
     #               3: {'new_clients': 'new_clients_True_train_True', 'local_epochs': '1_local_epochs'},
     #               4: {'new_clients': 'new_clients_True_train_True', 'local_epochs': '2_local_epochs'}}
     experiments = {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'layer_selection_evaluate': -2, 'local_epochs': '1_local_epochs'},
+         'comment': 'set', 'compression': 'dls_compredict', 'local_epochs': '1_local_epochs'},
                    2: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'layer_selection_evaluate': -2, 'local_epochs': '1_local_epochs'}}
+         'comment': 'set', 'compression': 'dls_compredict', 'local_epochs': '1_local_epochs'}}
 
     strategies = ['FedPredict', 'FedYogi_with_FedPredict', 'FedAVG', 'FedYogi', 'FedClassAvg', 'FedProto']
     # pocs = [0.1, 0.2, 0.3]

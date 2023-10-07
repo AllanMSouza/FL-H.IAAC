@@ -3,7 +3,7 @@ from torch.nn.parameter import Parameter
 import torch
 from pathlib import Path
 import numpy as np
-from utils.quantization.parameters_svd import inverse_parameter_svd_reading, parameter_svd_write
+from utils.compression_methods.parameters_svd import inverse_parameter_svd_reading, parameter_svd_write
 import os
 import sys
 import time

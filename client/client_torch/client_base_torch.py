@@ -75,7 +75,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			self.train_perc = float(args.train_perc)
 			self.alpha = float(args.alpha)
 			self.comment = args.comment
-			self.layer_selection_evaluate = int(args.layer_selection_evaluate)
+			self.compression = args.compression_method
 			self.use_gradient = bool(args.use_gradient)
 
 			self.model        = None
@@ -117,7 +117,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			elif self.aggregation_method == 'None':
 				self.solution_name = f"{solution_name}-{aggregation_method}-{self.fraction_fit}"
 
-			self.base = self._create_base_directory(self.type, self.solution_name, new_clients, new_clients_train, n_clients, model_name, dataset, str(args.class_per_client), str(args.alpha), str(args.rounds), str(args.local_epochs), str(args.comment), str(args.layer_selection_evaluate), args)
+			self.base = self._create_base_directory(self.type, self.solution_name, new_clients, new_clients_train, n_clients, model_name, dataset, str(args.class_per_client), str(args.alpha), str(args.rounds), str(args.local_epochs), str(args.comment), str(args.compression_method), args)
 			self.evaluate_client_filename = f"{self.base}/evaluate_client.csv"
 			self.train_client_filename = f"{self.base}/train_client.csv"
 			self.predictions_client_filename = f"{self.base}/predictions_client.csv"
@@ -132,9 +132,9 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			print("init client")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def _create_base_directory(self, type, strategy_name, new_clients, new_clients_train, n_clients, model_name, dataset, class_per_client, alpha, n_rounds, local_epochs, comment, layer_selection_evaluate, args):
+	def _create_base_directory(self, type, strategy_name, new_clients, new_clients_train, n_clients, model_name, dataset, class_per_client, alpha, n_rounds, local_epochs, comment, compression, args):
 
-		return f"logs/{type}/{strategy_name}/new_clients_{new_clients}_train_{new_clients_train}/{n_clients}/{model_name}/{dataset}/classes_per_client_{class_per_client}/alpha_{alpha}/{n_rounds}_rounds/{local_epochs}_local_epochs/{comment}_comment/{str(layer_selection_evaluate)}_layer_selection_evaluate"
+		return f"logs/{type}/{strategy_name}/new_clients_{new_clients}_train_{new_clients_train}/{n_clients}/{model_name}/{dataset}/classes_per_client_{class_per_client}/alpha_{alpha}/{n_rounds}_rounds/{local_epochs}_local_epochs/{comment}_comment/{str(compression)}_compression"
 
 	def load_data(self, dataset_name, n_clients, batch_size=32):
 		try:

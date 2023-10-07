@@ -2,7 +2,8 @@ import sys
 import copy
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
-from utils.quantization.parameters_svd import parameter_svd_write, inverse_parameter_svd_reading, if_reduces_size
+from utils.compression_methods.parameters_svd import parameter_svd_write, inverse_parameter_svd_reading, if_reduces_size
+from utils.compression_methods.fedkd import fedkd_compression
 import os
 from torch.nn.parameter import Parameter
 import scipy.stats as st
@@ -106,7 +107,7 @@ def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_sim
         else:
             print("similaridade layer selection: ", df)
             update_level = 1 / nt
-            evolution_level = t / T
+            evolution_level = t / 100
             eq1 = (-update_level*evolution_level*df)  # v8 ótimo
             eq2 = round(np.exp(eq1), 6)
             shared_layers = int(np.ceil(eq2 * n_layers))
@@ -126,7 +127,7 @@ def fedpredict_core_compredict(t, T, nt, layer, compression_range):
         updated_level = 1/nt
         columns = layer.shape[-1]
         fraction = compression_range/columns
-        evolution_level = t / T
+        evolution_level = t / 100
 
         lamda = 0.2
         # eq1 = (update_level - evolution_level - (1-sm)* lamda) # v3
@@ -336,28 +337,24 @@ def get_size(parameter):
 		print("get_size")
 		print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-def fedpredict_server(parameters, client_evaluate_list, fedpredict_clients_metrics, evaluate_config, similarity_between_layers_per_round, mean_similarity_per_round, server_round, num_rounds, comment, layer_selection_evaluate, df, layers_compression_range):
+def fedpredict_server(parameters, client_evaluate_list, fedpredict_clients_metrics, evaluate_config, similarity_between_layers_per_round, mean_similarity_per_round, server_round, num_rounds, comment, compression, df, layers_compression_range):
     client_evaluate_list_fedpredict = []
     accuracy = 0
     mean_similarity_per_layer = similarity_between_layers_per_round[server_round]
     mean_similarity = mean_similarity_per_round[server_round]
-    # if len(self.accuracy_history) > 0:
-    # 	accuracy = self.accuracy_history[len(self.accuracy_history)]
     size_of_parameters = []
     parameters = parameters_to_ndarrays(parameters)
-    # if server_round >= 4:
-    # 	self.calculate_current_similarity(server_round)
-    for i in range(1, len(parameters)):
-        size_of_parameters.append(get_size(parameters[i]))
-    f = True
+
+    # Reuse previously compressed parameters
     previously_reduced_parameters = {}
+    print("compression technique: ", compression)
     for client_tuple in client_evaluate_list:
         client = client_tuple[0]
         client_id = str(client.cid)
         config = copy.copy(evaluate_config)
         client_config = fedpredict_clients_metrics[str(client.cid)]
         nt = client_config['nt']
-        if nt in previously_reduced_parameters:
+        if nt != 0 and nt in previously_reduced_parameters:
             process_parameters = False
         else:
             process_parameters = True
@@ -369,42 +366,71 @@ def fedpredict_server(parameters, client_evaluate_list, fedpredict_clients_metri
             config['total_server_rounds'] = int(comment)
         except:
             pass
+        if nt == 0:
+            config['M'] = []
+            config['df'] = df
+            config['decompress'] = False
+            config['layers_fraction'] = 0
+            evaluate_ins = EvaluateIns(ndarrays_to_parameters(np.array([])), config)
+            # print("Evaluate enviar: ", client_id, [i.shape for i in parameters_to_ndarrays(parameters_to_send)])
+            # print("enviar referencia: ", len(parameters), len(parameters_to_ndarrays(parameters_to_send)))
+            client_evaluate_list_fedpredict.append((client, evaluate_ins))
+            continue
+        elif compression == "no":
+            config['M'] = [i for i in range(len(parameters))]
+            config['df'] = df
+            config['decompress'] = False
+            config['layers_fraction'] = 1
+            evaluate_ins = EvaluateIns(ndarrays_to_parameters(parameters), config)
+            # print("Evaluate enviar: ", client_id, [i.shape for i in parameters_to_ndarrays(parameters_to_send)])
+            # print("enviar referencia: ", len(parameters), len(parameters_to_ndarrays(parameters_to_send)))
+            client_evaluate_list_fedpredict.append((client, evaluate_ins))
+            continue
+
+        parameters_to_send = None
 
         print("Tamanho parametros antes: ", sum([i.nbytes for i in parameters]))
+        M = [i for i in range(len(parameters))]
         if process_parameters:
-            parameters_to_send, M = dls(fedpredict_clients_metrics[client_id]['first_round'],
-                                        layer_selection_evaluate, mean_similarity_per_layer, mean_similarity,
-                                        parameters, server_round, nt, num_rounds, df, size_of_parameters,
-                                        client_id, comment)
-            print("Tamanho parametros als: ", sum(i.nbytes for i in parameters_to_ndarrays(parameters_to_send)))
-        layers_fraction = []
-        if int(layer_selection_evaluate) in [-2, -3] and fedpredict_clients_metrics[client_id][
-            'first_round'] != -1:
-            config['decompress'] = True
-            if process_parameters:
+            if "dls" in compression:
+                parameters_to_send, M = dls(fedpredict_clients_metrics[client_id]['first_round'],
+                                            mean_similarity_per_layer, mean_similarity,
+                                            parameters, server_round, nt, num_rounds, df, size_of_parameters,
+                                            client_id, comment)
+                print("Tamanho parametros als: ", sum(i.nbytes for i in parameters_to_send))
+            layers_fraction = []
+            if compression == 'compredict':
+                parameters_to_send = parameters_to_send if parameters_to_send is not None else parameters
                 parameters_to_send, layers_fraction = compredict(
                     fedpredict_clients_metrics[str(client_id)]['round_of_last_fit'], layers_compression_range,
                     num_rounds, client_id, server_round, len(M), parameters_to_send)
-        else:
-            config['decompress'] = False
-            print("nao igual")
+                config['decompress'] = True
+            elif compression == 'fedkd':
+                parameters_to_send = parameters_to_send if parameters_to_send is not None else parameters
+                parameters_to_send = fedkd_compression(fedpredict_clients_metrics[str(client_id)]['round_of_last_fit'], layers_compression_range,
+                    num_rounds, client_id, server_round, len(M), parameters_to_send)
+                config['decompress'] = True
+            else:
+                config['decompress'] = False
+                print("nao igual")
 
-        if process_parameters:
             print("Novos parametros para nt: ", nt)
-            previously_reduced_parameters[nt] = [parameters_to_send, M, layers_fraction]
+            decompress = config['decompress']
+            previously_reduced_parameters[nt] = [copy.deepcopy(parameters_to_send), M, layers_fraction, decompress]
+
         else:
             print("Reutilizou parametros de nt: ", nt)
-            parameters_to_send, M, layers_fraction = previously_reduced_parameters[nt]
+            parameters_to_send, M, layers_fraction, decompress = previously_reduced_parameters[nt]
 
-        print("Tamanho parametros compredict: ", sum(i.nbytes for i in parameters_to_ndarrays(parameters_to_send)))
+        print("Tamanho parametros compredict: ", sum(i.nbytes for i in parameters_to_send))
+        for i in range(1, len(parameters)):
+            size_of_parameters.append(get_size(parameters[i]))
         fedpredict_clients_metrics[str(client.cid)]['acc_bytes_rate'] = size_of_parameters
         config['M'] = M
         config['df'] = df
+        config['decompress'] = decompress
         config['layers_fraction'] = layers_fraction
-        if f:
-            print("config enviado client: ", client_id, config)
-            f = False
-        evaluate_ins = EvaluateIns(parameters_to_send, config)
+        evaluate_ins = EvaluateIns(ndarrays_to_parameters(parameters_to_send), config)
         # print("Evaluate enviar: ", client_id, [i.shape for i in parameters_to_ndarrays(parameters_to_send)])
         # print("enviar referencia: ", len(parameters), len(parameters_to_ndarrays(parameters_to_send)))
         client_evaluate_list_fedpredict.append((client, evaluate_ins))
@@ -413,7 +439,6 @@ def fedpredict_server(parameters, client_evaluate_list, fedpredict_clients_metri
 
 
 def compredict(round_of_last_fit, layers_comppression_range, num_rounds, client_id, server_round, M, parameter):
-    parameter = parameters_to_ndarrays(parameter)
 
     nt = server_round - round_of_last_fit
     layers_fraction = []
@@ -457,7 +482,7 @@ def compredict(round_of_last_fit, layers_comppression_range, num_rounds, client_
 
         layers_fraction = [1] * len(parameter)
 
-    return ndarrays_to_parameters(parameter), layers_fraction
+    return parameter, layers_fraction
 
 def layer_compression_range(model_shape):
 
@@ -479,7 +504,7 @@ def layer_compression_range(model_shape):
 
     return layers_range
 
-def dls(first_round, layer_selection_evaluate, mean_similarity_per_layer, mean_similarity, parameters,
+def dls(first_round, mean_similarity_per_layer, mean_similarity, parameters,
         server_round, nt, num_rounds, df, size_of_layers, client_id, comment):
     try:
         M = [i for i in range(len(parameters))]
@@ -493,33 +518,12 @@ def dls(first_round, layer_selection_evaluate, mean_similarity_per_layer, mean_s
         # print("Tamanho total parametros original: ", sum(size_list), sys.getsizeof(fl.common.ndarrays_to_parameters(parameters)))
 
         # print("quantidade de camadas: ", len(parameters), [i.shape for i in parameters], " comment: ", comment)
-        # print("layer selection evaluate: ", self.layer_selection_evaluate, self.comment)
+        # print("layer selection evaluate: ", self.compression, self.comment)
         if first_round != -1:
             # baixo-cima
-            if comment == "":
-                M = M[-layer_selection_evaluate * 2:]
-            elif comment == "inverted":
-                M = M[:layer_selection_evaluate * 2]
-            elif comment == "individual":
-                M = [M[layer_selection_evaluate - 1], M[layer_selection_evaluate]]
-            elif comment == 'set':
-                if layer_selection_evaluate > 0:
-                    layer = str(layer_selection_evaluate)
-                    M = []
-                    for i in layer:
-                        i = int(i) * 2
-                        M.append(int(i) - 2)
-                        M.append(int(i) - 1)
-                    if layer == '10':
-                        M = [i for i in range(len(parameters))]
-                    elif layer == '50':
-                        M = [i for i in range(len(parameters) // 2)]
-                elif layer_selection_evaluate in [-1, -2]:
-                    M = fedpredict_core_layer_selection(t=server_round, T=num_rounds, nt=nt, n_layers=n_layers,
-                                                        size_per_layer=size_of_layers,
-                                                        mean_similarity_per_layer=mean_similarity_per_layer, df=df)
-                else:
-                    M = [i for i in range(len(parameters))]
+            M = fedpredict_core_layer_selection(t=server_round, T=num_rounds, nt=nt, n_layers=n_layers,
+                                                size_per_layer=size_of_layers,
+                                                mean_similarity_per_layer=mean_similarity_per_layer, df=df)
             new_parameters = []
             for i in range(len(parameters)):
                 if i in M:
@@ -530,8 +534,6 @@ def dls(first_round, layer_selection_evaluate, mean_similarity_per_layer, mean_s
         for i in range(len(parameters)):
             tamanho = parameters[i].nbytes
             size_list.append(tamanho)
-
-        parameters = ndarrays_to_parameters(parameters)
 
         return parameters, M
 

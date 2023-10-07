@@ -21,11 +21,11 @@ class QSGDCompressor(Compressor):
 
     A implementation for paper https://proceedings.neurips.cc/paper/2017/file/6c340f25839e6acdc73414517203f5f0-Paper.pdf.
 
-    Alistarh, Dan, et al. "QSGD: Communication-efficient SGD via gradient quantization and encoding." Advances in Neural Information Processing Systems 30 (2017): 1709-1720.
+    Alistarh, Dan, et al. "QSGD: Communication-efficient SGD via gradient compression_methods and encoding." Advances in Neural Information Processing Systems 30 (2017): 1709-1720.
     Thanks to git repo: https://github.com/xinyandai/gradient-quantization
 
     Args:
-        n_bit (int): the bits num for quantization. Bigger n_bit comes with better compress precision but more communication consumption.
+        n_bit (int): the bits num for compression_methods. Bigger n_bit comes with better compress precision but more communication consumption.
         random (bool, optional): Carry bit with probability. Defaults to True.
         cuda (bool, optional): use GPU. Defaults to False.
     """
@@ -40,7 +40,7 @@ class QSGDCompressor(Compressor):
         self.code_dtype = torch.int32
 
     def compress(self, tensor):
-        """Compress a tensor with quantization
+        """Compress a tensor with compression_methods
         Args:
             tensor ([type]): [description]
         Returns:

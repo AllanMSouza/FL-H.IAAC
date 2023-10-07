@@ -9,7 +9,7 @@ import os
 class Varying_Shared_layers:
 
     def __init__(self, tp, strategy_name, new_clients, aggregation_method, fraction_fit, new_clients_train, num_clients, model_name, dataset,
-                 class_per_client, alpha, num_rounds, epochs, comments, layer_selection_evaluate):
+                 class_per_client, alpha, num_rounds, epochs, comments, compression):
 
         self.type = tp
         self.strategy_name = strategy_name
@@ -25,19 +25,19 @@ class Varying_Shared_layers:
         self.num_rounds = num_rounds
         self.epochs = epochs
         self.comments = comments
-        self.layer_selection_evaluate = layer_selection_evaluate
+        self.compression = compression
 
     def start(self):
 
         self.build_filenames()
-        self.evaluate_client_analysis_shared_layers(self.layer_selection_evaluate)
+        self.evaluate_client_analysis_shared_layers(self.compression)
 
     def build_filenames(self):
 
         file = "evaluate_client.csv"
         df_concat = None
         for t in self.comments:
-            filename = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/" + f"logs/{self.type}/{self.strategy_name}-{self.aggregation_method}-{self.fraction_fit}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{t}_comment/{str(self.layer_selection_evaluate)}_layer_selection_evaluate/{file}"
+            filename = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/" + f"logs/{self.type}/{self.strategy_name}-{self.aggregation_method}-{self.fraction_fit}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{t}_comment/{str(self.compression)}_compression/{file}"
             df = pd.read_csv(filename)
             df['T'] = np.array([t] * len(df))
             df['Strategy'] = np.array([self.strategy_name] * len(df))
@@ -51,7 +51,7 @@ class Varying_Shared_layers:
 
 
 
-    def evaluate_client_analysis_shared_layers(self, layer_selection_evaluate):
+    def evaluate_client_analysis_shared_layers(self, compression):
         # acc
         df = self.df_concat
         def strategy(df):
@@ -77,7 +77,7 @@ class Varying_Shared_layers:
                   y_column=y_column,
                   title=title,
                   hue=hue,
-                  hue_order=layer_selection_evaluate,
+                  hue_order=compression,
                   type=1)
         x_column = 'Round'
         y_column = 'Communication cost (bytes)'
@@ -91,7 +91,7 @@ class Varying_Shared_layers:
                   y_column=y_column,
                   title=title,
                   hue=hue,
-                  hue_order=layer_selection_evaluate,
+                  hue_order=compression,
                   type=1)
 
 
@@ -111,9 +111,9 @@ if __name__ == '__main__':
     alpha = 1.0
     num_rounds = 30
     epochs = 1
-    layer_selection_evaluate = [4]
+    compression = [4]
     comments = [20, 30, 40]
 
     Varying_Shared_layers(tp=type, strategy_name=strategy, fraction_fit=fraction_fit, aggregation_method=aggregation_method, new_clients=False, new_clients_train=False, num_clients=num_clients,
                           model_name=model_name, dataset=dataset, class_per_client=2, alpha=alpha, num_rounds=num_rounds, epochs=epochs,
-                          comment=comments, layer_selection_evaluate=layer_selection_evaluate).start()
+                          comment=comments, compression=compression).start()

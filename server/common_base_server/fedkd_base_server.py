@@ -6,7 +6,7 @@ import time
 import csv
 import random
 import copy
-from utils.quantization.parameters_svd import parameter_svd_write, inverse_parameter_svd_reading
+from utils.compression_methods.parameters_svd import parameter_svd_write, inverse_parameter_svd_reading
 from logging import WARNING
 from flwr.common import FitIns
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg

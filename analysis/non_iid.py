@@ -26,7 +26,7 @@ class NonIid:
         self.rounds = args.rounds
         self.class_per_client = int(args.class_per_client)
         self.alpha = float(args.alpha)
-        self.layer_selection_evaluate = int(args.layer_selection_evaluate)
+        self.compression = int(args.compression)
         self.epochs = epochs
         self.decay = decay
         self.type = type
@@ -79,7 +79,7 @@ class NonIid:
             os.makedirs(self.base_dir + "svg/")
 
         models_directories = {self.strategy_name_list[i]:
-                              """{}/{}/{}/new_clients_{}_train_{}/{}/{}/{}/classes_per_client_{}/alpha_{}/{}_rounds/{}_local_epochs/{}_comment/{}_layer_selection_evaluate/""".
+                              """{}/{}/{}/new_clients_{}_train_{}/{}/{}/{}/classes_per_client_{}/alpha_{}/{}_rounds/{}_local_epochs/{}_comment/{}_compression/""".
                               format(os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/logs",
                                      self.type,
                                      self._get_strategy_config(self.strategy_name_list[i]),
@@ -93,7 +93,7 @@ class NonIid:
                                      self.rounds,
                                      self.epochs,
                                      self.comment,
-                                     self.layer_selection_evaluate) for i in range(len(self.strategy_name_list))}
+                                     self.compression) for i in range(len(self.strategy_name_list))}
 
         # read datasets
         print(models_directories)
@@ -122,11 +122,11 @@ class NonIid:
         self.server_analysis(title)
         self.evaluate_client_analysis()
         print("chamar")
-        if "FedPredict" in self.strategy_name_list and (-1 == self.layer_selection_evaluate or -2 == self.layer_selection_evaluate):
+        if "FedPredict" in self.strategy_name_list and (-1 == self.compression or -2 == self.compression):
             print("entrou")
             self.similarity_analysis("Alpha=" + str(self.alpha))
-            print("selecao de camadas: ", self.layer_selection_evaluate)
-            if -2 == self.layer_selection_evaluate:
+            print("selecao de camadas: ", self.compression)
+            if -2 == self.compression:
                 pass
                 # self.norm_analysis()
 
@@ -462,7 +462,9 @@ if __name__ == '__main__':
                       help="fraction of selected clients to be trained", metavar="FLOAT")
     parser.add_option("--class_per_client", help="Number of classes per client", default=2)
     parser.add_option("--alpha", help="Dirichlet alpha parameter", default=0.1)
-    parser.add_option("--layer_selection_evaluate", help="", default=0)
+    parser.add_option("--compression_method", help="", default=0)
+    parser.add_option("--n_clusters", help="", default=0)
+    parser.add_option("--clustering", help="", default=0)
 
     (opt, args) = parser.parse_args()
 

@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from torch.nn.parameter import Parameter
 from client.client_torch import FedAvgClientTorch, ClientBaseTorch, FedPerClientTorch
-from utils.quantization import inverse_parameter_quantization_reading, parameters_quantization_write
+from utils.compression_methods import inverse_parameter_quantization_reading, parameters_quantization_write
 
 
 import warnings

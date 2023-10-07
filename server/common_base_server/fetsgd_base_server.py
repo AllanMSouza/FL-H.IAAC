@@ -6,7 +6,7 @@ import time
 import csv
 import random
 import copy
-from utils.quantization.fetsgd import layers_sketching
+from utils.compression_methods.fetsgd import layers_sketching
 from logging import WARNING
 from flwr.common import FitIns
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg

@@ -9,7 +9,7 @@ import os
 class Reduced_C:
 
     def __init__(self, tp, strategy_name, new_clients, aggregation_method, fraction_fit, new_clients_train, num_clients, model_name, dataset,
-                 class_per_client, alpha, num_rounds, epochs, comment, layer_selection_evaluate):
+                 class_per_client, alpha, num_rounds, epochs, comment, compression):
 
         self.type = tp
         self.strategy_name = strategy_name
@@ -25,7 +25,7 @@ class Reduced_C:
         self.num_rounds = num_rounds
         self.epochs = epochs
         self.comment = comment
-        self.layer_selection_evaluate = layer_selection_evaluate
+        self.compression = compression
 
     def start(self):
 
@@ -38,9 +38,9 @@ class Reduced_C:
         df_concat = None
         for c in self.fraction_fit:
             for strategy in self.strategy_name:
-                filename = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/" + f"logs/{self.type}/{strategy}-{self.aggregation_method}-{c}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(self.layer_selection_evaluate)}_layer_selection_evaluate/{file}"
+                filename = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/" + f"logs/{self.type}/{strategy}-{self.aggregation_method}-{c}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(self.compression)}_compression/{file}"
                 df = pd.read_csv(filename)
-                df['Shared layers'] = np.array([self.layer_selection_evaluate] * len(df))
+                df['Shared layers'] = np.array([self.compression] * len(df))
                 df['C'] = np.array([c] * len(df))
                 df['Strategy'] = np.array(['FedAvg' if i == 'FedAVG' else i for i in [strategy]*len(df)])
                 if df_concat is None:
@@ -53,7 +53,7 @@ class Reduced_C:
 
 
 
-    def evaluate_client_analysis_reduced_c(self, layer_selection_evaluate):
+    def evaluate_client_analysis_reduced_c(self, compression):
         # acc
         df = self.df_concat
         def strategy(df):
@@ -85,7 +85,7 @@ class Reduced_C:
                   y_column=y_column,
                   title=title,
                   hue=hue,
-                  hue_order=layer_selection_evaluate,
+                  hue_order=compression,
                   type=1,
                   y_lim=True,
                   y_min=10,
@@ -101,7 +101,7 @@ class Reduced_C:
                   y_column=y_column,
                   title=title,
                   hue=hue,
-                  hue_order=layer_selection_evaluate,
+                  hue_order=compression,
                   type=1,
                   y_lim=True,
                   y_max=4,
@@ -121,7 +121,7 @@ class Reduced_C:
                   y_column=y_column,
                   title=title,
                   hue=hue,
-                  hue_order=layer_selection_evaluate,
+                  hue_order=compression,
                   type=1,
                   log_scale=True)
 
@@ -157,7 +157,7 @@ class Reduced_C:
 
         print("Final: ", df)
         df = df[df['Shared layers'] != "{1, 2, 3, 4}"]
-        layer_selection_evaluate =  ['FedPredict-v2', '{1}']
+        compression =  ['FedPredict-v2', '{1}']
         print("menor: ", df['Accuracy reduction (%)'].min())
         print("Fed", df[df['Shared layers'] == 'FedPredict-v2'][['Accuracy reduction (%)', 'Round']])
 
@@ -171,7 +171,7 @@ class Reduced_C:
                   y_column=y_column,
                   title=title,
                   hue=hue,
-                  hue_order=layer_selection_evaluate,
+                  hue_order=compression,
                   type=1,
                   log_scale=False,
                   y_lim=True,
@@ -188,7 +188,7 @@ class Reduced_C:
                   y_column=y_column,
                   title=title,
                   hue=hue,
-                  hue_order=layer_selection_evaluate,
+                  hue_order=compression,
                   type=1,
                   log_scale=True,
                   y_lim=True,
@@ -213,12 +213,12 @@ if __name__ == '__main__':
     alpha = float(2)
     num_rounds = 3
     epochs = 1
-    # layer_selection_evaluate = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
-    #layer_selection_evaluate = [1, 12, 123, 1234]
-    # layer_selection_evaluate = [4, 34, 234, 1234]
-    layer_selection_evaluate = -1
+    # compression_methods = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
+    #compression_methods = [1, 12, 123, 1234]
+    # compression_methods = [4, 34, 234, 1234]
+    compression = -1
     comment = "set"
 
     Reduced_C(tp=type_model, strategy_name=strategy, fraction_fit=fraction_fit, aggregation_method=aggregation_method, new_clients=False, new_clients_train=False, num_clients=num_clients,
               model_name=model_name, dataset=dataset, class_per_client=2, alpha=alpha, num_rounds=num_rounds, epochs=epochs,
-              comment=comment, layer_selection_evaluate=layer_selection_evaluate).start()
+              comment=comment, compression=compression).start()
