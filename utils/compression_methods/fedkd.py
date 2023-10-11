@@ -35,22 +35,25 @@ def fedkd_compression_core(parameters, energy):
     try:
         for i in range(0, len(parameters), 3):
             u = parameters[i]
-            s = parameters[i + 1]
-            v = parameters[i + 2]
+            v = parameters[i + 1]
+            s = parameters[i + 2]
 
-            if len(parameters) == 0:
+            if len(v) == 0:
                 continue
 
             if len(u.shape) == 4:
+                print("u shape: ", u.shape, "s shape: ", s.shape, " v shape: ", v.shape)
                 u = np.transpose(u, (2, 3, 0, 1))
                 s = np.transpose(s, (2, 0, 1))
                 v = np.transpose(v, (2, 3, 0, 1))
-            threshold = 0
+            threshold = 1
             if np.sum(np.square(s)) == 0:
                 continue
             else:
                 for singular_value_num in range(len(s)):
+                    print("lef: ", np.sum(np.square(s[:singular_value_num])) , " rig: ", energy * np.sum(np.square(s)))
                     if np.sum(np.square(s[:singular_value_num])) > energy * np.sum(np.square(s)):
+                        print("aumentou: ", singular_value_num)
                         threshold = singular_value_num
                         break
                 u = u[:, :threshold]
@@ -63,8 +66,11 @@ def fedkd_compression_core(parameters, energy):
                     v = np.transpose(v, (2, 3, 0, 1))
 
                 parameters[i] = u
-                parameters[i + 1] = s
-                parameters[i + 2] = v
+                parameters[i + 1] = v
+                parameters[i + 2] = s
+
+        for i in parameters:
+            print(i.shape)
 
         return parameters
 
@@ -76,40 +82,40 @@ def fedkd_compression(round_of_last_fit, layers_comppression_range, num_rounds, 
 
     nt = server_round - round_of_last_fit
     layers_fraction = []
-    if round_of_last_fit >= 1:
-        n_components_list = []
-        for i in range(M):
-            # if i % 2 == 0:
-            layer = parameter[i]
-            if len(layer.shape) >= 2:
+    n_components_list = []
+    for i in range(M):
+        # if i % 2 == 0:
+        layer = parameter[i]
+        if len(layer.shape) >= 2:
 
-                compression_range = layers_comppression_range[i]
-                if compression_range > 0:
-                    n_components = compression_range
-                else:
-                    n_components = None
+            if layers_comppression_range[i] > 0:
+                n_components = layers_comppression_range[i]
             else:
                 n_components = None
+        else:
+            n_components = None
 
-            n_components_list.append(n_components)
+        n_components_list.append(n_components)
 
-        print("Vetor de componentes: ", n_components_list)
+    print("Vetor de componentes: ", n_components_list)
 
-        parameter = parameter_svd_write(parameter, n_components_list)
-        parameter = fedkd_compression_core(parameter, 5)
+    parameter = parameter_svd_write(parameter, n_components_list)
+    tmin = 0.01
+    tmax = 0.95
+    energy = tmin + (tmax-tmin)*(server_round/num_rounds)
+    print("energy: ", energy)
+    parameter = fedkd_compression_core(parameter, energy)
 
-        # print("Client: ", client_id, " round: ", server_round, " nt: ", nt, " norm: ", np.mean(gradient_norm), " camadas: ", M, " todos: ", gradient_norm)
-        print("modelo compredict: ", [i.shape for i in parameter])
-
-    else:
-        new_parameter = []
-        for param in parameter:
-            new_parameter.append(param)
-            new_parameter.append(np.array([]))
-            new_parameter.append(np.array([]))
-
-        parameter = new_parameter
-
-        layers_fraction = [1] * len(parameter)
+    # else:
+    #     new_parameter = []
+    #     for param in parameter:
+    #         new_parameter.append(np.array(param))
+    #         new_parameter.append(np.array([]))
+    #         new_parameter.append(np.array([]))
+    #
+    #     parameter = copy.deepcopy(new_parameter)
+    #
+    #     layers_fraction = [1] * len(parameter)
+    parameter = [np.array(i) for i in parameter]
 
     return parameter, layers_fraction

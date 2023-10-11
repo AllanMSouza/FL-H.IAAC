@@ -31,11 +31,11 @@ class Varying_Shared_layers:
         self.compression = compression
         self.model_name_list = [model.replace("CNN_2", "CNN-a").replace("CNN_3", "CNN-b") for model in self.model_name]
         self.dataset_name_list = [dataset.replace("CIFAR10", "CIFAR-10") for dataset in self.dataset]
-        if -1 in self.compression and -2 in self.compression:
-            self.experiment = "als_compredict"
-        elif -1 in self.compression:
-            self.experiment = "als"
-        elif -2 in self.compression:
+        if "dls_compredict" in self.compression:
+            self.experiment = "dls_compredict"
+        elif "dls" in self.compression:
+            self.experiment = "dls"
+        elif "compredict" in self.compression:
             self.experiment = "compredict"
 
     def start(self):
@@ -64,7 +64,7 @@ class Varying_Shared_layers:
         df_concat = self.build_filename_fedavg(df_concat)
         for alpha in alphas:
             self.evaluate_client_joint_accuracy(df_concat, alpha)
-            self.joint_table(self.build_filename_fedavg(self.df_concat, use_mean=False), alpha=alpha, models=models)
+            # self.joint_table(self.build_filename_fedavg(self.df_concat, use_mean=False), alpha=alpha, models=models)
 
         # for alpha in alphas:
         #     self.evaluate_client_joint_accuracy(df_concat, alpha)
@@ -78,37 +78,45 @@ class Varying_Shared_layers:
         shared_layers_list = df['Solution'].tolist()
         for i in range(len(shared_layers_list)):
             shared_layer = str(shared_layers_list[i])
-            if "-1" in shared_layer:
-                shared_layers_list[i] = "$FedAvg+FP_{d}$"
-                continue
-            if "-2" in shared_layer:
+            if "dls_compredict" in shared_layer:
                 shared_layers_list[i] = "$FedAvg+FP_{dc}$"
                 continue
-            if "-3" in shared_layer:
+            if "dls" in shared_layer:
+                shared_layers_list[i] = "$FedAvg+FP_{d}$"
+                continue
+
+            if "compredict" in shared_layer:
                 shared_layers_list[i] = "$FedAvg+FP_{c}$"
                 continue
-            new_shared_layer = "{"
-            for layer in shared_layer:
-                if len(new_shared_layer) == 1:
-                    new_shared_layer += layer
-                else:
-                    new_shared_layer += ", " + layer
-
-            new_shared_layer += "}"
-            if shared_layer == "10":
-                new_shared_layer = "$FedAvg+FP$"
-            if shared_layer == "50":
-                new_shared_layer = "50% of the layers"
-
-            shared_layers_list[i] = new_shared_layer
+            if "no" in shared_layer:
+                shared_layers_list[i] = "$FedAvg+FP$"
+                continue
+            if "fedkd" in shared_layer:
+                shared_layers_list[i] = "$FedAvg+FP_{kd}$"
+                continue
+            # new_shared_layer = "{"
+            # for layer in shared_layer:
+            #     if len(new_shared_layer) == 1:
+            #         new_shared_layer += layer
+            #     else:
+            #         new_shared_layer += ", " + layer
+            #
+            # new_shared_layer += "}"
+            # if shared_layer == "no":
+            #     new_shared_layer = "$FedAvg+FP$"
+            # if shared_layer == "50":
+            #     new_shared_layer = "50% of the layers"
+            #
+            # shared_layers_list[i] = new_shared_layer
 
         df['Solution'] = np.array(shared_layers_list)
+        print(df['Solution'].unique().tolist())
 
         return df
 
     def build_filenames(self):
 
-        files = ["evaluate_client.csv", "similarity_between_layers.csv", "norm.csv"]
+        files = ["evaluate_client.csv", "similarity_between_layers.csv"]
         df_concat = None
         df_concat_similarity = None
         df_concat_norm = None
@@ -117,8 +125,16 @@ class Varying_Shared_layers:
                 for model in self.model_name:
                     for dataset in self.dataset:
                         for file in files:
+
+
                             filename = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/" + f"logs/{self.type}/{self.strategy_name}-{self.aggregation_method}-{self.fraction_fit}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{model}/{dataset}/classes_per_client_{self.class_per_client}/alpha_{a}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(layers)}_compression/{file}"
-                            df = pd.read_csv(filename)
+
+                            try:
+                                df = pd.read_csv(filename)
+                            except:
+                                print("arquivo inexistente")
+                                print(filename)
+                                continue
 
                             # model_name = model.replace("CNN_2", "CNN-a").replace("CNN_3", "CNN-b")
                             # dataset_name = dataset.replace("CIFAR10", "CIFAR-10")
@@ -137,7 +153,7 @@ class Varying_Shared_layers:
                                 else:
                                     df_concat = pd.concat([df_concat, df], ignore_index=True)
                             elif "similarity" in file:
-                                if layers not in [-1, -2]:
+                                if layers not in ["dls", "dls_compredict"]:
                                     continue
                                 df['\u03B1'] = np.array([a] * len(df))
                                 df['Round'] = np.array(df['Server round'].tolist())
@@ -150,7 +166,7 @@ class Varying_Shared_layers:
                                 else:
                                     df_concat_similarity = pd.concat([df_concat_similarity, df], ignore_index=True)
                             elif "norm" in file:
-                                if layers not in [-1, -2]:
+                                if layers not in ["dls", "dls_compredict"]:
                                     continue
                                 df['\u03B1'] = np.array([a] * len(df))
                                 df['Server round'] = np.array(df['Round'].tolist())
@@ -162,6 +178,10 @@ class Varying_Shared_layers:
                                     df_concat_norm = df
                                 else:
                                     df_concat_norm = pd.concat([df_concat_norm, df], ignore_index=True)
+
+                            # if "dls_compredict" in layers and file == 'evaluate_client.csv':
+                            #     print(df)
+                            #     exit()
 
 
         print("contruído: ", df_concat.columns)
@@ -176,12 +196,12 @@ class Varying_Shared_layers:
 
         files = ["evaluate_client.csv"]
         df_concat_similarity = None
-        for layers in [min(self.compression)]:
+        for layers in ["dls"]:
             for a in self.alpha:
                 for model in self.model_name:
                     for dataset in self.dataset:
                         for file in files:
-                            filename = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/" + f"logs/{self.type}/FedAVG-{self.aggregation_method}-{self.fraction_fit}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{model}/{dataset}/classes_per_client_{self.class_per_client}/alpha_{a}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(-1)}_compression/{file}"
+                            filename = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/" + f"logs/{self.type}/FedAVG-{self.aggregation_method}-{self.fraction_fit}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{model}/{dataset}/classes_per_client_{self.class_per_client}/alpha_{a}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{layers}_compression/{file}"
                             if not os.path.exists(filename):
                                 print("não achou fedavg")
                                 return df_concat
@@ -232,7 +252,7 @@ class Varying_Shared_layers:
             str(self.model_name),
             str(self.alpha), self.comment)
 
-        if len(self.dataset) == 2 and len(self.model_name) == 2 and -2 in self.compression:
+        if len(self.dataset) == 2 and len(self.model_name) == 2 and "dls_compredict" in self.compression:
             fig, ax = plt.subplots(2, 2, sharex='all', sharey='all', figsize=(6, 6))
             y_max = 2
             x_column = 'Round'
@@ -344,7 +364,7 @@ class Varying_Shared_layers:
             str(self.model_name),
             str(self.alpha), self.comment)
 
-        if len(self.dataset) == 2 and len(self.model_name) == 2 and -2 in self.compression:
+        if len(self.dataset) == 2 and len(self.model_name) == 2 and "dls_compredict" in self.compression:
             fig, ax = plt.subplots(2, 2, sharex='all', sharey='all', figsize=(6, 6))
             y_max = 1
             x_column = 'Round'
@@ -487,15 +507,15 @@ class Varying_Shared_layers:
         hue = 'Solution'
         style = '\u03B1'
         y_min = 0
-        if self.experiment == "als_compredict":
-            compression = ["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$"]
-        elif -1 in self.compression:
+        if self.experiment == "dls_compredict":
+            compression = ["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$", "$FedAvg+FP_{kd}$"]
+        elif "dls" in self.compression:
             compression = ["$FedAvg+FP_{d}$", 'FedPredict', 'FedAvg']
         else:
             compression = ["$FedAvg+FP_{c}$", 'FedPredict', 'FedAvg']
 
         if "$FedAvg+FP_{dc}$" not in df['Solution'].tolist():
-            y_max = 60
+            y_max = 80
         else:
             y_max = 100
 
@@ -620,9 +640,9 @@ class Varying_Shared_layers:
             markers = ["", "-", "--"]
 
             f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
-            handles = [f("o", colors[i]) for i in range(4)]
+            handles = [f("o", colors[i]) for i in range(5)]
             handles += [plt.Line2D([], [], linestyle=markers[i], color="k") for i in range(3)]
-            ax[1, 0].legend(handles, labels, fontsize=7, ncols=2)
+            fig.legend(handles, labels, fontsize=9, ncols=4, bbox_to_anchor=(0.85, 1.05))
             figure = fig.get_figure()
             Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
             Path(base_dir + "svg/").mkdir(parents=True, exist_ok=True)
@@ -777,6 +797,7 @@ class Varying_Shared_layers:
             self.experiment, str(self.dataset), self.num_clients, self.num_rounds, self.fraction_fit,
             str(self.model_name),
             str(self.alpha), self.comment)
+        Path(base_dir).mkdir(parents=True, exist_ok=True)
         filename = """{}latex_{}.txt""".format(base_dir, str(alpha))
         pd.DataFrame({'latex': [latex]}).to_csv(filename, header=False, index=False)
 
@@ -807,9 +828,9 @@ class Varying_Shared_layers:
 
         max_value = max(list_of_means)
         print("maximo: ", max_value)
-        for i in range(0, len(list_of_means), 5):
+        for i in range(0, len(list_of_means), 6):
 
-            dataset_values = list_of_means[i: i + 5]
+            dataset_values = list_of_means[i: i + 6]
             max_value = max(dataset_values)
 
             for j in range(len(list_of_means)):
@@ -853,12 +874,15 @@ class Varying_Shared_layers:
         df = df.query("""\u03B1 == {}""".format(alpha))
         print("strategias unicas: ", df['Solution'].unique().tolist())
 
-        if self.experiment == "als_compredict":
-            compression = ["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$", "$FedAvg+FP$", "$FedAvg$"]
+        if self.experiment == "dls_compredict":
+            compression = ["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$", "$FedAvg+FP$", "$FedAvg$", "$FedAvg+FP_{kd}$"]
         elif -1 in self.compression:
             compression = ["$FedAvg+FP_{d}$", 'FedPredict', 'FedAvg']
         else:
             compression = ["$FedAvg+FP_{c}$", 'FedPredict', 'FedAvg']
+
+        # print(compression)
+        # exit()
 
         if len(self.dataset) >= 2:
 
@@ -995,7 +1019,7 @@ class Varying_Shared_layers:
             markers = ["", "-", "--"]
 
             f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
-            handles = [f("o", colors[i]) for i in range(5)]
+            handles = [f("o", colors[i]) for i in range(6)]
             ax[0, 0].legend(handles, labels, fontsize=7)
 
             # plt.subplots_adjust(wspace=0.07, hspace=0.14)
@@ -1637,7 +1661,7 @@ if __name__ == '__main__':
     # compression_methods = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
     #compression_methods = [1, 12, 123, 1234]
     # compression_methods = [4, 34, 234, 1234]
-    compression = [-1, -2, -3, 10]
+    compression = ["dls", "dls_compredict", "compredict", "no", "fedkd"]
     comment = "set"
 
     Varying_Shared_layers(tp=type_model, strategy_name=strategy, fraction_fit=fraction_fit, aggregation_method=aggregation_method, new_clients=False, new_clients_train=False, num_clients=num_clients,

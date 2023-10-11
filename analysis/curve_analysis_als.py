@@ -164,7 +164,7 @@ class Verify:
             updated_level = 1 / rounds_without_fit
             evolutionary_level = (server_round / 100)
 
-            eq1 = (-updated_level*evolutionary_level*evolutionary_level*sm)
+            eq1 = (-updated_level - evolutionary_level*sm)
             eq2 = round(np.exp(eq1), 6)
             global_model_weight = eq2
 
@@ -185,7 +185,7 @@ class Verify:
             x.append(i)
         # x = [i for i in range(1, rounds + 1)]
         # rounds_without_fit_list = rounds_without_fit_list + [rounds_without_fit] * len(x)
-        sm = [0.4, 0.8]
+        sm = [0.4, 0.6]
         sm_list = []
         y = []
         x_new = []
@@ -232,7 +232,7 @@ class Verify:
                       style=style,
                       y_lim=True,
                       y_max=1,
-                      y_min=0.35,
+                      y_min=0,
                       type=2,
                       hue_order=hue_order)
 
