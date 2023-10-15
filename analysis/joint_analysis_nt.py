@@ -254,10 +254,19 @@ class JointAnalysis():
     def joint_plot_acc_four_plots(self, df, experiment, fractions_fit):
         print("Joint plot exeprimento: ", experiment)
 
-        df = df[df['nt'].isin([1, 10])]
+        df = df[df['nt'].isin([1,2,3, 8, 9, 10])]
         df = df[df['Round (t)'] >= 80]
+        nt_list = df['nt'].tolist()
+        for i in range(len(nt_list)):
+            nt = nt_list[i]
+            if int(nt) <= 3:
+                nt = '0<nt<4'
+            else:
+                nt = '7<nt<10'
+            nt_list[i] = nt
+        df['nt'] = np.array(nt_list)
         # df = df[df['Round (t)'] < 30]
-        df['nt'] = df['nt'].astype(int)
+        # df['nt'] = df['nt'].astype(int)
         df_test = df[['Round (t)', 'Loss', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset', 'nt']].groupby(['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'nt']).apply(lambda e: self.groupb_by_plot(e)).reset_index()[['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)', 'Loss', 'nt']]
         print("agrupou plot")
         print(df_test)

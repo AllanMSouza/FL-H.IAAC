@@ -643,7 +643,7 @@ def fedpredict_combine_models(global_parameters, model, t, T, nt, M, df):
         local_model_weights, global_model_weight = fedpredict_core(t, T, nt, df)
         count = 0
         for new_param, old_param in zip(global_parameters, model.parameters()):
-            if count in M:
+            if count in M and new_param.shape == old_param.shape:
                 old_param.data = (
                             global_model_weight * new_param.data.clone() + local_model_weights * old_param.data.clone())
             count += 1

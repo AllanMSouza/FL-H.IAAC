@@ -122,7 +122,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			self.train_client_filename = f"{self.base}/train_client.csv"
 			self.predictions_client_filename = f"{self.base}/predictions_client.csv"
 
-			self.trainloader, self.testloader = self.load_data(self.dataset, n_clients=self.n_clients)
+			self.trainloader, self.testloader, self.traindataset, self.testdataset = self.load_data(self.dataset, n_clients=self.n_clients)
+			print("leu dados")
 			self.model                                           = self.create_model().to(self.device)
 			# self.device = 'cpu'
 			self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate) if self.model_name == "Mobilenet" else torch.optim.SGD(self.model.parameters(), lr=self.learning_rate)
@@ -139,17 +140,17 @@ class ClientBaseTorch(fl.client.NumPyClient):
 	def load_data(self, dataset_name, n_clients, batch_size=32):
 		try:
 			if dataset_name in ['MNIST', 'CIFAR10', 'CIFAR100', 'EMNIST']:
-				trainLoader, testLoader = ManageDatasets(self.cid, self.model_name).select_dataset(
+				trainLoader, testLoader, traindataset, testdataset = ManageDatasets(self.cid, self.model_name).select_dataset(
 					dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid, batch_size)
 				self.input_shape = (3,64,64)
 			else:
 				print("gerar")
-				trainLoader, testLoader = ManageDatasets(self.cid, self.model_name).select_dataset(
+				trainLoader, testLoader, traindataset, testdataset = ManageDatasets(self.cid, self.model_name).select_dataset(
 					dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid, batch_size)
 				self.input_shape = (32, 0)
 				# exit()
 
-			return trainLoader, testLoader
+			return trainLoader, testLoader, traindataset, testdataset
 		except Exception as e:
 			print("load data")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
