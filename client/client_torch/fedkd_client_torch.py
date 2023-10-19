@@ -106,6 +106,10 @@ class FedKDClientTorch(FedAvgClientTorch):
 
 		self.model = self.create_model_distillation()
 		self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate, momentum=0.9)
+		self.teacher_filename = """./{}_saved_weights/{}/{}/model.pth""".format(self.strategy_name.lower(), self.model_name, self.cid)
+		feature_dim = 512
+		self.W_h = torch.nn.Linear(feature_dim, feature_dim, bias=False)
+		self.MSE = torch.nn.MSELoss()
 		# self.optimizer_teacher = torch.optim.SGD(self.teacher_model.parameters(), lr=self.learning_rate, momentum=0.9)
 
 	def get_parameters(self, config):
@@ -147,7 +151,7 @@ class FedKDClientTorch(FedAvgClientTorch):
 	def save_parameters_teacher(self):
 		# usando 'torch.save'
 		try:
-			filename = """./{}_saved_weights/{}/{}/model.pth""".format(self.strategy_name.lower(), self.model_name, self.cid)
+			filename = self.teacher_filename
 			if Path(filename).exists():
 				os.remove(filename)
 			torch.save(self.model.state_dict(), filename)
@@ -229,7 +233,7 @@ class FedKDClientTorch(FedAvgClientTorch):
 					train_num += y.shape[0]
 
 					self.optimizer.zero_grad()
-					output_student, output_teacher = self.model(x)
+					output_student, rep_g, output_teacher, rep = self.model(x)
 					outputs_S1 = F.log_softmax(output_student, dim=1)
 					outputs_S2 = F.log_softmax(output_teacher, dim=1)
 					outputs_T1 = F.softmax(output_student, dim=1)
@@ -239,7 +243,8 @@ class FedKDClientTorch(FedAvgClientTorch):
 					loss_teacher = self.loss(output_teacher, y)
 					loss = torch.nn.KLDivLoss()(outputs_S1, outputs_T2) / (loss_student + loss_teacher)
 					loss += torch.nn.KLDivLoss()(outputs_S2, outputs_T1) / (loss_student + loss_teacher)
-					loss += loss_student + loss_teacher
+					L_h = self.MSE(rep, self.W_h(rep_g)) / (loss_student + loss_teacher)
+					loss += loss_student + loss_teacher + L_h
 					# loss_student = self.loss(output_student, y)
 					# print("exemplo: ", output_teacher.shape, output_student.shape)
 					# print("professor: ", output_teacher[0])
@@ -431,13 +436,13 @@ class FedKDClientTorch(FedAvgClientTorch):
 					self.optimizer.zero_grad()
 					y = y.to(self.device)
 					y = torch.tensor(y)
-					output, output_teacher = self.model(x)
+					output, proto_student, output_teacher, proto_teacher = self.model(x)
 					loss = self.loss(output_teacher, y)
 					test_loss += loss.item() * y.shape[0]
-					prediction = torch.argmax(output_teacher, dim=1)
-					predictions = np.append(predictions, prediction)
+					prediction_teacher = torch.argmax(output_teacher, dim=1)
+					predictions = np.append(predictions, prediction_teacher)
 					labels = np.append(labels, y)
-					test_acc += (torch.sum(prediction == y)).item()
+					test_acc += (torch.sum(prediction_teacher == y)).item()
 					test_num += y.shape[0]
 
 			loss = test_loss / test_num

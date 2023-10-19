@@ -16,6 +16,8 @@ from server.server_torch.fedkd_server_torch import FedKDServerTorch
 from server.server_torch.feddistill_server_torch import FedDistillServerTorch
 from server.server_torch.fedyogi_with_fedpredict_server_torch import FedYogiWithFedPredictServerTorch
 from server.server_torch.fedclustering_server_torch import FedClusteringServerTorch
+from server.server_torch.fedala_server_torch import FedAlaServerTorch
+from server.server_torch.fedkd_with_fedpredict_server_torch import FedKDWithFedPredictServerTorch
 
 __all__ = [
     "FedProtoServerTorch",
@@ -35,5 +37,7 @@ __all__ = [
     "FedKDServerTorch",
     "FedDistillServerTorch",
     "FedYogiWithFedPredictServerTorch",
-    "FedClusteringServerTorch"
+    "FedClusteringServerTorch",
+    "FedAlaServerTorch",
+    "FedKDWithFedPredictServerTorch"
 ]

@@ -70,6 +70,9 @@ class JointAnalysis():
                                 elif strategy == "FedYogi_with_FedPredict" and compression == "dls_compredict":
                                     st = "FedYogi"
                                     s = "$+FP_{dc}$"
+                                elif strategy == "FedKD_with_FedPredict" and compression == "dls_compredict":
+                                    st = "FedKD"
+                                    s = "$+FP_{dc}$"
                                 else:
                                     st = strategy
                                     s = "Original"
@@ -537,7 +540,7 @@ if __name__ == '__main__':
                    2: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'False', 'class_per_client': 2,
          'comment': 'set', 'compression': 'dls_compredict', 'local_epochs': '1_local_epochs'}}
 
-    strategies = ['FedPredict', 'FedYogi_with_FedPredict', 'FedAVG', 'FedYogi', 'FedClassAvg', 'FedProto', 'FedKD']
+    strategies = ['FedPredict', 'FedYogi_with_FedPredict', 'FedKD_with_FedPredict', 'FedAVG', 'FedYogi', 'FedClassAvg', 'FedProto', 'FedKD']
     # pocs = [0.1, 0.2, 0.3]
     fractions_fit = [0.3]
     # datasets = ['MNIST', 'CIFAR10']

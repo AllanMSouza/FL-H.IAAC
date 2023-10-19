@@ -59,6 +59,7 @@ class Varying_Shared_layers:
         # print(df_concat['Strategy'].unique().tolist())
         # exit()
         self.evaluate_client_joint_parameter_reduction(df_concat)
+
         alphas = df_concat['\u03B1'].unique().tolist()
         models = df_concat['Model'].unique().tolist()
         df_concat = self.build_filename_fedavg(df_concat)
@@ -642,7 +643,7 @@ class Varying_Shared_layers:
             f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
             handles = [f("o", colors[i]) for i in range(5)]
             handles += [plt.Line2D([], [], linestyle=markers[i], color="k") for i in range(3)]
-            fig.legend(handles, labels, fontsize=9, ncols=4, bbox_to_anchor=(0.85, 1.05))
+            fig.legend(handles, labels, fontsize=9, ncols=4, bbox_to_anchor=(0.90, 1.02))
             figure = fig.get_figure()
             Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
             Path(base_dir + "svg/").mkdir(parents=True, exist_ok=True)
@@ -1020,7 +1021,7 @@ class Varying_Shared_layers:
 
             f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
             handles = [f("o", colors[i]) for i in range(6)]
-            ax[0, 0].legend(handles, labels, fontsize=7)
+            ax[0, 0].legend(handles, labels, fontsize=8)
 
             # plt.subplots_adjust(wspace=0.07, hspace=0.14)
             # lines_labels = [ax[0, 0].get_legend_handles_labels()]

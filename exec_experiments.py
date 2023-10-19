@@ -66,18 +66,19 @@ SPECIFIC_PARAMETERS = {'FedAVG': {'use_gradient': 'True', 'bits': 8}, 'FedKD': {
                        'FedPredict': {'use_gradient': 'True', 'bits': 8}, 'FedPer_with_FedPredict': {'use_gradient': 'True', 'bits': 8},
                        'FedPer': {'use_gradient': '', 'bits': 8}, 'FedAvgM': {'use_gradient': '', 'bits': 8},
                        'FedYogi': {'use_gradient': 'True', 'bits': 8}, 'FedProto': {'use_gradient': '', 'bits': 8}, 'FedClassAvg': {'use_gradient': '', 'bits': 8},
-                       'FedYogi_with_FedPredict': {'use_gradient': 'True', 'bits': 8}, 'FedClustering': {'use_gradient': 'True', 'bits': 8}}
+                       'FedYogi_with_FedPredict': {'use_gradient': 'True', 'bits': 8}, 'FedClustering': {'use_gradient': 'True', 'bits': 8},
+                       'FedAla': {'use_gradient': '', 'bits': 8}, 'FedKD_with_FedPredict': {'use_gradient': '', 'bits': 8}}
 POC = {'None': [0], 'POC': [0.2], 'FedLTA': [0]}
 DECAY = {'None': 0, 'POC': 0, 'FedLTA': 0.1}
 NEW_CLIENTS = {'None': ['FALSE'], 'POC': ['FALSE', 'TRUE']}
 NEW_CLIENTS_TRAIN = {'FALSE': ['FALSE'], 'TRUE': ['FALSE', 'TRUE']}
 # DECAY         				= (0.001, 0.005, 0.009)
-ROUNDS = 60
+ROUNDS = 10
 # STRATEGIES 					= ('FedPredict', 'FedPer', 'FedClassAvg', 'FedAVG', 'FedClassAvg_with_FedPredict', 'FedPer_with_FedPredict', 'FedProto', 'FedYogi', 'FedLocal',)
 # STRATEGIES_FOR_ANALYSIS = ['FedKD', 'FedAVG', 'FedPAQ']
 # STRATEGIES_TO_EXECUTE = ['FedKD', 'FedAVG']
-STRATEGIES_FOR_ANALYSIS = {'2': [], '3': ['FedClassAvg', 'FedAVG', 'FedPredict', 'FedYogi', 'FedYogi_with_FedPredict'], '22': ['FedPredict'], '26': ['FedPredict'], '30': ['FedPredict'], '31': ['FedPredict'], '32': ['FedPredict']}
-STRATEGIES_TO_EXECUTE = {'2': ['FedPredict'],'3': ['FedKD'],  '22': ['FedPredict'], '26': ['FedPredict'], '30': ['FedPredict'], '31': ['FedPredict'], '32': ['FedPredict']}
+STRATEGIES_FOR_ANALYSIS = {'2': ['FedKD'], '3': [], '6': ['FedPredict'], '7': ['FedPredict'], '22': ['FedPredict'], '26': ['FedPredict'], '30': ['FedPredict'], '31': ['FedPredict'], '32': ['FedPredict']}
+STRATEGIES_TO_EXECUTE = {'2': ['FedKD_with_FedPredict'],'3': ['FedKD_with_FedPredict'],  '6': ['FedPredict'], '7': ['FedPredict'], '22': ['FedPredict'], '26': ['FedPredict'], '30': ['FedPredict'], '31': ['FedPredict'], '32': ['FedPredict']}
 N_CLUSTERS = [3]
 CLUSTERING = "Yes"
 CLUSTER_ROUND = [17]
@@ -101,10 +102,10 @@ EXPERIMENTS = {
         'class_per_client': 2,
         'comment': """apos a rodada {}, apenas novos clientes sao testados - novos clientes treinam apenas 1 vez (um round) com duas épocas locais """.format(
             int(ROUNDS * 0.7)), 'compression_method': 4},
-    6: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '',
-        'compression_method': 1},
-    7: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '',
-        'compression_methods': 2},
+    6: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
+         'comment': 'set', 'compression_method': "dls"},
+    7: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
+         'comment': 'set', 'compression_method': "compredict"},
     8: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '',
         'compression_methods': 3},
     9: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '',
@@ -164,6 +165,8 @@ def execute_experiment(experiment, algorithm, new_client, new_client_train, comm
         comment = ROUNDS + 10
     comment = str(comment)
     try:
+        print("ola")
+        clustering = ""
         for dataset in DATASETS:
             classes = CLASSES[dataset]
             for model in MODELS:
@@ -173,23 +176,24 @@ def execute_experiment(experiment, algorithm, new_client, new_client_train, comm
                             for poc in POC[algorithm]:
                                 for alpha in ALPHA:
                                     decay = DECAY[algorithm]
-                                    for strategy in STRATEGIES_TO_EXECUTE[experiment]:
-                                        use_gradient = SPECIFIC_PARAMETERS[strategy]['use_gradient']
-                                        # if strategy == 'FedPredict' and fraction_fit == 0.3 and new_client == 'False':
-                                        #     print("Pulou ", strategy, fraction_fit)
-                                        #     continue
-                                        # if int(experiment) == 2 and dataset == 'EMNIST':
-                                        #     print("conti")
-                                        #     continue
-                                        if "cluster" in strategy.lower():
-                                            clustering = "False"
-                                        else:
-                                            clustering = ""
-                                        for n_cluster in N_CLUSTERS:
-                                            for cluster_round in CLUSTER_ROUND:
-                                                for cluster_metric in CLUSTER_METRIC:
-                                                    for cluster_method in CLUSTER_METHOD:
-                                                        for layer_metric in LAYER_METRIC:
+                                    for n_cluster in N_CLUSTERS:
+                                        for cluster_round in CLUSTER_ROUND:
+                                            for cluster_metric in CLUSTER_METRIC:
+                                                for cluster_method in CLUSTER_METHOD:
+                                                    for layer_metric in LAYER_METRIC:
+                                                        for strategy in STRATEGIES_TO_EXECUTE[experiment]:
+                                                            use_gradient = SPECIFIC_PARAMETERS[strategy]['use_gradient']
+                                                            # if strategy == 'FedPredict' and fraction_fit == 0.3 and new_client == 'False':
+                                                            #     print("Pulou ", strategy, fraction_fit)
+                                                            #     continue
+                                                            # if int(experiment) == 2 and dataset == 'EMNIST':
+                                                            #     print("conti")
+                                                            #     continue
+                                                            if "cluster" in strategy.lower():
+                                                                clustering = "False"
+                                                            else:
+                                                                clustering = ""
+
                                                             print(
                                                                 f'Starting {strategy} fraction_fit-{fraction_fit} simulation for {dataset} clients with {model} model ...',
                                                                 os.getcwd())
@@ -206,20 +210,19 @@ def execute_experiment(experiment, algorithm, new_client, new_client_train, comm
                                                             pass
                                                             # subprocess.Popen(['rm', '-fr', '/tmp/ray/']).wait()
                                                             # subprocess.Popen(['rm', '/tmp/*.py']).wait()
-                                                            strategies_arg = ""
-                                                            for i in STRATEGIES_FOR_ANALYSIS[experiment]:
-                                                                strategies_arg = strategies_arg + """ --strategy='{}'""".format(i)
-                                                            if len(STRATEGIES_FOR_ANALYSIS) > 0:
-                                                                analytics_result_dir = """python analysis/non_iid.py --dataset='{}' --model='{}' --round={} --client={} --aggregation_method='{}' --poc={} --new_clients={} --new_clients_train={} --non-iid={} --comment='{}' --epochs={} --decay={} --fraction_fit={} --class_per_client={} --alpha={} --compression_method={}  --n_clusters={} --clustering={} --cluster_round={} --cluster_metric={} --metric_layer={} --cluster_method={} --experiment={} {}""".format(
-                                                                    dataset, model, ROUNDS, clients, algorithm, poc, new_client,
-                                                                    new_client_train,
-                                                                    True, comment, epochs, decay, fraction_fit, class_per_client, alpha,
-                                                                    compression, n_cluster, clustering,
-                                                                    cluster_round, cluster_metric, layer_metric, cluster_method, experiment, strategies_arg)
-                                                                print("=====================================\nExecutando analytics... \n",
-                                                                      analytics_result_dir,
-                                                                      "\n=====================================")
-                                                                subprocess.Popen(analytics_result_dir, shell=True).wait()
+                                                        strategies_arg = ""
+                                                        for i in STRATEGIES_FOR_ANALYSIS[experiment]:
+                                                            strategies_arg = strategies_arg + """ --strategy='{}'""".format(i)
+                                                        if len(STRATEGIES_FOR_ANALYSIS) > 0:
+                                                            analytics_result_dir = """python analysis/non_iid.py --dataset='{}' --model='{}' --round={} --client={} --aggregation_method='{}' --poc={} --new_clients={} --new_clients_train={} --non-iid={} --comment='{}' --epochs={} --decay={} --fraction_fit={} --class_per_client={} --alpha={} --compression={}  --experiment={} {}""".format(
+                                                                dataset, model, ROUNDS, clients, algorithm, poc, new_client,
+                                                                new_client_train,
+                                                                True, comment, epochs, decay, fraction_fit, class_per_client, alpha,
+                                                                compression, experiment, strategies_arg)
+                                                            print("=====================================\nExecutando analytics... \n",
+                                                                  analytics_result_dir,
+                                                                  "\n=====================================")
+                                                            subprocess.Popen(analytics_result_dir, shell=True).wait()
 
                         # subprocess.Popen(['rm', '-fr', '/tmp/ray/']).wait()
                         # subprocess.Popen(['rm', '/tmp/*.py']).wait()

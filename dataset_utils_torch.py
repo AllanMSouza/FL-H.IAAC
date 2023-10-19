@@ -194,7 +194,7 @@ class ManageDatasets():
 
             print("baixou", len(training_dataset))
 
-            return training_loader, validation_loader
+            return training_loader, validation_loader, training_dataset, validation_dataset
 
         except Exception as e:
             print("load EMNIST")
@@ -255,7 +255,7 @@ class ManageDatasets():
 
             validation_loader = torch.utils.data.DataLoader(validation_dataset, batch_size=batch_size, shuffle=False)
 
-            return training_loader, validation_loader
+            return training_loader, validation_loader, training_dataset, validation_dataset
 
         except Exception as e:
             print("Select CIFAR10")

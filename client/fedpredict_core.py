@@ -204,6 +204,7 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
 
         client = clients_parameters[client_id]
         client_id = clients_ids[client_id]
+        print("cliente antes: ", len(client))
 
         for layer_index in range(num_layers):
             client_layer = client[layer_index]
@@ -218,6 +219,7 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
                 client_difference = {'min': [], 'max': []}
                 for k in range(len(global_layer)):
                     global_layer_k = global_layer[k][0]
+                    print("do cliente: ", client_layer.shape, " global: ", global_layer.shape)
                     client_layer_k = client_layer[k][0]
 
                     # if gradient:
@@ -576,7 +578,7 @@ def dls(first_round, mean_similarity_per_layer, mean_similarity, parameters,
 # FedPredict client
 
 
-def fedpredict_client( filename, model, global_parameters, config={}):
+def fedpredict_client(filename, model, global_parameters, config={}, mode=None):
     # Using 'torch.load'
     try:
         # filename = """./fedpredict_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
@@ -612,8 +614,12 @@ def fedpredict_client( filename, model, global_parameters, config={}):
             model = fedpredict_combine_models(global_parameters, model, t, T, nt, M, df)
         else:
             print("usar modelo global: ", cid)
-            for old_param, new_param in zip(model.parameters(), global_parameters):
-                old_param.data = new_param.data.clone()
+            if mode is None:
+                for old_param, new_param in zip(model.parameters(), global_parameters):
+                    old_param.data = new_param.data.clone()
+            else:
+                for old_param, new_param in zip(model.student.parameters(), global_parameters):
+                    old_param.data = new_param.data.clone()
 
         return model
 

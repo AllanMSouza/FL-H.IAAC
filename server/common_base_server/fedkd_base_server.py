@@ -111,6 +111,7 @@ class FedKDBaseServer(FedAvgBaseServer):
 		self.teacher_filename = """{}_saved_weights/{}/""".format(strategy_name.lower(), self.model_name)
 		self.create_folder(self.teacher_filename)
 		self.model_shape = [i.detach().numpy().shape for i in model.parameters()]
+		self.layers_compression_range = layer_compression_range(self.model_shape)
 
 
 
@@ -145,7 +146,7 @@ class FedKDBaseServer(FedAvgBaseServer):
 				for i in range(len(parameters)):
 					compression_range = self.layers_compression_range[i]
 					if compression_range > 0:
-						frac = 1-server_round/self.num_rounds
+						frac = max(1, abs(1-server_round))/self.num_rounds
 						compression_range = max(round(frac * compression_range), 1)
 					else:
 						compression_range = None
@@ -161,10 +162,11 @@ class FedKDBaseServer(FedAvgBaseServer):
 		weights_results = []
 		clients_parameters = []
 		clients_ids = []
+		print("agregar")
 		for _, fit_res in results:
 			client_id = str(fit_res.metrics['cid'])
 			clients_ids.append(client_id)
-			# print("Parametros aggregate fit: ", len(fl.common.parameters_to_ndarrays(fit_res.parameters)))
+			print("Parametros aggregate fit: ", [i.shape for i in fl.common.parameters_to_ndarrays(fit_res.parameters)])
 			# print("Fit respons", fit_res.metrics)
 			clients_parameters.append(inverse_parameter_svd_reading(fl.common.parameters_to_ndarrays(fit_res.parameters), self.model_shape))
 			if self.aggregation_method not in ['POC', 'FL-H.IAAC'] or int(server_round) <= 1:
@@ -179,10 +181,13 @@ class FedKDBaseServer(FedAvgBaseServer):
 		parameters_aggregated = fl.common.ndarrays_to_parameters(self._aggregate(weights_results, server_round))
 		# self.similarity_between_layers_per_round_and_client[server_round], self.similarity_between_layers_per_round[server_round], self.mean_similarity_per_round[server_round], self.decimals_per_layer[server_round] = fedpredict_layerwise_similarity(fl.common.parameters_to_ndarrays(parameters_aggregated), clients_parameters, clients_ids, server_round)
 		# Aggregate custom metrics if aggregation fn was provided
-		metrics_aggregated = {}
-		if server_round == 1:
-			print("treinados rodada 1: ", self.clients_metrics)
-			self.layers_compression_range = layer_compression_range(self.model_shape)
+		if 'FedKD_with_FedPredict' in self.strategy_name:
+			metrics_aggregated = {'clients_id': clients_ids, 'parameters': clients_parameters}
+		else:
+			metrics_aggregated = {}
+		# if server_round == 1:
+		# 	print("treinados rodada 1: ", self.clients_metrics)
+		# 	self.layers_compression_range = layer_compression_range(self.model_shape)
 
 		return parameters_aggregated, metrics_aggregated
 

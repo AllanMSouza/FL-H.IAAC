@@ -23,42 +23,42 @@ from server.common_base_server import FedKDBaseServer
 from pathlib import Path
 import shutil
 
-def if_reduces_size(shape, n_components, dtype=np.float64):
-
-    try:
-        size = np.array([1], dtype=dtype)
-        p = shape[0]
-        q = shape[1]
-        k = n_components
-
-        if p*k + k*k + k*q < p*q:
-            return True
-        else:
-            return False
-
-    except Exception as e:
-        print("svd")
-        print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, 0), type(e).__name__, e)
-
-def layer_compression_range(model_shape):
-
-    layers_range = []
-    for shape in model_shape:
-
-        layer_range = 0
-        if len(shape) >= 2:
-            shape = shape[-2:]
-
-            col = shape[1]
-            for n_components in range(1, col+1):
-                if if_reduces_size(shape, n_components):
-                    layer_range = n_components
-                else:
-                    break
-
-        layers_range.append(layer_range)
-
-    return layers_range
+# def if_reduces_size(shape, n_components, dtype=np.float64):
+#
+#     try:
+#         size = np.array([1], dtype=dtype)
+#         p = shape[0]
+#         q = shape[1]
+#         k = n_components
+#
+#         if p*k + k*k + k*q < p*q:
+#             return True
+#         else:
+#             return False
+#
+#     except Exception as e:
+#         print("svd")
+#         print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, 0), type(e).__name__, e)
+#
+# def layer_compression_range(model_shape):
+#
+#     layers_range = []
+#     for shape in model_shape:
+#
+#         layer_range = 0
+#         if len(shape) >= 2:
+#             shape = shape[-2:]
+#
+#             col = shape[1]
+#             for n_components in range(1, col+1):
+#                 if if_reduces_size(shape, n_components):
+#                     layer_range = n_components
+#                 else:
+#                     break
+#
+#         layers_range.append(layer_range)
+#
+#     return layers_range
 
 class FedKDWithFedPredictBaseServer(FedKDBaseServer):
 
@@ -90,6 +90,7 @@ class FedKDWithFedPredictBaseServer(FedKDBaseServer):
 						 num_epochs=num_epochs,
 						 decay=decay,
 						 perc_of_clients=perc_of_clients,
+						 model=model,
 						 dataset=dataset,
 						 strategy_name=strategy_name,
 						 model_name=model_name,
@@ -97,8 +98,9 @@ class FedKDWithFedPredictBaseServer(FedKDBaseServer):
 						 new_clients_train=new_clients_train,
 						 type=type)
 
-		self.n_rate = float(args.n_rate)
 		self.model = model
+		self.n_rate = float(args.n_rate)
+
 		self.window_of_previous_accs = 4
 		self.create_folder(strategy_name)
 		self.similarity_between_layers_per_round = {}
@@ -114,6 +116,7 @@ class FedKDWithFedPredictBaseServer(FedKDBaseServer):
 		self.gradient_norm_round = []
 		self.gradient_norm_nt = []
 		self.T = int(args.T)
+		self.model_shape = [i.detach().numpy().shape for i in model.parameters()]
 
 	def calculate_initial_similarity(self, server_round, rate=0.1):
 
@@ -214,19 +217,16 @@ class FedKDWithFedPredictBaseServer(FedKDBaseServer):
 			print("similaridade inicial: ", self.similarity_list_per_layer)
 			print("range: ", self.layers_compression_range)
 		weights_results = []
-		clients_parameters = []
-		clients_ids = []
-		for _, fit_res in results:
-			client_id = str(fit_res.metrics['cid'])
-			clients_ids.append(client_id)
-			clients_parameters.append(fl.common.parameters_to_ndarrays(fit_res.parameters))
+		clients_parameters = metrics_aggregated['parameters']
+		clients_ids = metrics_aggregated['clients_id']
+		metrics_aggregated = {}
 
 		if self.use_gradient:
 			global_parameter = [current - previous for current, previous in
 								zip(parameters_to_ndarrays(parameters_aggregated),
 									self.previous_global_parameters[server_round - 1])]
 		else:
-			global_parameter = self.previous_global_parameters[server_round]
+			global_parameter = self.previous_global_parameters[-1]
 
 		np.random.seed()
 		flag = bool(int(np.random.binomial(1, 0.2, 1)))
@@ -234,8 +234,9 @@ class FedKDWithFedPredictBaseServer(FedKDBaseServer):
 		if server_round == 1:
 			flag = True
 		print("Flag: ", flag)
-		if "dls" in self.compression:
+		if "dls" in self.compression and server_round > 1:
 			if flag:
+				print("logo dls")
 				self.similarity_between_layers_per_round_and_client[server_round], \
 				self.similarity_between_layers_per_round[server_round], self.mean_similarity_per_round[
 					server_round], self.similarity_list_per_layer = fedpredict_layerwise_similarity(global_parameter,
@@ -263,11 +264,6 @@ class FedKDWithFedPredictBaseServer(FedKDBaseServer):
 
 		print("df médio: ", self.df, " rodada: ", server_round)
 
-		# self.parameters_aggregated_checkpoint[server_round] = parameters_to_ndarrays(parameters_aggregated)
-
-		# if server_round == 3:
-		# 	self.calculate_initial_similarity(server_round)
-
 		return parameters_aggregated, metrics_aggregated
 
 	def configure_evaluate(self, server_round, parameters, client_manager):
@@ -284,19 +280,6 @@ class FedKDWithFedPredictBaseServer(FedKDBaseServer):
 	def end_evaluate_function(self):
 		self._write_similarity()
 
-	# self._write_norm()
-
-	# def _write_norm(self):
-	#
-	# 	columns = ["Server round", "Norm", "nt"]
-	# 	data = {column: [] for column in columns}
-	#
-	# 	data = {'Round': self.gradient_norm_round, 'Norm': self.gradient_norm, 'nt': self.gradient_norm_nt}
-	#
-	# 	self.similarity_filename = f"{self.base}/norm.csv"
-	# 	df = pd.DataFrame(data)
-	# 	df.to_csv(self.similarity_filename, index=False)
-
 	def _write_similarity(self):
 
 		columns = ["Server round", "Layer", "Similarity"]
@@ -312,16 +295,6 @@ class FedKDWithFedPredictBaseServer(FedKDBaseServer):
 		self.similarity_filename = f"{self.base}/similarity_between_layers.csv"
 		df = pd.DataFrame(data)
 		df.to_csv(self.similarity_filename, index=False)
-
-	def _gradient_metric(self, updated_global_parameters, server_round):
-
-		norm = []
-
-		layer = updated_global_parameters[-2]
-		norm = np.linalg.norm(layer)
-
-		# self.gradient_norm = float(norm)
-		print("norma: ", float(norm))
 
 	def _get_server_header(self):
 

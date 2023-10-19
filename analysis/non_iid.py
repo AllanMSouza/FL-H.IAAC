@@ -26,7 +26,7 @@ class NonIid:
         self.rounds = args.rounds
         self.class_per_client = int(args.class_per_client)
         self.alpha = float(args.alpha)
-        self.compression = int(args.compression)
+        self.compression = args.compression
         self.epochs = epochs
         self.decay = decay
         self.type = type
@@ -59,6 +59,7 @@ class NonIid:
         return strategy_config
 
     def start(self, title):
+        print(self.strategy_name_list)
         self.base_dir = """analysis/output/{}/experiment_{}/{}/new_clients_{}_train_{}/{}_clients/{}/{}/classes_per_client_{}/alpha_{}/{}_rounds/{}_local_epochs/{}_comment/""".format(self.type,
                                                                                                                                     self.experiment,
                                                                                                                                     self.aggregation_method+str(self.fraction_fit),
@@ -100,12 +101,10 @@ class NonIid:
         for i in range(len(self.strategy_name_list)):
             strategy_name = self.strategy_name_list[i]
 
-
-
             for j in self.base_files_names:
                 print("arquivos pass: ", j)
                 file_name = self.base_files_names[j]
-                if 'similarity' in file_name and strategy_name != 'FedPredict':
+                if 'similarity' in file_name and 'FedPredict' not in strategy_name:
                     continue
                 if 'norm' in file_name:
                     continue
@@ -462,9 +461,10 @@ if __name__ == '__main__':
                       help="fraction of selected clients to be trained", metavar="FLOAT")
     parser.add_option("--class_per_client", help="Number of classes per client", default=2)
     parser.add_option("--alpha", help="Dirichlet alpha parameter", default=0.1)
-    parser.add_option("--compression_method", help="", default=0)
+    parser.add_option("--compression", help="", default=0)
     parser.add_option("--n_clusters", help="", default=0)
     parser.add_option("--clustering", help="", default=0)
+    parser.add_option("--cluster_round", help="", default=0)
 
     (opt, args) = parser.parse_args()
 

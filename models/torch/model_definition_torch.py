@@ -621,16 +621,16 @@ class CNNDistillation(nn.Module):
                 mid_dim = 16
             else:
                 mid_dim = 4
-            self.teacher = CNN_3(input_shape=input_shape, mid_dim=mid_dim, num_classes=num_classes)
+            self.teacher = CNN_3_proto(input_shape=input_shape, mid_dim=mid_dim, num_classes=num_classes)
         except Exception as e:
             print("CNNDistillation")
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
     def forward(self, x):
         try:
-            out_student = self.student(x)
-            out_teacher = self.teacher(x)
-            return out_student, out_teacher
+            out_student, proto_student = self.student(x)
+            out_teacher, proto_teacher = self.teacher(x)
+            return out_student, proto_student, out_teacher, proto_teacher
         except Exception as e:
             print("CNNDistillation forward")
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
@@ -835,16 +835,17 @@ class CNN_student(nn.Module):
                 nn.MaxPool2d(kernel_size=(2, 2)),
                 nn.Flatten(),
                 nn.Linear(mid_dim * 4, 512),
-                nn.ReLU(inplace=True),
-                nn.Linear(512, num_classes))
+                nn.ReLU(inplace=True))
+            self.out = nn.Linear(512, num_classes)
         except Exception as e:
             print("CNN student")
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
     def forward(self, x):
         try:
-            out = self.conv1(x)
-            return out
+            proto = self.conv1(x)
+            out = self.out(proto)
+            return out, proto
         except Exception as e:
             print("CNN student forward")
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)

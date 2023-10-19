@@ -245,6 +245,8 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		random.seed(server_round)
 
 		self.previous_global_parameters.append(self.parameters_to_ndarrays(parameters))
+		print("ola: ", len(self.previous_global_parameters[-1]))
+
 		# if server_round == 2:
 		# 	for layer in self.previous_global_parameters:
 		# 		print("lat", layer)
@@ -293,7 +295,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 				available_clients = list(self.clients_metrics.keys())
 
 			print("disponiveis para treino: ", len(available_clients))
-			self.clients2select = int(self.num_clients * self.fraction_fit)
+			self.clients2select = int(len(available_clients) * self.fraction_fit)
 			if len(available_clients) == 0 and server_round != 1:
 				print("Erro na rodada: ", server_round)
 				exit()
