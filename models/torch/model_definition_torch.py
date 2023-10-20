@@ -610,8 +610,9 @@ class CNNDistillation(nn.Module):
         try:
             self.dataset = dataset
             super(CNNDistillation, self).__init__()
+            self.new_client = False
             if self.dataset in ['EMNIST', 'MNIST']:
-                # mid_dim = 256
+                # mid_dim = 1568
                 mid_dim = 1352
             else:
                 # mid_dim = 400

@@ -72,7 +72,7 @@ class CKA(object):
 
         return hsic / (var1 * var2)
 
-def fedpredict_core(t, T, nt, sm):
+def fedpredict_core(t, T, nt, df):
     try:
 
         # 9
@@ -601,15 +601,22 @@ def fedpredict_client(filename, model, global_parameters, config={}, mode=None):
 
         decompress = config['decompress']
         layers_fraction = config['layers_fraction']
-        model_shape = [i.detach().cpu().numpy().shape for i in model.parameters()]
+        if mode == "kd":
+            model_shape = [i.detach().cpu().numpy().shape for i in model.student.parameters()]
+        else:
+            model_shape = [i.detach().cpu().numpy().shape for i in model.parameters()]
         global_parameters = decompress_global_parameters(global_parameters, model_shape, M, decompress)
+        print("shape modelo: ", model_shape)
+        print("descomprimido: ", [i.shape for i in global_parameters])
         parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
+
         if len(parameters) != len(M):
             print("diferente", len(parameters), len(M))
             raise Exception("Lenght of parameters is different from M")
 
         if os.path.exists(filename):
             # Load local parameters to 'self.model'
+            print("existe modelo local")
             model.load_state_dict(torch.load(filename))
             model = fedpredict_combine_models(global_parameters, model, t, T, nt, M, df)
         else:
@@ -618,6 +625,7 @@ def fedpredict_client(filename, model, global_parameters, config={}, mode=None):
                 for old_param, new_param in zip(model.parameters(), global_parameters):
                     old_param.data = new_param.data.clone()
             else:
+                model.new_client = True
                 for old_param, new_param in zip(model.student.parameters(), global_parameters):
                     old_param.data = new_param.data.clone()
 
@@ -649,9 +657,12 @@ def fedpredict_combine_models(global_parameters, model, t, T, nt, M, df):
         local_model_weights, global_model_weight = fedpredict_core(t, T, nt, df)
         count = 0
         for new_param, old_param in zip(global_parameters, model.parameters()):
-            if count in M and new_param.shape == old_param.shape:
-                old_param.data = (
-                            global_model_weight * new_param.data.clone() + local_model_weights * old_param.data.clone())
+            if count in M:
+                if new_param.shape == old_param.shape:
+                    old_param.data = (
+                                global_model_weight * new_param.data.clone() + local_model_weights * old_param.data.clone())
+                else:
+                    print("Não combinou, CNN student: ", new_param.shape, " CNN 3 proto: ", old_param.shape)
             count += 1
 
         return model

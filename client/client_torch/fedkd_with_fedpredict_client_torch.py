@@ -97,7 +97,7 @@ class FedKDWithFedPredictClientTorch(FedKDClientTorch):
 	def set_parameters_to_model_evaluate(self, global_parameters, config={}):
 		# Using 'torch.load'
 		try:
-			self.model = fedpredict_client(self.teacher_filename, self.model, global_parameters, config, mode='kd')
+			self.model = fedpredict_client(self.fedkd_model_filename, self.model, global_parameters, config, mode='kd')
 		except Exception as e:
 			print("Set parameters to model")
 			print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, self.cid), type(e).__name__, e)

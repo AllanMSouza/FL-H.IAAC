@@ -106,7 +106,7 @@ class FedKDClientTorch(FedAvgClientTorch):
 
 		self.model = self.create_model_distillation()
 		self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate, momentum=0.9)
-		self.teacher_filename = """./{}_saved_weights/{}/{}/model.pth""".format(self.strategy_name.lower(), self.model_name, self.cid)
+		self.fedkd_model_filename = """./{}_saved_weights/{}/{}/model.pth""".format(self.strategy_name.lower(), self.model_name, self.cid)
 		feature_dim = 512
 		self.W_h = torch.nn.Linear(feature_dim, feature_dim, bias=False)
 		self.MSE = torch.nn.MSELoss()
@@ -140,7 +140,7 @@ class FedKDClientTorch(FedAvgClientTorch):
 	def save_parameters(self):
 		# usando 'torch.save'
 		try:
-			filename = """./{}_saved_weights/{}/{}/model.pth""".format(self.strategy_name.lower(), self.model_name, self.cid)
+			filename = self.fedkd_model_filename
 			if Path(filename).exists():
 				os.remove(filename)
 			torch.save(self.model.state_dict(), filename)
@@ -151,7 +151,7 @@ class FedKDClientTorch(FedAvgClientTorch):
 	def save_parameters_teacher(self):
 		# usando 'torch.save'
 		try:
-			filename = self.teacher_filename
+			filename = self.fedkd_model_filename
 			if Path(filename).exists():
 				os.remove(filename)
 			torch.save(self.model.state_dict(), filename)
@@ -437,6 +437,8 @@ class FedKDClientTorch(FedAvgClientTorch):
 					y = y.to(self.device)
 					y = torch.tensor(y)
 					output, proto_student, output_teacher, proto_teacher = self.model(x)
+					if self.model.new_client:
+						output_teacher = output
 					loss = self.loss(output_teacher, y)
 					test_loss += loss.item() * y.shape[0]
 					prediction_teacher = torch.argmax(output_teacher, dim=1)

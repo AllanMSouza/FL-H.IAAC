@@ -727,6 +727,38 @@ class Varying_Shared_layers:
 
         return str(mean) + u"\u00B1" + str(average_variation)
 
+    def accuracy_improvement(self, df):
+
+        df_difference = copy.deepcopy(df)
+        columns = df.columns.tolist()
+        indexes = df.index.tolist()
+
+        datasets = ['EMNIST', 'CIFAR-10']
+        solutions = pd.Series([i[1] for i in indexes]).unique().tolist()
+        reference_solutions = {}
+        for solution_key in solutions:
+            if "FP_{dc}" in solution_key:
+                reference_solutions[solution_key] = solution_key.replace("+FP_{dc}", "").replace("+FP_{d}", "").replace("+FP_{c}", "").replace("+FP_{kd}", "")
+
+        for dataset in datasets:
+            for solution in reference_solutions:
+                reference_index = (dataset, solution)
+                target_index = (dataset, reference_solutions[solution])
+
+                for column in columns:
+                    difference = str(
+                        round(float(df.loc[reference_index, column][:4]) - float(df.loc[target_index, column][:4]), 1))
+                    if difference[0] != "-":
+                        difference = "+" + difference
+                    df_difference.loc[reference_index, column] = df.loc[
+                                                                     reference_index, column] + "(" + difference + ")"
+
+        print(indexes)
+        print(indexes[0])
+        print(df_difference)
+
+        return df_difference
+
     def joint_table(self, df, alpha, models):
 
         shared_layers = df['Solution'].unique().tolist()
@@ -775,9 +807,12 @@ class Varying_Shared_layers:
         df_table = pd.DataFrame(models_dict, index=index).round(4)
         print(df_table.to_string())
 
+        df_accuracy_improvements = self.accuracy_improvement(df_table)
 
+        indexes = df_table.index.tolist()
+        n_solutions = len(pd.Series([i[1] for i in indexes]).unique().tolist()) + 1
 
-        max_values = self.idmax(df_table)
+        max_values = self.idmax(df_table, n_solutions)
         print("max values", max_values)
 
         for max_value in max_values:
@@ -786,13 +821,13 @@ class Varying_Shared_layers:
             column_values = df_table[column].tolist()
             column_values[row_index] = "textbf{" + str(column_values[row_index]) + "}"
 
-            df_table[column] = np.array(column_values)
+            df_accuracy_improvements[column] = np.array(column_values)
 
-        print(df_table)
+        print(df_accuracy_improvements)
         # df_table.columns = np.array(columns)
-        print(df_table.columns)
+        print(df_accuracy_improvements.columns)
 
-        latex = df_table.to_latex().replace("\\\nMNIST", "\\\n\hline\nMNIST").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}")
+        latex = df_accuracy_improvements.to_latex().replace("\\\nMNIST", "\\\n\hline\nMNIST").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}")
 
         base_dir = """analysis/output/torch/varying_shared_layers/{}/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/csv/""".format(
             self.experiment, str(self.dataset), self.num_clients, self.num_rounds, self.fraction_fit,
@@ -800,9 +835,10 @@ class Varying_Shared_layers:
             str(self.alpha), self.comment)
         Path(base_dir).mkdir(parents=True, exist_ok=True)
         filename = """{}latex_{}.txt""".format(base_dir, str(alpha))
+        print("ddr: ", filename)
         pd.DataFrame({'latex': [latex]}).to_csv(filename, header=False, index=False)
 
-    def idmax(self, df):
+    def idmax(self, df, n_solutions):
 
         df_indexes = []
         columns = df.columns.tolist()
@@ -811,12 +847,12 @@ class Varying_Shared_layers:
             column = columns[i]
             row = df[column].tolist()
             print("ddd", row)
-            indexes = self.select_mean(i, row, columns)
+            indexes = self.select_mean(i, row, columns, n_solutions)
             df_indexes += indexes
 
         return df_indexes
 
-    def select_mean(self, index, values, columns):
+    def select_mean(self, index, values, columns, n_solutions):
 
         list_of_means = []
         indexes = []
@@ -829,9 +865,9 @@ class Varying_Shared_layers:
 
         max_value = max(list_of_means)
         print("maximo: ", max_value)
-        for i in range(0, len(list_of_means), 6):
+        for i in range(0, len(list_of_means), n_solutions):
 
-            dataset_values = list_of_means[i: i + 6]
+            dataset_values = list_of_means[i: i + n_solutions]
             max_value = max(dataset_values)
 
             for j in range(len(list_of_means)):
