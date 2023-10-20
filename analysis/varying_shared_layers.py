@@ -737,8 +737,8 @@ class Varying_Shared_layers:
         solutions = pd.Series([i[1] for i in indexes]).unique().tolist()
         reference_solutions = {}
         for solution_key in solutions:
-            if "FP_{dc}" in solution_key:
-                reference_solutions[solution_key] = solution_key.replace("+FP_{dc}", "").replace("+FP_{d}", "").replace("+FP_{c}", "").replace("+FP_{kd}", "")
+            if "FP_{dc}" in solution_key or "FP_{d}" in solution_key or "FP_{c}" in solution_key or "FP_{kd}" in solution_key or "FP" in solution_key:
+                reference_solutions[solution_key] = solution_key.replace("+FP_{dc}", "").replace("+FP_{d}", "").replace("+FP_{c}", "").replace("+FP_{kd}", "").replace("+FP", "")
 
         for dataset in datasets:
             for solution in reference_solutions:
@@ -765,7 +765,7 @@ class Varying_Shared_layers:
 
         model_report = {i: {} for i in df['Model'].unique().tolist()}
 
-        df = df[df['Round'] == 100]
+        # df = df[df['Round'] == 100]
         print("receb: ", df.columns)
         df_test = df[
             ['Round', 'Size of parameters', 'Solution', 'Accuracy (%)', '\u03B1', 'Dataset', 'Model']]
@@ -808,6 +808,8 @@ class Varying_Shared_layers:
         print(df_table.to_string())
 
         df_accuracy_improvements = self.accuracy_improvement(df_table)
+        print(df_accuracy_improvements)
+
 
         indexes = df_table.index.tolist()
         n_solutions = len(pd.Series([i[1] for i in indexes]).unique().tolist()) + 1
@@ -818,7 +820,7 @@ class Varying_Shared_layers:
         for max_value in max_values:
             row_index = max_value[0]
             column = max_value[1]
-            column_values = df_table[column].tolist()
+            column_values = df_accuracy_improvements[column].tolist()
             column_values[row_index] = "textbf{" + str(column_values[row_index]) + "}"
 
             df_accuracy_improvements[column] = np.array(column_values)
@@ -1213,8 +1215,8 @@ class Varying_Shared_layers:
             print("filename: ", filename)
             x = df[x_column].tolist()
             y = df[y_column].tolist()
-            print("filtrado:")
-            print(df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[0])).to_string())
+            # print("filtrado:")
+            # print(df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[0])).to_string())
             line_plot(ax=ax[0, 0], base_dir=base_dir, file_name=filename, title=title, df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[0])),
                      x_column=x_column, y_column=y_column, y_lim=True, y_max=1,
                      y_min=0, hue=hue, hue_order=order, type=1)

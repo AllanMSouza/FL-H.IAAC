@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import scipy.stats as st
 import os
+import sys
 from matplotlib.lines import Line2D
 
 class JointAnalysis():
@@ -76,8 +77,8 @@ class JointAnalysis():
                                     st = "FedKD"
                                     s = "$+FP_{dc}$"
                                 else:
-                                    st = strategy
-                                    s = "Original"
+                                    st = copy.copy(strategy).replace('FedAVG', 'FedAvg')
+                                    s = "$Original$"
 
 
                                 df['Strategy'] = np.array([st] * len(df))
@@ -87,7 +88,6 @@ class JointAnalysis():
                                 df['Dataset'] = np.array([dataset] * len(df))
                                 df['Solution'] = np.array([compression] * len(df))
                                 df['Alpha'] = np.array([alpha] * len(df))
-                                df['Strategy'] = np.array(['FedAvg' if i=='FedAVG' else i for i in df['Strategy'].tolist()])
                                 if count == 0:
                                     df_concat = df
                                 else:
@@ -101,15 +101,28 @@ class JointAnalysis():
         # plots
         # self.joint_plot_acc_two_plots(df=df_concat, experiment=1, pocs=pocs)
         # self.joint_plot_acc_two_plots(df=df_concat, experiment=1, pocs=pocs)
-        self.joint_plot_acc_four_plots(df=df_concat, experiment=1, alphas=alphas)
+
+        # self.joint_plot_acc_four_plots(df=df_concat, experiment=1, alphas=alphas)
         self.joint_plot_acc_four_plots(df=df_concat, experiment=2, alphas=alphas)
         # self.joint_plot_acc_four_plots(df=df_concat, experiment=3, fractions_fit=fractions_fit)
         # self.joint_plot_acc_four_plots(df=df_concat, experiment=4, fractions_fit=fractions_fit)
         # table
 
+
+
+
+        print("estrategias: ", strategies)
+        print("versao: ", df_concat[['Strategy', 'Version']].drop_duplicates())
         df_concat = self.convert(df_concat)
-        strategies = [i.replace("FedAVG", "FedAvg") for i in df_concat['Strategy'].unique().tolist()]
-        print(strategies)
+        strategies = df_concat['Strategy'].unique().tolist()
+        print("versao2: ", df_concat['Strategy'].unique().tolist())
+        aux = []
+        order = ['$FedAvg+FP_{dc}$', '$FedAvg$', '$FedYogi+FP_{dc}$', '$FedYogi$', '$FedKD+FP_{dc}$', '$FedKD$', '$FedClassAvg$', '$FedProto$']
+        for s in order:
+            if s in strategies:
+                aux.append(s)
+        strategies = aux
+        print("finai: ", strategies)
         self.joint_table(df_concat, alphas, strategies, experiment=1)
         self.joint_table(df_concat, alphas, strategies, experiment=2)
         # self.joint_table(df_concat, fractions_fit, strategies, experiment=3)
@@ -126,6 +139,9 @@ class JointAnalysis():
 
             if version == "$+FP_{dc}$":
                 strategy = "$" + strategy + "+FP_{dc}$"
+                strategies[i] = strategy
+            else:
+                strategy = "$" + strategy + "$"
                 strategies[i] = strategy
 
         df['Strategy'] = np.array(strategies)
@@ -176,7 +192,10 @@ class JointAnalysis():
         reference_solutions = {}
         for solution_key in solutions:
             if "FP_{dc}" in solution_key:
-                reference_solutions[solution_key] = solution_key.replace("$", "").replace("+FP_{dc}", "")
+                reference_solutions[solution_key] = solution_key.replace("+FP_{dc}", "")
+
+        print("indexes: ", indexes)
+        print("reference: ", reference_solutions)
 
         for dataset in datasets:
             for solution in reference_solutions:
@@ -199,6 +218,8 @@ class JointAnalysis():
 
     def joint_table(self, df, pocs, strategies, experiment):
 
+
+
         model_report = {i: {} for i in df['Alpha'].unique().tolist()}
         df = df[df['Round (t)'] == 100]
         # df_test = df[['Round (t)', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset']].groupby(
@@ -220,8 +241,7 @@ class JointAnalysis():
 
         models_dict = {}
         ci = 0.95
-        # print(df_test.query("Strategy == 'FedKD'").drop_duplicates(['Strategy', 'Dataset', 'Alpha', 'Experiment', 'Fraction fit']))
-        # exit()
+        print("filtro tabela")
         for model_name in model_report:
 
             mnist_acc = {}
@@ -262,10 +282,8 @@ class JointAnalysis():
 
             df_accuracy_improvements[column] = np.array(column_values)
 
-        print(df_accuracy_improvements)
         df_accuracy_improvements.columns = np.array(list(model_report.keys()))
         print(df_accuracy_improvements.columns)
-        print(df_accuracy_improvements.index)
 
         latex = df_accuracy_improvements.to_latex().replace("\\\nEMNIST", "\\\n\hline\nEMNIST").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}")
 
@@ -277,9 +295,11 @@ class JointAnalysis():
 
         #  df.to_latex().replace("\}", "}").replace("\{", "{").replace("\\\nRecall", "\\\n\hline\nRecall").replace("\\\nF-score", "\\\n\hline\nF1-score")
 
+
+
     def improvements(self, df, experiment):
 
-        strategies = {"$FedAvg+FP_{dc}$": "FedAvg", "$FedYogi+FP_{dc}$": "FedYogi"}
+        strategies = {"$FedAvg+FP_{dc}$": "$FedAvg$", "$FedYogi+FP_{dc}$": "$FedYogi$"}
         datasets = ['EMNIST', 'CIFAR-10']
         columns = df.columns.tolist()
         improvements_dict = {'Dataset': [], 'Strategy': [], 'Original strategy': [], 'Alpha': [], 'Accuracy (%)': []}
@@ -330,6 +350,7 @@ class JointAnalysis():
     def filter_and_plot(self, ax, base_dir, filename, title, df, experiment, dataset, alpha, x_column, y_column, hue, hue_order=None, style=None, markers=None, size=None, sizes=None):
 
         df = self.filter(df, experiment, dataset, alpha)
+        df['Strategy'] = np.array(["$" + i + "$" for i in df['Strategy'].tolist()])
 
         print("filtrado: ", df, df[hue].unique().tolist())
         line_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, type='1', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes)
@@ -357,7 +378,7 @@ class JointAnalysis():
         i = 0
         j = 0
         # hue_order = ['$FedPredict_{dc}$', "$FedPredict$", 'FedClassAvg', 'FedAvg']
-        hue_order = ['FedAvg', 'FedYogi', 'FedClassAvg', 'FedProto', 'FedKD']
+        hue_order = ['$FedAvg$', '$FedYogi$', '$FedKD$', '$FedClassAvg$', '$FedProto$']
         style = "Version"
         # markers = [',', '.'
         markers = None
@@ -534,18 +555,26 @@ class JointAnalysis():
 
             print("valor: ", values[i])
             value = float(str(values[i])[:4])
-            list_of_means.append(value)
+            interval = float(str(values[i])[5:8])
+            minimum = value - interval
+            maximum = value + interval
+            list_of_means.append((value, minimum, maximum))
 
-        max_value = max(list_of_means)
-        print("maximo: ", max_value)
+
         for i in range(0, len(list_of_means), n_solutions):
 
             dataset_values = list_of_means[i: i+n_solutions]
-            max_value = max(dataset_values)
-
+            max_tuple = max(dataset_values, key=lambda e: e[0])
+            column_min_value = max_tuple[1]
+            column_max_value = max_tuple[2]
+            print("maximo: ", column_max_value)
             for j in range(len(list_of_means)):
-                if list_of_means[j] == max_value:
-                    indexes.append([j, columns[index]])
+                value_tuple = list_of_means[i]
+                min_value = value_tuple[1]
+                max_value = value_tuple[2]
+                if j >= i and j < i+n_solutions:
+                    if not(max_value < column_min_value or min_value > column_max_value):
+                        indexes.append([j, columns[index]])
 
         return indexes
 
