@@ -613,10 +613,12 @@ class CNNDistillation(nn.Module):
             self.new_client = False
             if self.dataset in ['EMNIST', 'MNIST']:
                 # mid_dim = 1568
-                mid_dim = 1352
+                mid_dim = 1352 # CNN 1 pad 1
+                # mid_dim = 400
             else:
                 # mid_dim = 400
-                mid_dim = 1800
+                mid_dim = 1800 # cnn student 1 cnn
+                # mid_dim = 576 # cnn student 2 cnn
             self.student = CNN_student(input_shape=input_shape, mid_dim=mid_dim, num_classes=num_classes)
             if self.dataset == 'CIFAR10':
                 mid_dim = 16
@@ -837,6 +839,23 @@ class CNN_student(nn.Module):
                 nn.Flatten(),
                 nn.Linear(mid_dim * 4, 512),
                 nn.ReLU(inplace=True))
+            self.out = nn.Linear(512, num_classes)
+            # self.conv1 = nn.Sequential(
+            #     nn.Conv2d(input_shape,
+            #               32,
+            #               kernel_size=3,
+            #               padding=0,
+            #               stride=1,
+            #               bias=True),
+            #     nn.ReLU(inplace=True),
+            #     nn.MaxPool2d(kernel_size=(2, 2)),
+            #     torch.nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=0),
+            #     torch.nn.ReLU(),
+            #     # Input = 64 x 16 x 16, Output = 64 x 8 x 8
+            #     torch.nn.MaxPool2d(kernel_size=2),
+            #     nn.Flatten(),
+            #     nn.Linear(mid_dim * 4, 512),
+            #     nn.ReLU(inplace=True))
             self.out = nn.Linear(512, num_classes)
         except Exception as e:
             print("CNN student")

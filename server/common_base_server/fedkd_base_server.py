@@ -126,6 +126,7 @@ class FedKDBaseServer(FedAvgBaseServer):
 		client_fit_list_fedkd = []
 		accuracy = 0
 		size_of_parameters = []
+		svd_type = 'svd'
 		parameters = fl.common.parameters_to_ndarrays(parameters)
 		for i in range(1, len(parameters)):
 			size_of_parameters.append(parameters[i].nbytes)
@@ -146,17 +147,22 @@ class FedKDBaseServer(FedAvgBaseServer):
 				for i in range(len(parameters)):
 					compression_range = self.layers_compression_range[i]
 					if compression_range > 0:
-						frac = max(1, abs(1-server_round))/self.num_rounds
-						compression_range = max(round(frac * compression_range), 1)
+						compression_range = self.fedkd_formula(server_round, self.num_rounds, compression_range)
 					else:
 						compression_range = None
 					n_components_list.append(compression_range)
 
-				parameters_to_send = ndarrays_to_parameters(parameter_svd_write(parameters, n_components_list))
+				parameters_to_send = ndarrays_to_parameters(parameter_svd_write(parameters, n_components_list, svd_type))
 			fit_ins = fl.common.FitIns(parameters_to_send, config)
 			client_fit_list_fedkd.append((client, fit_ins))
 
 		return client_fit_list_fedkd
+
+	def fedkd_formula(self, server_round, num_rounds, compression_range):
+
+		frac = max(1, abs(1 - server_round)) / num_rounds
+		compression_range = max(round(frac * compression_range), 1)
+		return compression_range
 
 	def aggregate_fit(self, server_round, results, failures):
 		weights_results = []
@@ -191,29 +197,41 @@ class FedKDBaseServer(FedAvgBaseServer):
 
 		return parameters_aggregated, metrics_aggregated
 
-	# def configure_evaluate(self, server_round, parameters, client_manager):
-	# 	client_evaluate_list = super().configure_evaluate(server_round, parameters, client_manager)
-	# 	client_evaluate_list_fedkd = []
-	# 	accuracy = 0
-	# 	size_of_parameters = []
-	# 	parameters = fl.common.parameters_to_ndarrays(parameters)
-	# 	for i in range(1, len(parameters)):
-	# 		size_of_parameters.append(parameters[i].nbytes)
-	# 	for client_tuple in client_evaluate_list:
-	# 		client = client_tuple[0]
-	# 		client_id = str(client.cid)
-	# 		config = copy.copy(self.evaluate_config)
-	# 		config['total_server_rounds'] = self.num_rounds
-	# 		try:
-	# 			config['total_server_rounds'] = int(self.comment)
-	# 		except:
-	# 			pass
-	#
-	# 		parameters_to_send = ndarrays_to_parameters(parameters)
-	# 		if server_round >= 1:
-	# 			parameters_to_send = ndarrays_to_parameters(parameter_svd_write(parameters, self.n_rate))
-	# 		evaluate_ins = fl.common.EvaluateIns(parameters_to_send, config)
-	# 		client_evaluate_list_fedkd.append((client, evaluate_ins))
-	#
-	# 	return client_evaluate_list_fedkd
-	#
+	def configure_evaluate(self, server_round, parameters, client_manager):
+		client_evaluate_list = super().configure_evaluate(server_round, parameters, client_manager)
+		client_evaluate_list_fedkd = []
+		accuracy = 0
+		svd_type = 'svd'
+		size_of_parameters = []
+		parameters = fl.common.parameters_to_ndarrays(parameters)
+		for i in range(1, len(parameters)):
+			size_of_parameters.append(parameters[i].nbytes)
+		for client_tuple in client_evaluate_list:
+			client = client_tuple[0]
+			fitins = client_tuple[1]
+			client_id = str(client.cid)
+			config = copy.copy(fitins.config)
+			config['total_server_rounds'] = self.num_rounds
+			try:
+				config['total_server_rounds'] = int(self.comment)
+			except:
+				pass
+
+			parameters_to_send = ndarrays_to_parameters(parameters)
+			n_components_list = []
+			if server_round > 1:
+				for i in range(len(parameters)):
+					compression_range = self.layers_compression_range[i]
+					if compression_range > 0:
+						compression_range = self.fedkd_formula(server_round, self.num_rounds, compression_range)
+					else:
+						compression_range = None
+					n_components_list.append(compression_range)
+
+				parameters_to_send = ndarrays_to_parameters(
+					parameter_svd_write(parameters, n_components_list, svd_type))
+			fit_ins = fl.common.FitIns(parameters_to_send, config)
+			client_evaluate_list_fedkd.append((client, fit_ins))
+
+		return client_evaluate_list_fedkd
+

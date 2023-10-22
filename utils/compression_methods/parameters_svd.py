@@ -2,7 +2,7 @@ import  sys
 import numpy as np
 from sklearn.utils.extmath import randomized_svd
 
-def parameter_svd_write(arrays, n_components_list):
+def parameter_svd_write(arrays, n_components_list, svd_type='tsvd'):
 
     try:
 
@@ -16,7 +16,7 @@ def parameter_svd_write(arrays, n_components_list):
             else:
                 n_components = n_components_list
             # print("Indice da camada: ", i)
-            r = parameter_svd(arrays[i], n_components)
+            r = parameter_svd(arrays[i], n_components, svd_type)
             arrays_compre += r
 
         return arrays_compre
@@ -25,20 +25,20 @@ def parameter_svd_write(arrays, n_components_list):
         print("paramete_svd")
         print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, 0), type(e).__name__, e)
 
-def parameter_svd(layer, n_components):
+def parameter_svd(layer, n_components, svd_type='tsvd'):
 
     try:
         if np.ndim(layer) == 1 or n_components is None:
             return [layer, np.array([]), np.array([])]
         elif np.ndim(layer) == 2:
-            r = svd(layer, n_components)
+            r = svd(layer, n_components, svd_type)
             return r
         elif np.ndim(layer) >= 3:
             u = []
             v = []
             sig = []
             for i in range(len(layer)):
-                r = parameter_svd(layer[i], n_components)
+                r = parameter_svd(layer[i], n_components, svd_type)
                 u.append(r[0])
                 v.append(r[1])
                 sig.append(r[2])
@@ -49,21 +49,24 @@ def parameter_svd(layer, n_components):
         print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, 0), type(e).__name__, e)
 
 
-def svd(layer, n_components):
+def svd(layer, n_components, svd_type='tsvd'):
 
     try:
         np.random.seed(0)
         # print("ola: ", int(len(layer) * n_components), layer.shape, layer)
         if n_components > 0 and n_components < 1:
             n_components = int(len(layer) * n_components)
-        U, Sigma, VT = randomized_svd(layer,
-                                      n_components=n_components,
-                                      n_iter=5,
-                                      random_state=0)
-        # U, Sigma, VT = np.linalg.svd(layer, full_matrices=True)
-        # u = u[:, :n_components]
-        # sigma = sigma[:n_components]
-        # v = v[:threshold, :]
+
+        if svd_type == 'tsvd':
+            U, Sigma, VT = randomized_svd(layer,
+                                          n_components=n_components,
+                                          n_iter=5,
+                                          random_state=0)
+        else:
+            U, Sigma, VT = np.linalg.svd(layer, full_matrices=False)
+            U = U[:, :n_components]
+            Sigma = Sigma[:n_components]
+            VT = VT[:n_components, :]
 
         # print(U.shape, Sigma.shape, VT.T.shape)
         return [U, VT, Sigma]

@@ -102,9 +102,9 @@ class JointAnalysis():
         # self.joint_plot_acc_two_plots(df=df_concat, experiment=1, pocs=pocs)
         # self.joint_plot_acc_two_plots(df=df_concat, experiment=1, pocs=pocs)
 
-        # self.joint_plot_acc_four_plots(df=df_concat, experiment=1, alphas=alphas)
+        self.joint_plot_acc_four_plots(df=df_concat, experiment=1, alphas=alphas)
         self.joint_plot_acc_four_plots(df=df_concat, experiment=2, alphas=alphas)
-        # self.joint_plot_acc_four_plots(df=df_concat, experiment=3, fractions_fit=fractions_fit)
+        # self.joint_plot_acc_four_plots(df=df_concat, experiment=3, alphas=alphas)
         # self.joint_plot_acc_four_plots(df=df_concat, experiment=4, fractions_fit=fractions_fit)
         # table
 
@@ -194,8 +194,8 @@ class JointAnalysis():
             if "FP_{dc}" in solution_key:
                 reference_solutions[solution_key] = solution_key.replace("+FP_{dc}", "")
 
-        print("indexes: ", indexes)
-        print("reference: ", reference_solutions)
+        # print("indexes: ", indexes)
+        # print("reference: ", reference_solutions)
 
         for dataset in datasets:
             for solution in reference_solutions:
@@ -209,9 +209,9 @@ class JointAnalysis():
                     df_difference.loc[reference_index, column] = df.loc[reference_index, column] + "(" + difference + ")"
 
 
-        print(indexes)
-        print(indexes[0])
-        print(df_difference)
+        # print(indexes)
+        # print(indexes[0])
+        # print(df_difference)
 
         return df_difference
 
@@ -265,12 +265,13 @@ class JointAnalysis():
             models_dict[model_name] = model_metrics
 
         df_table = pd.DataFrame(models_dict, index=index).round(4)
+        print("df table: ", df_table)
         print(df_table.to_string())
 
         df_accuracy_improvements = self.accuracy_improvement(df_table)
 
         indexes = df_table.index.tolist()
-        n_solutions = len(pd.Series([i[1] for i in indexes]).unique().tolist()) + 1
+        n_solutions = len(pd.Series([i[1] for i in indexes]).unique().tolist())
         max_values = self.idmax(df_table, n_solutions)
         print("max values", max_values)
 
@@ -283,7 +284,8 @@ class JointAnalysis():
             df_accuracy_improvements[column] = np.array(column_values)
 
         df_accuracy_improvements.columns = np.array(list(model_report.keys()))
-        print(df_accuracy_improvements.columns)
+        print("melhorias")
+        print(df_accuracy_improvements)
 
         latex = df_accuracy_improvements.to_latex().replace("\\\nEMNIST", "\\\n\hline\nEMNIST").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}")
 
@@ -538,24 +540,24 @@ class JointAnalysis():
         for i in range(len(columns)):
 
             column = columns[i]
-            row = df[column].tolist()
-            print("ddd", row)
-            indexes = self.select_mean(i, row, columns, n_solutions)
+            column_values = df[column].tolist()
+            print("ddd", column_values)
+            indexes = self.select_mean(i, column_values, columns, n_solutions)
             df_indexes += indexes
 
         return df_indexes
 
-    def select_mean(self, index, values, columns, n_solutions):
+    def select_mean(self, index, column_values, columns, n_solutions):
 
         list_of_means = []
         indexes = []
-        print("ola: ", values, "ola0")
+        print("ola: ", column_values, "ola0")
 
-        for i in range(len(values)):
+        for i in range(len(column_values)):
 
-            print("valor: ", values[i])
-            value = float(str(values[i])[:4])
-            interval = float(str(values[i])[5:8])
+            print("valor: ", column_values[i])
+            value = float(str(column_values[i])[:4])
+            interval = float(str(column_values[i])[5:8])
             minimum = value - interval
             maximum = value + interval
             list_of_means.append((value, minimum, maximum))
@@ -569,7 +571,7 @@ class JointAnalysis():
             column_max_value = max_tuple[2]
             print("maximo: ", column_max_value)
             for j in range(len(list_of_means)):
-                value_tuple = list_of_means[i]
+                value_tuple = list_of_means[j]
                 min_value = value_tuple[1]
                 max_value = value_tuple[2]
                 if j >= i and j < i+n_solutions:
