@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 from scipy.sparse import coo_array, csr_matrix
+import sys
 
 '''
 **********************************************
@@ -10,10 +11,15 @@ Input must be a pytorch tensor
 
 def bytes(sparse):
 
-    if "numpy" in str(type(sparse)):
-        return sparse.nbytes
+    try:
+        if "numpy" in str(type(sparse)):
+            return sparse.nbytes
 
-    return sparse.data.nbytes + sparse.indptr.nbytes + sparse.indices.nbytes
+        return sparse.data.nbytes + sparse.indptr.nbytes + sparse.indices.nbytes
+
+    except Exception as e:
+        print("bytes")
+        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 def quantize(x, d):
     """quantize the tensor x in d level on the absolute value coef wise"""
@@ -95,30 +101,118 @@ def one_bit(x, input_compress_settings={}):
     return compressed_x
 
 
-def sparse_top_k(x, k):
-    x = torch.from_numpy(x)
-    vec_x = x.flatten()
-    d = int(len(vec_x))
-    # print(d)
-    k = int(np.ceil(d * k))
-    # print(k)
-    indices = torch.abs(vec_x).topk(k)[1]
-    out_x = torch.zeros_like(vec_x)
-    out_x[indices] = vec_x[indices]
-    out_x = out_x.reshape(x.shape)
-    # print(x.shape)
-    return out_x.numpy()
+def top_k(x, k):
+
+    try:
+        # print("spars: ", type(x))
+        if type(x) != type(np.array([])):
+            print("tentou: ", type(x))
+            x = np.array(x)
+            # print("passou")
+        x = torch.from_numpy(x)
+        vec_x = x.flatten()
+        d = int(len(vec_x))
+        # print(d)
+        k = int(np.ceil(d * k))
+        # print(k)
+        indices = torch.abs(vec_x).topk(k)[1]
+        out_x = torch.zeros_like(vec_x)
+        out_x[indices] = vec_x[indices]
+        out_x = out_x.reshape(x.shape)
+        # print(x.shape)
+        return out_x.numpy(), k
+
+    except Exception as e:
+        print("top k")
+        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+def sparse_top_k(layer, k):
+
+    try:
+        if layer.ndim == 1:
+            return layer, -1
+        else:
+            return top_k(layer, k)
+        # else:
+        #     new_layer = []
+        #     k_values = []
+        #     if layer.ndim == 3:
+        #         for i in range(len(layer)):
+        #             l, k_value = (sparse_top_k(layer[i], k))
+        #             new_layer.append(l)
+        #             k_values.append(k_value)
+        #
+        #     elif layer.ndim == 4:
+        #         for i in range(len(layer)):
+        #             row = []
+        #             row_k_values = []
+        #             for j in range(len(layer[i])):
+        #                 p, k_value = sparse_top_k(layer[i][j], k)
+        #                 row.append(p)
+        #                 row_k_values.append(k_value)
+        #             new_layer.append(row)
+        #             k_values.append(row_k_values)
+        #
+        #     return np.array(new_layer), k_values
+
+    except Exception as e:
+        print("sparse top k")
+        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 def sparse_crs_top_k(parameters, k):
 
-    for i in range(len(parameters)):
-        p = sparse_top_k(parameters[i], k)
-        parameters[i] = csr_matrix(p).toarray()
-    return parameters
+    try:
+        k_values = []
+        for i in range(len(parameters)):
+            p, k_value = sparse_top_k(parameters[i], k)
+            # print(parameters[i].shape, " convertido para ", p.shape)
+            # parameters[i] = sparse_matrix(p)
+            parameters[i] = p
+            k_values.append(k_value)
+        return parameters, k_values
+    except Exception as e:
+        print("sparse crs top k")
+        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+def sparse_matrix(layer):
+
+    try:
+
+        if layer.ndim == 1:
+            return layer
+        elif layer.ndim == 2:
+            return csr_matrix(layer)
+        else:
+            new_layer = []
+            if layer.ndim == 3:
+                for i in range(len(layer)):
+                    new_layer.append(sparse_matrix(layer[i]))
+            elif layer.ndim == 4:
+                for i in range(len(layer)):
+                    row = []
+                    for j in range(len(layer[i])):
+                        row.append(sparse_matrix(layer[i][j]))
+                    new_layer.append(row)
+
+            return new_layer
+
+    except Exception as e:
+        print("sparse matrix")
+        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 def to_dense(x):
 
-    return x.toarray()
+    try:
+
+        for i in range(len(x)):
+            if type(x[i]) == csr_matrix:
+                x[i] = x[i].toarray()
+
+        return x
+
+    except Exception as e:
+        print("to dense")
+        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 # x = np.array([[1,2,3,4,5], [6,7,8,9,10]])
 # k = 1/100

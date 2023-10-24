@@ -1,5 +1,6 @@
 import flwr as fl
 import numpy as np
+import pandas as pd
 import math
 import os
 import time
@@ -67,18 +68,40 @@ class FedSparsificationBaseServer(FedAvgBaseServer):
 						 new_clients_train=new_clients_train,
 						 type=type)
 
+		self.create_folder(strategy_name)
+
+	def create_folder(self, strategy_name):
+
+		directory = """{}_saved_weights/{}/""".format(strategy_name.lower(), self.model_name)
+		if Path(directory).exists():
+			shutil.rmtree(directory)
+		for i in range(self.num_clients):
+			Path("""{}_saved_weights/{}/{}/""".format(strategy_name.lower(), self.model_name, i)).mkdir(
+				parents=True, exist_ok=True)
+			pd.DataFrame({'round_of_last_fit': [-1], 'round_of_last_evaluate': [-1], 'acc_of_last_fit': [0], 'first_round': [-1], 'acc_of_last_evaluate': [0]}).to_csv("""{}_saved_weights/{}/{}/{}.csv""".format(strategy_name.lower(), self.model_name, i, i), index=False)
+
 	def configure_fit(self, server_round, parameters, client_manager):
 
 		client_evaluate_list_sparsification = []
 		client_fit_list = super().configure_fit(server_round, parameters, client_manager)
+		parameters = parameters_to_ndarrays(parameters)
+		print("shape original: ", [i.shape for i in parameters])
+		# k = 0.3
+		# parameters_to_send, k_values = sparse_crs_top_k(parameters, k)
+		parameters_to_send = parameters
+		print("tip pa: ", [type(i) for i in parameters_to_send])
+		print([i.shape for i in parameters_to_send])
 		for client_tuple in client_fit_list:
 			client = client_tuple[0]
 			fit_ins = client_tuple[1]
 			client_config = fit_ins.config
-			k = 0.1
-			parameters_to_send = sparse_crs_top_k(parameters, k)
-			evaluate_ins = EvaluateIns(parameters_to_send, client_config)
+
+			# client_config['parameters'] = parameters_to_send
+
+			evaluate_ins = EvaluateIns(ndarrays_to_parameters(parameters_to_send), client_config)
 			client_evaluate_list_sparsification.append((client, evaluate_ins))
+
+		return client_evaluate_list_sparsification
 
 	def aggregate_fit(self, server_round, results, failures):
 		weights_results = []
@@ -90,14 +113,14 @@ class FedSparsificationBaseServer(FedAvgBaseServer):
 			clients_ids.append(client_id)
 			print("Parametros aggregate fit: ", [i.shape for i in fl.common.parameters_to_ndarrays(fit_res.parameters)])
 			# print("Fit respons", fit_res.metrics)
-			clients_parameters.append(to_dense(fl.common.parameters_to_ndarrays(fit_res.parameters), self.model_shape))
+			clients_parameters.append(fl.common.parameters_to_ndarrays(fit_res.parameters))
 			if self.aggregation_method not in ['POC', 'FL-H.IAAC'] or int(server_round) <= 1:
-				weights_results.append((to_dense(fl.common.parameters_to_ndarrays(fit_res.parameters), self.model_shape), fit_res.num_examples))
+				weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples))
 
 			else:
 				if client_id in self.selected_clients:
 					print("parametro recebido cliente: ", client_id, " parametro: ", len(fl.common.parameters_to_ndarrays(fit_res.parameters)))
-					weights_results.append((to_dense(fl.common.parameters_to_ndarrays(fit_res.parameters), self.model_shape), fit_res.num_examples))
+					weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples))
 
 		#print(f'LEN AGGREGATED PARAMETERS: {len(weights_results)}')
 		parameters_aggregated = fl.common.ndarrays_to_parameters(self._aggregate(weights_results, server_round))
@@ -119,6 +142,9 @@ class FedSparsificationBaseServer(FedAvgBaseServer):
 		parameters = fl.common.parameters_to_ndarrays(parameters)
 		for i in range(1, len(parameters)):
 			size_of_parameters.append(parameters[i].nbytes)
+		# k = 0.3
+		# parameters_to_send, k_values = sparse_crs_top_k(parameters, k)
+		parameters_to_send = parameters
 		for client_tuple in client_evaluate_list:
 			client = client_tuple[0]
 			fitins = client_tuple[1]
@@ -130,11 +156,12 @@ class FedSparsificationBaseServer(FedAvgBaseServer):
 			except:
 				pass
 
-			k = 0.1
-			parameters_to_send = sparse_crs_top_k(parameters, k)
-			evaluate_ins = EvaluateIns(parameters_to_send, client_config)
-			fit_ins = fl.common.FitIns(parameters_to_send, client_config)
-			client_evaluate_list_fedkd.append((client, fit_ins))
+
+			print("server sparse evaluate")
+
+			# client_config['parameters'] = parameters_to_send
+			evaluate_ins = EvaluateIns(ndarrays_to_parameters(parameters_to_send), client_config)
+			client_evaluate_list_fedkd.append((client, evaluate_ins))
 
 		return client_evaluate_list_fedkd
 
