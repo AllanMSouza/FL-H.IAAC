@@ -199,7 +199,8 @@ class Verify:
         y = y0 + y1 + y2 + y3 + y4
         x_column = 'Round (t)'
         if index == 0:
-            y_column = 'Weight of global parameter (gw)'
+            # Weight of global parameter (gw)
+            y_column = '$F(el, ul)$'
         else:
             y_column = 'Updated level (ul)'
         hue = 'Rounds since the \n last training (nt)'

@@ -255,7 +255,7 @@ class JointAnalysis():
         print("Joint plot exeprimento: ", experiment)
 
         df = df[df['nt'].isin([1,2,3, 8, 9, 10])]
-        df = df[df['Round (t)'] >= 80]
+        df = df[df['Round (t)'] >= 10]
         nt_list = df['nt'].tolist()
         for i in range(len(nt_list)):
             nt = nt_list[i]

@@ -847,34 +847,41 @@ class Varying_Shared_layers:
         print("colunas", columns)
         for i in range(len(columns)):
             column = columns[i]
-            row = df[column].tolist()
-            print("ddd", row)
-            indexes = self.select_mean(i, row, columns, n_solutions)
+            column_values = df[column].tolist()
+            print("ddd", column_values)
+            indexes = self.select_mean(i, column_values, columns, n_solutions)
             df_indexes += indexes
 
         return df_indexes
 
-    def select_mean(self, index, values, columns, n_solutions):
+    def select_mean(self, index, column_values, columns, n_solutions):
 
         list_of_means = []
         indexes = []
-        print("ola: ", values, "ola0")
+        print("ola: ", column_values, "ola0")
 
-        for i in range(len(values)):
-            print("valor: ", values[i])
-            value = float(str(values[i])[:4])
-            list_of_means.append(value)
+        for i in range(len(column_values)):
+            print("valor: ", column_values[i])
+            value = float(str(column_values[i])[:4])
+            interval = float(str(column_values[i])[5:8])
+            minimum = value - interval
+            maximum = value + interval
+            list_of_means.append((value, minimum, maximum))
 
-        max_value = max(list_of_means)
-        print("maximo: ", max_value)
         for i in range(0, len(list_of_means), n_solutions):
 
             dataset_values = list_of_means[i: i + n_solutions]
-            max_value = max(dataset_values)
-
+            max_tuple = max(dataset_values, key=lambda e: e[0])
+            column_min_value = max_tuple[1]
+            column_max_value = max_tuple[2]
+            print("maximo: ", column_max_value)
             for j in range(len(list_of_means)):
-                if list_of_means[j] == max_value:
-                    indexes.append([j, columns[index]])
+                value_tuple = list_of_means[j]
+                min_value = value_tuple[1]
+                max_value = value_tuple[2]
+                if j >= i and j < i + n_solutions:
+                    if not (max_value < column_min_value or min_value > column_max_value):
+                        indexes.append([j, columns[index]])
 
         return indexes
 

@@ -204,9 +204,12 @@ class JointAnalysis():
 
                 for column in columns:
                     difference = str(round(float(df.loc[reference_index, column][:4]) - float(df.loc[target_index, column][:4]), 1))
+                    difference = str(round(float(difference)*100/float(df.loc[target_index, column][:4]), 1))
                     if difference[0] != "-":
-                        difference = "+" + difference
-                    df_difference.loc[reference_index, column] = df.loc[reference_index, column] + "(" + difference + ")"
+                        difference = "textuparrow" + difference
+                    else:
+                        difference = "textdownarrow" + difference.replace("-", "")
+                    df_difference.loc[reference_index, column] = df.loc[reference_index, column] + "(" + difference + "%)"
 
 
         # print(indexes)
@@ -221,7 +224,8 @@ class JointAnalysis():
 
 
         model_report = {i: {} for i in df['Alpha'].unique().tolist()}
-        df = df[df['Round (t)'] == 100]
+        if experiment == 1:
+            df = df[df['Round (t)'] == 100]
         # df_test = df[['Round (t)', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset']].groupby(
         #     ['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset']).apply(
         #     lambda e: self.groupb_by_table(e)).reset_index()[

@@ -97,11 +97,15 @@ class FedSparsificationClientTorch(ClientBaseTorch):
         print([i.shape for i in parameters])
         trained_parameters, train_num, fit_response = super().fit(parameters, config)
         updated_parameters = [np.abs(original - trained) for trained, original in zip(trained_parameters, parameters)]
-        k = 1
-        print("parametros treinados")
-        trained_parameters, k_values = sparse_crs_top_k(updated_parameters, k)
-        trained_parameters = self.get_not_zero_values(updated_parameters, trained_parameters)
-        return trained_parameters, train_num, fit_response
+        k = 0.6 # k = 0.6 já é ruim para EMNIST
+        t, k_values = sparse_crs_top_k(updated_parameters, k)
+        t = self.get_not_zero_values(updated_parameters, trained_parameters, k_values)
+        print("valores k: ", k_values)
+        for i in range(len(updated_parameters)):
+            if False in np.equal(t[i], trained_parameters[i]):
+                print("diferente")
+        print("shape: ", [np.count_nonzero(i==0) for i in t])
+        return t, train_num, fit_response
 
     def evaluate(self, parameters, config):
 
@@ -129,30 +133,42 @@ class FedSparsificationClientTorch(ClientBaseTorch):
             print("Set parameters to model")
             print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, self.cid), type(e).__name__, e)
 
-    def get_not_zero_values(self, updated_parameters, parameters):
+    def get_not_zero_values(self, updated_parameters, parameters, k_values):
 
-        for i in range(len(updated_parameters)):
+        try:
+            for i in range(len(updated_parameters)):
 
-            updated_layer = updated_parameters[i]
-            layer = parameters[i]
-            non_zero_indexes = np.nonzero(updated_layer)
-            zero = np.zeros(updated_layer.shape)
-            size = len(non_zero_indexes)
-            for j in range(len(non_zero_indexes[0])):
-                    if size == 1:
-                        zero[non_zero_indexes[0][j]] = layer[non_zero_indexes[0][j]]
-                    elif size == 2:
-                        zero[non_zero_indexes[0][j], non_zero_indexes[1][j]] = layer[non_zero_indexes[0][j], non_zero_indexes[1][j]]
-                    elif size == 3:
-                        zero[non_zero_indexes[0][j], non_zero_indexes[1][j], non_zero_indexes[2][j]] = layer[non_zero_indexes[0][j], non_zero_indexes[1][j], non_zero_indexes[2][j]]
-                    elif size == 4:
-                        zero[non_zero_indexes[0][j], non_zero_indexes[1][j], non_zero_indexes[2][j], non_zero_indexes[3][j]] = layer[non_zero_indexes[0][j], non_zero_indexes[1][j], non_zero_indexes[2][j], non_zero_indexes[3][j]]
+                updated_layer = updated_parameters[i]
+                layer = copy.deepcopy(parameters[i])
+                k_value = k_values[i]
+                if k_value == -1:
+                    continue
+                layer[updated_layer < k_value] = 0
+                parameters[i] = layer
 
-            parameters[i] = copy.copy(zero)
 
-            # print("zero:")
-            # print(zero)
-            # exit()
+                # non_zero_indexes = np.argwhere(updated_layer >= k_value)
+                # zero = np.zeros(updated_layer.shape)
+                # size = len(non_zero_indexes)
+                # for j in range(len(non_zero_indexes[0])):
+                #         if size == 1:
+                #             zero[non_zero_indexes[0][j]] = layer[non_zero_indexes[0][j]]
+                #         elif size == 2:
+                #             zero[non_zero_indexes[0][j], non_zero_indexes[1][j]] = layer[non_zero_indexes[0][j], non_zero_indexes[1][j]]
+                #         elif size == 3:
+                #             zero[non_zero_indexes[0][j], non_zero_indexes[1][j], non_zero_indexes[2][j]] = layer[non_zero_indexes[0][j], non_zero_indexes[1][j], non_zero_indexes[2][j]]
+                #         elif size == 4:
+                #             zero[non_zero_indexes[0][j], non_zero_indexes[1][j], non_zero_indexes[2][j], non_zero_indexes[3][j]] = layer[non_zero_indexes[0][j], non_zero_indexes[1][j], non_zero_indexes[2][j], non_zero_indexes[3][j]]
+                #
+                # parameters[i] = copy.copy(zero)
+
+                # print("zero:")
+                # print(zero)
+                # exit()
+
+        except Exception as e:
+            print("get non zero values")
+            print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, self.cid), type(e).__name__, e)
 
         return parameters
 
