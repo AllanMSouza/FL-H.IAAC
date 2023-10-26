@@ -391,15 +391,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			config['cid'] = self.cid
 			print("p recebidos: ", len(parameters), " round: ", server_round, " nt: ", nt, " cid: ", self.cid)
 			self.set_parameters_to_model_evaluate(parameters, config)
-			# loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
-
-			size_list = []
-			for i in range(len(parameters)):
-				tamanho = get_size(parameters[i])
-				# print("Client id: ", self.cid, " camada: ", i, " tamanho: ", tamanho, " shape: ", parameters[i].shape)
-				size_list.append(tamanho)
-			print("Tamanho total parametros evaluate: ", sum(size_list), " quantidade de camadas recebidas: ", len(parameters))
-			size_of_parameters = sum(size_list)
+			size_of_parameters = self.calculate_bytes(parameters)
 			# size_of_parameters = sum([sum(map(sys.getsizeof, parameters[i])) for i in range(len(parameters))])
 			size_of_config = self._get_size_of_dict(config)
 			loss, accuracy, test_num, predictions, labels = self.model_eval()
@@ -457,3 +449,19 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			size += sys.getsizeof(data)
 
 		return size
+
+	def calculate_bytes(self, parameters):
+
+		try:
+			size_list = []
+			for i in range(len(parameters)):
+				tamanho = get_size(parameters[i])
+				# print("Client id: ", self.cid, " camada: ", i, " tamanho: ", tamanho, " shape: ", parameters[i].shape)
+				size_list.append(tamanho)
+			print("Tamanho total parametros evaluate: ", sum(size_list), " quantidade de camadas recebidas: ", len(parameters))
+			size_of_parameters = sum(size_list)
+			return size_of_parameters
+
+		except Exception as e:
+			print("calculate bytes")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)

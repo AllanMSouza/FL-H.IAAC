@@ -1,3 +1,5 @@
+import copy
+
 import torch
 import numpy as np
 from scipy.sparse import coo_array, csr_matrix
@@ -109,6 +111,7 @@ def top_k(x, k):
             print("tentou: ", type(x))
             x = np.array(x)
             # print("passou")
+        entrada = copy.deepcopy(x)
         x = torch.from_numpy(x)
         vec_x = x.flatten()
         d = int(len(vec_x))
@@ -120,7 +123,10 @@ def top_k(x, k):
         out_x[indices] = vec_x[indices]
         out_x = out_x.reshape(x.shape)
         # print(x.shape)
-        return out_x.numpy(), k
+        out = out_x.numpy()
+        out_aux = np.abs(copy.copy(out))
+        threshold = np.min(out_aux[out_aux > 0])
+        return out, threshold
 
     except Exception as e:
         print("top k")
@@ -214,10 +220,10 @@ def to_dense(x):
         print("to dense")
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-# x = np.array([[1,2,3,4,5], [6,7,8,9,10]])
-# k = 1/100
-# x2 = sparse_top_k(x, k)
-# print(x2.nbytes)
-# x3 = csr_matrix(x2)
-# print(bytes(x3))
+x = np.array([[1.3,2,3,4,5], [6,7,8,9,10], [6,7,8,9,10]])
+k = 0.5
+x2 = sparse_top_k(x, k)[0]
+print(x2.nbytes)
+x3 = csr_matrix(x2)
+print(bytes(x3))
 # print(quantize(x, 3))

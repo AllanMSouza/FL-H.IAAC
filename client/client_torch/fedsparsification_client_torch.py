@@ -9,13 +9,14 @@ import os
 import sys
 import torch
 
+from scipy.sparse import coo_array, csr_matrix
 import warnings
 from torch.nn.parameter import Parameter
 
 warnings.simplefilter("ignore")
 
 import logging
-from utils.compression_methods.sparsification import sparse_crs_top_k, to_dense
+from utils.compression_methods.sparsification import sparse_crs_top_k, to_dense, sparse_matrix
 
 # logging.getLogger("torch").setLevel(logging.ERROR)
 
@@ -97,7 +98,7 @@ class FedSparsificationClientTorch(ClientBaseTorch):
         print([i.shape for i in parameters])
         trained_parameters, train_num, fit_response = super().fit(parameters, config)
         updated_parameters = [np.abs(original - trained) for trained, original in zip(trained_parameters, parameters)]
-        k = 0.6 # k = 0.6 já é ruim para EMNIST
+        k = 0.5 # k = 0.6 já é ruim para EMNIST
         t, k_values = sparse_crs_top_k(updated_parameters, k)
         t = self.get_not_zero_values(updated_parameters, trained_parameters, k_values)
         print("valores k: ", k_values)
@@ -171,4 +172,50 @@ class FedSparsificationClientTorch(ClientBaseTorch):
             print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, self.cid), type(e).__name__, e)
 
         return parameters
+
+    def sparse_bytes(self, sparse):
+
+        try:
+
+            bytes = 0
+            if type(sparse) == list:
+
+                for i in range(len(sparse)):
+                    bytes += self.sparse_bytes(sparse[i])
+
+                return bytes
+
+            elif type(sparse) == csr_matrix:
+                return sparse.data.nbytes + sparse.indptr.nbytes + sparse.indices.nbytes
+
+            elif type(sparse) == np.ndarray:
+                return sparse.nbytes
+
+            else:
+                print("nenhum: ", type(sparse))
+
+        except Exception as e:
+            print("sparse bytes")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+
+    def calculate_bytes(self, parameters):
+
+        try:
+
+            size = 0
+
+            for p in parameters:
+
+                sparse = sparse_matrix(p)
+                print("Tamanho original: ", p.nbytes)
+                b = self.sparse_bytes(sparse)
+                print("Apos esparcificacao: ", b)
+                # b = min(p.nbytes, b)
+                size += b
+            return size
+
+        except Exception as e:
+            print("calculate bytes")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
