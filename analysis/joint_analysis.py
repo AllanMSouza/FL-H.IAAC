@@ -209,7 +209,7 @@ class JointAnalysis():
                         difference = "textuparrow" + difference
                     else:
                         difference = "textdownarrow" + difference.replace("-", "")
-                    df_difference.loc[reference_index, column] = df.loc[reference_index, column] + "(" + difference + "%)"
+                    df_difference.loc[reference_index, column] = "(" + difference + "%)" + df.loc[reference_index, column]
 
 
         # print(indexes)
@@ -291,7 +291,34 @@ class JointAnalysis():
         print("melhorias")
         print(df_accuracy_improvements)
 
-        latex = df_accuracy_improvements.to_latex().replace("\\\nEMNIST", "\\\n\hline\nEMNIST").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}")
+        indexes = [0.1, 1.0, 5.0]
+        for i in range(df_accuracy_improvements.shape[0]):
+            row = df_accuracy_improvements.iloc[i]
+            for index in indexes:
+                value_string = row[index]
+                add_textbf = False
+                if "textbf{" in value_string:
+                    value_string = value_string.replace("textbf{", "").replace("}", "")
+                    add_textbf = True
+
+                if ")" in value_string:
+                    value_string = value_string.replace("(", "").split(")")
+                    gain = value_string[0]
+                    acc = value_string[1]
+                else:
+                    gain = ""
+                    acc = value_string
+
+                if add_textbf:
+                    if gain != "":
+                        gain = "textbf{" + gain + "}"
+                    acc = "textbf{" + acc + "}"
+
+                row[index] = acc + " & " + gain
+
+            df_accuracy_improvements.iloc[i] = row
+
+        latex = df_accuracy_improvements.to_latex().replace("\\\nEMNIST", "\\\n\hline\nEMNIST").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}").replace("\$", "$").replace("textuparrow", "\oitextuparrow").replace("textdownarrow", "\oitextdownarrow").replace("\&", "&").replace("\_", "_")
 
         base_dir = """analysis/output/experiment_{}/""".format(str(experiment + 1))
         filename = """{}latex_{}.txt""".format(base_dir, str(experiment))
@@ -620,8 +647,8 @@ if __name__ == '__main__':
     rounds = 100
     clients = '20'
     model = 'CNN_3'
-    type = 'torch'
+    type_t = 'torch'
     file_type = 'evaluate_client.csv'
 
     joint_plot = JointAnalysis()
-    joint_plot.build_filenames_and_read(type, strategies, fractions_fit, datasets, experiments, alpha, rounds, clients, model, file_type)
+    joint_plot.build_filenames_and_read(type_t, strategies, fractions_fit, datasets, experiments, alpha, rounds, clients, model, file_type)

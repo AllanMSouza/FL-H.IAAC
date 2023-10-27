@@ -5,6 +5,7 @@ import torch
 from pathlib import Path
 import os
 import sys
+from utils.compression_methods.sparsification import calculate_bytes, sparse_bytes, sparse_matrix
 
 import warnings
 warnings.simplefilter("ignore")
@@ -98,4 +99,25 @@ class FedPredictClientTorch(FedAvgClientTorch):
 		except Exception as e:
 			print("Set parameters to model")
 			print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, self.cid), type(e).__name__, e)
+
+	def calculate_bytes(self, parameters):
+
+		try:
+
+			size = 0
+
+			for p in parameters:
+				aux = p[p==0]
+				print("quantidade zeros: ", len(aux))
+				sparse = sparse_matrix(p)
+				print("Tamanho original: ", p.nbytes)
+				b = sparse_bytes(sparse)
+				print("Apos esparcificacao: ", b)
+				b = min(p.nbytes, b)
+				size += b
+			return size
+
+		except Exception as e:
+			print("calculate bytes")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 

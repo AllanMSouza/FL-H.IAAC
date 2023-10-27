@@ -3,6 +3,8 @@ import copy
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
 from utils.compression_methods.parameters_svd import parameter_svd_write, inverse_parameter_svd_reading, if_reduces_size
+from utils.compression_methods.sparsification import client_model_non_zero_indexes, client_specific_top_k_parameters
+from utils.compression_methods.sparsification import sparse_crs_top_k, to_dense, sparse_matrix, get_not_zero_values
 from utils.compression_methods.fedkd import fedkd_compression
 import os
 from torch.nn.parameter import Parameter
@@ -339,7 +341,7 @@ def get_size(parameter):
 		print("get_size")
 		print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-def fedpredict_server(parameters, client_evaluate_list, fedpredict_clients_metrics, evaluate_config, similarity_between_layers_per_round, mean_similarity_per_round, server_round, num_rounds, comment, compression, df, layers_compression_range):
+def fedpredict_server(parameters, client_evaluate_list, fedpredict_clients_metrics, evaluate_config, similarity_between_layers_per_round, mean_similarity_per_round, server_round, num_rounds, comment, compression, df, layers_compression_range, args={}):
     client_evaluate_list_fedpredict = []
     accuracy = 0
     mean_similarity_per_layer = similarity_between_layers_per_round[server_round]
@@ -400,6 +402,26 @@ def fedpredict_server(parameters, client_evaluate_list, fedpredict_clients_metri
             # print("enviar referencia: ", len(parameters), len(parameters_to_ndarrays(parameters_to_send)))
             client_evaluate_list_fedpredict.append((client, evaluate_ins))
             continue
+        elif compression == 'sparsification':
+            k = 0.5
+
+            t, k_values = sparse_crs_top_k([np.abs(i) for i in parameters], k)
+            print("contar1")
+            print([len(i[i == 0]) for i in t])
+            # parameters_to_send = get_not_zero_values([np.abs(i) for i in t], parameters, k_values)
+            parameters_to_send = t
+            print("contar2")
+            print([len(i[i == 0]) for i in parameters_to_send])
+            config['decompress'] = False
+            config['M'] = M
+            config['df'] = df
+            config['layers_fraction'] = 1
+            evaluate_ins = EvaluateIns(ndarrays_to_parameters(parameters_to_send), config)
+            # print("Evaluate enviar: ", client_id, [i.shape for i in parameters_to_ndarrays(parameters_to_send)])
+            # print("enviar referencia: ", len(parameters), len(parameters_to_ndarrays(parameters_to_send)))
+            client_evaluate_list_fedpredict.append((client, evaluate_ins))
+            continue
+
         elif compression == "no":
             config['M'] = [i for i in range(len(parameters))]
             config['df'] = df

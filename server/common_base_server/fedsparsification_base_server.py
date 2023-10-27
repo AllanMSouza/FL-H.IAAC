@@ -7,7 +7,7 @@ import time
 import csv
 import copy
 import random
-from utils.compression_methods.sparsification import sparse_matrix
+from utils.compression_methods.sparsification import sparse_matrix, client_model_non_zero_indexes
 
 from logging import WARNING
 from flwr.common import FitIns
@@ -27,7 +27,7 @@ from flwr.common import (
     parameters_to_ndarrays,
 )
 
-from utils.compression_methods.sparsification import sparse_crs_top_k, to_dense
+from utils.compression_methods.sparsification import sparse_crs_top_k, to_dense, client_specific_top_k_parameters
 from server.common_base_server import FedAvgBaseServer
 
 from pathlib import Path
@@ -114,7 +114,7 @@ class FedSparsificationBaseServer(FedAvgBaseServer):
 			client_id = str(fit_res.metrics['cid'])
 			clients_ids.append(client_id)
 			parameters = fl.common.parameters_to_ndarrays(fit_res.parameters)
-			self.client_model_non_zero_indexes(client_id, parameters)
+			self.clients_model_non_zero_indexes = client_model_non_zero_indexes(client_id, parameters, self.clients_model_non_zero_indexes)
 			print("Parametros aggregate fit: ", [i.shape for i in parameters])
 			# print("Fit respons", fit_res.metrics)
 			clients_parameters.append(parameters)
@@ -154,7 +154,7 @@ class FedSparsificationBaseServer(FedAvgBaseServer):
 			client = client_tuple[0]
 			fitins = client_tuple[1]
 			client_id = str(client.cid)
-			client_evaluate_list[i][1].parameters = ndarrays_to_parameters(self.client_specific_top_k_parameters(client_id, parameters))
+			client_evaluate_list[i][1].parameters = ndarrays_to_parameters(client_specific_top_k_parameters(client_id, parameters, self.clients_model_non_zero_indexes))
 			# client_config = copy.copy(fitins.config)
 			# # print("client config: ", client_config)
 			# client_config['total_server_rounds'] = self.num_rounds
@@ -172,63 +172,6 @@ class FedSparsificationBaseServer(FedAvgBaseServer):
 
 		return client_evaluate_list
 
-
-	def client_model_non_zero_indexes(self, client_id, parameters):
-
-		non_zero_indexes = []
-
-		for p in parameters:
-
-			zero = p == 0
-			non_zero_indexes.append(zero)
-
-		self.clients_model_non_zero_indexes[client_id] = non_zero_indexes
-
-	def client_specific_top_k_parameters(self, client_id, parameters):
-
-		if client_id in self.clients_model_non_zero_indexes:
-			indexes_list = self.clients_model_non_zero_indexes[client_id]
-
-			for i in range(len(parameters)):
-
-				parameter = parameters[i]
-				indexes = indexes_list[i]
-
-				zeros = np.zeros(parameter.shape, dtype=np.double)
-
-				if zeros.ndim == 1:
-					# for j in range(len(indexes[0])):
-					# 	zeros[indexes[0][j]] = parameter[indexes[0][j]]
-					zeros = parameter
-
-				elif zeros.ndim == 2:
-					for j in range(len(indexes)):
-						for k in range(len(indexes[j])):
-						# print("valor: ", parameter[indexes[0][j], indexes[1][j]])
-							if indexes[j, k]:
-								parameter[j, k] = 0
-
-
-				elif zeros.ndim == 3:
-					for j in range(len(indexes)):
-						for k in range(len(indexes[j])):
-							for l in range(len(indexes[j, k])):
-								if indexes[j, k, l]:
-									parameter[j, k, l] = 0
-
-				elif zeros.ndim == 4:
-					for j in range(len(indexes)):
-						for k in range(len(indexes[j])):
-							for l in range(len(indexes[j, k])):
-								for m in range(len(indexes[j, k, l])):
-									if indexes[j, k, l, m]:
-										parameter[j, k, l, m] = 0
-
-
-
-				parameters[i] = parameter
-
-		return parameters
 
 
 

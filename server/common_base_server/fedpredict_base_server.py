@@ -12,6 +12,7 @@ import copy
 from server.common_base_server import FedAvgBaseServer
 from client.fedpredict_core import fedpredict_core_layer_selection, fedpredict_layerwise_similarity, fedpredict_core_compredict, dls, layer_compression_range, compredict, fedpredict_server
 from utils.compression_methods.parameters_svd import if_reduces_size
+from utils.compression_methods.sparsification import sparse_crs_top_k, to_dense, client_model_non_zero_indexes
 
 from pathlib import Path
 import shutil
@@ -115,6 +116,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		self.gradient_norm_round = []
 		self.gradient_norm_nt = []
 		self.T = int(args.T)
+		self.clients_model_non_zero_indexes = {}
 
 	def calculate_initial_similarity(self, server_round, rate=0.1):
 
@@ -218,6 +220,9 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		for _, fit_res in results:
 			client_id = str(fit_res.metrics['cid'])
 			clients_ids.append(client_id)
+			parameters = fl.common.parameters_to_ndarrays(fit_res.parameters)
+			# self.clients_model_non_zero_indexes = client_model_non_zero_indexes(client_id, parameters,
+			# 																	self.clients_model_non_zero_indexes)
 			clients_parameters.append(fl.common.parameters_to_ndarrays(fit_res.parameters))
 
 		if self.use_gradient:

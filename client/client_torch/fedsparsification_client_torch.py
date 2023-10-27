@@ -12,11 +12,12 @@ import torch
 from scipy.sparse import coo_array, csr_matrix
 import warnings
 from torch.nn.parameter import Parameter
+from utils.compression_methods.sparsification import calculate_bytes, sparse_bytes
 
 warnings.simplefilter("ignore")
 
 import logging
-from utils.compression_methods.sparsification import sparse_crs_top_k, to_dense, sparse_matrix
+from utils.compression_methods.sparsification import sparse_crs_top_k, to_dense, sparse_matrix, get_not_zero_values
 
 # logging.getLogger("torch").setLevel(logging.ERROR)
 
@@ -100,7 +101,7 @@ class FedSparsificationClientTorch(ClientBaseTorch):
         updated_parameters = [np.abs(original - trained) for trained, original in zip(trained_parameters, parameters)]
         k = 0.5 # k = 0.6 já é ruim para EMNIST
         t, k_values = sparse_crs_top_k(updated_parameters, k)
-        t = self.get_not_zero_values(updated_parameters, trained_parameters, k_values)
+        t = get_not_zero_values(updated_parameters, trained_parameters, k_values)
         print("valores k: ", k_values)
         for i in range(len(updated_parameters)):
             if False in np.equal(t[i], trained_parameters[i]):
@@ -134,69 +135,6 @@ class FedSparsificationClientTorch(ClientBaseTorch):
             print("Set parameters to model")
             print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, self.cid), type(e).__name__, e)
 
-    def get_not_zero_values(self, updated_parameters, parameters, k_values):
-
-        try:
-            for i in range(len(updated_parameters)):
-
-                updated_layer = updated_parameters[i]
-                layer = copy.deepcopy(parameters[i])
-                k_value = k_values[i]
-                if k_value == -1:
-                    continue
-                layer[updated_layer < k_value] = 0
-                parameters[i] = layer
-
-
-                # non_zero_indexes = np.argwhere(updated_layer >= k_value)
-                # zero = np.zeros(updated_layer.shape)
-                # size = len(non_zero_indexes)
-                # for j in range(len(non_zero_indexes[0])):
-                #         if size == 1:
-                #             zero[non_zero_indexes[0][j]] = layer[non_zero_indexes[0][j]]
-                #         elif size == 2:
-                #             zero[non_zero_indexes[0][j], non_zero_indexes[1][j]] = layer[non_zero_indexes[0][j], non_zero_indexes[1][j]]
-                #         elif size == 3:
-                #             zero[non_zero_indexes[0][j], non_zero_indexes[1][j], non_zero_indexes[2][j]] = layer[non_zero_indexes[0][j], non_zero_indexes[1][j], non_zero_indexes[2][j]]
-                #         elif size == 4:
-                #             zero[non_zero_indexes[0][j], non_zero_indexes[1][j], non_zero_indexes[2][j], non_zero_indexes[3][j]] = layer[non_zero_indexes[0][j], non_zero_indexes[1][j], non_zero_indexes[2][j], non_zero_indexes[3][j]]
-                #
-                # parameters[i] = copy.copy(zero)
-
-                # print("zero:")
-                # print(zero)
-                # exit()
-
-        except Exception as e:
-            print("get non zero values")
-            print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, self.cid), type(e).__name__, e)
-
-        return parameters
-
-    def sparse_bytes(self, sparse):
-
-        try:
-
-            bytes = 0
-            if type(sparse) == list:
-
-                for i in range(len(sparse)):
-                    bytes += self.sparse_bytes(sparse[i])
-
-                return bytes
-
-            elif type(sparse) == csr_matrix:
-                return sparse.data.nbytes + sparse.indptr.nbytes + sparse.indices.nbytes
-
-            elif type(sparse) == np.ndarray:
-                return sparse.nbytes
-
-            else:
-                print("nenhum: ", type(sparse))
-
-        except Exception as e:
-            print("sparse bytes")
-            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 
     def calculate_bytes(self, parameters):
@@ -209,9 +147,9 @@ class FedSparsificationClientTorch(ClientBaseTorch):
 
                 sparse = sparse_matrix(p)
                 print("Tamanho original: ", p.nbytes)
-                b = self.sparse_bytes(sparse)
+                b = sparse_bytes(sparse)
                 print("Apos esparcificacao: ", b)
-                # b = min(p.nbytes, b)
+                b = min(p.nbytes, b)
                 size += b
             return size
 
