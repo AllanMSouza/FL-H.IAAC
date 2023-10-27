@@ -2,7 +2,7 @@ import copy
 
 import torch
 import numpy as np
-from scipy.sparse import coo_array, csr_matrix
+from scipy.sparse import coo_array, csr_matrix, csc_matrix
 import sys
 
 '''
@@ -187,7 +187,7 @@ def sparse_matrix(layer):
         if layer.ndim == 1:
             return layer
         elif layer.ndim == 2:
-            return csr_matrix(layer)
+            return coo_array(layer)
         else:
             new_layer = []
             if layer.ndim == 3:
@@ -220,10 +220,157 @@ def to_dense(x):
         print("to dense")
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-x = np.array([[1.3,2,3,4,5], [6,7,8,9,10], [6,7,8,9,10]])
-k = 0.5
-x2 = sparse_top_k(x, k)[0]
-print(x2.nbytes)
-x3 = csr_matrix(x2)
-print(bytes(x3))
-# print(quantize(x, 3))
+def sparse_bytes(sparse):
+
+    try:
+
+        bytes = 0
+        if type(sparse) == list:
+
+            for i in range(len(sparse)):
+                bytes += sparse_bytes(sparse[i])
+
+            return bytes
+
+        elif type(sparse) == csr_matrix:
+            return sparse.data.nbytes + sparse.indptr.nbytes + sparse.indices.nbytes
+
+        elif type(sparse) == coo_array:
+            return sparse.data.nbytes + sparse.row.nbytes + sparse.col.nbytes
+
+        elif type(sparse) == np.ndarray:
+            return sparse.nbytes
+
+        else:
+            print("nenhum: ", type(sparse))
+
+    except Exception as e:
+        print("sparse bytes")
+        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+
+def calculate_bytes(parameters):
+
+    try:
+
+        size = 0
+
+        for p in parameters:
+
+            sparse = sparse_matrix(p)
+            # print("Tamanho original: ", p.nbytes)
+            b = sparse_bytes(sparse)
+            # print("Apos esparcificacao: ", b)
+            b = min(p.nbytes, b)
+            size += b
+        return size
+
+    except Exception as e:
+        print("calculate bytes")
+        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+def client_specific_top_k_parameters(client_id, parameters, clients_model_non_zero_indexes={}):
+    if client_id in clients_model_non_zero_indexes:
+        indexes_list = clients_model_non_zero_indexes[client_id]
+
+        for i in range(len(parameters)):
+
+            parameter = parameters[i]
+            indexes = indexes_list[i]
+
+            zeros = np.zeros(parameter.shape, dtype=np.double)
+
+            if zeros.ndim == 1:
+                # for j in range(len(indexes[0])):
+                # 	zeros[indexes[0][j]] = parameter[indexes[0][j]]
+                zeros = parameter
+
+            elif zeros.ndim == 2:
+                for j in range(len(indexes)):
+                    for k in range(len(indexes[j])):
+                        # print("valor: ", parameter[indexes[0][j], indexes[1][j]])
+                        if indexes[j, k]:
+                            parameter[j, k] = 0
+
+
+            elif zeros.ndim == 3:
+                for j in range(len(indexes)):
+                    for k in range(len(indexes[j])):
+                        for l in range(len(indexes[j, k])):
+                            if indexes[j, k, l]:
+                                parameter[j, k, l] = 0
+
+            elif zeros.ndim == 4:
+                for j in range(len(indexes)):
+                    for k in range(len(indexes[j])):
+                        for l in range(len(indexes[j, k])):
+                            for m in range(len(indexes[j, k, l])):
+                                if indexes[j, k, l, m]:
+                                    parameter[j, k, l, m] = 0
+
+            parameters[i] = parameter
+
+    return parameters
+
+def get_not_zero_values(updated_parameters, parameters, k_values):
+
+    try:
+        for i in range(len(updated_parameters)):
+
+            updated_layer = updated_parameters[i]
+            layer = copy.deepcopy(parameters[i])
+            k_value = k_values[i]
+            if k_value == -1:
+                continue
+            layer[updated_layer < k_value] = 0
+            parameters[i] = layer
+
+
+            # non_zero_indexes = np.argwhere(updated_layer >= k_value)
+            # zero = np.zeros(updated_layer.shape)
+            # size = len(non_zero_indexes)
+            # for j in range(len(non_zero_indexes[0])):
+            #         if size == 1:
+            #             zero[non_zero_indexes[0][j]] = layer[non_zero_indexes[0][j]]
+            #         elif size == 2:
+            #             zero[non_zero_indexes[0][j], non_zero_indexes[1][j]] = layer[non_zero_indexes[0][j], non_zero_indexes[1][j]]
+            #         elif size == 3:
+            #             zero[non_zero_indexes[0][j], non_zero_indexes[1][j], non_zero_indexes[2][j]] = layer[non_zero_indexes[0][j], non_zero_indexes[1][j], non_zero_indexes[2][j]]
+            #         elif size == 4:
+            #             zero[non_zero_indexes[0][j], non_zero_indexes[1][j], non_zero_indexes[2][j], non_zero_indexes[3][j]] = layer[non_zero_indexes[0][j], non_zero_indexes[1][j], non_zero_indexes[2][j], non_zero_indexes[3][j]]
+            #
+            # parameters[i] = copy.copy(zero)
+
+            # print("zero:")
+            # print(zero)
+            # exit()
+            return parameters
+
+    except Exception as e:
+        print("get non zero values")
+        print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+
+def client_model_non_zero_indexes(client_id, parameters, clients_model_non_zero_indexes, k=0.5):
+    non_zero_indexes = []
+
+    for p in parameters:
+        zero = p == 0
+        count = len(zero.flatten()==True)
+        if count == len(p.flatten()):
+            t, k_values = sparse_crs_top_k(np.abs(p), k)
+            t = get_not_zero_values(np.abs(p), p, k_values)
+            zero = t == 0
+        non_zero_indexes.append(zero)
+
+    clients_model_non_zero_indexes[client_id] = non_zero_indexes
+
+    return clients_model_non_zero_indexes
+
+# x = np.array([[1.3,2,3,4,5], [6,7,8,9,10], [6,7,8,9,10]])
+# k = 0.5
+# x2 = sparse_top_k(x, k)[0]
+# print(x2.nbytes)
+# x3 = csr_matrix(x2)
+# print(bytes(x3))
+# # print(quantize(x, 3))
