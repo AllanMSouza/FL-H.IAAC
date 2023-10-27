@@ -403,15 +403,15 @@ def fedpredict_server(parameters, client_evaluate_list, fedpredict_clients_metri
             client_evaluate_list_fedpredict.append((client, evaluate_ins))
             continue
         elif compression == 'sparsification':
-            k = 0.5
+            k = 0.3
 
             t, k_values = sparse_crs_top_k([np.abs(i) for i in parameters], k)
-            print("contar1")
-            print([len(i[i == 0]) for i in t])
+            # print("contar1")
+            # print([len(i[i == 0]) for i in t])
             # parameters_to_send = get_not_zero_values([np.abs(i) for i in t], parameters, k_values)
             parameters_to_send = t
-            print("contar2")
-            print([len(i[i == 0]) for i in parameters_to_send])
+            # print("contar2")
+            # print([len(i[i == 0]) for i in parameters_to_send])
             config['decompress'] = False
             config['M'] = M
             config['df'] = df

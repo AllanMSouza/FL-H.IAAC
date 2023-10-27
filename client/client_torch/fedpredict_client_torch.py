@@ -106,6 +106,8 @@ class FedPredictClientTorch(FedAvgClientTorch):
 
 			size = 0
 
+			print("contar3")
+			print([len(i[i == 0]) for i in parameters])
 			for p in parameters:
 				aux = p[p==0]
 				print("quantidade zeros: ", len(aux))

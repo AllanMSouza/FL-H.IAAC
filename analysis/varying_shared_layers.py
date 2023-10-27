@@ -37,6 +37,8 @@ class Varying_Shared_layers:
             self.experiment = "dls"
         elif "compredict" in self.compression:
             self.experiment = "compredict"
+        elif "sparsification" in self.compression:
+            self.experiment = "sparsification"
 
     def start(self):
 
@@ -65,7 +67,7 @@ class Varying_Shared_layers:
         df_concat = self.build_filename_fedavg(df_concat)
         for alpha in alphas:
             self.evaluate_client_joint_accuracy(df_concat, alpha)
-            self.joint_table(self.build_filename_fedavg(self.df_concat, use_mean=False), alpha=alpha, models=models)
+            # self.joint_table(self.build_filename_fedavg(self.df_concat, use_mean=False), alpha=alpha, models=models)
 
         # for alpha in alphas:
         #     self.evaluate_client_joint_accuracy(df_concat, alpha)
@@ -94,6 +96,9 @@ class Varying_Shared_layers:
                 continue
             if "fedkd" in shared_layer:
                 shared_layers_list[i] = "$FedAvg+FP_{kd}$"
+                continue
+            if "sparsification" in shared_layer:
+                shared_layers_list[i] = "$FedAvg+FP_{s}$"
                 continue
             # new_shared_layer = "{"
             # for layer in shared_layer:
@@ -154,7 +159,7 @@ class Varying_Shared_layers:
                                 else:
                                     df_concat = pd.concat([df_concat, df], ignore_index=True)
                             elif "similarity" in file:
-                                if layers not in ["dls", "dls_compredict"]:
+                                if layers not in ["dls", "dls_compredict", "sparsification"]:
                                     continue
                                 df['\u03B1'] = np.array([a] * len(df))
                                 df['Round'] = np.array(df['Server round'].tolist())
@@ -167,7 +172,7 @@ class Varying_Shared_layers:
                                 else:
                                     df_concat_similarity = pd.concat([df_concat_similarity, df], ignore_index=True)
                             elif "norm" in file:
-                                if layers not in ["dls", "dls_compredict"]:
+                                if layers not in ["dls", "dls_compredict", "sparsification"]:
                                     continue
                                 df['\u03B1'] = np.array([a] * len(df))
                                 df['Server round'] = np.array(df['Round'].tolist())
@@ -509,7 +514,7 @@ class Varying_Shared_layers:
         style = '\u03B1'
         y_min = 0
         if self.experiment == "dls_compredict":
-            compression = ["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$", "$FedAvg+FP_{kd}$"]
+            compression = ["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$", "$FedAvg+FP_{kd}$", "$FedAvg+FP_{s}$"]
         elif "dls" in self.compression:
             compression = ["$FedAvg+FP_{d}$", 'FedPredict', 'FedAvg']
         else:
@@ -622,7 +627,7 @@ class Varying_Shared_layers:
             # lines_labels = [ax[0, 0].get_legend_handles_labels()]
             # lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
             # fig.legend(lines, labels, loc='upper center', ncol=4, bbox_to_anchor=(0.5, 1.06))
-            lines_labels = [ax[0, 0].get_legend_handles_labels()]
+            lines_labels = [ax[0, 1].get_legend_handles_labels()]
             lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
             print("linhas")
             print(lines)
@@ -641,7 +646,7 @@ class Varying_Shared_layers:
             markers = ["", "-", "--"]
 
             f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
-            handles = [f("o", colors[i]) for i in range(5)]
+            handles = [f("o", colors[i]) for i in range(len(compression))]
             handles += [plt.Line2D([], [], linestyle=markers[i], color="k") for i in range(3)]
             fig.legend(handles, labels, fontsize=9, ncols=4, bbox_to_anchor=(0.90, 1.02))
             figure = fig.get_figure()
@@ -1707,7 +1712,7 @@ if __name__ == '__main__':
     # compression_methods = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
     #compression_methods = [1, 12, 123, 1234]
     # compression_methods = [4, 34, 234, 1234]
-    compression = ["dls", "dls_compredict", "compredict", "no", "fedkd"]
+    compression = ["dls", "dls_compredict", "compredict", "no", "fedkd", "sparsification"]
     comment = "set"
 
     Varying_Shared_layers(tp=type_model, strategy_name=strategy, fraction_fit=fraction_fit, aggregation_method=aggregation_method, new_clients=False, new_clients_train=False, num_clients=num_clients,
