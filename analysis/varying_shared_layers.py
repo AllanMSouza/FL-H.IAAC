@@ -40,38 +40,105 @@ class Varying_Shared_layers:
         elif "sparsification" in self.compression:
             self.experiment = "sparsification"
 
+    def parameters_reduction(self):
+
+        df = self.df_concat
+        df_aux = copy.deepcopy(df)
+
+        print("e1: ", df.query("Solution=='$FedAvg+FP$' and Model=='CNN-b' and Dataset=='EMNIST'")[
+            'Size of parameters (MB)'])
+        print("e2: ", df.query("Solution=='$FedAvg+FP_{s}$' and Model=='CNN-b' and Dataset=='EMNIST'")[[
+            'Size of parameters (MB)']])
+
+        def comparison_with_shared_layers(df):
+
+            round = int(df['Round'].values[0])
+            dataset = str(df['Dataset'].values[0])
+            alpha = float(df['\u03B1'].values[0])
+            model = str(df['Model'].values[0])
+            solution = df['Solution'].values[0]
+            # print("interes: ", round, dataset, alpha, model)
+            df_copy = copy.deepcopy(df_aux.query("""Round == {} and Dataset == '{}' and \u03B1 == {} and Model == '{}'""".format(round, dataset, alpha, model)))
+            # print("apos: ", df_copy.columns)
+            target = df_copy[df_copy['Solution'] == "$FedAvg+FP$"]
+            target_acc = target['Accuracy (%)'].mean()
+            target_size = target['Size of parameters (MB)'].mean()
+
+            if len(target) != len(df):
+                print("oioi", len(target), len(df))
+                exit()
+
+            acc = df['Accuracy (%)'].mean()
+            accuracy = df['Accuracy (%)'].mean()
+            size = df['Size of parameters (MB)'].mean()
+            acc_reduction = target_acc - acc
+            size_reduction = (target_size - size)
+            # if model=='CNN-b' and dataset=='EMNIST' and solution =='$FedAvg+FP_{s}$':
+            #     print("di", target_size, size, size_reduction)
+            #     print(df['Size of parameters (MB)'])
+            #     print(df[df['Solution']=='$FedAvg+FP_{s}$'])
+            size_reduction_percentage = (1 - size/target_size) * 100
+            # acc_weight = 1
+            # size_weight = 1
+            # acc_score = acc_score *acc_weight
+            # size_reduction = size_reduction * size_weight
+            # score = 2*(acc_score * size_reduction)/(acc_score + size_reduction)
+            # if df['Solution'].tolist()[0] == "{1, 2, 3, 4}":
+            #     acc_reduction = 0.0001
+            #     size_reduction = 0.0001
+            # if df['Solution'].unique().tolist()[0] == "$FedAvg+FP_{s}$":
+            #     print("tamanho: ", len(target['Size of parameters (MB)'].tolist()))
+            #     print('Parameters reduction (%)', dataset, model, alpha, size_reduction_percentage, size, target_size)
+
+
+            return pd.DataFrame({'Accuracy reduction (%)': [acc_reduction], 'Parameters reduction (MB)': [size_reduction],
+                                 'Parameters reduction (%)': [size_reduction_percentage], 'Accuracy (%)': [accuracy], 'Size of parameters (MB)': [size]})
+
+        df = df[['Accuracy (%)', 'Size of parameters (MB)', 'Strategy', 'Solution', 'Round', '\u03B1', 'Dataset',
+                 'Model']].groupby(
+            by=['Strategy', 'Round', 'Solution', 'Dataset', '\u03B1', 'Model']).apply(
+            lambda e: comparison_with_shared_layers(df=e)).reset_index()
+        # [
+        #     ['Strategy', 'Round', 'Solution', '\u03B1', 'Accuracy (%)', 'Accuracy reduction (%)',
+        #      'Parameters reduction (MB)', 'Size of parameters (MB)', 'Dataset', 'Model']]
+
+        print("e11: ", df.query("Solution=='$FedAvg+FP$' and Model=='CNN-b' and Dataset=='EMNIST'")[
+                'Size of parameters (MB)'])
+        print("e12: ", df.query("Solution=='$FedAvg+FP_{s}$' and Model=='CNN-b' and Dataset=='EMNIST'")[[
+                'Size of parameters (MB)', 'Parameters reduction (MB)']])
+
+        self.df_concat = df
+
+
     def start(self):
 
         self.build_filenames()
 
-        df_concat = None
+        self.parameters_reduction()
 
-        for model in self.model_name:
-            for dataset in self.dataset:
-                model_name = model.replace("CNN_2", "CNN-a").replace("CNN_3", "CNN-b")
-                dataset_name = dataset.replace("CIFAR10", "CIFAR-10")
-                df = self.evaluate_client_analysis_shared_layers(model_name, dataset_name)
-                if df_concat is None:
-                    df_concat = df
-                else:
-                    df_concat = pd.concat([df_concat, df], ignore_index=True)
+        # df_concat = None
 
-        print(df_concat)
+        # for model in self.model_name:
+        #     for dataset in self.dataset:
+        #         model_name = model.replace("CNN_2", "CNN-a").replace("CNN_3", "CNN-b")
+        #         dataset_name = dataset.replace("CIFAR10", "CIFAR-10")
+        #         self.evaluate_client_analysis_shared_layers(model_name, dataset_name)
+
         # self.evaluate_client_analysis_differnt_models(df_concat)
         # print(df_concat['Strategy'].unique().tolist())
         # exit()
-        self.evaluate_client_joint_parameter_reduction(df_concat)
-
-        alphas = df_concat['\u03B1'].unique().tolist()
-        models = df_concat['Model'].unique().tolist()
-        df_concat = self.build_filename_fedavg(df_concat)
+        self.evaluate_client_joint_parameter_reduction(self.df_concat)
+        alphas = self.df_concat['\u03B1'].unique().tolist()
+        models = self.df_concat['Model'].unique().tolist()
+        self.df_concat = self.build_filename_fedavg(self.df_concat)
         for alpha in alphas:
-            self.evaluate_client_joint_accuracy(df_concat, alpha)
-            # self.joint_table(self.build_filename_fedavg(self.df_concat, use_mean=False), alpha=alpha, models=models)
+            self.evaluate_client_joint_accuracy(self.df_concat, alpha)
+            self.joint_table(self.df_concat, alpha=alpha, models=models)
+            self.joint_table(self.df_concat, alpha=alpha, models=models, target_col='Parameters reduction (%)')
 
         # for alpha in alphas:
         #     self.evaluate_client_joint_accuracy(df_concat, alpha)
-        self.similarity()
+        # self.similarity()
         # for alpha in alphas:
         #     self.evaluate_client_norm_analysis_nt(alpha)
         # self.evaluate_client_norm_analysis()
@@ -81,25 +148,19 @@ class Varying_Shared_layers:
         shared_layers_list = df['Solution'].tolist()
         for i in range(len(shared_layers_list)):
             shared_layer = str(shared_layers_list[i])
-            if "dls_compredict" in shared_layer:
+            if "dls_compredict" == shared_layer:
                 shared_layers_list[i] = "$FedAvg+FP_{dc}$"
-                continue
-            if "dls" in shared_layer:
+            elif "dls" == shared_layer:
                 shared_layers_list[i] = "$FedAvg+FP_{d}$"
-                continue
 
-            if "compredict" in shared_layer:
+            elif "compredict" == shared_layer:
                 shared_layers_list[i] = "$FedAvg+FP_{c}$"
-                continue
-            if "no" in shared_layer:
-                shared_layers_list[i] = "$FedAvg+FP$"
-                continue
-            if "fedkd" in shared_layer:
+            elif "fedkd" == shared_layer:
                 shared_layers_list[i] = "$FedAvg+FP_{kd}$"
-                continue
-            if "sparsification" in shared_layer:
+            elif "sparsification" == shared_layer:
                 shared_layers_list[i] = "$FedAvg+FP_{s}$"
-                continue
+            elif "no" == shared_layer:
+                shared_layers_list[i] = "$FedAvg+FP$"
             # new_shared_layer = "{"
             # for layer in shared_layer:
             #     if len(new_shared_layer) == 1:
@@ -122,19 +183,22 @@ class Varying_Shared_layers:
 
     def build_filenames(self):
 
-        files = ["evaluate_client.csv", "similarity_between_layers.csv"]
+        # files = ["evaluate_client.csv", "similarity_between_layers.csv"]
+        files = ["evaluate_client.csv"]
         df_concat = None
         df_concat_similarity = None
         df_concat_norm = None
-        for layers in self.compression:
-            for a in self.alpha:
-                for model in self.model_name:
-                    for dataset in self.dataset:
-                        for file in files:
+        for file in files:
+            for compression in self.compression:
+                for a in self.alpha:
+                    for model in self.model_name:
+                        for dataset in self.dataset:
 
 
-                            filename = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/" + f"logs/{self.type}/{self.strategy_name}-{self.aggregation_method}-{self.fraction_fit}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{model}/{dataset}/classes_per_client_{self.class_per_client}/alpha_{a}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(layers)}_compression/{file}"
 
+                            filename = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/" + f"logs/{self.type}/{self.strategy_name}-{self.aggregation_method}-{self.fraction_fit}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{model}/{dataset}/classes_per_client_{self.class_per_client}/alpha_{a}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(compression)}_compression/{file}"
+                            # if "/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/logs/torch/FedPredict-None-0.3/new_clients_False_train_False/20/CNN_3/EMNIST/classes_per_client_2/alpha_5.0/100_rounds/1_local_epochs/set_comment/no_compression" not in filename:
+                            #     continue
                             try:
                                 df = pd.read_csv(filename)
                             except:
@@ -144,55 +208,64 @@ class Varying_Shared_layers:
 
                             # model_name = model.replace("CNN_2", "CNN-a").replace("CNN_3", "CNN-b")
                             # dataset_name = dataset.replace("CIFAR10", "CIFAR-10")
+                            print("leu: ", filename)
                             model_name = model.replace("CNN_2", "CNN-a").replace("CNN_3", "CNN-b")
                             dataset_name = dataset.replace("CIFAR10", "CIFAR-10")
-                            print("olar: ", model_name, dataset_name, model, dataset)
                             if "evaluate" in file:
-                                df['Solution'] = np.array([layers] * len(df))
+                                df['Solution'] = np.array([compression] * len(df))
                                 df['Strategy'] = np.array([self.strategy_name] * len(df))
                                 df['\u03B1'] = np.array([a]*len(df))
                                 df['Model'] = np.array([model_name]*len(df))
                                 df['Dataset'] = np.array([dataset_name]*len(df))
                                 df['Accuracy (%)'] = df['Accuracy'].to_numpy() * 100
+                                df['Size of parameters (MB)'] = df['Size of parameters'] / 1000000
+                                df['Accuracy (%)'] = df['Accuracy (%)'].round(4)
+                                # df['Round'] = np.array(df['Server round'].tolist())
                                 if df_concat is None:
                                     df_concat = df
                                 else:
                                     df_concat = pd.concat([df_concat, df], ignore_index=True)
                             elif "similarity" in file:
-                                if layers not in ["dls", "dls_compredict", "sparsification"]:
+                                if compression not in ["dls", "dls_compredict", "sparsification", "no"]:
                                     continue
                                 df['\u03B1'] = np.array([a] * len(df))
                                 df['Round'] = np.array(df['Server round'].tolist())
                                 df['Dataset'] = np.array([dataset_name] * len(df))
                                 df['Model'] = np.array([model_name] * len(df))
-                                df['Solution'] = np.array([layers] * len(df))
+                                df['Solution'] = np.array([compression] * len(df))
                                 df['Strategy'] = np.array([self.strategy_name] * len(df))
                                 if df_concat_similarity is None:
                                     df_concat_similarity = df
                                 else:
                                     df_concat_similarity = pd.concat([df_concat_similarity, df], ignore_index=True)
-                            elif "norm" in file:
-                                if layers not in ["dls", "dls_compredict", "sparsification"]:
-                                    continue
-                                df['\u03B1'] = np.array([a] * len(df))
-                                df['Server round'] = np.array(df['Round'].tolist())
-                                df['Dataset'] = np.array([dataset_name] * len(df))
-                                df['Model'] = np.array([model_name] * len(df))
-                                df['Solution'] = np.array([layers] * len(df))
-                                df['Strategy'] = np.array([self.strategy_name] * len(df))
-                                if df_concat_norm is None:
-                                    df_concat_norm = df
-                                else:
-                                    df_concat_norm = pd.concat([df_concat_norm, df], ignore_index=True)
+                            # elif "norm" in file:
+                            #     if layers not in ["dls", "dls_compredict", "sparsification"]:
+                            #         continue
+                            #     df['\u03B1'] = np.array([a] * len(df))
+                            #     df['Server round'] = np.array(df['Round'].tolist())
+                            #     df['Dataset'] = np.array([dataset_name] * len(df))
+                            #     df['Model'] = np.array([model_name] * len(df))
+                            #     df['Solution'] = np.array([layers] * len(df))
+                            #     df['Strategy'] = np.array([self.strategy_name] * len(df))
+                            #     if df_concat_norm is None:
+                            #         df_concat_norm = df
+                            #     else:
+                            #         df_concat_norm = pd.concat([df_concat_norm, df], ignore_index=True)
 
                             # if "dls_compredict" in layers and file == 'evaluate_client.csv':
                             #     print(df)
-                            #     exit()
 
 
-        print("contruído: ", df_concat.columns)
+
 
         self.df_concat = self.convert_shared_layers(df_concat)
+        print("contruído: ", df_concat.columns)
+        # print("e1: ", self.df_concat.query("Solution=='$FedAvg+FP$' and Model=='CNN-b' and Dataset=='EMNIST'")[
+        #     'Size of parameters (MB)'])
+        # print("e2: ", self.df_concat.query("Solution=='$FedAvg+FP_{s}$' and Model=='CNN-b' and Dataset=='EMNIST'")[
+        #     'Size of parameters (MB)'])
+        # exit()
+        # exit()
         self.df_concat_similarity = df_concat_similarity
         self.df_concat_norm = df_concat_norm
         # print("Leu similaridade", df_concat_similarity[['Round', '\u03B1', 'Similarity', 'Dataset', 'Model', 'Layer']].drop_duplicates().to_string())
@@ -500,7 +573,6 @@ class Varying_Shared_layers:
     def evaluate_client_joint_parameter_reduction(self, df):
 
         # df = df[df['Solution'] == "$FedAvg+FP_d$"]
-        df = df[df['Solution'] != "$FedAvg+FP$"]
         fig, ax = plt.subplots(2, 2,  sharex='all', sharey='all', figsize=(6, 6))
 
         base_dir = """analysis/output/torch/varying_shared_layers/{}/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
@@ -646,9 +718,9 @@ class Varying_Shared_layers:
             markers = ["", "-", "--"]
 
             f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
-            handles = [f("o", colors[i]) for i in range(len(compression))]
+            handles = [f("o", colors[i]) for i in range(len(colors))]
             handles += [plt.Line2D([], [], linestyle=markers[i], color="k") for i in range(3)]
-            fig.legend(handles, labels, fontsize=9, ncols=4, bbox_to_anchor=(0.90, 1.02))
+            fig.legend(handles, labels, fontsize=9, ncols=4, bbox_to_anchor=(0.90, 1.05))
             figure = fig.get_figure()
             Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
             Path(base_dir + "svg/").mkdir(parents=True, exist_ok=True)
@@ -742,8 +814,8 @@ class Varying_Shared_layers:
         solutions = pd.Series([i[1] for i in indexes]).unique().tolist()
         reference_solutions = {}
         for solution_key in solutions:
-            if "FP_{dc}" in solution_key or "FP_{d}" in solution_key or "FP_{c}" in solution_key or "FP_{kd}" in solution_key or "FP" in solution_key:
-                reference_solutions[solution_key] = solution_key.replace("+FP_{dc}", "").replace("+FP_{d}", "").replace("+FP_{c}", "").replace("+FP_{kd}", "").replace("+FP", "")
+            if "FP_{dc}" in solution_key or "FP_{d}" in solution_key or "FP_{c}" in solution_key or "FP_{kd}" in solution_key or "FP" in solution_key or "FP_{s}" in solution_key:
+                reference_solutions[solution_key] = solution_key.replace("+FP_{dc}", "").replace("+FP_{d}", "").replace("+FP_{c}", "").replace("+FP_{kd}", "").replace("+FP_{s}", "").replace("+FP", "")
 
         for dataset in datasets:
             for solution in reference_solutions:
@@ -764,7 +836,7 @@ class Varying_Shared_layers:
 
         return df_difference
 
-    def joint_table(self, df, alpha, models):
+    def joint_table(self, df, alpha, models, target_col='Accuracy (%)'):
 
         shared_layers = df['Solution'].unique().tolist()
 
@@ -773,7 +845,7 @@ class Varying_Shared_layers:
         # df = df[df['Round'] == 100]
         print("receb: ", df.columns)
         df_test = df[
-            ['Round', 'Size of parameters', 'Solution', 'Accuracy (%)', '\u03B1', 'Dataset', 'Model']]
+            ['Round', 'Size of parameters', 'Solution', 'Accuracy (%)', '\u03B1', 'Dataset', 'Model', 'Parameters reduction (%)']]
 
         # df_test = df_test.query("""Round in [10, 100]""")
         print("agrupou table")
@@ -796,9 +868,9 @@ class Varying_Shared_layers:
                 # mnist_acc[column] = (self.filter(df_test, experiment, 'MNIST', float(column), strategy=model_name)['Accuracy (%)']*100).mean().round(6)
                 # cifar10_acc[column] = (self.filter(df_test, experiment, 'CIFAR10', float(column), strategy=model_name)['Accuracy (%)']*100).mean().round(6)
                 mnist_acc[column] = self.t_distribution((self.filter(df_test, model=shared_layer, dataset='EMNIST', alpha=alpha, shared_layer=column)[
-                                         'Accuracy (%)']).tolist(), ci)
+                                         target_col]).tolist(), ci)
                 cifar10_acc[column] = self.t_distribution((self.filter(df_test,model=shared_layer, dataset='CIFAR-10', alpha=alpha, shared_layer=column)[
-                                           'Accuracy (%)']).tolist(), ci)
+                                           target_col]).tolist(), ci)
 
             model_metrics = []
 
@@ -841,7 +913,7 @@ class Varying_Shared_layers:
             str(self.model_name),
             str(self.alpha), self.comment)
         Path(base_dir).mkdir(parents=True, exist_ok=True)
-        filename = """{}latex_{}.txt""".format(base_dir, str(alpha))
+        filename = """{}latex_{}_{}.txt""".format(base_dir, str(alpha), target_col)
         print("ddr: ", filename)
         pd.DataFrame({'latex': [latex]}).to_csv(filename, header=False, index=False)
 
@@ -926,7 +998,7 @@ class Varying_Shared_layers:
         print("strategias unicas: ", df['Solution'].unique().tolist())
 
         if self.experiment == "dls_compredict":
-            compression = ["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$", "$FedAvg+FP$", "$FedAvg$", "$FedAvg+FP_{kd}$"]
+            compression = ["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$", "$FedAvg+FP$", "$FedAvg$", "$FedAvg+FP_{kd}$", "$FedAvg+FP_{s}$"]
         elif -1 in self.compression:
             compression = ["$FedAvg+FP_{d}$", 'FedPredict', 'FedAvg']
         else:
@@ -1051,7 +1123,7 @@ class Varying_Shared_layers:
             # ax[1].set_xticks([])
             # plt.tight_layout(pad=0.5)
 
-            lines_labels = [ax[0, 0].get_legend_handles_labels()]
+            lines_labels = [ax[1, 0].get_legend_handles_labels()]
             lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
             print("linhas")
             print(lines)
@@ -1070,7 +1142,7 @@ class Varying_Shared_layers:
             markers = ["", "-", "--"]
 
             f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
-            handles = [f("o", colors[i]) for i in range(6)]
+            handles = [f("o", colors[i]) for i in range(len(colors))]
             ax[0, 0].legend(handles, labels, fontsize=8)
 
             # plt.subplots_adjust(wspace=0.07, hspace=0.14)
@@ -1459,18 +1531,20 @@ class Varying_Shared_layers:
         print("iniciais: ", self.df_concat.columns)
         df = self.df_concat
         df = df.query("""Model == '{}' and Dataset == '{}'""".format(model, dataset))
-        def strategy(df):
-            parameters = float(df['Size of parameters'].mean())/1000000
-            config = float(df['Size of config'].mean())/1000000
-            acc = float(df['Accuracy'].mean())
-            acc_gain_per_byte = acc/parameters
-            total_size = parameters + config
-
-            return pd.DataFrame({'Size of parameters (MB)': [parameters], 'Communication cost (MB)': [total_size], 'Accuracy': [acc], 'Accuracy gain per MB': [acc_gain_per_byte]})
-        df = df[['Accuracy', 'Round', 'Size of parameters', 'Size of config', 'Strategy', 'Solution', '\u03B1', 'Dataset', 'Model']].groupby(by=['Strategy', 'Solution', 'Round', '\u03B1', 'Dataset', 'Model']).apply(lambda e: strategy(e)).reset_index()[['Accuracy', 'Size of parameters (MB)', 'Communication cost (MB)', 'Strategy', 'Solution', 'Round', 'Accuracy gain per MB', '\u03B1', 'Dataset', 'Model']]
+        # def strategy(df):
+        #     parameters = float(df['Size of parameters'].mean())/1000000
+        #     config = float(df['Size of config'].mean())/1000000
+        #     acc = float(df['Accuracy'].mean())
+        #     acc_gain_per_byte = acc/parameters
+        #     total_size = parameters + config
+        #
+        #     return pd.DataFrame({'Size of parameters (MB)': [parameters], 'Communication cost (MB)': [total_size], 'Accuracy': [acc], 'Accuracy gain per MB': [acc_gain_per_byte]})
+        # df = df[['Accuracy', 'Round', 'Size of parameters', 'Size of config', 'Strategy', 'Solution', '\u03B1', 'Dataset', 'Model']].groupby(by=['Strategy', 'Solution', 'Round', '\u03B1', 'Dataset', 'Model']).apply(lambda e: strategy(e)).reset_index()[['Accuracy', 'Size of parameters (MB)', 'Communication cost (MB)', 'Strategy', 'Solution', 'Round', 'Accuracy gain per MB', '\u03B1', 'Dataset', 'Model']]
         # print("Com alpha: ", alpha, "\n", df)
-        df['Accuracy (%)'] = df['Accuracy'] * 100
-        df['Accuracy (%)'] = df['Accuracy (%)'].round(4)
+        print("rodou: ", model, dataset)
+        # if model == 'CNN-a' and dataset == 'EMNIST':
+        #     print(df.query("Solution=='$FedAvg+FP_{s}$' and Model=='CNN-a' and Dataset=='EMNIST'"))
+        #     exit()
         x_column = 'Round'
         y_column = 'Accuracy (%)'
         hue = 'Solution'
@@ -1526,7 +1600,7 @@ class Varying_Shared_layers:
         #         sort.append(i)
         # compression_methods = sort
         # print("ord: ", compression_methods)
-        compression  = ["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$", "$FedAvg+FP$", "$FedAvg$"]
+        compression  = ["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$", "$FedAvg+FP$", "$FedAvg$", "$FedAvg+FP_{s}$"]
         style = '\u03B1'
 
         title = """Accuracy in {}; Model={}""".format(dataset, model)
@@ -1550,11 +1624,11 @@ class Varying_Shared_layers:
         # print("Custo {1}", df[df['Solution']=='{1}'])
         title = """Communication cost in {}; Model={}""".format(dataset, model)
         x_column = 'Round'
-        y_column = 'Communication cost (MB)'
+        y_column = 'Size of parameters (MB)'
         hue = 'Solution'
         line_plot(df=df,
                   base_dir=base_dir,
-                  file_name="evaluate_client_communication_cost_round_varying_shared_layers_lineplot" + "_ " + dataset + "_" + "_alpha" + str(alpha) + "_model_" + model,
+                  file_name="evaluate_client_size_of_parameters_round_varying_shared_layers_lineplot" + "_ " + dataset + "_" + "_alpha" + str(alpha) + "_model_" + model,
                   x_column=x_column,
                   y_column=y_column,
                   title=title,
@@ -1569,59 +1643,31 @@ class Varying_Shared_layers:
         if comment == "bottom up":
             # df = df[df["Solution"] > 1]
             pass
-        print("Com alpha: ", alpha, "\n", df[['Accuracy', 'Solution', 'Round', 'Accuracy gain per MB']])
-        x_column = 'Round'
-        y_column = 'Accuracy gain per MB'
-        hue = 'Solution'
-        line_plot(df=df,
-                  base_dir=base_dir,
-                  file_name="evaluate_client_accuracy_gain_per_MB_varying_shared_layers_lineplot" + "_ " + dataset + "_" + "_alpha" + str(alpha) + "_model_" + model,
-                  x_column=x_column,
-                  y_column=y_column,
-                  title=title,
-                  hue=hue,
-                  hue_order=compression,
-                  type=1,
-                  log_scale=True)
+        # x_column = 'Round'
+        # y_column = 'Accuracy gain per MB'
+        # hue = 'Solution'
+        # line_plot(df=df,
+        #           base_dir=base_dir,
+        #           file_name="evaluate_client_accuracy_gain_per_MB_varying_shared_layers_lineplot" + "_ " + dataset + "_" + "_alpha" + str(alpha) + "_model_" + model,
+        #           x_column=x_column,
+        #           y_column=y_column,
+        #           title=title,
+        #           hue=hue,
+        #           hue_order=compression,
+        #           type=1,
+        #           log_scale=True)
 
         filename = base_dir + "csv/comparison.csv"
         df.to_csv(filename, index=False)
-
-        def comparison_with_shared_layers(df, df_aux):
-
-            round = int(df['Round'].values[0])
-            dataset = str(df['Dataset'].values[0])
-            alpha = float(df['\u03B1'].values[0])
-            model = str(df['Model'].values[0])
-            # print("interes: ", round, dataset, alpha, model)
-            df_copy = copy.deepcopy(df_aux.query("""Round == {} and Dataset == '{}' and \u03B1 == {} and Model == '{}'""".format(round, dataset, alpha, model)))
-            # print("apos: ", df_copy.columns)
-            target = df_copy[df_copy['Solution'] == "$FedAvg+FP$"]
-            target_acc = target['Accuracy (%)'].tolist()[0]
-            target_size = target['Size of parameters (MB)'].tolist()[0]
-            acc = df['Accuracy (%)'].tolist()[0]
-            accuracy = df['Accuracy (%)'].mean()
-            size = df['Size of parameters (MB)'].tolist()[0]
-            acc_reduction = target_acc - acc
-            size_reduction = (target_size - size)
-            size_reduction_percentage = (1 - size/target_size) * 100
-            # acc_weight = 1
-            # size_weight = 1
-            # acc_score = acc_score *acc_weight
-            # size_reduction = size_reduction * size_weight
-            # score = 2*(acc_score * size_reduction)/(acc_score + size_reduction)
-            # if df['Solution'].tolist()[0] == "{1, 2, 3, 4}":
-            #     acc_reduction = 0.0001
-            #     size_reduction = 0.0001
-
-            return pd.DataFrame({'Accuracy reduction (%)': [acc_reduction], 'Parameters reduction (MB)': [size_reduction],
-                                 'Parameters reduction (%)': [size_reduction_percentage], 'Accuracy (%)': [accuracy]})
-
         print("antes: ", df.columns)
         aux = copy.deepcopy(df)
-        df = df[['Accuracy (%)', 'Size of parameters (MB)', 'Communication cost (MB)', 'Strategy', 'Solution', 'Round', 'Accuracy gain per MB', '\u03B1', 'Dataset', 'Model']].groupby(
-            by=['Strategy', 'Round', 'Solution', 'Dataset', '\u03B1', 'Model']).apply(lambda e: comparison_with_shared_layers(df=e, df_aux=aux)).reset_index()[['Strategy', 'Round', 'Solution', '\u03B1', 'Accuracy (%)', 'Accuracy reduction (%)', 'Parameters reduction (MB)', 'Parameters reduction (%)', 'Dataset', 'Model']]
-
+        if dataset == 'EMNIST' and model == 'CNN-b':
+            print("e1: ", df.query("Solution=='$FedAvg+FP$' and Model=='CNN-b' and Dataset=='EMNIST'")[
+                'Size of parameters (MB)'])
+        if dataset == 'EMNIST' and model == 'CNN-b':
+            print("e2: ", df.query("Solution=='$FedAvg+FP$' and Model=='CNN-b' and Dataset=='EMNIST'")[
+                'Size of parameters (MB)'])
+            exit()
         df_preprocessed = copy.deepcopy(df)
 
         df = df[df['Solution'] != "$FedAvg+FP$"]
