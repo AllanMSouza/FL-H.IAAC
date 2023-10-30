@@ -29,7 +29,7 @@ class Varying_Shared_layers:
         self.epochs = epochs
         self.comment = comment
         self.compression = compression
-        self.model_name_list = [model.replace("CNN_2", "CNN-a").replace("CNN_3", "CNN-b") for model in self.model_name]
+        self.model_name_list = [model.replace("CNN_2", "CNN-a").replace("CNN_3", "CNN-b").replace("CNN_1", "CNN-a") for model in self.model_name]
         self.dataset_name_list = [dataset.replace("CIFAR10", "CIFAR-10") for dataset in self.dataset]
         if "dls_compredict" in self.compression:
             self.experiment = "dls_compredict"
@@ -114,7 +114,13 @@ class Varying_Shared_layers:
 
         self.build_filenames()
 
+
+
         self.parameters_reduction()
+
+        self.df_concat = self.df_concat[['Strategy', 'Round', 'Solution', 'Dataset', 'α', 'Model', 'level_6',
+       'Accuracy reduction (%)', 'Parameters reduction (MB)',
+       'Parameters reduction (%)', 'Accuracy (%)', 'Size of parameters (MB)']]
 
         # df_concat = None
 
@@ -130,11 +136,17 @@ class Varying_Shared_layers:
         self.evaluate_client_joint_parameter_reduction(self.df_concat)
         alphas = self.df_concat['\u03B1'].unique().tolist()
         models = self.df_concat['Model'].unique().tolist()
+        # print(self.df_concat.columns)
+        # print(self.df_concat.isna())
         self.df_concat = self.build_filename_fedavg(self.df_concat)
+        # print(self.df_concat.columns)
+        # print(self.df_concat.isna())
+        # exit()
+
         for alpha in alphas:
             self.evaluate_client_joint_accuracy(self.df_concat, alpha)
             self.joint_table(self.df_concat, alpha=alpha, models=models)
-            self.joint_table(self.df_concat, alpha=alpha, models=models, target_col='Parameters reduction (%)')
+            self.joint_table(self.df_concat, alpha=alpha, models=models, target_col='Size of parameters (MB)')
 
         # for alpha in alphas:
         #     self.evaluate_client_joint_accuracy(df_concat, alpha)
@@ -200,7 +212,7 @@ class Varying_Shared_layers:
                             # if "/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/logs/torch/FedPredict-None-0.3/new_clients_False_train_False/20/CNN_3/EMNIST/classes_per_client_2/alpha_5.0/100_rounds/1_local_epochs/set_comment/no_compression" not in filename:
                             #     continue
                             try:
-                                df = pd.read_csv(filename)
+                                df = pd.read_csv(filename).dropna()
                             except:
                                 print("arquivo inexistente")
                                 print(filename)
@@ -218,9 +230,10 @@ class Varying_Shared_layers:
                                 df['Model'] = np.array([model_name]*len(df))
                                 df['Dataset'] = np.array([dataset_name]*len(df))
                                 df['Accuracy (%)'] = df['Accuracy'].to_numpy() * 100
-                                df['Size of parameters (MB)'] = df['Size of parameters'] / 1000000
+                                df['Size of parameters (MB)'] = df['Size of parameters'].to_numpy() / 1000000
                                 df['Accuracy (%)'] = df['Accuracy (%)'].round(4)
                                 # df['Round'] = np.array(df['Server round'].tolist())
+
                                 if df_concat is None:
                                     df_concat = df
                                 else:
@@ -255,11 +268,10 @@ class Varying_Shared_layers:
                             # if "dls_compredict" in layers and file == 'evaluate_client.csv':
                             #     print(df)
 
-
-
-
         self.df_concat = self.convert_shared_layers(df_concat)
         print("contruído: ", df_concat.columns)
+        # print(df_concat.isna())
+        # exit()
         # print("e1: ", self.df_concat.query("Solution=='$FedAvg+FP$' and Model=='CNN-b' and Dataset=='EMNIST'")[
         #     'Size of parameters (MB)'])
         # print("e2: ", self.df_concat.query("Solution=='$FedAvg+FP_{s}$' and Model=='CNN-b' and Dataset=='EMNIST'")[
@@ -280,13 +292,16 @@ class Varying_Shared_layers:
                 for model in self.model_name:
                     for dataset in self.dataset:
                         for file in files:
+
                             filename = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/" + f"logs/{self.type}/FedAVG-{self.aggregation_method}-{self.fraction_fit}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{model}/{dataset}/classes_per_client_{self.class_per_client}/alpha_{a}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{layers}_compression/{file}"
                             if not os.path.exists(filename):
                                 print("não achou fedavg")
-                                return df_concat
-                            df = pd.read_csv(filename)
+                                continue
+                            df = pd.read_csv(filename).dropna()
                             model_name = model.replace("CNN_2", "CNN-a").replace("CNN_3", "CNN-b")
                             dataset_name = dataset.replace("CIFAR10", "CIFAR-10")
+                            print("la: ", a, model, dataset, file)
+                            print(df.isnull())
                             if "evaluate" in file:
                                 df['Solution'] = np.array([layers] * len(df))
                                 df['Strategy'] = np.array(['FedAvg'] * len(df))
@@ -295,6 +310,10 @@ class Varying_Shared_layers:
                                 df['Model'] = np.array([model_name]*len(df))
                                 df['Dataset'] = np.array([dataset_name]*len(df))
                                 df['Accuracy (%)'] = df['Accuracy'].to_numpy() * 100
+                                df['Size of parameters (MB)'] = df['Size of parameters'].to_numpy() / 1000000
+                                df['Accuracy reduction (%)'] = np.array([0]*len(df))
+                                df['Parameters reduction (MB)'] = np.array([0]*len(df))
+                                df['Parameters reduction (%)'] = np.array([0] * len(df))
 
                                 def summary(df):
 
@@ -302,16 +321,19 @@ class Varying_Shared_layers:
 
                                     return pd.DataFrame({'Accuracy (%)': [acc]})
 
-                                if use_mean:
-                                    df = df.groupby(
-                                        ['Dataset', 'Model', '\u03B1', 'Strategy', 'Solution', 'Round']).mean().reset_index()
+                                # if use_mean:
+                                #     df = df.groupby(
+                                #         ['Dataset', 'Model', '\u03B1', 'Strategy', 'Solution', 'Round']).mean().reset_index()
 
                                 if df_concat is None:
                                     df_concat = df
                                 else:
+                                    print("concat: ", df_concat.columns)
+                                    print("df: ", df.columns)
+                                    df = df[['Strategy', 'Round', 'Solution', 'Dataset', 'α', 'Model',
+       'Accuracy reduction (%)', 'Parameters reduction (MB)',
+       'Parameters reduction (%)', 'Accuracy (%)', 'Size of parameters (MB)']]
                                     df_concat = pd.concat([df_concat, df], ignore_index=True)
-
-        print("Concatenado: ", df_concat.to_string())
 
         return df_concat
 
@@ -580,8 +602,9 @@ class Varying_Shared_layers:
             str(self.model_name),
             str(self.alpha), self.comment)
 
+        df['Space saving (%)'] = np.array(df['Parameters reduction (%)'].tolist())
         x_column = 'Round'
-        y_column = 'Parameters reduction (%)'
+        y_column = 'Space saving (%)'
         hue = 'Solution'
         style = '\u03B1'
         y_min = 0
@@ -718,7 +741,7 @@ class Varying_Shared_layers:
             markers = ["", "-", "--"]
 
             f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
-            handles = [f("o", colors[i]) for i in range(len(colors))]
+            handles = [f("o", colors[i]) for i in range(6)]
             handles += [plt.Line2D([], [], linestyle=markers[i], color="k") for i in range(3)]
             fig.legend(handles, labels, fontsize=9, ncols=4, bbox_to_anchor=(0.90, 1.05))
             figure = fig.get_figure()
@@ -794,17 +817,20 @@ class Varying_Shared_layers:
 
     def t_distribution(self, data, ci):
 
-        min_ = st.t.interval(alpha=ci, df=len(data) - 1,
+        min_, max_ = st.t.interval(alpha=ci, df=len(data) - 1,
                       loc=np.mean(data),
-                      scale=st.sem(data))[0]
+                      scale=st.sem(data))
 
         mean = np.mean(data)
         average_variation = (mean - min_).round(1)
         mean = mean.round(1)
+        if np.isnan(average_variation):
+            print("nulo: ", average_variation, len(data), np.mean(data), mean, ci, min_, max_)
+            average_variation = "0.0"
 
         return str(mean) + u"\u00B1" + str(average_variation)
 
-    def accuracy_improvement(self, df):
+    def accuracy_improvement(self, df, range_of_string, target_col):
 
         df_difference = copy.deepcopy(df)
         columns = df.columns.tolist()
@@ -824,11 +850,14 @@ class Varying_Shared_layers:
 
                 for column in columns:
                     difference = str(
-                        round(float(df.loc[reference_index, column][:4]) - float(df.loc[target_index, column][:4]), 1))
+                        round(float(df.loc[reference_index, column][:range_of_string]) - float(df.loc[target_index, column][:range_of_string]), 1))
+                    difference = str(round(float(difference) * 100 / float(df.loc[target_index, column][:range_of_string]), 1))
                     if difference[0] != "-":
-                        difference = "+" + difference
-                    df_difference.loc[reference_index, column] = df.loc[
-                                                                     reference_index, column] + "(" + difference + ")"
+                        difference = "textuparrow" + difference
+                    elif float(difference[1:4]) > 0:
+                        difference = "textuparrow" + difference.replace("-", "")
+                    df_difference.loc[reference_index, column] = "(" + difference + "%)" + df.loc[
+                        reference_index, column]
 
         print(indexes)
         print(indexes[0])
@@ -845,7 +874,7 @@ class Varying_Shared_layers:
         # df = df[df['Round'] == 100]
         print("receb: ", df.columns)
         df_test = df[
-            ['Round', 'Size of parameters', 'Solution', 'Accuracy (%)', '\u03B1', 'Dataset', 'Model', 'Parameters reduction (%)']]
+            ['Round', 'Size of parameters (MB)', 'Solution', 'Accuracy (%)', '\u03B1', 'Dataset', 'Model', 'Parameters reduction (%)']]
 
         # df_test = df_test.query("""Round in [10, 100]""")
         print("agrupou table")
@@ -884,14 +913,15 @@ class Varying_Shared_layers:
         df_table = pd.DataFrame(models_dict, index=index).round(4)
         print(df_table.to_string())
 
-        df_accuracy_improvements = self.accuracy_improvement(df_table)
+        range_of_string = {'Accuracy (%)': 4, 'Size of parameters (MB)': 3}[target_col]
+        df_accuracy_improvements = self.accuracy_improvement(df_table, range_of_string, target_col)
         print(df_accuracy_improvements)
 
 
         indexes = df_table.index.tolist()
         n_solutions = len(pd.Series([i[1] for i in indexes]).unique().tolist()) + 1
 
-        max_values = self.idmax(df_table, n_solutions)
+        max_values = self.idmax(df_table, n_solutions, range_of_string, target_col)
         print("max values", max_values)
 
         for max_value in max_values:
@@ -906,7 +936,38 @@ class Varying_Shared_layers:
         # df_table.columns = np.array(columns)
         print(df_accuracy_improvements.columns)
 
-        latex = df_accuracy_improvements.to_latex().replace("\\\nMNIST", "\\\n\hline\nMNIST").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}")
+        indexes = ['CNN-a', 'CNN-b']
+        for i in range(df_accuracy_improvements.shape[0]):
+            row = df_accuracy_improvements.iloc[i]
+            for index in indexes:
+                value_string = row[index]
+                add_textbf = False
+                if "textbf{" in value_string:
+                    value_string = value_string.replace("textbf{", "").replace("}", "")
+                    add_textbf = True
+
+                if ")" in value_string:
+                    value_string = value_string.replace("(", "").split(")")
+                    gain = value_string[0]
+                    acc = value_string[1]
+                else:
+                    gain = ""
+                    acc = value_string
+
+                if add_textbf:
+                    if gain != "":
+                        gain = "textbf{" + gain + "}"
+                    acc = "textbf{" + acc + "}"
+
+                row[index] = acc + " & " + gain
+
+            df_accuracy_improvements.iloc[i] = row
+
+        latex = df_accuracy_improvements.to_latex().replace("\\\nEMNIST", "\\\n\hline\nEMNIST").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}").replace("\$", "$").replace("textuparrow", "\oitextuparrow").replace("textdownarrow", "\oitextdownarrow").replace("\&", "&").replace("\_", "_")
+        if 'Acc' in target_col:
+            latex = latex.replace("\oitextuparrow0.0", "0.0")
+        else:
+            latex = latex.replace("\oitextuparrow0.0\%", "")
 
         base_dir = """analysis/output/torch/varying_shared_layers/{}/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/csv/""".format(
             self.experiment, str(self.dataset), self.num_clients, self.num_rounds, self.fraction_fit,
@@ -917,7 +978,7 @@ class Varying_Shared_layers:
         print("ddr: ", filename)
         pd.DataFrame({'latex': [latex]}).to_csv(filename, header=False, index=False)
 
-    def idmax(self, df, n_solutions):
+    def idmax(self, df, n_solutions, range_of_string, target_col):
 
         df_indexes = []
         columns = df.columns.tolist()
@@ -926,12 +987,12 @@ class Varying_Shared_layers:
             column = columns[i]
             column_values = df[column].tolist()
             print("ddd", column_values)
-            indexes = self.select_mean(i, column_values, columns, n_solutions)
+            indexes = self.select_mean(i, column_values, columns, n_solutions, range_of_string, target_col)
             df_indexes += indexes
 
         return df_indexes
 
-    def select_mean(self, index, column_values, columns, n_solutions):
+    def select_mean(self, index, column_values, columns, n_solutions, range_of_string, target_col):
 
         list_of_means = []
         indexes = []
@@ -939,8 +1000,8 @@ class Varying_Shared_layers:
 
         for i in range(len(column_values)):
             print("valor: ", column_values[i])
-            value = float(str(column_values[i])[:4])
-            interval = float(str(column_values[i])[5:8])
+            value = float(str(column_values[i])[:range_of_string])
+            interval = float(str(column_values[i])[range_of_string+1:range_of_string+4])
             minimum = value - interval
             maximum = value + interval
             list_of_means.append((value, minimum, maximum))
@@ -948,7 +1009,10 @@ class Varying_Shared_layers:
         for i in range(0, len(list_of_means), n_solutions):
 
             dataset_values = list_of_means[i: i + n_solutions]
-            max_tuple = max(dataset_values, key=lambda e: e[0])
+            if 'Acc' in target_col:
+                max_tuple = max(dataset_values, key=lambda e: e[0])
+            else:
+                max_tuple = min(dataset_values, key=lambda e: e[0])
             column_min_value = max_tuple[1]
             column_max_value = max_tuple[2]
             print("maximo: ", column_max_value)

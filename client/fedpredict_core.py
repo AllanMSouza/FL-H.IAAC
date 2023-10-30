@@ -221,7 +221,7 @@ def fedpredict_layerwise_similarity(global_parameter, clients_parameters, client
                 client_difference = {'min': [], 'max': []}
                 for k in range(len(global_layer)):
                     global_layer_k = global_layer[k][0]
-                    print("do cliente: ", client_layer.shape, " global: ", global_layer.shape)
+                    # print("do cliente: ", client_layer.shape, " global: ", global_layer.shape)
                     client_layer_k = client_layer[k][0]
 
                     # if gradient:

@@ -108,15 +108,19 @@ class FedPredictClientTorch(FedAvgClientTorch):
 
 			print("contar3")
 			print([len(i[i == 0]) for i in parameters])
-			for p in parameters:
-				aux = p[p==0]
-				print("quantidade zeros: ", len(aux))
-				sparse = sparse_matrix(p)
-				print("Tamanho original: ", p.nbytes)
-				b = sparse_bytes(sparse)
-				print("Apos esparcificacao: ", b)
-				b = min(p.nbytes, b)
-				size += b
+			if self.comment == "sparsification":
+				for p in parameters:
+					aux = p[p==0]
+					print("quantidade zeros: ", len(aux))
+					sparse = sparse_matrix(p)
+					print("Tamanho original: ", p.nbytes)
+					b = sparse_bytes(sparse)
+					print("Apos esparcificacao: ", b)
+					b = min(p.nbytes, b)
+					size += b
+			else:
+				for p in parameters:
+					size += p.nbytes
 			return size
 
 		except Exception as e:

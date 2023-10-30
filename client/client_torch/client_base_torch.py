@@ -183,7 +183,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				else:
 					mid_dim = 4
 				return  CNN_3(input_shape=input_shape, mid_dim=mid_dim, num_classes=self.num_classes)
-			elif self.model_name == 'CNN'  and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10']:
+			elif self.model_name == 'CNN_1'  and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10']:
 				if self.dataset in ['EMNIST', 'MNIST']:
 					mid_dim = 256
 				else:
