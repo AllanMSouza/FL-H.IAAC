@@ -117,13 +117,15 @@ class JointAnalysis():
         strategies = df_concat['Strategy'].unique().tolist()
         print("versao2: ", df_concat['Strategy'].unique().tolist())
         aux = []
-        order = ['$FedAvg+FP_{dc}$', '$FedAvg$', '$FedYogi+FP_{dc}$', '$FedYogi$', '$FedKD+FP_{dc}$', '$FedKD$', '$FedClassAvg$', '$FedProto$']
+        order = ['$FedAvg+FP_{dc}$', '$FedAvg$', '$FedYogi+FP_{dc}$', '$FedYogi$', '$FedKD+FP_{dc}$', '$FedKD$', '$FedPer$', '$FedProto$']
         for s in order:
             if s in strategies:
                 aux.append(s)
         strategies = aux
         print("finai: ", strategies)
+        print("Experimento 1")
         self.joint_table(df_concat, alphas, strategies, experiment=1)
+        print("Experimento 2")
         self.joint_table(df_concat, alphas, strategies, experiment=2)
         # self.joint_table(df_concat, fractions_fit, strategies, experiment=3)
         # self.joint_table(df_concat, fractions_fit, strategies, experiment=4)
@@ -411,7 +413,7 @@ class JointAnalysis():
         i = 0
         j = 0
         # hue_order = ['$FedPredict_{dc}$', "$FedPredict$", 'FedClassAvg', 'FedAvg']
-        hue_order = ['$FedAvg$', '$FedYogi$', '$FedKD$', '$FedClassAvg$', '$FedProto$']
+        hue_order = ['$FedAvg$', '$FedYogi$', '$FedKD$', '$FedPer$', '$FedProto$']
         style = "Version"
         # markers = [',', '.'
         markers = None
@@ -587,7 +589,7 @@ class JointAnalysis():
         for i in range(len(column_values)):
 
             print("valor: ", column_values[i])
-            value = float(str(column_values[i])[:4])
+            value = float(str(str(column_values[i])[:4]).replace(u"\u00B1", ""))
             interval = float(str(column_values[i])[5:8])
             minimum = value - interval
             maximum = value + interval
@@ -638,7 +640,7 @@ if __name__ == '__main__':
                    2: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'False', 'class_per_client': 2,
          'comment': 'set', 'compression': 'dls_compredict', 'local_epochs': '1_local_epochs'}}
 
-    strategies = ['FedPredict', 'FedYogi_with_FedPredict', 'FedKD_with_FedPredict', 'FedAVG', 'FedYogi', 'FedClassAvg', 'FedProto', 'FedKD']
+    strategies = ['FedPredict', 'FedYogi_with_FedPredict', 'FedKD_with_FedPredict', 'FedAVG', 'FedYogi', 'FedPer', 'FedProto', 'FedKD']
     # pocs = [0.1, 0.2, 0.3]
     fractions_fit = [0.3]
     # datasets = ['MNIST', 'CIFAR10']

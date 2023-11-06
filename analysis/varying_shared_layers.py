@@ -171,6 +171,8 @@ class Varying_Shared_layers:
                 shared_layers_list[i] = "$FedAvg+FP_{kd}$"
             elif "sparsification" == shared_layer:
                 shared_layers_list[i] = "$FedAvg+FP_{s}$"
+            elif "per" == shared_layer:
+                shared_layers_list[i] = "$FedAvg+FP_{per}$"
             elif "no" == shared_layer:
                 shared_layers_list[i] = "$FedAvg+FP$"
             # new_shared_layer = "{"
@@ -321,9 +323,9 @@ class Varying_Shared_layers:
 
                                     return pd.DataFrame({'Accuracy (%)': [acc]})
 
-                                # if use_mean:
-                                #     df = df.groupby(
-                                #         ['Dataset', 'Model', '\u03B1', 'Strategy', 'Solution', 'Round']).mean().reset_index()
+                                if use_mean:
+                                    df = df.groupby(
+                                        ['Dataset', 'Model', '\u03B1', 'Strategy', 'Solution', 'Round']).mean().reset_index()
 
                                 if df_concat is None:
                                     df_concat = df
@@ -595,7 +597,6 @@ class Varying_Shared_layers:
     def evaluate_client_joint_parameter_reduction(self, df):
 
         # df = df[df['Solution'] == "$FedAvg+FP_d$"]
-        fig, ax = plt.subplots(2, 2,  sharex='all', sharey='all', figsize=(6, 6))
 
         base_dir = """analysis/output/torch/varying_shared_layers/{}/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
             self.experiment, str(self.dataset), self.num_clients, self.num_rounds, self.fraction_fit,
@@ -609,7 +610,7 @@ class Varying_Shared_layers:
         style = '\u03B1'
         y_min = 0
         if self.experiment == "dls_compredict":
-            compression = ["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$", "$FedAvg+FP_{kd}$", "$FedAvg+FP_{s}$"]
+            compression = ["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$", "$FedAvg+FP_{kd}$", "$FedAvg+FP_{s}$", "$FedAvg+FP_{per}$"]
         elif "dls" in self.compression:
             compression = ["$FedAvg+FP_{d}$", 'FedPredict', 'FedAvg']
         else:
@@ -716,12 +717,6 @@ class Varying_Shared_layers:
             fig.suptitle("", fontsize=16)
             fig.supxlabel(x_column, y=-0.02)
             fig.supylabel(y_column, x=-0.005)
-            # plt.tight_layout(pad=0.5)
-
-            # plt.subplots_adjust(wspace=0.07, hspace=0.14)
-            # lines_labels = [ax[0, 0].get_legend_handles_labels()]
-            # lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-            # fig.legend(lines, labels, loc='upper center', ncol=4, bbox_to_anchor=(0.5, 1.06))
             lines_labels = [ax[0, 1].get_legend_handles_labels()]
             lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
             print("linhas")
@@ -729,21 +724,30 @@ class Varying_Shared_layers:
             print(lines[0].get_color(), lines[0].get_ls())
             print("rotulos")
             print(labels)
-            # # exit()
             colors = []
-            markers = []
             for i in range(len(lines)):
                 color = lines[i].get_color()
                 colors.append(color)
                 ls = lines[i].get_ls()
                 if ls not in ["o"]:
                     ls = "o"
-            markers = ["", "-", "--"]
+            markers = ["-", "--"]
 
             f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
-            handles = [f("o", colors[i]) for i in range(6)]
-            handles += [plt.Line2D([], [], linestyle=markers[i], color="k") for i in range(3)]
-            fig.legend(handles, labels, fontsize=9, ncols=4, bbox_to_anchor=(0.90, 1.05))
+            n = len(compression) + 1
+            handles = [f("o", colors[i]) for i in range(n)]
+            new_labels = []
+            for i in range(len(labels)):
+                if i != n:
+                    new_labels.append(labels[i])
+                else:
+                    print("label: ", labels[i])
+            new_labels[-1] = '\u03B1=' + new_labels[-1]
+            new_labels[-2] = '\u03B1=' + new_labels[-2]
+            new_labels = new_labels[1:]
+
+            handles += [plt.Line2D([], [], linestyle=markers[i], color="k") for i in range(len(markers))]
+            fig.legend(handles[1:], new_labels, fontsize=9, ncols=4, bbox_to_anchor=(0.90, 1.02))
             figure = fig.get_figure()
             Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
             Path(base_dir + "svg/").mkdir(parents=True, exist_ok=True)
@@ -840,8 +844,8 @@ class Varying_Shared_layers:
         solutions = pd.Series([i[1] for i in indexes]).unique().tolist()
         reference_solutions = {}
         for solution_key in solutions:
-            if "FP_{dc}" in solution_key or "FP_{d}" in solution_key or "FP_{c}" in solution_key or "FP_{kd}" in solution_key or "FP" in solution_key or "FP_{s}" in solution_key:
-                reference_solutions[solution_key] = solution_key.replace("+FP_{dc}", "").replace("+FP_{d}", "").replace("+FP_{c}", "").replace("+FP_{kd}", "").replace("+FP_{s}", "").replace("+FP", "")
+            if "FP_{dc}" in solution_key or "FP_{d}" in solution_key or "FP_{c}" in solution_key or "FP_{kd}" in solution_key or "FP" in solution_key or "FP_{s}" in solution_key or "FP_{per}" in solution_key:
+                reference_solutions[solution_key] = solution_key.replace("+FP_{dc}", "").replace("+FP_{d}", "").replace("+FP_{c}", "").replace("+FP_{kd}", "").replace("+FP_{s}", "").replace("+FP_{per}", "").replace("+FP", "")
 
         for dataset in datasets:
             for solution in reference_solutions:
@@ -1062,7 +1066,7 @@ class Varying_Shared_layers:
         print("strategias unicas: ", df['Solution'].unique().tolist())
 
         if self.experiment == "dls_compredict":
-            compression = ["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$", "$FedAvg+FP$", "$FedAvg$", "$FedAvg+FP_{kd}$", "$FedAvg+FP_{s}$"]
+            compression = ["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$", "$FedAvg+FP$", "$FedAvg$", "$FedAvg+FP_{kd}$", "$FedAvg+FP_{s}$", "$FedAvg+FP_{per}$"]
         elif -1 in self.compression:
             compression = ["$FedAvg+FP_{d}$", 'FedPredict', 'FedAvg']
         else:
@@ -1128,9 +1132,6 @@ class Varying_Shared_layers:
             fig.suptitle("", fontsize=16)
             fig.supxlabel(x_column, y=-0.02)
             fig.supylabel(y_column, x=-0.005)
-            # ax[0, 1].set_yticks([])
-            # ax[0, 1].set_xticks([])
-            # plt.tight_layout(pad=0.5)
 
             title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[1])
             line_plot(ax=ax[1, 0],
@@ -1154,9 +1155,6 @@ class Varying_Shared_layers:
             # ax[1, 0].legend(fontsize=7)
             ax[1, 0].set_xlabel('')
             ax[1, 0].set_ylabel('')
-            # ax[1, 0].set_xticks([])
-            # ax[1, 0].set_yticks(np.arange(0, 101, 10))
-            # ax[1, 0].set_xticks(np.arange(0, max(x) + 1, 5))
 
             title = """{}; {}""".format(self.dataset_name_list[1], self.model_name_list[1])
             line_plot(ax=ax[1, 1],
@@ -1179,13 +1177,9 @@ class Varying_Shared_layers:
             ax[1, 1].get_legend().remove()
             ax[1, 1].set_xlabel('')
             ax[1, 1].set_ylabel('')
-            fig.suptitle("", fontsize=16)
+            fig.suptitle("", fontsize=9)
             fig.supxlabel(x_column, y=-0.02)
             fig.supylabel(y_column, x=-0.005)
-            # ax[1, 1].set_yticks([])
-            # ax[1, 1].set_xticks(np.arange(0, max(x) + 1, 5))
-            # ax[1].set_xticks([])
-            # plt.tight_layout(pad=0.5)
 
             lines_labels = [ax[1, 0].get_legend_handles_labels()]
             lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
@@ -1207,14 +1201,8 @@ class Varying_Shared_layers:
 
             f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
             handles = [f("o", colors[i]) for i in range(len(colors))]
-            ax[0, 0].legend(handles, labels, fontsize=8)
+            fig.legend(handles, labels, loc='upper center', ncol=4, title="""\u03B1={}""".format(alpha), bbox_to_anchor=(0.5, 1.06), fontsize=9)
 
-            # plt.subplots_adjust(wspace=0.07, hspace=0.14)
-            # lines_labels = [ax[0, 0].get_legend_handles_labels()]
-            # lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-            # fig.legend(lines, labels, loc='upper center', ncol=4, title="""\u03B1={}""".format(alpha), bbox_to_anchor=(0.5, 1.05))
-            fig.suptitle("""\u03B1={}""".format(alpha))
-            # plt.xticks(np.arange(min(x), max(x) + 1, max(x) // 5))
             figure = fig.get_figure()
             Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
             Path(base_dir + "svg/").mkdir(parents=True, exist_ok=True)
@@ -1250,8 +1238,6 @@ class Varying_Shared_layers:
             ax[0].get_legend().remove()
             ax[0].set_xlabel('')
             ax[0].set_ylabel('')
-            # ax[0, 0].set_xticks([])
-            # ax[0, 0].set_yticks(np.arange(0, 101, 10))
 
             title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[1])
             line_plot(ax=ax[1],
@@ -1822,7 +1808,7 @@ if __name__ == '__main__':
     # compression_methods = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
     #compression_methods = [1, 12, 123, 1234]
     # compression_methods = [4, 34, 234, 1234]
-    compression = ["dls", "dls_compredict", "compredict", "no", "fedkd", "sparsification"]
+    compression = ["dls", "dls_compredict", "compredict", "no", "fedkd", "sparsification", "per"]
     comment = "set"
 
     Varying_Shared_layers(tp=type_model, strategy_name=strategy, fraction_fit=fraction_fit, aggregation_method=aggregation_method, new_clients=False, new_clients_train=False, num_clients=num_clients,

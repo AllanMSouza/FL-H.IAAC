@@ -455,6 +455,12 @@ def fedpredict_server(parameters, client_evaluate_list, fedpredict_clients_metri
                                             parameters, server_round, nt, num_rounds, df, size_of_parameters,
                                             client_id, comment)
                 print("Tamanho parametros als: ", sum(i.nbytes for i in parameters_to_send))
+            elif "per" in compression:
+                parameters_to_send, M = per(fedpredict_clients_metrics[client_id]['first_round'],
+                                            mean_similarity_per_layer, mean_similarity,
+                                            parameters, server_round, nt, num_rounds, df, size_of_parameters,
+                                            client_id, comment)
+                print("Tamanho parametros per: ", sum(i.nbytes for i in parameters_to_send), len(parameters_to_send), len(M))
             layers_fraction = []
             if 'compredict' in compression:
                 parameters_to_send = parameters_to_send if parameters_to_send is not None else parameters
@@ -577,6 +583,44 @@ def dls(first_round, mean_similarity_per_layer, mean_similarity, parameters,
             M = fedpredict_core_layer_selection(t=server_round, T=num_rounds, nt=nt, n_layers=n_layers,
                                                 size_per_layer=size_of_layers,
                                                 mean_similarity_per_layer=mean_similarity_per_layer, df=df)
+            new_parameters = []
+            for i in range(len(parameters)):
+                if i in M:
+                    new_parameters.append(parameters[i])
+            parameters = new_parameters
+
+        size_list = []
+        for i in range(len(parameters)):
+            tamanho = parameters[i].nbytes
+            size_list.append(tamanho)
+
+        return parameters, M
+
+    except Exception as e:
+        print("_select_layers")
+        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+
+# ===========================================================================================
+
+def per(first_round, mean_similarity_per_layer, mean_similarity, parameters,
+        server_round, nt, num_rounds, df, size_of_layers, client_id, comment):
+    try:
+        M = [i for i in range(len(parameters))]
+        n_layers = len(parameters) / 2
+
+        size_list = []
+        for i in range(len(parameters)):
+            tamanho = get_size(parameters[i])
+            # print("inicio camada: ", i, " tamanho: ", tamanho, " shape: ", parameters[i].shape)
+            size_list.append(tamanho)
+        # print("Tamanho total parametros original: ", sum(size_list), sys.getsizeof(fl.common.ndarrays_to_parameters(parameters)))
+
+        # print("quantidade de camadas: ", len(parameters), [i.shape for i in parameters], " comment: ", comment)
+        # print("layer selection evaluate: ", self.compression, self.comment)
+        if first_round != -1:
+            # baixo-cima
+            M = [i for i in range(len(parameters))][:-2]
             new_parameters = []
             for i in range(len(parameters)):
                 if i in M:
