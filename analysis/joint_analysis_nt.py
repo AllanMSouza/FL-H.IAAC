@@ -56,6 +56,9 @@ class JointAnalysis():
                         elif strategy == "FedYogi_with_FedPredict" and compression == 'dls_compredict':
                             strategy = "FedYogi"
                             s = "$+FP_{dc}$"
+                        elif strategy == "FedKD_with_FedPredict" and compression == 'dls_compredict':
+                            strategy = "FedKD"
+                            s = "$+FP_{dc}$"
                         else:
                             s = "Original"
 
@@ -244,25 +247,25 @@ class JointAnalysis():
 
         return df
 
-    def filter_and_plot(self, ax, base_dir, filename, title, df, experiment, dataset, fraction_fit, x_column, y_column, hue, hue_order=None, style=None, palette=None):
+    def filter_and_plot(self, ax, base_dir, filename, title, df, experiment, dataset, fraction_fit, x_column, y_column, hue, hue_order=None, style=None, x_order=None, palette=None):
 
         df = self.filter(df, experiment, dataset, fraction_fit)
 
         print("filtrado: ", df, df[hue].unique().tolist())
-        box_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, tipo='1', hue_order=hue_order, palette=palette)
+        box_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, tipo='1', hue_order=hue_order, palette=palette, x_order=x_order)
 
     def joint_plot_acc_four_plots(self, df, experiment, fractions_fit):
         print("Joint plot exeprimento: ", experiment)
 
-        df = df[df['nt'].isin([1,2,3, 8, 9, 10])]
-        df = df[df['Round (t)'] >= 10]
+        df = df[df['nt'].isin([0,1,2,3, 7, 8, 9, 10])]
+        df = df[df['Round (t)'] >= 80]
         nt_list = df['nt'].tolist()
         for i in range(len(nt_list)):
             nt = nt_list[i]
             if int(nt) <= 3:
-                nt = '0<nt<4'
+                nt = 'Updated'
             else:
-                nt = '7<nt<10'
+                nt = 'Outdated'
             nt_list[i] = nt
         df['nt'] = np.array(nt_list)
         # df = df[df['Round (t)'] < 30]
@@ -285,14 +288,15 @@ class JointAnalysis():
         title = """{}""".format(dataset)
         filename = 'nt'
         i = 0
-        hue_order = ['$FedAvg+FP_{dc}$', 'FedAvg', '$FedYogi+FP_{dc}$', "FedYogi"]
-        colors = ["mediumblue", "lightblue", "green", "lightgreen"]
+        hue_order = ['$FedAvg+FP_{dc}$', 'FedAvg', '$FedYogi+FP_{dc}$', "FedYogi", '$FedKD+FP_{dc}$', "FedKD"]
+        colors = ["mediumblue", "lightblue", "green", "lightgreen", "red", "mistyrose"]
         palette = {i: j for i, j in zip(hue_order, colors)}
         print(df_test['Strategy'].unique().tolist())
         hue = 'nt'
+        x_order = ['Updated', 'Outdated']
         self.filter_and_plot(ax=axs[i], base_dir=base_dir, filename=filename, title=title, df=df_test,
                              experiment=experiment, dataset=dataset, fraction_fit=fraction_fit, x_column=x_column, y_column=y_column,
-                             hue='Strategy', hue_order=hue_order, style=None, palette=palette)
+                             hue='Strategy', x_order=x_order, hue_order=hue_order, style=None, palette=palette)
         axs[i].get_legend().remove()
         axs[i].set_xlabel('')
         axs[i].set_ylabel('')
@@ -303,7 +307,7 @@ class JointAnalysis():
         i = 1
         self.filter_and_plot(ax=axs[i], base_dir=base_dir, filename=filename, title=title, df=df_test,
                              experiment=experiment, dataset=dataset, fraction_fit=fraction_fit, x_column=x_column, y_column=y_column,
-                             hue='Strategy', hue_order=hue_order, style='nt', palette=palette)
+                             hue='Strategy', x_order=x_order, hue_order=hue_order, style='nt', palette=palette)
         axs[i].get_legend().remove()
         axs[i].set_xlabel('')
         axs[i].set_ylabel('')
@@ -343,13 +347,13 @@ class JointAnalysis():
         #            loc="lower right")
         # fig.legend(lines, labels)
         # plt.tick_params(labelcolor='none', which='both', top=False, bottom=False, left=False, right=False)
-        fig.supxlabel(x_column, y=-0.02)
+        # fig.supxlabel(x_column, y=-0.02)
         fig.supylabel(y_column, x=-0.01)
 
 
         lines_labels = [axs[0].get_legend_handles_labels()]
         lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-        fig.legend(lines, labels, loc='upper center', ncol=4, bbox_to_anchor=(0.5, 1.06))
+        fig.legend(lines, labels, loc='upper center', ncol=3, bbox_to_anchor=(0.5, 1.06))
         print("""{}joint_plot_four_plot_{}_nt.png""".format(base_dir, str(experiment)))
         fig.savefig("""{}joint_plot_four_plot_{}_nt_{}_alpha.png""".format(base_dir, str(experiment), alpha), bbox_inches='tight', dpi=400)
         fig.savefig("""{}joint_plot_four_plot_{}_nt_{}_alpha.svg""".format(base_dir, str(experiment), alpha), bbox_inches='tight', dpi=400)
@@ -414,12 +418,12 @@ if __name__ == '__main__':
     experiments = {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
          'comment': 'set', 'compression_method': "dls_compredict", 'local_epochs': '1_local_epochs'}}
 
-    strategies = ['FedPredict', 'FedYogi_with_FedPredict', 'FedAVG', 'FedYogi']
+    strategies = ['FedPredict', 'FedYogi_with_FedPredict', 'FedKD_with_FedPredict', 'FedAVG', 'FedYogi', 'FedKD']
     # pocs = [0.1, 0.2, 0.3]
     fractions_fit = [0.3]
     # datasets = ['MNIST', 'CIFAR10']
     datasets = ['EMNIST', 'CIFAR10']
-    alpha = 5.0
+    alpha = 0.1
     rounds = 100
     clients = '20'
     model = 'CNN_3'

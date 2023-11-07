@@ -2,7 +2,7 @@ import copy
 
 import torch
 import numpy as np
-from scipy.sparse import coo_array, csr_matrix, csc_matrix
+from scipy.sparse import coo_array, csr_matrix, csc_matrix, bsr_matrix, csc_array, dia_array, dok_array, lil_array, coo_matrix, csr_array, bsr_array, dia_matrix, dok_matrix, lil_matrix
 import sys
 
 '''
@@ -17,7 +17,56 @@ def bytes(sparse):
         if "numpy" in str(type(sparse)):
             return sparse.nbytes
 
-        return sparse.data.nbytes + sparse.indptr.nbytes + sparse.indices.nbytes
+        elif type(sparse) == csr_array:
+            return sparse.data.nbytes + sparse.indptr.nbytes + sparse.indices.nbytes
+
+        elif type(sparse) == csr_matrix:
+            return sparse.data.nbytes + sparse.indptr.nbytes + sparse.indices.nbytes
+
+        elif type(sparse) == coo_array:
+            return sparse.data.nbytes + sparse.row.nbytes + sparse.col.nbytes
+
+        elif type(sparse) == coo_matrix:
+            return sparse.data.nbytes + sparse.row.nbytes + sparse.col.nbytes
+
+        elif type(sparse) == bsr_array:
+            return sparse.data.nbytes  + sparse.indptr.nbytes + sparse.indices.nbytes
+
+        elif type(sparse) == bsr_matrix:
+            return sparse.data.nbytes  + sparse.indptr.nbytes + sparse.indices.nbytes
+
+        elif type(sparse) == csc_array:
+            return sparse.data.nbytes + sparse.indptr.nbytes + sparse.indices.nbytes
+
+        elif type(sparse) == csc_matrix:
+            return sparse.data.nbytes + sparse.indptr.nbytes + sparse.indices.nbytes
+
+        elif type(sparse) == dia_matrix:
+            return sparse.data.nbytes
+
+        elif type(sparse) == dia_array:
+            return sparse.data.nbytes
+
+        elif type(sparse) == dok_array:
+            return sparse.nbytes
+
+        elif type(sparse) == dok_matrix:
+            return sparse.data.nbytes + sparse.row.nbytes
+
+        elif type(sparse) == lil_array:
+            return sparse.data.nbytes + sparse.rows.nbytes
+
+        elif type(sparse) == lil_matrix:
+            return sparse.data.nbytes + sparse.rows.nbytes
+
+        elif type(sparse) == np.ndarray:
+            return sparse.nbytes
+
+        else:
+            print("nenhum: ", type(sparse))
+            exit()
+
+        # return sparse.data.nbytes + sparse.indptr.nbytes + sparse.indices.nbytes
 
     except Exception as e:
         print("bytes")
@@ -187,7 +236,7 @@ def sparse_matrix(layer):
         if layer.ndim == 1:
             return layer
         elif layer.ndim == 2:
-            return coo_array(layer)
+            return lil_array(layer)
         else:
             new_layer = []
             if layer.ndim == 3:
@@ -236,6 +285,39 @@ def sparse_bytes(sparse):
             return sparse.data.nbytes + sparse.indptr.nbytes + sparse.indices.nbytes
 
         elif type(sparse) == coo_array:
+            return sparse.data.nbytes + sparse.row.nbytes + sparse.col.nbytes
+
+        elif type(sparse) == coo_matrix:
+            return sparse.data.nbytes + sparse.row.nbytes + sparse.col.nbytes
+
+        elif type(sparse) == bsr_array:
+            return sparse.data.nbytes + sparse.row.nbytes + sparse.col.nbytes
+
+        elif type(sparse) == bsr_matrix:
+            return sparse.data.nbytes + sparse.row.nbytes + sparse.col.nbytes
+
+        elif type(sparse) == csc_array:
+            return sparse.data.nbytes + sparse.row.nbytes + sparse.col.nbytes
+
+        elif type(sparse) == csc_matrix:
+            return sparse.data.nbytes + sparse.row.nbytes + sparse.col.nbytes
+
+        elif type(sparse) == dia_matrix:
+            return sparse.data.nbytes + sparse.row.nbytes + sparse.col.nbytes
+
+        elif type(sparse) == dia_array:
+            return sparse.data.nbytes + sparse.row.nbytes + sparse.col.nbytes
+
+        elif type(sparse) == dok_array:
+            return sparse.data.nbytes + sparse.row.nbytes + sparse.col.nbytes
+
+        elif type(sparse) == dok_matrix:
+            return sparse.data.nbytes + sparse.row.nbytes + sparse.col.nbytes
+
+        elif type(sparse) == lil_array:
+            return sparse.data.nbytes + sparse.rows.nbytes
+
+        elif type(sparse) == lil_matrix:
             return sparse.data.nbytes + sparse.row.nbytes + sparse.col.nbytes
 
         elif type(sparse) == np.ndarray:
@@ -368,9 +450,39 @@ def client_model_non_zero_indexes(client_id, parameters, clients_model_non_zero_
     return clients_model_non_zero_indexes
 
 # x = np.array([[1.3,2,3,4,5], [6,7,8,9,10], [6,7,8,9,10]])
-# k = 0.5
+# k = 0.6
 # x2 = sparse_top_k(x, k)[0]
-# print(x2.nbytes)
+# print("numpy: ", x2.nbytes)
 # x3 = csr_matrix(x2)
-# print(bytes(x3))
-# # print(quantize(x, 3))
+# print("csr matrix: ", bytes(x3))
+# x4 = csr_array(x2)
+# print("csr array: ", bytes(x4))
+# x5 = bsr_matrix(x2)
+# print("bsr matrix: ", bytes(x5))
+# x6 = bsr_array(x2)
+# print("bsr array: ", bytes(x6))
+# x7 = bsr_matrix(x2)
+# print("bsr matrix: ", bytes(x7))
+# x8 = bsr_array(x2)
+# print("bsr array: ", bytes(x8))
+# x9 = dia_matrix(x2)
+# print("dia matrix: ", bytes(x9))
+# x10 = dia_array(x2)
+# print("dia array: ", bytes(x10))
+# x11 = dia_matrix(x2)
+# print("dok matrix: ", bytes(x11))
+# x12 = dok_array(x2)
+# print("dok array: ", bytes(x12))
+# x13 = lil_matrix(x2)
+# print("lil matrix: ", bytes(x13))
+# x14 = lil_array(x2)
+# print("lil array: ", bytes(x14))
+# x15 = csc_array(x2)
+# print("csc array: ", bytes(x15))
+# x16 = csc_matrix(x2)
+# print("csc matrix: ", bytes(x16))
+# x17 = coo_matrix(x2)
+# print("coo matrix: ", bytes(x17))
+# x18 = coo_array(x2)
+# print("coo array: ", bytes(x18))
+# print(quantize(x, 3))
