@@ -335,7 +335,7 @@ class Varying_Shared_layers:
                                     df = df[['Strategy', 'Round', 'Solution', 'Dataset', 'α', 'Model',
        'Accuracy reduction (%)', 'Parameters reduction (MB)',
        'Parameters reduction (%)', 'Accuracy (%)', 'Size of parameters (MB)']]
-                                    df_concat = pd.concat([df_concat, df], ignore_index=True)
+                                    df_concat = pd.concat([df, df_concat], ignore_index=True)
 
         return df_concat
 
@@ -603,9 +603,9 @@ class Varying_Shared_layers:
             str(self.model_name),
             str(self.alpha), self.comment)
 
-        df['Space saving (%)'] = np.array(df['Parameters reduction (%)'].tolist())
+        df['Parameters saving (%)'] = np.array(df['Parameters reduction (%)'].tolist())
         x_column = 'Round'
-        y_column = 'Space saving (%)'
+        y_column = 'Parameters saving (%)'
         hue = 'Solution'
         style = '\u03B1'
         y_min = 0
@@ -856,12 +856,26 @@ class Varying_Shared_layers:
                     difference = str(
                         round(float(df.loc[reference_index, column][:range_of_string]) - float(df.loc[target_index, column][:range_of_string]), 1))
                     difference = str(round(float(difference) * 100 / float(df.loc[target_index, column][:range_of_string]), 1))
-                    if difference[0] != "-":
-                        difference = "textuparrow" + difference
-                    elif float(difference[1:4]) > 0:
-                        difference = "textuparrow" + difference.replace("-", "")
-                    df_difference.loc[reference_index, column] = "(" + difference + "%)" + df.loc[
-                        reference_index, column]
+                    if "Acc" in target_col:
+                        if difference[0] != "-":
+                            difference = "textuparrow" + difference
+                        elif float(difference[1:4]) > 0:
+                            difference = "textuparrow" + difference.replace("-", "")
+                    else:
+                        if difference[0] != "-":
+                            difference = difference
+                        elif float(difference[1:4]) > 0:
+                            difference = difference.replace("-", "")
+                    print("solucao: ", solution)
+                    if solution in ["$FedAvg$", "$FedAvg+FP$"] and 'Acc' not in target_col:
+                        print("foi:", difference)
+                        difference = difference.replace("0.0", "")
+                        print("depois:", difference)
+                        df_difference.loc[reference_index, column] = difference + df.loc[
+                            reference_index, column]
+                    else:
+                        df_difference.loc[reference_index, column] = str("(" + difference + "%)" + df.loc[
+                            reference_index, column])
 
         print(indexes)
         print(indexes[0])
@@ -1808,7 +1822,7 @@ if __name__ == '__main__':
     # compression_methods = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
     #compression_methods = [1, 12, 123, 1234]
     # compression_methods = [4, 34, 234, 1234]
-    compression = ["dls", "dls_compredict", "compredict", "no", "fedkd", "sparsification", "per"]
+    compression = ["no", "fedkd", "sparsification", "per", "dls", "compredict", "dls_compredict"]
     comment = "set"
 
     Varying_Shared_layers(tp=type_model, strategy_name=strategy, fraction_fit=fraction_fit, aggregation_method=aggregation_method, new_clients=False, new_clients_train=False, num_clients=num_clients,

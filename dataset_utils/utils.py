@@ -136,7 +136,7 @@ def save_dataloaders(dataset_name="CIFAR10", num_clients=10, num_classes=10, nii
                  batch_size=10, train_size=0.8, alpha=0.1, dataset_dir="./dataset/", sim_id=0):
 
     if num_classes == 10:
-        num_classes = {'Tiny-ImageNet': 200, 'CIFAR10': 10, 'MNIST': 10, 'EMNIST': 47}[dataset_name]
+        num_classes = {'Tiny-ImageNet': 200, 'CIFAR10': 10, 'MNIST': 10, 'EMNIST': 47, 'statefarm': 10}[dataset_name]
 
     # transform = get_transform(dataset_name)
     x_train, y_train, x_test, y_test = ManageDatasets().select_dataset(dataset_name)

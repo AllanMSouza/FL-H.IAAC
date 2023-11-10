@@ -252,7 +252,7 @@ class JointAnalysis():
         df = self.filter(df, experiment, dataset, fraction_fit)
 
         print("filtrado: ", df, df[hue].unique().tolist())
-        box_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, tipo='1', hue_order=hue_order, palette=palette, x_order=x_order)
+        bar_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, tipo='1', hue_order=hue_order, palette=palette, x_order=x_order, sci=True, y_lim=True, y_max=100)
 
     def joint_plot_acc_four_plots(self, df, experiment, fractions_fit):
         print("Joint plot exeprimento: ", experiment)

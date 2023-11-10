@@ -1,3 +1,5 @@
+import copy
+
 import tensorflow as tf
 import torch
 import numpy as np
@@ -303,6 +305,116 @@ class ManageDatasets():
             print("load tinyimagenet")
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
+    def load_data_statefarm(self, data_path):
+        """Load ImageNet (training and val set)."""
+
+        # Load ImageNet and normalize
+        traindir = os.path.join(data_path, "train")
+
+        # normalize = transforms.Normalize(
+        #     mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]
+        # )
+        #
+        trainset = datasets.ImageFolder(
+            traindir,
+            transforms.Compose(
+                [
+                    transforms.RandomHorizontalFlip(),
+                    transforms.RandomResizedCrop(224),
+                    transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
+                    transforms.RandomRotation(degrees=60, expand=False),
+                    transforms.ToTensor(),
+                    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                ]
+            ),
+        )
+        #
+        # valset = datasets.ImageFolder(
+        #     valdir,
+        #     transforms.Compose(
+        #         [
+        #             transforms.Resize(size=(224, 224)),
+        #             transforms.ToTensor(),
+        #             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        #         ]
+        #     ),
+        # )
+        print("teee")
+        print(trainset.targets)
+        # exit()
+        # trainset = DriverDataset(data_root=traindir, train=True)
+
+        return trainset, None
+
+    def load_statefarm(self, n_clients, filename_train, filename_test, non_iid=False):
+
+        try:
+
+            dir_path = "data/state-farm-distracted-driver-detection/imgs/"
+
+            if not os.path.exists(dir_path):
+                os.makedirs(dir_path)
+
+                # Setup directory for train/test data
+            config_path = dir_path + "config.json"
+            train_path = dir_path + "train/"
+            test_path = dir_path + "test/"
+
+            # if not os.listdir(dir_path):
+            #     print("entro")
+            #     command = """cd {} \nwget http://cs231n.stanford.edu/tiny-imagenet-200.zip""".format(dir_path)
+            #     subprocess.Popen(command, shell=True).wait()
+            #     command = """cd {} \nunzip tiny-imagenet-200.zip""".format(dir_path)
+            #     subprocess.Popen(command, shell=True).wait()
+            # elif not os.path.exists(dir_path + "tiny-imagenet-200/val/"):
+            #     print("aaa")
+            #     command = """cd {} \nunzip 'tiny-imagenet-200.zip'""".format(dir_path)
+            #     subprocess.Popen(command, shell=True).wait()
+
+            trainset, valset = self.load_data_statefarm(dir_path)
+            valset = copy.deepcopy(trainset)
+
+            np.random.seed(0)
+
+            dataset_image = []
+            dataset_label = []
+            dataset_image.extend(trainset.samples)
+            dataset_label.extend(trainset.targets)
+            dataset_image = np.array(dataset_image)
+            dataset_label = np.array(dataset_label)
+
+            with open(filename_train, 'rb') as handle:
+                idx_train = pickle.load(handle)
+
+            with open(filename_test, 'rb') as handle:
+                idx_test = pickle.load(handle)
+
+            x = trainset.imgs
+            y = trainset.targets
+            samples = trainset.samples
+            x_train = x[idx_train]
+            x_test = x[idx_test]
+            y_train = y[idx_train]
+            y_test = y[idx_test]
+            samples_train = samples[idx_train]
+            samples_test = samples[idx_test]
+
+            trainset.data = x_train
+            trainset.targets = y_train
+            trainset.samples = samples_train
+            valset.data = x_test
+            valset.targets = y_test
+            valset.samples = samples_test
+
+            trainLoader = DataLoader(dataset=trainset, batch_size=256, shuffle=True)
+            testLoader = DataLoader(dataset=valset, batch_size=256, shuffle=False)
+
+            return trainLoader, testLoader
+
+        except Exception as e:
+            print("load statefarm")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
 
     def load_CIFAR100(self, n_clients, filename_train, filename_test, non_iid=False):
         (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar100.load_data()
@@ -353,6 +465,10 @@ class ManageDatasets():
 
             elif dataset_name == 'Tiny-ImageNet':
                 return self.load_tiny_imagenet(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test,
+                                         non_iid=non_iid)
+
+            elif dataset_name == 'statefarm':
+                return self.load_statefarm(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test,
                                          non_iid=non_iid)
 
             elif dataset_name == 'MotionSense':
