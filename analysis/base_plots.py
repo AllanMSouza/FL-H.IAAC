@@ -31,10 +31,10 @@ def bar_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, hue_o
         plt.ylim([y_min, y_max])
 
 
-
-    figure = sns.barplot(ax=ax, x=x_column, y=y_column, hue=hue, data=df, hue_order=hue_order, errorbar=('ci', 0.95), order=x_order, palette=palette).set_title(title)
-    for bars in ax.containers:
-        ax.bar_label(bars, fmt='%.f', fontsize=9)
+    # errorbar=('ci', 0.95),
+    figure = sns.barplot(ax=ax, x=x_column, y=y_column, hue=hue, data=df, hue_order=hue_order,  order=x_order, palette=palette).set_title(title)
+    # for bars in ax.containers:
+    #     ax.bar_label(bars, fmt='%.f', fontsize=9)
 
     if ax is None:
         fig, ax = plt.subplots()
@@ -232,7 +232,7 @@ def stacked_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, l
         classes = df[hue].unique().tolist()
         classes = sorted(classes, reverse=True)
         n = len(classes)
-        labels = {10:[[9, 10], [7, 8], [5, 6], [3, 4], [1, 2]], 47: [[40, 47], [30, 39], [20, 29], [10, 19], [1, 9]]}
+        labels = {10:[[9, 10], [7, 8], [5, 6], [3, 4], [1, 2]], 47: [[40, 47], [30, 39], [20, 29], [10, 19], [1, 9]], 43: [[39, 43], [29, 38], [19, 28], [9, 18], [1, 8]]}
         labels_str = {k1: ["""[{}, {}]""".format(str(labels[k1][i][0]), str(labels[k1][i][1])) for i in range(len(labels[k1]))] for k1 in labels}
         print("labels str")
         print(labels_str)

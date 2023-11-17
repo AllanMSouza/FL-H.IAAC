@@ -319,38 +319,93 @@ class ManageDatasets():
             traindir,
             transforms.Compose(
                 [
-                    transforms.RandomHorizontalFlip(),
-                    transforms.RandomResizedCrop(224),
-                    transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
-                    transforms.RandomRotation(degrees=60, expand=False),
+                    transforms.Resize((32, 32)),
+                    # transforms.RandomHorizontalFlip(),  # FLips the image w.r.t horizontal axis
+                    # transforms.RandomRotation(10),  # Rotates the image to a specified angel
+                    # transforms.RandomAffine(0, shear=10, scale=(0.8, 1.2)),
+                    # # Performs actions like zooms, change shear angles.
+                    # transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),  # Set the color params
+                    # transforms.ToTensor(),
+                    transforms.Grayscale(num_output_channels=3),
+                    transforms.RandomPerspective(distortion_scale=0.6, p=1.0),
+                    transforms.AutoAugment(transforms.AutoAugmentPolicy.IMAGENET),
                     transforms.ToTensor(),
                     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
                 ]
             ),
         )
         #
-        # valset = datasets.ImageFolder(
-        #     valdir,
-        #     transforms.Compose(
-        #         [
-        #             transforms.Resize(size=(224, 224)),
-        #             transforms.ToTensor(),
-        #             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        #         ]
-        #     ),
-        # )
-        print("teee")
-        print(trainset.targets)
+        valset = datasets.ImageFolder(
+            traindir,
+            transforms.Compose(
+                [
+                    transforms.Resize((32, 32)),
+                    transforms.Grayscale(num_output_channels=3),
+                    transforms.RandomPerspective(distortion_scale=0.6, p=1.0),
+                    transforms.AutoAugment(transforms.AutoAugmentPolicy.IMAGENET),
+                    transforms.ToTensor(),
+                    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                ]
+            ),
+        )
+        # print("teee")
+        # print(trainset.targets)
         # exit()
         # trainset = DriverDataset(data_root=traindir, train=True)
 
-        return trainset, None
+        return trainset, valset
+
+    def load_data_gtsrb(self, data_path):
+        """Load ImageNet (training and val set)."""
+
+        try:
+            # Load ImageNet and normalize
+            traindir = os.path.join(data_path, "Train")
+
+            trainset = datasets.ImageFolder(
+                traindir,
+                transforms.Compose(
+                    [
+
+                        transforms.Resize((32, 32)),
+                        transforms.RandomHorizontalFlip(),  # FLips the image w.r.t horizontal axis
+                        transforms.RandomRotation(10),  # Rotates the image to a specified angel
+                        transforms.RandomAffine(0, shear=10, scale=(0.8, 1.2)),
+                        # Performs actions like zooms, change shear angles.
+                        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
+                        transforms.ToTensor(),
+                        transforms.Normalize((0.3337, 0.3064, 0.3171), (0.2672, 0.2564, 0.2629))
+                    ]
+                )
+            )
+
+            valset = datasets.ImageFolder(
+                traindir,
+                transforms.Compose(
+                    [
+
+                        transforms.Resize((32, 32)),
+                        transforms.ToTensor(),
+                        transforms.Normalize((0.3337, 0.3064, 0.3171), (0.2672, 0.2564, 0.2629))
+                    ]
+                )
+            )
+            # print("tee")
+            # print(type(trainset.classes), trainset.classes, len(trainset.classes))
+            # print(type(trainset.class_to_idx), trainset.class_to_idx)
+            # print()
+
+            return trainset, valset
+
+        except Exception as e:
+            print("load data gtrsb")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
     def load_statefarm(self, n_clients, filename_train, filename_test, non_iid=False):
 
         try:
 
-            dir_path = "data/state-farm-distracted-driver-detection/imgs/"
+            dir_path = "dataset_utils/data/State Farm/raw_data/"
 
             if not os.path.exists(dir_path):
                 os.makedirs(dir_path)
@@ -371,15 +426,15 @@ class ManageDatasets():
             #     command = """cd {} \nunzip 'tiny-imagenet-200.zip'""".format(dir_path)
             #     subprocess.Popen(command, shell=True).wait()
 
-            trainset, valset = self.load_data_statefarm(dir_path)
-            valset = copy.deepcopy(trainset)
+            training_dataset, validation_dataset = self.load_data_statefarm(dir_path)
+            # valset = copy.deepcopy(trainset)
 
             np.random.seed(0)
 
             dataset_image = []
             dataset_label = []
-            dataset_image.extend(trainset.samples)
-            dataset_label.extend(trainset.targets)
+            dataset_image.extend(training_dataset.samples)
+            dataset_label.extend(training_dataset.targets)
             dataset_image = np.array(dataset_image)
             dataset_label = np.array(dataset_label)
 
@@ -389,32 +444,204 @@ class ManageDatasets():
             with open(filename_test, 'rb') as handle:
                 idx_test = pickle.load(handle)
 
-            x = trainset.imgs
-            y = trainset.targets
-            samples = trainset.samples
-            x_train = x[idx_train]
-            x_test = x[idx_test]
-            y_train = y[idx_train]
-            y_test = y[idx_test]
-            samples_train = samples[idx_train]
-            samples_test = samples[idx_test]
+            x_train = np.array(training_dataset.samples)
+            x_test = np.array(validation_dataset.samples)
+            # x = np.concatenate((x, validation_dataset.samples))
+            # imgs = np.concatenate((imgs, validation_dataset.imgs))
+            y_train = np.array(training_dataset.targets)
 
-            trainset.data = x_train
-            trainset.targets = y_train
-            trainset.samples = samples_train
-            valset.data = x_test
-            valset.targets = y_test
-            valset.samples = samples_test
+            # print("Desc: ", pd.Series(y_train).astype(str).value_counts())
+            # exit()
+            y_test = np.array(validation_dataset.targets)
+            # y = np.concatenate((y, validation_dataset.targets))
+            x_train = x_train[idx_train]
+            print("quantidade treino: ", len(x_train))
+            # exit()
+            # imgs_train = imgs[idx_train]
+            y_train = y_train[idx_train]
+            # imgs_test = imgs[idx_train]
+            x_test = x_test[idx_test]
 
-            trainLoader = DataLoader(dataset=trainset, batch_size=256, shuffle=True)
-            testLoader = DataLoader(dataset=valset, batch_size=256, shuffle=False)
+            y_test = y_test[idx_test]
 
-            return trainLoader, testLoader
+            training_dataset.samples = list(x_train)
+            training_dataset.targets = list(y_train)
+            # training_dataset.imgs = list(imgs_train)
+            validation_dataset.samples = list(x_test)
+            validation_dataset.targets = list(y_test)
+
+            trainLoader = DataLoader(dataset=training_dataset, batch_size=16, shuffle=True)
+            testLoader = DataLoader(dataset=validation_dataset, batch_size=16, shuffle=False)
+
+            return trainLoader, testLoader, training_dataset, validation_dataset
 
         except Exception as e:
             print("load statefarm")
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
+    def load_gtsrb(self, n_clients, filename_train, filename_test, non_iid=False, batch_size=32):
+
+        try:
+
+            dir_path = "dataset_utils/data/GTSRB/raw_data/"
+
+            if not os.path.exists(dir_path):
+                os.makedirs(dir_path)
+
+                # Setup directory for train/test data
+            config_path = dir_path + "config.json"
+            train_path = dir_path + "train/"
+            test_path = dir_path + "test/"
+
+            # transform_train = transforms.Compose(
+            #     [transforms.Resize((32, 32)),  # resises the image so it can be perfect for our model.
+            #      transforms.RandomHorizontalFlip(),  # FLips the image w.r.t horizontal axis
+            #      transforms.RandomRotation(10),  # Rotates the image to a specified angel
+            #      transforms.RandomAffine(0, shear=10, scale=(0.8, 1.2)),
+            #      # Performs actions like zooms, change shear angles.
+            #      transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),  # Set the color params
+            #      transforms.ToTensor(),  # comvert the image to tensor so that it can work with torch
+            #      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))  # Normalize all the images
+            #      ])
+            #
+            # transform_test = transforms.Compose([transforms.Resize((32, 32)),
+            #                                      transforms.ToTensor(),
+            #                                      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+            #                                      ])
+            #
+            # training_dataset = datasets.GTSRB(root=dir_path, split='train', download=True,
+            #                                     transform=transform_train)  # Data augmentation is only done on training images
+            # validation_dataset = datasets.GTSRB(root=dir_path, split='test', download=True, transform=transform_train)
+            #
+            # if non_iid:
+            #     with open(filename_train, 'rb') as handle:
+            #         idx_train = pickle.load(handle)
+            #
+            #     with open(filename_test, 'rb') as handle:
+            #         idx_test = pickle.load(handle)
+            #
+            #     x = []
+            #     y = []
+            #     samples = []
+            #     for i in range(len(training_dataset._samples)):
+            #         sample = training_dataset[i]
+            #         samples.append(sample)
+            #         a, b = sample
+            #         x.append(a)
+            #         y.append(b)
+            #
+            #     for i in range(len(validation_dataset._samples)):
+            #         sample = training_dataset[i]
+            #         samples.append(sample)
+            #         a, b = sample
+            #         x.append(a)
+            #         y.append(b)
+            #
+            #     # x = training_dataset.data
+            #     # x = np.concatenate((x, validation_dataset.data))
+            #     # y = training_dataset.targets
+            #     # y = np.concatenate((y, validation_dataset.targets))
+            #     x = np.array(x)
+            #     y = np.array(y)
+            #     samples = np.array(samples)
+            #     # x_train = x[idx_train]
+            #     # x_test = x[idx_test]
+            #     # y_train = y[idx_train]
+            #     # y_test = y[idx_test]
+            #     samples_train = samples[idx_train]
+            #     samples_test = samples[idx_test]
+            #
+            #     training_dataset._samples = samples_train
+            #     validation_dataset._samples = samples_test
+            #
+            # training_loader = torch.utils.data.DataLoader(training_dataset, batch_size=batch_size,
+            #                                               shuffle=True)  # Batch size of 100 i.e to work with 100 images at a time
+            #
+            # validation_loader = torch.utils.data.DataLoader(validation_dataset, batch_size=batch_size, shuffle=False)
+            #
+            # return training_loader, validation_loader, training_dataset, validation_dataset
+
+
+            # antigo
+
+            training_dataset, validation_dataset = self.load_data_gtsrb(dir_path)
+            # validation_dataset = copy.deepcopy(training_dataset)
+
+            np.random.seed(0)
+
+            dataset_image = []
+            dataset_samples = []
+            dataset_label = []
+            dataset_samples.extend(training_dataset.samples)
+            dataset_samples.extend(training_dataset.samples)
+            dataset_samples.extend(training_dataset.samples)
+            dataset_image.extend(training_dataset.imgs)
+            dataset_image.extend(training_dataset.imgs)
+            dataset_image.extend(training_dataset.imgs)
+            dataset_label.extend(training_dataset.targets)
+            dataset_label.extend(training_dataset.targets)
+            dataset_label.extend(training_dataset.targets)
+            dataset_image = np.array(dataset_image)
+            dataset_label = np.array(dataset_label)
+
+            with open(filename_train, 'rb') as handle:
+                idx_train = pickle.load(handle)
+
+            with open(filename_test, 'rb') as handle:
+                idx_test = pickle.load(handle)
+
+            print("indices: ", idx_train[:3])
+            # print("x: ", trainset.imgs)
+            # exit()
+            print("tipo: ", type(training_dataset.imgs), type(training_dataset.targets), type(training_dataset.samples))
+            print("x: ", training_dataset.samples[:5])
+            imgs = training_dataset.imgs
+            x_train = []
+            x_test = []
+            y_train = []
+            y_test = []
+            for i in range(2):
+                x_train += training_dataset.samples
+                x_test += validation_dataset.samples
+                y_train += training_dataset.targets
+                y_test += validation_dataset.targets
+            # x_train = np.array(training_dataset.samples + training_dataset.samples + training_dataset.samples)
+            # x_test = np.array(validation_dataset.samples + validation_dataset.samples + validation_dataset.samples)
+            # # x = np.concatenate((x, validation_dataset.samples))
+            # # imgs = np.concatenate((imgs, validation_dataset.imgs))
+            # y_train = np.array(training_dataset.targets + training_dataset.targets + training_dataset.targets)
+            #
+            # # print("Desc: ", pd.Series(y_train).astype(str).value_counts())
+            # # exit()
+            # y_test = np.array(validation_dataset.targets + validation_dataset.targets + validation_dataset.targets)
+            # y = np.concatenate((y, validation_dataset.targets))
+            x_train = np.array(x_train)
+            y_train = np.array(y_train)
+            x_test = np.array(x_test)
+            y_test = np.array(y_test)
+            x_train = x_train[idx_train]
+            # imgs_train = imgs[idx_train]
+            y_train = y_train[idx_train]
+            # imgs_test = imgs[idx_train]
+            x_test = x_test[idx_test]
+
+            y_test = y_test[idx_test]
+
+            training_dataset.samples = list(x_train)
+            training_dataset.targets = list(y_train)
+            # training_dataset.imgs = list(imgs_train)
+            validation_dataset.samples = list(x_test)
+            validation_dataset.targets = list(y_test)
+            # validation_dataset.imgs = list(imgs_test)
+
+            trainLoader = DataLoader(dataset=training_dataset, batch_size=32, shuffle=True)
+            testLoader = DataLoader(dataset=validation_dataset, batch_size=32, shuffle=False)
+
+            return trainLoader, testLoader, training_dataset, validation_dataset
+
+        except Exception as e:
+            print("load gtsrb")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
     def load_CIFAR100(self, n_clients, filename_train, filename_test, non_iid=False):
         (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar100.load_data()
@@ -467,8 +694,12 @@ class ManageDatasets():
                 return self.load_tiny_imagenet(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test,
                                          non_iid=non_iid)
 
-            elif dataset_name == 'statefarm':
+            elif dataset_name == "State Farm":
                 return self.load_statefarm(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test,
+                                         non_iid=non_iid)
+
+            elif dataset_name == 'GTSRB':
+                return self.load_gtsrb(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test,
                                          non_iid=non_iid)
 
             elif dataset_name == 'MotionSense':

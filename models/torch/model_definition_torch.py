@@ -3,6 +3,7 @@ import torch
 import torch.nn.functional as F
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 from torch import nn, Tensor
+from torchvision import models
 import copy
 import random
 import numpy as np
@@ -176,6 +177,111 @@ class CNN_3(torch.nn.Module):
             # Input = 64 x 8 x 8, Output = 64 x 4 x 4
             torch.nn.MaxPool2d(kernel_size=2),
             torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1),
+            torch.nn.ReLU(),
+            # Input = 64 x 8 x 8, Output = 64 x 4 x 4
+            torch.nn.MaxPool2d(kernel_size=2),
+
+            torch.nn.Flatten(),
+            torch.nn.Linear(mid_dim * 4 * 4, 512),
+            torch.nn.ReLU(),
+            torch.nn.Linear(512, num_classes)
+        )
+
+
+    def forward(self, x):
+        return self.model(x)
+
+# ====================================================================================================================
+
+class MobileNet_V3(nn.Module):
+    """
+    Transfer learning using large MobileNetV3 architecture.
+    See the documentation here: https://pytorch.org/vision/main/models/generated/torchvision.models.mobilenet_v3_large.html
+    """
+
+    def __init__(self, input_shape=1, mid_dim=10, num_classes=10):
+        try:
+            super().__init__()
+            self.name = 'MobileNet_V3'
+
+            MobileNet_V3 = models.mobilenet_v3_small(weights='DEFAULT')
+            # Freeze all base layers in the "features" section of the model (the feature extractor) by setting requires_grad=False
+            for param in MobileNet_V3.features.parameters():
+                param.requires_grad = True
+
+            MobileNet_V3.classifier = torch.nn.Sequential(
+                torch.nn.Dropout(p=0.2, inplace=True),
+                torch.nn.Linear(in_features=mid_dim,
+                                out_features=num_classes,  # same number of output units as our number of classes
+                                bias=True)
+            )
+
+            self.net = MobileNet_V3
+        except Exception as e:
+            print("Mobile net")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+    def forward(self, x):
+        try:
+            return self.net(x)
+        except Exception as e:
+            print("Mobilenet forward")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+
+# ====================================================================================================================
+
+class CNN_3_GTSRB(torch.nn.Module):
+    def __init__(self, input_shape, mid_dim=64, num_classes=10):
+        super().__init__()
+        self.model = torch.nn.Sequential(
+
+            # queda para asl
+            # nn.Conv2d(input_shape, 32, kernel_size=3, padding=1),
+            # nn.ReLU(),
+            # nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
+            # nn.ReLU(),
+            # nn.MaxPool2d(2, 2),  # output: 64 x 16 x 16
+            #
+            # nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
+            # nn.ReLU(),
+            # nn.MaxPool2d(2, 2),  # output: 128 x 8 x 8
+            # nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
+            # nn.ReLU(),
+            # nn.MaxPool2d(2, 2),  # output: 128 x 8 x 8
+            #
+            # nn.Flatten(),
+            # nn.Linear(mid_dim,512),
+            # nn.ReLU(),
+            # nn.Linear(512, num_classes))
+
+            # nn.Linear(28*28, 392),
+            # nn.ReLU(),
+            # nn.Dropout(0.5),
+            # nn.Linear(392, 196),
+            # nn.ReLU(),
+            # nn.Linear(196, 98),
+            # nn.ReLU(),
+            # nn.Dropout(0.3),
+            # nn.Linear(98, num_classes)
+
+            torch.nn.Conv2d(in_channels=input_shape, out_channels=32, kernel_size=13, padding=1),
+            torch.nn.ReLU(),
+            # Input = 32 x 32 x 32, Output = 32 x 16 x 16
+            torch.nn.MaxPool2d(kernel_size=2),
+
+            # Input = 32 x 16 x 16, Output = 64 x 16 x 16
+            torch.nn.Conv2d(in_channels=32, out_channels=64, kernel_size=13, padding=1),
+            torch.nn.ReLU(),
+            # Input = 64 x 16 x 16, Output = 64 x 8 x 8
+            torch.nn.MaxPool2d(kernel_size=2),
+
+            # Input = 64 x 8 x 8, Output = 64 x 8 x 8
+            torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=13, padding=1),
+            torch.nn.ReLU(),
+            # Input = 64 x 8 x 8, Output = 64 x 4 x 4
+            torch.nn.MaxPool2d(kernel_size=2),
+            torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=13, padding=1),
             torch.nn.ReLU(),
             # Input = 64 x 8 x 8, Output = 64 x 4 x 4
             torch.nn.MaxPool2d(kernel_size=2),
@@ -620,7 +726,7 @@ class CNNDistillation(nn.Module):
                 mid_dim = 1800 # cnn student 1 cnn
                 # mid_dim = 576 # cnn student 2 cnn
             self.student = CNN_student(input_shape=input_shape, mid_dim=mid_dim, num_classes=num_classes)
-            if self.dataset == 'CIFAR10':
+            if self.dataset in ['CIFAR10', 'GTSRB']:
                 mid_dim = 16
             else:
                 mid_dim = 4

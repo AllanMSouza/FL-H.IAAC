@@ -188,7 +188,7 @@ class FedKDClientTorch(FedAvgClientTorch):
 				return Logistic(input_shape=input_shape, num_classes=self.num_classes)
 			elif self.model_name == 'DNN':
 				return DNN_teacher(input_shape=input_shape, num_classes=self.num_classes), DNN_student(input_shape=input_shape, num_classes=self.num_classes)
-			elif self.model_name in ['CNN_2', 'CNN_3']  and self.dataset in ['MNIST', 'CIFAR10', 'EMNIST']:
+			elif self.model_name in ['CNN_2', 'CNN_3']  and self.dataset in ['MNIST', 'CIFAR10', 'EMNIST', 'GTSRB']:
 				if self.dataset in ['MNIST', 'EMNIST']:
 					input_shape = 1
 					mid_dim_teacher = 256
@@ -228,8 +228,10 @@ class FedKDClientTorch(FedAvgClientTorch):
 						x[0] = x[0].to(self.device)
 					else:
 						x = x.to(self.device)
-					y = y.to(self.device)
+
+					y = np.array(y).astype(int)
 					y = torch.tensor(y)
+					y = y.to(self.device)
 					train_num += y.shape[0]
 
 					self.optimizer.zero_grad()
@@ -434,8 +436,11 @@ class FedKDClientTorch(FedAvgClientTorch):
 					else:
 						x = x.to(self.device)
 					self.optimizer.zero_grad()
-					y = y.to(self.device)
+
+					if type(y) == tuple:
+						y = torch.from_numpy(np.array(y).astype(int))
 					y = torch.tensor(y)
+					y = y.to(self.device)
 					output, proto_student, output_teacher, proto_teacher = self.model(x)
 					if self.model.new_client:
 						output_teacher = output

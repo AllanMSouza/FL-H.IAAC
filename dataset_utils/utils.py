@@ -25,6 +25,7 @@ def separate_data(targets, num_clients, num_classes, niid=False, balance=False, 
         return:
             dataidx_map: dict of client_id and the list of samples' indexes
     """
+    np.random.seed(0)
     least_samples = batch_size / (1 - train_size)
     least_samples = train_size
     alpha = alpha  # for Dirichlet distribution
@@ -97,9 +98,9 @@ def separate_data(targets, num_clients, num_classes, niid=False, balance=False, 
         for j in range(num_clients):
             dataidx_map[j] = idx_batch[j]
             m = np.take(np.array(targets), idx_batch[j]).max()
-            if m > max_class:
-                max_class = m
-            print("max ", max_class)
+            # if m > max_class:
+            #     max_class = m
+            # print("max ", max_class)
     else:
         raise NotImplementedError
 
@@ -136,12 +137,15 @@ def save_dataloaders(dataset_name="CIFAR10", num_clients=10, num_classes=10, nii
                  batch_size=10, train_size=0.8, alpha=0.1, dataset_dir="./dataset/", sim_id=0):
 
     if num_classes == 10:
-        num_classes = {'Tiny-ImageNet': 200, 'CIFAR10': 10, 'MNIST': 10, 'EMNIST': 47, 'statefarm': 10}[dataset_name]
+        num_classes = {'Tiny-ImageNet': 200, 'CIFAR10': 10, 'MNIST': 10, 'EMNIST': 47, "State Farm": 10, 'GTSRB': 43}[dataset_name]
 
     # transform = get_transform(dataset_name)
     x_train, y_train, x_test, y_test = ManageDatasets().select_dataset(dataset_name)
 
     target = np.concatenate((y_train, y_test), axis=0)
+    if dataset_name == 'GTSRB':
+        x = np.concatenate((np.array([i[0] for i in x_train]), np.array([i[0] for i in x_test])), axis=0)
+        print(x[:2])
     print("Quantidade de amostras do ", dataset_name, ": ", len(target))
     # dataset = Dataset()
     masks, statistic = separate_data(target, num_clients, num_classes, niid, balance, partition, class_per_client,
@@ -155,13 +159,19 @@ def save_dataloaders(dataset_name="CIFAR10", num_clients=10, num_classes=10, nii
 
         index_train = train_data[client_id]
         index_test = test_data[client_id]
+        if dataset_name == 'GTSRB':
+            x_client = np.concatenate((x[index_train], x[index_test]), axis=0)
+            df = pd.DataFrame({'x': x_client, 'index': np.concatenate((index_train, index_test), axis=0), 'type': np.concatenate((np.array(['train'] * len(index_train)), np.array(['test'] * len(index_test))), axis=0)}).drop_duplicates('x')
+            index_train = df.query("type == 'train'")['index'].to_numpy()
+            index_test = df.query("type == 'test'")['index'].to_numpy()
         # print("""Quantidade de dados de treino para o cliente {}: {}, teste: {}""".format(client_id, len(index_train), len(index_test)))
         print("Original: ", len(index_train), " Sem duplicadas: ", len(pd.Series(index_train).drop_duplicates()), " classes: ", len(pd.Series(target[index_train]).unique().tolist()), " teste: ", len(index_test))
+        print("Suporte: ", pd.Series(target[index_train]).astype(str).value_counts())
         count += len(index_train) + len(index_test)
 
         filename_train = """data/{}/{}_clients/classes_per_client_{}/alpha_{}/{}/idx_train_{}.pickle""".format(dataset_name, num_clients, class_per_client, alpha, client_id, client_id)
         filename_test = """data/{}/{}_clients/classes_per_client_{}/alpha_{}/{}/idx_test_{}.pickle""".format(dataset_name, num_clients, class_per_client, alpha, client_id, client_id)
-
+        print("escrever: ", filename_train)
         os.makedirs(os.path.dirname(filename_train), exist_ok=True)
         os.makedirs(os.path.dirname(filename_test), exist_ok=True)
 

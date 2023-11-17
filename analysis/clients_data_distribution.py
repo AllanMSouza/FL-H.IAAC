@@ -73,6 +73,15 @@ class CLient:
                 validation_dataset = datasets.EMNIST(
                     root=dir_path, train=False, download=False, transform=transform, split='balanced')
 
+            elif self.dataset == "GTSRB":
+
+                dir_path = "dataset_utils/data/GTSRB/raw_data/"
+                # antigo
+
+                training_dataset, validation_dataset = self.load_data_gtsrb(dir_path)
+                validation_dataset = copy.deepcopy(training_dataset)
+                validation_dataset.targets = np.array([])
+
             with open(self.filename_train, 'rb') as handle:
                 idx_train = pickle.load(handle)
 
@@ -116,6 +125,38 @@ class CLient:
             print("Select CIFAR10")
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
+    def load_data_gtsrb(self, data_path):
+        """Load ImageNet (training and val set)."""
+
+        try:
+            # Load ImageNet and normalize
+            traindir = os.path.join(data_path, "Train")
+
+            trainset = datasets.ImageFolder(
+                traindir,
+                transforms.Compose(
+                    [   transforms.Resize((32, 32)),
+                        # transforms.RandomHorizontalFlip(),
+                        # transforms.RandomResizedCrop(224),
+                        # transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
+                        # transforms.RandomRotation(degrees=60, expand=False),
+                        transforms.ToTensor(),
+
+                        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                    ]
+                )
+            )
+            # print("tee")
+            # print(type(trainset.classes), trainset.classes, len(trainset.classes))
+            # print(type(trainset.class_to_idx), trainset.class_to_idx)
+            # print()
+
+            return trainset, None
+
+        except Exception as e:
+            print("load data gtrsb")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
 
 
 class Varying_Shared_layers:
@@ -133,9 +174,9 @@ class Varying_Shared_layers:
 
         for alpha in self.alpha:
             for dataset in self.dataset:
-                classes = {'CIFAR10': 10, 'EMNIST': 47}[dataset]
-                for i in range(self.num_clients):
-                    self.clients.append(CLient(i, dataset_name=dataset, n_clients=num_clients, class_per_client=class_per_client, alpha=alpha, classes=classes))
+                classes = {'CIFAR10': 10, 'EMNIST': 47, 'GTSRB': 43}[dataset]
+                for i in range(self.num_clients[dataset]):
+                    self.clients.append(CLient(i, dataset_name=dataset, n_clients=self.num_clients[dataset], class_per_client=class_per_client, alpha=alpha, classes=classes))
 
     def start(self):
 
@@ -167,7 +208,7 @@ class Varying_Shared_layers:
             media = {alpha: [] for alpha in self.alpha}
             for alpha in self.alpha:
                 unique_classes = alpha_summary[dataset][alpha]
-                classes = {'CIFAR10': 10, 'EMNIST': 47}[dataset]
+                classes = {'CIFAR10': 10, 'EMNIST': 47, 'GTSRB': 43}[dataset]
                 unique_classes_count = {i: 0 for i in range(1, classes + 1)}
                 for unique in unique_classes:
                     unique_classes_count[unique] += 1
@@ -199,7 +240,7 @@ class Varying_Shared_layers:
 
 
             self.df_summary = pd.DataFrame({'\u03B1': alphas_list, 'Unique_classes': classes_list, 'Total of clients': count})
-            self.df_summary['Total_of_clients_(%)'] = (self.df_summary['Total of clients']/40)*100
+            self.df_summary['Total_of_clients_(%)'] = (self.df_summary['Total of clients']/self.num_clients[dataset])*100
             print("sumario antes: ")
             print(self.df_summary)
 
@@ -294,8 +335,8 @@ if __name__ == '__main__':
     type_model = "torch"
     aggregation_method = "None"
     fraction_fit = 0.3
-    num_clients = 40
-    dataset = ["CIFAR10", "EMNIST"]
+    num_clients = {'GTSRB': 10, 'EMNIST': 20, 'CIFAR10': 20}
+    dataset = ["GTSRB", "EMNIST", "CIFAR10"]
     alpha = [0.1, 1.0, 3.0, 5.0]
     num_rounds = 50
 

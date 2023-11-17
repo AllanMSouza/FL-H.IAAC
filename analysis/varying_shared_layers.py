@@ -150,7 +150,7 @@ class Varying_Shared_layers:
 
         # for alpha in alphas:
         #     self.evaluate_client_joint_accuracy(df_concat, alpha)
-        # self.similarity()
+        self.similarity()
         # for alpha in alphas:
         #     self.evaluate_client_norm_analysis_nt(alpha)
         # self.evaluate_client_norm_analysis()
@@ -198,7 +198,7 @@ class Varying_Shared_layers:
     def build_filenames(self):
 
         # files = ["evaluate_client.csv", "similarity_between_layers.csv"]
-        files = ["evaluate_client.csv"]
+        files = ["evaluate_client.csv", "similarity_between_layers.csv"]
         df_concat = None
         df_concat_similarity = None
         df_concat_norm = None
@@ -840,7 +840,7 @@ class Varying_Shared_layers:
         columns = df.columns.tolist()
         indexes = df.index.tolist()
 
-        datasets = ['EMNIST', 'CIFAR-10']
+        datasets = ['EMNIST', 'GTSRB']
         solutions = pd.Series([i[1] for i in indexes]).unique().tolist()
         reference_solutions = {}
         for solution_key in solutions:
@@ -887,7 +887,7 @@ class Varying_Shared_layers:
 
         shared_layers = df['Solution'].unique().tolist()
 
-        model_report = {i: {} for i in df['Model'].unique().tolist()}
+        model_report = {i: {} for i in df['Model'].sort_values().unique().tolist()}
 
         # df = df[df['Round'] == 100]
         print("receb: ", df.columns)
@@ -902,7 +902,7 @@ class Varying_Shared_layers:
 
         columns = shared_layers
 
-        index = [np.array(['EMNIST'] * len(columns) + ['CIFAR-10'] * len(columns)), np.array(columns * 2)]
+        index = [np.array(['EMNIST'] * len(columns) + ['GTSRB'] * len(columns)), np.array(columns * 2)]
 
         models_dict = {}
         ci = 0.95
@@ -916,7 +916,7 @@ class Varying_Shared_layers:
                 # cifar10_acc[column] = (self.filter(df_test, experiment, 'CIFAR10', float(column), strategy=model_name)['Accuracy (%)']*100).mean().round(6)
                 mnist_acc[column] = self.t_distribution((self.filter(df_test, model=shared_layer, dataset='EMNIST', alpha=alpha, shared_layer=column)[
                                          target_col]).tolist(), ci)
-                cifar10_acc[column] = self.t_distribution((self.filter(df_test,model=shared_layer, dataset='CIFAR-10', alpha=alpha, shared_layer=column)[
+                cifar10_acc[column] = self.t_distribution((self.filter(df_test,model=shared_layer, dataset='GTSRB', alpha=alpha, shared_layer=column)[
                                            target_col]).tolist(), ci)
 
             model_metrics = []
@@ -1373,7 +1373,7 @@ class Varying_Shared_layers:
             ax[0, 0].set_ylabel('')
             # ax[0, 0].set_xticks([])
             # ax[0, 0].set_yticks(np.arange(0, 0.6, 0.1))
-            title = """{}; {}""".format(self.dataset_name_list[1], self.model_name_list[0])
+            title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[1])
 
             line_plot(ax=ax[0, 1], base_dir=base_dir, file_name=filename, title=title, df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[1], self.model_name_list[0])),
                       x_column=x_column, y_column=y_column, y_lim=True, y_max=1,
@@ -1382,7 +1382,7 @@ class Varying_Shared_layers:
             ax[0, 1].set_xlabel('')
             ax[0, 1].set_ylabel('')
 
-            title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[1])
+            title = """{}; {}""".format(self.dataset_name_list[1], self.model_name_list[0])
             line_plot(ax=ax[1, 0], base_dir=base_dir, file_name=filename, title=title,
                       df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[1])),
                       x_column=x_column, y_column=y_column, y_lim=True, y_max=1,
@@ -1815,14 +1815,15 @@ if __name__ == '__main__':
     fraction_fit = 0.3
     num_clients = 20
     model_name = ["CNN_2", "CNN_3"]
-    dataset = ["EMNIST", "CIFAR10"]
+    dataset = ["EMNIST", "GTSRB"]
     alpha = [0.1, 5.0]
     num_rounds = 100
     epochs = 1
     # compression_methods = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]
     #compression_methods = [1, 12, 123, 1234]
     # compression_methods = [4, 34, 234, 1234]
-    compression = ["no", "fedkd", "sparsification", "per", "dls", "compredict", "dls_compredict"]
+    compression = ["no", "sparsification", "fedkd", "per", "dls", "compredict", "dls_compredict"]
+    # "fedkd", "sparsification", "per",
     comment = "set"
 
     Varying_Shared_layers(tp=type_model, strategy_name=strategy, fraction_fit=fraction_fit, aggregation_method=aggregation_method, new_clients=False, new_clients_train=False, num_clients=num_clients,

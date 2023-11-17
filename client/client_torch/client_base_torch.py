@@ -6,7 +6,7 @@ import time
 import sys
 
 from dataset_utils_torch import ManageDatasets
-from models.torch import DNN, Logistic, CNN, MobileNet, resnet20, CNN_EMNIST, MobileNetV2, CNN_X, CNN_5, CNN_2, CNN_3
+from models.torch import DNN, Logistic, CNN, MobileNet, resnet20, CNN_EMNIST, MobileNetV2, CNN_X, CNN_5, CNN_2, CNN_3, CNN_3_GTSRB, MobileNet_V3
 import csv
 import torch.nn as nn
 import warnings
@@ -97,7 +97,6 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			self.fraction_fit	  = fraction_fit
 
 			self.loss = nn.CrossEntropyLoss()
-			self.learning_rate = 0.01 if self.dataset == "CIFAR10" else 0.01
 			if model_name == "CNN_10":
 				self.learning_rate = 0.005
 			self.new_clients = new_clients
@@ -125,8 +124,21 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			self.trainloader, self.testloader, self.traindataset, self.testdataset = self.load_data(self.dataset, n_clients=self.n_clients)
 			print("leu dados")
 			self.model                                           = self.create_model().to(self.device)
+			if self.dataset in ['EMNIST', 'CIFAR10', 'GTSRB']:
+				self.learning_rate = 0.01
+				# self.optimizer = torch.optim.Adam(self.model.parameters(),
+				# 								  lr=self.learning_rate)
+				self.optimizer = torch.optim.SGD(
+					self.model.parameters(), lr=self.learning_rate)
+			elif self.dataset == 'State Farm':
+				# self.learning_rate = 0.01
+				# self.optimizer = torch.optim.Adam(self.model.parameters(),
+				# 								  lr=self.learning_rate)
+				self.learning_rate = 0.01
+				self.optimizer = torch.optim.SGD(
+					self.model.parameters(), lr=self.learning_rate, momentum=0.9)
 			# self.device = 'cpu'
-			self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate) if self.model_name == "Mobilenet" else torch.optim.SGD(self.model.parameters(), lr=self.learning_rate)
+			# self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate) if self.model_name == "Mobilenet" else torch.optim.SGD(self.model.parameters(), lr=self.learning_rate)
 			# self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
 
 		except Exception as e:
@@ -139,7 +151,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 	def load_data(self, dataset_name, n_clients, batch_size=32):
 		try:
-			if dataset_name in ['MNIST', 'CIFAR10', 'CIFAR100', 'EMNIST']:
+			if dataset_name in ['MNIST', 'CIFAR10', 'CIFAR100', 'EMNIST', 'GTSRB', 'State Farm']:
 				trainLoader, testLoader, traindataset, testdataset = ManageDatasets(self.cid, self.model_name).select_dataset(
 					dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid, batch_size)
 				self.input_shape = (3,64,64)
@@ -163,7 +175,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			model = None
 			if self.dataset in ['MNIST', 'EMNIST']:
 				input_shape = 1
-			elif self.dataset in ['CIFAR10']:
+			elif self.dataset in ['CIFAR10', 'GTSRB', 'State Farm']:
 				input_shape = 3
 			elif self.dataset in ['MotionSense', 'UCIHAR']:
 				input_shape = self.input_shape[1]
@@ -171,19 +183,39 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				model =  Logistic(input_shape=input_shape, num_classes=self.num_classes)
 			elif self.model_name == 'DNN':
 				model =  DNN(input_shape=input_shape, num_classes=self.num_classes)
-			elif self.model_name == 'CNN_2' and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10']:
+			elif self.model_name == 'CNN_2' and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10', 'GTSRB']:
 				if self.dataset == 'CIFAR10':
+					mid_dim = 64
+				elif self.dataset == 'GTSRB':
+					mid_dim = 64
+				elif self.dataset == 'State Farm':
 					mid_dim = 64
 				else:
 					mid_dim = 36
 				return  CNN_2(input_shape=input_shape, mid_dim=mid_dim, num_classes=self.num_classes)
-			elif self.model_name == 'CNN_3' and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10']:
-				if self.dataset == 'CIFAR10':
+			elif self.model_name in ['CNN_3'] and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10', 'GTSRB', 'State Farm']:
+				if self.dataset in ['CIFAR10']:
 					mid_dim = 16
+				elif self.dataset == 'GTSRB':
+					mid_dim = 16
+				elif self.dataset == 'State Farm':
+					mid_dim = 16
+					# return CNN_3_GTSRB(input_shape=input_shape, mid_dim=mid_dim, num_classes=self.num_classes)
 				else:
 					mid_dim = 4
 				return  CNN_3(input_shape=input_shape, mid_dim=mid_dim, num_classes=self.num_classes)
-			elif self.model_name == 'CNN_1'  and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10']:
+			elif self.model_name in ['MobileNet'] and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10', 'GTSRB', 'State Farm']:
+				if self.dataset in ['CIFAR10']:
+					mid_dim = 16
+				elif self.dataset == 'GTSRB':
+					mid_dim = 16
+				elif self.dataset == 'State Farm':
+					mid_dim = 576
+					# return CNN_3_GTSRB(input_shape=input_shape, mid_dim=mid_dim, num_classes=self.num_classes)
+				else:
+					mid_dim = 4
+				return  MobileNet_V3(input_shape=input_shape, mid_dim=mid_dim, num_classes=self.num_classes)
+			elif self.model_name == 'CNN_1'  and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10', 'GTSRB']:
 				if self.dataset in ['EMNIST', 'MNIST']:
 					mid_dim = 256
 				else:
@@ -267,6 +299,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			start_time = time.process_time()
 			server_round = int(config['round'])
 			original_parameters = copy.deepcopy(parameters)
+			print("dataloader: ", self.trainloader)
 			if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
 				self.set_parameters_to_model_fit(parameters)
 				# self.save_parameters_global_model(parameters)
@@ -292,7 +325,9 @@ class ClientBaseTorch(fl.client.NumPyClient):
 							x = x.to(self.device)
 						# if self.dataset == 'EMNIST':
 						# 	x = x.view(-1, 28 * 28)
-						y = y.to(self.device)
+						y = np.array(y).astype(int)
+						# print("entrada: ", x.shape, y.shape, type(x[0]), type(y[0]), y[0])
+						# y = y.to(self.device)
 						train_num += y.shape[0]
 
 						self.optimizer.zero_grad()
@@ -363,6 +398,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 						x = x.to(self.device)
 					# if self.dataset == 'EMNIST':
 					# 	x = x.view(-1, 28 * 28)
+					if type(y) == tuple:
+						y = torch.from_numpy(np.array(y).astype(int))
 					self.optimizer.zero_grad()
 					y = y.to(self.device)
 					y = torch.tensor(y)
