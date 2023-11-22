@@ -267,15 +267,12 @@ class FedKDWithFedPredictBaseServer(FedKDBaseServer):
 		return parameters_aggregated, metrics_aggregated
 
 	def configure_evaluate(self, server_round, parameters, client_manager):
-		print("Similaridade: ", self.similarity_between_layers_per_round[server_round])
 		client_evaluate_list = super().configure_evaluate(server_round, parameters, client_manager)
 		return fedpredict_server(parameters=parameters, client_evaluate_list=client_evaluate_list,
-								 fedpredict_clients_metrics=self.fedpredict_clients_metrics,
-								 evaluate_config=self.evaluate_config,
-								 similarity_between_layers_per_round=self.similarity_between_layers_per_round,
-								 mean_similarity_per_round=self.mean_similarity_per_round, server_round=server_round,
+								 fedpredict_clients_metrics=self.fedpredict_clients_metrics, df=self.df,
+								 evaluate_config=self.evaluate_config, server_round=server_round,
 								 num_rounds=self.num_rounds, comment=self.comment, compression=self.compression,
-								 df=self.df, layers_compression_range=self.layers_compression_range)
+								 layers_compression_range=self.layers_compression_range)
 
 	def end_evaluate_function(self):
 		self._write_similarity()

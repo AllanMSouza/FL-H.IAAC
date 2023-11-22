@@ -65,7 +65,7 @@ class Varying_Shared_layers:
             target_size = target['Size of parameters (MB)'].mean()
 
             if len(target) != len(df):
-                print("oioi", len(target), len(df))
+                print("oioi", len(target), len(df), "co: ", round, dataset, alpha, model, "\n", df_aux.query("""Dataset == '{}' and \u03B1 == {} and Model == '{}'""".format(dataset, alpha, model))[['Dataset', 'Round', 'Solution', 'Strategy', '\u03B1', 'Model']].drop_duplicates())
                 exit()
 
             acc = df['Accuracy (%)'].mean()
@@ -622,7 +622,7 @@ class Varying_Shared_layers:
             y_max = 100
 
         if len(self.dataset) >= 2:
-            fig, ax = plt.subplots(2, 2, sharex='all', sharey='all', figsize=(6, 6))
+            fig, ax = plt.subplots(3, 2, sharex='all', sharey='all', figsize=(6, 6))
             title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[0])
             x = df[x_column].tolist()
             y = df[y_column].tolist()
@@ -647,9 +647,9 @@ class Varying_Shared_layers:
             ax[0, 0].get_legend().remove()
             ax[0, 0].set_xlabel('')
             ax[0, 0].set_ylabel('')
-            title = """{}; {}""".format(self.dataset_name_list[1], self.model_name_list[0])
+            title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[1])
             line_plot(ax=ax[0, 1],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[1], self.model_name_list[0])),
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[1])),
                       base_dir=base_dir,
                       file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
                       x_column=x_column,
@@ -669,9 +669,9 @@ class Varying_Shared_layers:
             ax[0, 1].set_xlabel('')
             ax[0, 1].set_ylabel('')
 
-            title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[1])
+            title = """{}; {}""".format(self.dataset_name_list[1], self.model_name_list[0])
             line_plot(ax=ax[1, 0],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[1])),
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[1], self.model_name_list[0])),
                       base_dir=base_dir,
                       file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
                       x_column=x_column,
@@ -713,6 +713,55 @@ class Varying_Shared_layers:
             ax[1, 1].get_legend().remove()
             ax[1, 1].set_xlabel('')
             ax[1, 1].set_ylabel('')
+
+            #
+
+            title = """{}; {}""".format(self.dataset_name_list[2], self.model_name_list[0])
+            line_plot(ax=ax[2, 0],
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[2],
+                                                                                 self.model_name_list[0])),
+                      base_dir=base_dir,
+                      file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
+                      x_column=x_column,
+                      y_column=y_column,
+                      title=title,
+                      hue=hue,
+                      style=style,
+                      hue_order=compression,
+                      type=1,
+                      log_scale=False,
+                      y_lim=True,
+                      y_max=y_max,
+                      y_min=y_min,
+                      n=1)
+
+            ax[2, 0].get_legend().remove()
+            # ax[1, 0].legend(fontsize=7, ncol=2)
+            ax[2, 0].set_xlabel('')
+            ax[2, 0].set_ylabel('')
+
+            title = """{}; {}""".format(self.dataset_name_list[2], self.model_name_list[1])
+            line_plot(ax=ax[2, 1],
+                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[2],
+                                                                                 self.model_name_list[1])),
+                      base_dir=base_dir,
+                      file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
+                      x_column=x_column,
+                      y_column=y_column,
+                      title=title,
+                      hue=hue,
+                      style=style,
+                      hue_order=compression,
+                      type=1,
+                      log_scale=False,
+                      y_lim=True,
+                      y_max=y_max,
+                      y_min=y_min,
+                      n=1)
+
+            ax[2, 1].get_legend().remove()
+            ax[2, 1].set_xlabel('')
+            ax[2, 1].set_ylabel('')
 
             fig.suptitle("", fontsize=16)
             fig.supxlabel(x_column, y=-0.02)
@@ -1815,8 +1864,8 @@ if __name__ == '__main__':
     fraction_fit = 0.3
     num_clients = 20
     model_name = ["CNN_2", "CNN_3"]
-    dataset = ["EMNIST", "GTSRB"]
-    alpha = [0.1, 5.0]
+    dataset = ["EMNIST", "CIFAR10", "GTSRB"]
+    alpha = [0.1, 1.0]
     num_rounds = 100
     epochs = 1
     # compression_methods = [-1, 1, 2, 3, 4, 12, 13, 14, 123, 124, 134, 23, 24, 1234, 34]

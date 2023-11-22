@@ -252,7 +252,7 @@ class JointAnalysis():
         df = self.filter(df, experiment, dataset, fraction_fit)
 
         print("filtrado: ", df, df[hue].unique().tolist())
-        bar_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, tipo='1', hue_order=hue_order, palette=palette, x_order=x_order, sci=True, y_lim=True, y_max=100)
+        bar_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, tipo='nt', hue_order=hue_order, palette=palette, x_order=x_order, sci=True, y_lim=True, y_max=100)
 
     def joint_plot_acc_four_plots(self, df, experiment, fractions_fit):
         print("Joint plot exeprimento: ", experiment)
@@ -275,7 +275,7 @@ class JointAnalysis():
         print(df_test)
         # figsize=(12, 9),
         sns.set(style='whitegrid')
-        fig, axs = plt.subplots(1, 2,  sharex='all', sharey='all', figsize=(6, 6))
+        fig, axs = plt.subplots(3, 1,  sharex='all', sharey='all', figsize=(6, 6))
 
         x_column = 'nt'
         y_column = 'Accuracy (%)'
@@ -307,6 +307,18 @@ class JointAnalysis():
         i = 1
         self.filter_and_plot(ax=axs[i], base_dir=base_dir, filename=filename, title=title, df=df_test,
                              experiment=experiment, dataset=dataset, fraction_fit=fraction_fit, x_column=x_column, y_column=y_column,
+                             hue='Strategy', x_order=x_order, hue_order=hue_order, style='nt', palette=palette)
+        axs[i].get_legend().remove()
+        axs[i].set_xlabel('')
+        axs[i].set_ylabel('')
+        # ====================================================================
+        fraction_fit = fractions_fit[0]
+        dataset = 'GTSRB'
+        title = """GTSRB""".format()
+        i = 2
+        self.filter_and_plot(ax=axs[i], base_dir=base_dir, filename=filename, title=title, df=df_test,
+                             experiment=experiment, dataset=dataset, fraction_fit=fraction_fit, x_column=x_column,
+                             y_column=y_column,
                              hue='Strategy', x_order=x_order, hue_order=hue_order, style='nt', palette=palette)
         axs[i].get_legend().remove()
         axs[i].set_xlabel('')
@@ -422,7 +434,7 @@ if __name__ == '__main__':
     # pocs = [0.1, 0.2, 0.3]
     fractions_fit = [0.3]
     # datasets = ['MNIST', 'CIFAR10']
-    datasets = ['EMNIST', 'CIFAR10']
+    datasets = ['EMNIST', 'CIFAR10', 'GTSRB']
     alpha = 0.1
     rounds = 100
     clients = '20'

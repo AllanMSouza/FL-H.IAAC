@@ -118,28 +118,28 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		self.T = int(args.T)
 		self.clients_model_non_zero_indexes = {}
 
-	def calculate_initial_similarity(self, server_round, rate=0.1):
-
-		rounds = int(rate*self.T)
-
-		sm = 0
-		rounds = min(rounds, server_round)
-		for i in range(1, rounds +1):
-
-			sm += self.similarity_between_layers_per_round[i][0]['mean']
-
-		self.initial_similarity = sm/rounds
-
-	def calculate_current_similarity(self, server_round, rate=0.05):
-
-		rounds = max(1, int(rate * self.T))
-		rounds = min(server_round, rounds)
-
-		sm = 0
-		for i in range(server_round - rounds, server_round + 1):
-			sm += self.similarity_between_layers_per_round[i][0]['mean']
-
-		self.current_similarity = sm / rounds
+	# def calculate_initial_similarity(self, server_round, rate=0.1):
+	#
+	# 	rounds = int(rate*self.T)
+	#
+	# 	sm = 0
+	# 	rounds = min(rounds, server_round)
+	# 	for i in range(1, rounds +1):
+	#
+	# 		sm += self.similarity_between_layers_per_round[i][0]['mean']
+	#
+	# 	self.initial_similarity = sm/rounds
+	#
+	# def calculate_current_similarity(self, server_round, rate=0.05):
+	#
+	# 	rounds = max(1, int(rate * self.T))
+	# 	rounds = min(server_round, rounds)
+	#
+	# 	sm = 0
+	# 	for i in range(server_round - rounds, server_round + 1):
+	# 		sm += self.similarity_between_layers_per_round[i][0]['mean']
+	#
+	# 	self.current_similarity = sm / rounds
 
 	def create_folder(self, strategy_name):
 
@@ -212,7 +212,7 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			self.layers_compression_range = layer_compression_range(self.model_shape)
 			print("shape do modelo: ", self.model_shape)
 			print("tamanho do modelo: ", self.model_size)
-			print("similaridade inicial: ", self.similarity_list_per_layer)
+			# print("similaridade inicial: ", self.similarity_list_per_layer)
 			print("range: ", self.layers_compression_range)
 		weights_results = []
 		clients_parameters = []
@@ -230,9 +230,8 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		else:
 			global_parameter = self.previous_global_parameters[server_round]
 
-		np.random.seed()
+		np.random.seed(server_round)
 		flag = bool(int(np.random.binomial(1, 0.2, 1)))
-		np.random.seed(0)
 		if server_round == 1:
 			flag = True
 		print("Flag: ", flag)
@@ -252,8 +251,6 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			self.similarity_between_layers_per_round_and_client[server_round] = []
 			self.df = 1
 
-		print("df médio: ", self.df, " rodada: ", server_round)
-
 		# self.parameters_aggregated_checkpoint[server_round] = parameters_to_ndarrays(parameters_aggregated)
 
 
@@ -264,13 +261,16 @@ class FedPredictBaseServer(FedAvgBaseServer):
 		return parameters_aggregated, metrics_aggregated
 
 	def configure_evaluate(self, server_round, parameters, client_manager):
-		print("Similaridade: ", self.similarity_between_layers_per_round[server_round])
 		client_evaluate_list = super().configure_evaluate(server_round, parameters, client_manager)
-		return fedpredict_server(parameters=parameters, client_evaluate_list=client_evaluate_list, fedpredict_clients_metrics=self.fedpredict_clients_metrics, evaluate_config=self.evaluate_config, similarity_between_layers_per_round=self.similarity_between_layers_per_round, mean_similarity_per_round=self.mean_similarity_per_round, server_round=server_round, num_rounds=self.num_rounds, comment=self.comment, compression=self.compression, df=self.df, layers_compression_range=self.layers_compression_range)
+		return fedpredict_server(parameters=parameters, client_evaluate_list=client_evaluate_list, 
+								 fedpredict_clients_metrics=self.fedpredict_clients_metrics, df=self.df,
+								 evaluate_config=self.evaluate_config, server_round=server_round, 
+								 num_rounds=self.num_rounds, comment=self.comment, 
+								 compression=self.compression, layers_compression_range=self.layers_compression_range)
 
-	def end_evaluate_function(self):
-		self._write_similarity()
-		#self._write_norm()
+	# def end_evaluate_function(self):
+	# 	self._write_similarity()
+	# 	#self._write_norm()
 
 	# def _write_norm(self):
 	#
@@ -283,22 +283,22 @@ class FedPredictBaseServer(FedAvgBaseServer):
 	# 	df = pd.DataFrame(data)
 	# 	df.to_csv(self.similarity_filename, index=False)
 
-	def _write_similarity(self):
-
-		columns = ["Server round", "Layer", "Similarity"]
-		data = {column: [] for column in columns}
-
-		for round in self.similarity_between_layers_per_round:
-
-			for layer in self.similarity_between_layers_per_round[round]:
-
-				data['Server round'].append(round)
-				data['Layer'].append(layer)
-				data['Similarity'].append(self.similarity_between_layers_per_round[round][layer]['mean'])
-
-		self.similarity_filename = f"{self.base}/similarity_between_layers.csv"
-		df = pd.DataFrame(data)
-		df.to_csv(self.similarity_filename, index=False)
+	# def _write_similarity(self):
+	#
+	# 	columns = ["Server round", "Layer", "Similarity"]
+	# 	data = {column: [] for column in columns}
+	#
+	# 	for round in self.similarity_between_layers_per_round:
+	#
+	# 		for layer in self.similarity_between_layers_per_round[round]:
+	#
+	# 			data['Server round'].append(round)
+	# 			data['Layer'].append(layer)
+	# 			data['Similarity'].append(self.similarity_between_layers_per_round[round][layer]['mean'])
+	#
+	# 	self.similarity_filename = f"{self.base}/similarity_between_layers.csv"
+	# 	df = pd.DataFrame(data)
+	# 	df.to_csv(self.similarity_filename, index=False)
 
 	def _gradient_metric(self, updated_global_parameters, server_round):
 

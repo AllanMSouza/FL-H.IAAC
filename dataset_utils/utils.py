@@ -6,6 +6,48 @@ import torch
 
 from torch.utils.data import DataLoader, ConcatDataset, Subset, Dataset
 from select_dataset import ManageDatasets
+from pathlib import Path
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import seaborn.objects as so
+import numpy as np
+from sklearn.utils import resample
+
+def bar_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, hue_order=None, y_lim=False, y_min=0, y_max=100, log_scale=False, sci=False, x_order=None, ax=None, tipo=None, palette=None):
+    Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
+    Path(base_dir + "svg/").mkdir(parents=True, exist_ok=True)
+    max_value = df[y_column].max()
+
+    sns.set(style='whitegrid')
+    log = ""
+    file_name = """{}_barplot""".format(file_name)
+    # df[y_column] = df[y_column].round(2)
+    if log_scale:
+        plt.yscale('log')
+        log = "_log_"
+    if sci:
+        from matplotlib import ticker
+        formatter = ticker.ScalarFormatter(useMathText=True)
+        formatter.set_scientific(True)
+        # formatter.set_powerlimits((-1, 1))
+        ax.yaxis.set_major_formatter(formatter)
+        # ax.set_ylim([0, 130000])
+    if y_lim:
+        # y_max = float(max_value)
+        plt.ylim([y_min, y_max])
+
+
+    # errorbar=('ci', 0.95),
+    figure = sns.barplot(ax=ax, x=x_column, y=y_column, hue=hue, data=df, hue_order=hue_order,  order=x_order, palette=palette).set_title(title)
+    # for bars in ax.containers:
+    #     ax.bar_label(bars, fmt='%.f', fontsize=9)
+    plt.xticks(rotation=90)
+    if ax is None:
+        fig, ax = plt.subplots()
+        figure = figure.get_figure()
+        figure.savefig(base_dir + "png/" + file_name + log + ".png", bbox_inches='tight', dpi=400)
+        figure.savefig(base_dir + "svg/" + file_name + log + ".svg", bbox_inches='tight', dpi=400)
 
 # import torchvision.transforms as transforms
 #
@@ -19,7 +61,7 @@ from select_dataset import ManageDatasets
 #
 #     return transform
 
-def separate_data(targets, num_clients, num_classes, niid=False, balance=False, partition=None, class_per_client=2,
+def separate_data(targets, num_clients, num_classes, dataset, niid=True, balance=False, partition=None, class_per_client=2,
                   batch_size=10, train_size=0.8, alpha=0.1):
     """
         return:
@@ -27,8 +69,9 @@ def separate_data(targets, num_clients, num_classes, niid=False, balance=False, 
     """
     np.random.seed(0)
     least_samples = batch_size / (1 - train_size)
-    least_samples = train_size
+    # least_samples = train_size
     alpha = alpha  # for Dirichlet distribution
+    least_samples = 20
 
     print("aq:", partition)
 
@@ -75,32 +118,65 @@ def separate_data(targets, num_clients, num_classes, niid=False, balance=False, 
                 idx += num_sample
                 class_num_per_client[client] -= 1
 
+
+
     elif partition == "dir":
-        # https://github.com/IBM/probabilistic-federated-neural-matching/blob/master/experiment.py
-        min_size = 0
-        K = num_classes
-        max_class = 0
-        N = len(targets)
-        print("ola: ", class_per_client)
+        if dataset == 'GTSRB':
 
-        while min_size < least_samples:
-            idx_batch = [[] for _ in range(num_clients)]
-            for k in range(K):
-                idx_k = np.where(targets == k)[0]
-                np.random.shuffle(idx_k)
-                proportions = np.random.dirichlet(np.repeat(alpha, num_clients))
-                proportions = np.array([p * (len(idx_j) < N / num_clients) for p, idx_j in zip(proportions, idx_batch)])
-                proportions = proportions / proportions.sum()
-                proportions = (np.cumsum(proportions) * len(idx_k)).astype(int)[:-1]
-                idx_batch = [idx_j + idx.tolist() for idx_j, idx in zip(idx_batch, np.split(idx_k, proportions))]
-                min_size = min([len(idx_j) for idx_j in idx_batch])
+            # https://github.com/IBM/probabilistic-federated-neural-matching/blob/master/experiment.py
+            min_size = 0
+            K = num_classes
+            max_class = 0
+            N = len(targets)
+            print("ola: ", class_per_client)
 
-        for j in range(num_clients):
-            dataidx_map[j] = idx_batch[j]
-            m = np.take(np.array(targets), idx_batch[j]).max()
-            # if m > max_class:
-            #     max_class = m
-            # print("max ", max_class)
+            while min_size < least_samples:
+                idx_batch = [[] for _ in range(num_clients)]
+                for k in range(K):
+                    idx_k = np.where(targets == k)[0]
+                    np.random.shuffle(idx_k)
+                    proportions = np.random.dirichlet(np.repeat(alpha, num_clients))
+                    proportions = np.array(
+                        [p * (len(idx_j) < N / num_clients) for p, idx_j in zip(proportions, idx_batch)])
+                    proportions = proportions / proportions.sum()
+                    proportions = (np.cumsum(proportions) * len(idx_k)).astype(int)[:-1]
+                    idx_batch = [idx_j + idx.tolist() for idx_j, idx in zip(idx_batch, np.split(idx_k, proportions))]
+                    min_size = min([len(idx_j) for idx_j in idx_batch])
+                    print("classe: ", k, " min size: ", min_size, " least: ", least_samples)
+
+            for j in range(num_clients):
+                dataidx_map[j] = idx_batch[j]
+                m = np.take(np.array(targets), idx_batch[j]).max()
+                # if m > max_class:
+                #     max_class = m
+                # print("max ", max_class)
+
+        else:
+            # https://github.com/IBM/probabilistic-federated-neural-matching/blob/master/experiment.py
+            min_size = 0
+            K = num_classes
+            max_class = 0
+            N = len(targets)
+            print("ola: ", class_per_client)
+
+            while min_size < least_samples:
+                idx_batch = [[] for _ in range(num_clients)]
+                for k in range(K):
+                    idx_k = np.where(targets == k)[0]
+                    np.random.shuffle(idx_k)
+                    proportions = np.random.dirichlet(np.repeat(alpha, num_clients))
+                    proportions = np.array([p * (len(idx_j) < N / num_clients) for p, idx_j in zip(proportions, idx_batch)])
+                    proportions = proportions / proportions.sum()
+                    proportions = (np.cumsum(proportions) * len(idx_k)).astype(int)[:-1]
+                    idx_batch = [idx_j + idx.tolist() for idx_j, idx in zip(idx_batch, np.split(idx_k, proportions))]
+                    min_size = min([len(idx_j) for idx_j in idx_batch])
+
+            for j in range(num_clients):
+                dataidx_map[j] = idx_batch[j]
+                m = np.take(np.array(targets), idx_batch[j]).max()
+                # if m > max_class:
+                #     max_class = m
+                # print("max ", max_class)
     else:
         raise NotImplementedError
 
@@ -115,12 +191,20 @@ def separate_data(targets, num_clients, num_classes, niid=False, balance=False, 
     return dataidx_map, statistic
 
 
-def split_data(dataidx_map, num_clients, train_size):
+def split_data(dataidx_map, target, num_clients, train_size):
     # Split dataset
     train_data, test_data = [], []
+    frac = 0.8
 
     for cli_id in range(num_clients):
         cli_idxs = dataidx_map[cli_id]
+        cli_targets = target[cli_idxs]
+        # aux = np.array([[i, j] for i, j in zip(cli_idxs, cli_targets)])
+        # # print("antes: ", len(aux))
+        # aux = resample(aux, n_samples=len(aux) * frac, random_state=0, replace=False, stratify=cli_targets)
+        # cli_idxs = np.array([i[0] for i in aux])
+        # print("depois: ", len(aux))
+        # exit()
         np.random.shuffle(cli_idxs)
         test_first_index = int(train_size * len(cli_idxs))
         train_idxs = cli_idxs[:test_first_index]
@@ -136,36 +220,48 @@ def save_dataloaders(dataset_name="CIFAR10", num_clients=10, num_classes=10, nii
                  class_per_client=10,
                  batch_size=10, train_size=0.8, alpha=0.1, dataset_dir="./dataset/", sim_id=0):
 
-    if num_classes == 10:
-        num_classes = {'Tiny-ImageNet': 200, 'CIFAR10': 10, 'MNIST': 10, 'EMNIST': 47, "State Farm": 10, 'GTSRB': 43}[dataset_name]
+    num_classes = {'Tiny-ImageNet': 200, 'CIFAR10': 10, 'MNIST': 10, 'EMNIST': 47, "State Farm": 10, 'GTSRB': 43}[dataset_name]
 
     # transform = get_transform(dataset_name)
     x_train, y_train, x_test, y_test = ManageDatasets().select_dataset(dataset_name)
 
-    target = np.concatenate((y_train, y_test), axis=0)
+    target = np.concatenate((y_train, y_test), axis=0).astype(int)
+    df = pd.DataFrame({'label': target}).value_counts().reset_index()
+    df['count'] = df[0].to_numpy()
+    df = df[['label', 'count']]
+    x_order = df.sort_values(by='count')['label'].tolist()
+    # df = pd.DataFrame({'label': df.index.tolist(), 'count': df.tolist()})
+    print("ordem: ", x_order)
+    bar_plot(df=df, base_dir='', file_name="""{}_label_counts_original""".format(dataset_name), title='', x_column='label', y_column='count', x_order=x_order)
+    # print(df)
+    # exit()
     if dataset_name == 'GTSRB':
         x = np.concatenate((np.array([i[0] for i in x_train]), np.array([i[0] for i in x_test])), axis=0)
         print(x[:2])
     print("Quantidade de amostras do ", dataset_name, ": ", len(target))
-    # dataset = Dataset()
-    masks, statistic = separate_data(target, num_clients, num_classes, niid, balance, partition, class_per_client,
+    masks, statistic = separate_data(target, num_clients, num_classes, dataset_name, niid, balance, partition, class_per_client,
                                      batch_size, train_size, alpha)
 
-    train_data, test_data = split_data(masks, num_clients, train_size)
+    train_data, test_data = split_data(masks, target, num_clients, train_size)
 
     count = 0
+    final_target = []
+    classes_list = []
 
     for client_id in range(num_clients):
 
         index_train = train_data[client_id]
         index_test = test_data[client_id]
+        final_target += list(target[index_train]) + list(target[index_test])
         if dataset_name == 'GTSRB':
             x_client = np.concatenate((x[index_train], x[index_test]), axis=0)
             df = pd.DataFrame({'x': x_client, 'index': np.concatenate((index_train, index_test), axis=0), 'type': np.concatenate((np.array(['train'] * len(index_train)), np.array(['test'] * len(index_test))), axis=0)}).drop_duplicates('x')
             index_train = df.query("type == 'train'")['index'].to_numpy()
             index_test = df.query("type == 'test'")['index'].to_numpy()
         # print("""Quantidade de dados de treino para o cliente {}: {}, teste: {}""".format(client_id, len(index_train), len(index_test)))
-        print("Original: ", len(index_train), " Sem duplicadas: ", len(pd.Series(index_train).drop_duplicates()), " classes: ", len(pd.Series(target[index_train]).unique().tolist()), " teste: ", len(index_test))
+        classes = len(pd.Series(target[index_train]).unique().tolist())
+        classes_list.append(classes)
+        print("Original: ", len(index_train), " Sem duplicadas: ", len(pd.Series(index_train).drop_duplicates()), " classes: ",  classes, " teste: ", len(index_test))
         print("Suporte: ", pd.Series(target[index_train]).astype(str).value_counts())
         count += len(index_train) + len(index_test)
 
@@ -180,5 +276,14 @@ def save_dataloaders(dataset_name="CIFAR10", num_clients=10, num_classes=10, nii
 
         with open(filename_test, 'wb') as handle:
             pickle.dump(index_test, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    print("Media de classes: ", pd.Series(np.array(classes_list)/num_classes).describe())
+    df = pd.DataFrame({'label': final_target}).value_counts().reset_index()
+    df['count'] = df[0].to_numpy()
+    df = df[['label', 'count']]
+    x_order = df.sort_values(by='count')['label'].tolist()
+    # df = pd.DataFrame({'label': df.index.tolist(), 'count': df.tolist()})
+    bar_plot(df=df, base_dir='', file_name="""{}_label_counts_final""".format(dataset_name), title='',
+             x_column='label', y_column='count', x_order=x_order)
 
     print("total: ", count)

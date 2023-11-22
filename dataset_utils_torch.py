@@ -600,7 +600,7 @@ class ManageDatasets():
             x_test = []
             y_train = []
             y_test = []
-            for i in range(2):
+            for i in range(3):
                 x_train += training_dataset.samples
                 x_test += validation_dataset.samples
                 y_train += training_dataset.targets

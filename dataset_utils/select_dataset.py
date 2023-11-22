@@ -12,6 +12,8 @@ import torchvision.transforms as transforms
 import subprocess
 from torchvision.datasets import ImageFolder, DatasetFolder, ImageNet
 import torchvision.datasets as datasets
+from PIL import Image
+from torch.utils import data
 import time
 import sys
 
@@ -73,6 +75,124 @@ def load_data_imagenet(data_path):
 
     return trainset, valset
 
+def load_data_statefarm(data_path):
+    """Load ImageNet (training and val set)."""
+
+    # Load ImageNet and normalize
+    traindir = os.path.join(data_path, "train")
+
+    trainset = datasets.ImageFolder(
+        traindir,
+        transforms.Compose(
+            [
+                transforms.RandomHorizontalFlip(),
+                transforms.RandomResizedCrop(224),
+                transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
+                transforms.RandomRotation(degrees=60, expand=False),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ]
+        ),
+    )
+
+    valset = datasets.ImageFolder(
+        traindir,
+        transforms.Compose(
+            [
+                transforms.Resize(size=(224, 224)),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ]
+        ),
+    )
+
+    print(trainset.targets)
+
+    return trainset, None
+
+def load_data_gtsrb(data_path):
+    """Load ImageNet (training and val set)."""
+
+    # Load ImageNet and normalize
+    traindir = os.path.join(data_path, "train")
+
+    trainset = datasets.ImageFolder(
+        traindir,
+        transforms.Compose(
+            [
+                transforms.RandomHorizontalFlip(),
+                transforms.RandomResizedCrop(224),
+                transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
+                transforms.RandomRotation(degrees=60, expand=False),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ]
+        ),
+    )
+
+    return trainset, None
+
+def get_filepath(dir_root):
+    ''''获取一个目录下所有文件的路径，并存储到List中'''
+    file_paths = []
+    for root, dirs, files in os.walk(dir_root):
+        for file in files:
+            file_paths.append(os.path.join(root, file))
+    return file_paths
+
+class DriverDataset(data.Dataset):
+
+    def __init__(self, data_root, transform=None, train=True):
+        self.train = train
+        imgs_in = get_filepath(data_root)
+
+        if transform is None and self.train:
+            self.transforms = transforms.Compose([transforms.RandomHorizontalFlip(),
+                                         transforms.RandomResizedCrop(224),
+                                         transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
+                                         transforms.RandomRotation(degrees=60, expand=False),
+                                         transforms.ToTensor(),
+                                         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                                         ])
+        else:
+            self.transforms = transforms.Compose([transforms.Resize(size=(224, 224)),
+                                         transforms.ToTensor(),
+                                         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                                         ])
+        self.imgs = imgs_in
+
+        self.samples, self.labels = self.ler()
+
+    def __getitem__(self, index):
+        img_path = self.imgs[index]
+        label = int(img_path.split('/')[-2][1])
+        data = Image.open(img_path)
+        data = self.transforms(data)
+        return data, label
+
+    def ler(self):
+
+        samples = []
+        labels = []
+        for i in range(len(self.imgs)):
+            img_path = self.imgs[i]
+            label = int(img_path.split('/')[-2][1])
+            data = Image.open(img_path)
+            samples.append(data)
+            labels.append(label)
+
+        return self.transforms(np.array(samples)), labels
+
+    def get_targets(self):
+
+        labels = []
+        for i in range(len(self.imgs)):
+            labels.append(self.imgs[i][1])
+
+        return labels
+
+    def __len__(self):
+        return len(self.imgs)
 
 class ImageFolder_custom(DatasetFolder):
     def __init__(self, root, dataidxs=None, train=True, transform=None, target_transform=None):
@@ -278,6 +398,126 @@ class ManageDatasets():
 
         return dataset_image, dataset_label, np.array([]), np.array([])
 
+    def load_statefarm(self):
+
+        dir_path = "data/state-farm-distracted-driver-detection/imgs/"
+
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+
+            # Setup directory for train/test data
+        config_path = dir_path + "config.json"
+        train_path = dir_path + "train/"
+        test_path = dir_path + "test/"
+
+        # if not os.listdir(dir_path):
+        #     print("entro")
+        #     command = """cd {} \nwget http://cs231n.stanford.edu/tiny-imagenet-200.zip""".format(dir_path)
+        #     subprocess.Popen(command, shell=True).wait()
+        #     command = """cd {} \nunzip tiny-imagenet-200.zip""".format(dir_path)
+        #     subprocess.Popen(command, shell=True).wait()
+        # elif not os.path.exists(dir_path + "tiny-imagenet-200/val/"):
+        #     print("aaa")
+        #     command = """cd {} \nunzip 'tiny-imagenet-200.zip'""".format(dir_path)
+        #     subprocess.Popen(command, shell=True).wait()
+
+        trainset, valset = load_data_statefarm(dir_path)
+
+        # trainset = ImageFolder_custom(root=dir_path + '', transform=transform)
+        # testset = ImageFolder_custom(root=dir_path + '', transform=transform)
+        # trainloader = torch.utils.data.DataLoader(
+        #     trainset, batch_size=len(trainset), shuffle=False)
+        # testloader = torch.utils.data.DataLoader(
+        #     testset, batch_size=len(testset), shuffle=False)
+        #
+        # print("sam: ", trainset.classes)
+        #
+        # # for _, train_data in enumerate(trainloader, 0):
+        # #     print("oi: ", train_data)
+        # #     exit()
+        # # for _, test_data in enumerate(testloader, 0):
+        # #     testset.data, testset.targets = test_data
+        # exit()
+        np.random.seed(0)
+
+        dataset_image = []
+        dataset_label = []
+        dataset_image.extend(trainset.samples)
+        dataset_label.extend(trainset.targets)
+        dataset_image = np.array(dataset_image)
+        dataset_label = np.array(dataset_label)
+
+        print("rotulos: ", dataset_label, dataset_label[0])
+
+        return dataset_image, dataset_label, np.array([]), np.array([])
+
+    def load_gtsrb(self):
+
+        dir_path = "data/GTSRB/raw_data/"
+
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+
+            # Setup directory for train/test data
+        config_path = dir_path + "config.json"
+        train_path = dir_path + "train/"
+        test_path = dir_path + "test/"
+
+        trainset, valset = load_data_gtsrb(dir_path)
+
+        np.random.seed(0)
+
+        dataset_image = []
+        dataset_label = []
+        for i in range(3):
+            dataset_image.extend(trainset.samples)
+            dataset_label.extend(trainset.targets)
+        dataset_image = np.array(dataset_image)
+        dataset_label = np.array(dataset_label)
+
+        print("rotulos: ", dataset_label, dataset_label[0])
+
+        return dataset_image, dataset_label, np.array([]), np.array([])
+
+        # transform = transforms.Compose(
+        #     [
+        #         transforms.RandomHorizontalFlip(),
+        #         transforms.RandomResizedCrop(224),
+        #         transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
+        #         transforms.RandomRotation(degrees=60, expand=False),
+        #         transforms.ToTensor(),
+        #         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        #     ]
+        # )
+        #
+        # trainset = torchvision.datasets.GTSRB(
+        #     root=dir_path + "raw_data", split='train', download=True, transform=transform)
+        # testset = torchvision.datasets.GTSRB(
+        #     root=dir_path + "raw_data", split='test', download=True, transform=transform)
+        # trainloader = torch.utils.data.DataLoader(
+        #     trainset, batch_size=len(trainset._samples), shuffle=False)
+        # testloader = torch.utils.data.DataLoader(
+        #     testset, batch_size=len(testset._samples), shuffle=False)
+
+
+
+        # for _, train_data in enumerate(trainloader, 0):
+        #     trainset.data, trainset.targets = train_data
+        # for _, test_data in enumerate(testloader, 0):
+        #     testset.data, testset.targets = test_data
+        #
+        # dataset_image = []
+        # dataset_label = []
+        #
+        # dataset_image.extend(trainset.data.cpu().detach().numpy())
+        # dataset_image.extend(testset.data.cpu().detach().numpy())
+        # dataset_label.extend(trainset.targets.cpu().detach().numpy())
+        # dataset_label.extend(testset.targets.cpu().detach().numpy())
+        # dataset_image = np.array(dataset_image)
+        # dataset_label = np.array(dataset_label)
+        #
+        # return dataset_image, dataset_label, np.array([]), np.array([])
+
     def load_emnist(self):
 
         dir_path = "data/EMNIST/"
@@ -397,6 +637,12 @@ class ManageDatasets():
 
         elif dataset_name == 'Tiny-ImageNet':
             return self.load_tiny_imagenet()
+
+        elif dataset_name == "State Farm":
+            return self.load_statefarm()
+
+        elif dataset_name == 'GTSRB':
+            return self.load_gtsrb()
 
         elif dataset_name == 'EMNIST':
             return self.load_emnist()

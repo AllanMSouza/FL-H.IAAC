@@ -89,7 +89,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.regression_window = 5
 		self.fedpredict_metrics = {'el': 1/self.num_rounds, 'round_acc_el': {1: {'acc': 0, 'el': 0}}}
 		self.fedpredict_clients_metrics = {str(i): {'round_of_last_fit': 0, 'round_of_last_evaluate': 0, 'first_round': -1,
-											   'acc_of_last_fit': 0, 'acc_of_last_evaluate': 0, 'nt': 0, 'acc_bytes_rate': 0}
+											   'acc_of_last_fit': 0, 'acc_of_last_evaluate': 0, 'nt': 0, 'acc_bytes_rate': 0, 'local_classes': 0}
 										   for i in range(0, self.num_clients + 1)}
 
 		# FedPredictSelection
@@ -362,6 +362,8 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		clients_ids = []
 		for _, fit_res in results:
 			client_id = str(fit_res.metrics['cid'])
+			local_classes = float(fit_res.metrics['local_classes'])
+			self.fedpredict_clients_metrics[client_id]['local_classes'] = local_classes
 			clients_ids.append(client_id)
 			# print("Parametros aggregate fit: ", len(fl.common.parameters_to_ndarrays(fit_res.parameters)))
 			# print("Fit respons", fit_res.metrics)

@@ -72,11 +72,14 @@ class FedProtoClientTorch(ClientBaseTorch):
 			model = None
 			if self.dataset in ['MNIST', 'EMNIST']:
 				input_shape = 1
-			elif self.dataset in ['CIFAR10']:
+			elif self.dataset in ['CIFAR10', 'GTSRB']:
 				input_shape = 3
-			if self.model_name == 'CNN_3' and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10']:
-				if self.dataset == 'CIFAR10':
+			if self.model_name in ['CNN_3'] and self.dataset in ['EMNIST', 'MNIST', 'CIFAR10', 'GTSRB']:
+				if self.dataset in ['CIFAR10']:
 					mid_dim = 16
+				elif self.dataset == 'GTSRB':
+					mid_dim = 16
+				# return CNN_3_GTSRB(input_shape=input_shape, mid_dim=mid_dim, num_classes=self.num_classes)
 				else:
 					mid_dim = 4
 				return CNN_3_proto(input_shape=input_shape, mid_dim=mid_dim, num_classes=self.num_classes)
@@ -163,7 +166,9 @@ class FedProtoClientTorch(ClientBaseTorch):
 							x[0] = x[0].to(self.device)
 						else:
 							x = x.to(self.device)
-						y = y.to(self.device)
+
+						y = np.array(y).astype(int)
+
 						train_num += y.shape[0]
 
 						self.optimizer.zero_grad()
@@ -171,6 +176,7 @@ class FedProtoClientTorch(ClientBaseTorch):
 						# output = self.model.head(rep)
 						output, rep = self.model(x)
 						y = torch.tensor(y)
+						y = y.to(self.device)
 						loss = self.loss(output, y)
 
 						if self.global_protos != None:
@@ -267,6 +273,8 @@ class FedProtoClientTorch(ClientBaseTorch):
 					else:
 						x = x.to(self.device)
 					self.optimizer.zero_grad()
+					if type(y) == tuple:
+						y = torch.from_numpy(np.array(y).astype(int))
 					y = y.to(self.device)
 					y = torch.tensor(y)
 					output, rep = self.model(x)

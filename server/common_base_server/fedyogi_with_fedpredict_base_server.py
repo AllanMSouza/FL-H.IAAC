@@ -278,12 +278,9 @@ class FedYogiWithFedPredictBaseServer(FedYogiBaseServer):
 		client_evaluate_list = super().configure_evaluate(server_round, parameters, client_manager)
 		return fedpredict_server(parameters=parameters, client_evaluate_list=client_evaluate_list,
 								 fedpredict_clients_metrics=self.fedpredict_clients_metrics,
-								 evaluate_config=self.evaluate_config,
-								 similarity_between_layers_per_round=self.similarity_between_layers_per_round,
-								 mean_similarity_per_round=self.mean_similarity_per_round, server_round=server_round,
+								 evaluate_config=self.evaluate_config, server_round=server_round,
 								 num_rounds=self.num_rounds, comment=self.comment,
-								 compression=self.compression, df=self.df,
-								 layers_compression_range=self.layers_compression_range)
+								 compression=self.compression, layers_compression_range=self.layers_compression_range)
 
 	def get_client_similarity_per_layer(self, client_id, server_round):
 

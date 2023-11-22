@@ -105,7 +105,6 @@ class JointAnalysis():
         # self.joint_plot_acc_two_plots(df=df_concat, experiment=1, pocs=pocs)
 
         self.joint_plot_acc_four_plots(df=df_concat, experiment=1, alphas=alphas)
-
         # self.joint_plot_acc_four_plots(df=df_concat, experiment=2, alphas=alphas)
         # self.joint_plot_acc_four_plots(df=df_concat, experiment=3, alphas=alphas)
         # self.joint_plot_acc_four_plots(df=df_concat, experiment=4, fractions_fit=fractions_fit)
@@ -246,7 +245,7 @@ class JointAnalysis():
 
         columns = strategies
 
-        index = [np.array(['EMNIST'] * len(columns) + ['GTSRB'] * len(columns)), np.array(columns * 2)]
+        index = [np.array(['EMNIST'] * len(columns) +['CIFAR-10'] * len(columns) + ['GTSRB'] * len(columns)), np.array(columns * 3)]
 
         models_dict = {}
         ci = 0.95
@@ -255,14 +254,18 @@ class JointAnalysis():
 
             mnist_acc = {}
             cifar10_acc = {}
+            gtsrb_acc = {}
             for column in columns:
 
                 # mnist_acc[column] = (self.filter(df_test, experiment, 'MNIST', float(column), strategy=model_name)['Accuracy (%)']*100).mean().round(6)
                 # cifar10_acc[column] = (self.filter(df_test, experiment, 'CIFAR10', float(column), strategy=model_name)['Accuracy (%)']*100).mean().round(6)
                 mnist_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'EMNIST', float(model_name), strategy=column)[
                                          'Accuracy (%)']).tolist(), ci)
-                cifar10_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'GTSRB', float(model_name), strategy=column)[
+                cifar10_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'CIFAR10', float(model_name), strategy=column)[
                                            'Accuracy (%)']).tolist(), ci)
+                gtsrb_acc[column] = self.t_distribution(
+                    (self.filter(df_test, experiment, 'GTSRB', float(model_name), strategy=column)[
+                        'Accuracy (%)']).tolist(), ci)
 
             model_metrics = []
 
@@ -270,6 +273,8 @@ class JointAnalysis():
                 model_metrics.append(mnist_acc[column])
             for column in columns:
                 model_metrics.append(cifar10_acc[column])
+            for column in columns:
+                model_metrics.append(gtsrb_acc[column])
 
             models_dict[model_name] = model_metrics
 
@@ -296,7 +301,7 @@ class JointAnalysis():
         print("melhorias")
         print(df_accuracy_improvements)
 
-        indexes = [0.1, 1.0, 5.0]
+        indexes = [0.1, 1.0]
         for i in range(df_accuracy_improvements.shape[0]):
             row = df_accuracy_improvements.iloc[i]
             for index in indexes:
@@ -410,7 +415,7 @@ class JointAnalysis():
         base_dir = """analysis/output/experiment_{}/""".format(str(experiment+1))
         # ====================================================================
         alpha = alphas[0]
-        dataset = 'GTSRB'
+        dataset = 'EMNIST'
         title = """{}; \u03B1={}""".format(dataset, alpha)
         filename = ''
         i = 0
@@ -442,23 +447,23 @@ class JointAnalysis():
         # plt.legend([handles[idx] for idx in order], [labels[idx] for idx in order])
         # ====================================================================
         alpha = alphas[1]
-        dataset = 'GTSRB'
+        dataset = 'EMNIST'
         title = """{}; \u03B1={}""".format(dataset, float(alpha))
-        i = 0
-        j = 1
+        i = 1
+        j = 0
         self.filter_and_plot(ax=axs[i,j], base_dir=base_dir, filename=filename, title=title, df=df_test,
                              experiment=experiment, dataset=dataset, alpha=alpha, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes)
         axs[i,j].get_legend().remove()
-        # axs[i].set_xlabel('')
-        # axs[i].set_ylabel('')
+        axs[i, j].set_xlabel('')
+        axs[i, j].set_ylabel('')
 
         # ====================================================================
-        alpha = alphas[2]
-        dataset = 'GTSRB'
-        title = """{}; \u03B1={}""".format(dataset, float(alpha))
+        alpha = alphas[0]
+        dataset = 'CIFAR10'
+        title = """{}; \u03B1={}""".format(dataset.replace("CIFAR10", "CIFAR-10"), float(alpha))
         i = 0
-        j = 2
+        j = 1
         self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df_test,
                              experiment=experiment, dataset=dataset, alpha=alpha, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes)
@@ -466,11 +471,23 @@ class JointAnalysis():
         # axs[i].set_xlabel('')
         # axs[i].set_ylabel('')
         # ====================================================================
+        alpha = alphas[1]
+        dataset = 'CIFAR10'
+        title = """CIFAR-10; \u03B1={}""".format(float(alpha))
+        i = 1
+        j = 1
+        self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df_test,
+                             experiment=experiment, dataset=dataset, alpha=alpha, x_column=x_column, y_column=y_column,
+                             hue='Strategy', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes)
+        axs[i, j].get_legend().remove()
+        axs[i, j].set_xlabel('')
+        axs[i, j].set_ylabel('')
+        # ====================================================================
         alpha = alphas[0]
         dataset = 'GTSRB'
-        title = """GTSRB; \u03B1={}""".format(float(alpha))
-        i = 1
-        j = 0
+        title = """GTSRB; \u03B1={}""".format(alpha)
+        i = 0
+        j = 2
         self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df_test,
                              experiment=experiment, dataset=dataset, alpha=alpha, x_column=x_column, y_column=y_column,
                              hue='Strategy', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes)
@@ -479,18 +496,6 @@ class JointAnalysis():
         axs[i, j].set_ylabel('')
         # ====================================================================
         alpha = alphas[1]
-        dataset = 'GTSRB'
-        title = """GTSRB; \u03B1={}""".format(alpha)
-        i = 1
-        j = 1
-        self.filter_and_plot(ax=axs[i, j], base_dir=base_dir, filename=filename, title=title, df=df_test,
-                             experiment=experiment, dataset=dataset, alpha=alpha, x_column=x_column, y_column=y_column,
-                             hue='Strategy', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes)
-        axs[i, j].get_legend().remove()
-        axs[i, j].set_xlabel('')
-        axs[i, j].set_ylabel('')
-        # ====================================================================
-        alpha = alphas[2]
         dataset = 'GTSRB'
         title = """GTSRB; \u03B1={}""".format(alpha)
         i = 1
@@ -564,7 +569,7 @@ class JointAnalysis():
         handles = [f("o", colors[i]) for i in range(len(hue_order) + 1)]
         handles += [plt.Line2D([], [], linestyle=markers[i], color="k") for i in range(3)]
         axs[0, 0].legend(handles, labels, fontsize=7)
-        print("base: ", base_dir, """{}joint_plot_four_plot_{}_{}_rounds.png""".format(base_dir, str(experiment), self.rounds))
+        print("base: ", base_dir, """{}joint_plot_four_plot_{}_{}_rounds_{}_clients.png""".format(base_dir, str(experiment), self.rounds, self.clients))
         fig.savefig("""{}joint_plot_four_plot_{}_{}_rounds_{}_clients.png""".format(base_dir, str(experiment), self.rounds, self.clients), bbox_inches='tight', dpi=400)
         fig.savefig("""{}joint_plot_four_plot_{}_{}_rounds_{}_clients.svg""".format(base_dir, str(experiment), self.rounds, self.clients), bbox_inches='tight', dpi=400)
 
@@ -643,15 +648,15 @@ if __name__ == '__main__':
                    2: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'False', 'class_per_client': 2,
          'comment': 'set', 'compression': 'dls_compredict', 'local_epochs': '1_local_epochs'}}
 
-    strategies = ['FedAVG', 'FedPredict']
+    strategies = ['FedAVG', 'FedPredict', 'FedYogi', 'FedKD', 'FedKD_with_FedPredict', 'FedPer', 'FedProto']
     # 'FedPredict', 'FedYogi_with_FedPredict', 'FedKD_with_FedPredict', 'FedAVG', 'FedYogi', 'FedPer', 'FedProto', 'FedKD'
     # pocs = [0.1, 0.2, 0.3]
     fractions_fit = [0.3]
     # datasets = ['MNIST', 'CIFAR10']
-    datasets = ['EMNIST', 'GTSRB']
-    alpha = [3.0, 3.0, 3.0]
-    rounds = 150
-    clients = '10'
+    datasets = ['EMNIST', 'CIFAR10', 'GTSRB']
+    alpha = [0.1, 1.0]
+    rounds = 100
+    clients = '20'
     model = 'CNN_3'
     type_t = 'torch'
     file_type = 'evaluate_client.csv'

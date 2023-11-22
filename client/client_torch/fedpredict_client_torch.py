@@ -94,7 +94,8 @@ class FedPredictClientTorch(FedAvgClientTorch):
 	def set_parameters_to_model_evaluate(self, global_parameters, config={}):
 		# Using 'torch.load'
 		try:
-			self.model = fedpredict_client(self.filename, self.model, global_parameters, config)
+			local_classes = self.local_classes
+			self.model = fedpredict_client(self.filename, self.model, global_parameters, config, mode=None, local_classes=local_classes)
 
 		except Exception as e:
 			print("Set parameters to model")

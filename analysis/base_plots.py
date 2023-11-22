@@ -32,9 +32,20 @@ def bar_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, hue_o
 
 
     # errorbar=('ci', 0.95),
-    figure = sns.barplot(ax=ax, x=x_column, y=y_column, hue=hue, data=df, hue_order=hue_order,  order=x_order, palette=palette).set_title(title)
-    # for bars in ax.containers:
-    #     ax.bar_label(bars, fmt='%.f', fontsize=9)
+    figure = sns.barplot(ax=ax, x=x_column, y=y_column, hue=hue, data=df, hue_order=hue_order,  order=x_order, palette=palette)
+    if tipo == "classes":
+        for bars in figure.containers:
+            figure.bar_label(bars, fmt='%.f', padding=15, fontsize=9)
+        figure.set_ylim(top=110)
+    if tipo == "balance":
+        for bars in figure.containers:
+            figure.bar_label(bars, fmt='%.2f', padding=9, fontsize=9)
+        figure.set_ylim(top=1.1)
+    if tipo == "nt":
+        for bars in figure.containers:
+            figure.bar_label(bars, fmt='%.f', padding=9, fontsize=9)
+        figure.set_ylim(top=119)
+    figure.set_title(title)
 
     if ax is None:
         fig, ax = plt.subplots()

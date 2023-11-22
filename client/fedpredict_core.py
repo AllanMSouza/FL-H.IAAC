@@ -74,10 +74,11 @@ class CKA(object):
 
         return hsic / (var1 * var2)
 
-def fedpredict_core(t, T, nt, df):
+def fedpredict_core(t, T, nt, local_classes):
     try:
 
         # 9
+        print("local classes: ", local_classes)
         if nt == 0:
             global_model_weight = 0
         elif nt == t:
@@ -100,7 +101,7 @@ def fedpredict_core(t, T, nt, df):
         print("fedpredict core")
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_similarity_per_layer, df):
+def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, df):
     try:
 
         # 9
@@ -110,7 +111,7 @@ def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, mean_sim
             print("similaridade layer selection: ", df)
             update_level = 1 / nt
             evolution_level = t / 100
-            eq1 = (-update_level*df-evolution_level*df)  # v8 ótimo
+            eq1 = (-update_level - evolution_level) * (df)  # v8 ótimo
             eq2 = round(np.exp(eq1), 6)
             shared_layers = int(np.ceil(eq2 * n_layers))
 
@@ -341,11 +342,9 @@ def get_size(parameter):
 		print("get_size")
 		print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-def fedpredict_server(parameters, client_evaluate_list, fedpredict_clients_metrics, evaluate_config, similarity_between_layers_per_round, mean_similarity_per_round, server_round, num_rounds, comment, compression, df, layers_compression_range, args={}):
+def fedpredict_server(parameters, client_evaluate_list, fedpredict_clients_metrics, df, evaluate_config, server_round, num_rounds, comment, compression, layers_compression_range, args={}):
     client_evaluate_list_fedpredict = []
     accuracy = 0
-    mean_similarity_per_layer = similarity_between_layers_per_round[server_round]
-    mean_similarity = mean_similarity_per_round[server_round]
     size_of_parameters = []
     parameters = parameters_to_ndarrays(parameters)
 
@@ -363,6 +362,9 @@ def fedpredict_server(parameters, client_evaluate_list, fedpredict_clients_metri
             process_parameters = False
         else:
             process_parameters = True
+
+        if compression == "no":
+            process_parameters = True
         config['nt'] = nt
         config['metrics'] = client_config
         config['last_global_accuracy'] = accuracy
@@ -373,9 +375,8 @@ def fedpredict_server(parameters, client_evaluate_list, fedpredict_clients_metri
             pass
         M = [i for i in range(len(parameters))]
         parameters_to_send = None
-        if nt == 0 and compression != "fedkd":
+        if nt == 0 and compression not in ["fedkd", "no"]:
             config['M'] = []
-            config['df'] = df
             config['decompress'] = False
             config['layers_fraction'] = 0
             evaluate_ins = EvaluateIns(ndarrays_to_parameters(np.array([])), config)
@@ -395,7 +396,6 @@ def fedpredict_server(parameters, client_evaluate_list, fedpredict_clients_metri
                 parameters_to_send = fedkd
             config['decompress'] = True
             config['M'] = M
-            config['df'] = df
             config['layers_fraction'] = layers_fraction
             evaluate_ins = EvaluateIns(ndarrays_to_parameters(parameters_to_send), config)
             # print("Evaluate enviar: ", client_id, [i.shape for i in parameters_to_ndarrays(parameters_to_send)])
@@ -414,7 +414,6 @@ def fedpredict_server(parameters, client_evaluate_list, fedpredict_clients_metri
             # print([len(i[i == 0]) for i in parameters_to_send])
             config['decompress'] = False
             config['M'] = M
-            config['df'] = df
             config['layers_fraction'] = 1
             evaluate_ins = EvaluateIns(ndarrays_to_parameters(parameters_to_send), config)
             # print("Evaluate enviar: ", client_id, [i.shape for i in parameters_to_ndarrays(parameters_to_send)])
@@ -424,7 +423,6 @@ def fedpredict_server(parameters, client_evaluate_list, fedpredict_clients_metri
 
         elif compression == "no":
             config['M'] = [i for i in range(len(parameters))]
-            config['df'] = df
             config['decompress'] = False
             config['layers_fraction'] = 1
             evaluate_ins = EvaluateIns(ndarrays_to_parameters(parameters), config)
@@ -451,14 +449,12 @@ def fedpredict_server(parameters, client_evaluate_list, fedpredict_clients_metri
         if process_parameters:
             if "dls" in compression:
                 parameters_to_send, M = dls(fedpredict_clients_metrics[client_id]['first_round'],
-                                            mean_similarity_per_layer, mean_similarity,
                                             parameters, server_round, nt, num_rounds, df, size_of_parameters,
                                             client_id, comment)
                 print("Tamanho parametros als: ", sum(i.nbytes for i in parameters_to_send))
             elif "per" in compression:
                 parameters_to_send, M = per(fedpredict_clients_metrics[client_id]['first_round'],
-                                            mean_similarity_per_layer, mean_similarity,
-                                            parameters, server_round, nt, num_rounds, df, size_of_parameters,
+                                            parameters, server_round, nt, num_rounds, size_of_parameters,
                                             client_id, comment)
                 print("Tamanho parametros per: ", sum(i.nbytes for i in parameters_to_send), len(parameters_to_send), len(M))
             layers_fraction = []
@@ -468,10 +464,11 @@ def fedpredict_server(parameters, client_evaluate_list, fedpredict_clients_metri
                     fedpredict_clients_metrics[str(client_id)]['round_of_last_fit'], layers_compression_range,
                     num_rounds, client_id, server_round, len(M), parameters_to_send)
                 config['decompress'] = True
+                pass
             else:
                 config['decompress'] = False
                 print("nao igual")
-
+            config['decompress'] = False
             print("Novos parametros para nt: ", nt)
             decompress = config['decompress']
             previously_reduced_parameters[nt] = [copy.deepcopy(parameters_to_send), M, layers_fraction, decompress]
@@ -486,7 +483,6 @@ def fedpredict_server(parameters, client_evaluate_list, fedpredict_clients_metri
             size_of_parameters.append(get_size(parameters[i]))
         fedpredict_clients_metrics[str(client.cid)]['acc_bytes_rate'] = size_of_parameters
         config['M'] = M
-        config['df'] = df
         config['decompress'] = decompress
         config['layers_fraction'] = layers_fraction
         evaluate_ins = EvaluateIns(ndarrays_to_parameters(parameters_to_send), config)
@@ -563,11 +559,13 @@ def layer_compression_range(model_shape):
 
     return layers_range
 
-def dls(first_round, mean_similarity_per_layer, mean_similarity, parameters,
+def dls(first_round, parameters,
         server_round, nt, num_rounds, df, size_of_layers, client_id, comment):
     try:
         M = [i for i in range(len(parameters))]
         n_layers = len(parameters) / 2
+
+        # return parameters, M
 
         size_list = []
         for i in range(len(parameters)):
@@ -581,8 +579,7 @@ def dls(first_round, mean_similarity_per_layer, mean_similarity, parameters,
         if first_round != -1:
             # baixo-cima
             M = fedpredict_core_layer_selection(t=server_round, T=num_rounds, nt=nt, n_layers=n_layers,
-                                                size_per_layer=size_of_layers,
-                                                mean_similarity_per_layer=mean_similarity_per_layer, df=df)
+                                                size_per_layer=size_of_layers, df=df)
             new_parameters = []
             for i in range(len(parameters)):
                 if i in M:
@@ -603,8 +600,8 @@ def dls(first_round, mean_similarity_per_layer, mean_similarity, parameters,
 
 # ===========================================================================================
 
-def per(first_round, mean_similarity_per_layer, mean_similarity, parameters,
-        server_round, nt, num_rounds, df, size_of_layers, client_id, comment):
+def per(first_round, parameters,
+        server_round, nt, num_rounds, size_of_layers, client_id, comment):
     try:
         M = [i for i in range(len(parameters))]
         n_layers = len(parameters) / 2
@@ -644,7 +641,7 @@ def per(first_round, mean_similarity_per_layer, mean_similarity, parameters,
 # FedPredict client
 
 
-def fedpredict_client(filename, model, global_parameters, config={}, mode=None):
+def fedpredict_client(filename, model, global_parameters, config={}, mode=None, local_classes=1):
     # Using 'torch.load'
     try:
         # filename = """./fedpredict_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
@@ -663,7 +660,6 @@ def fedpredict_client(filename, model, global_parameters, config={}, mode=None):
         last_global_accuracy = config['last_global_accuracy']
         # print("chegou")
         M = config['M']
-        df = config['df']
 
         decompress = config['decompress']
         layers_fraction = config['layers_fraction']
@@ -684,7 +680,7 @@ def fedpredict_client(filename, model, global_parameters, config={}, mode=None):
             # Load local parameters to 'self.model'
             print("existe modelo local")
             model.load_state_dict(torch.load(filename))
-            model = fedpredict_combine_models(global_parameters, model, t, T, nt, M, df)
+            model = fedpredict_combine_models(global_parameters, model, t, T, nt, M, local_classes)
         else:
             print("usar modelo global: ", cid)
             if mode is None:
@@ -717,10 +713,10 @@ def decompress_global_parameters(compressed_global_model_gradients, model_shape,
         print("decompress")
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-def fedpredict_combine_models(global_parameters, model, t, T, nt, M, df):
+def fedpredict_combine_models(global_parameters, model, t, T, nt, M, local_classes):
     try:
 
-        local_model_weights, global_model_weight = fedpredict_core(t, T, nt, df)
+        local_model_weights, global_model_weight = fedpredict_core(t, T, nt, local_classes)
         count = 0
         for new_param, old_param in zip(global_parameters, model.parameters()):
             if count in M:

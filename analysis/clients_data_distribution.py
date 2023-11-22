@@ -10,6 +10,9 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import seaborn as sns
 import scipy.stats as st
+import numpy as np
+
+from scipy.stats import entropy
 import os
 import pickle
 
@@ -19,14 +22,16 @@ class CLient:
     def __init__(self, cid, dataset_name, n_clients, class_per_client, alpha, classes=10):
 
         self.cid = cid
-        self.filename_train = f"dataset_utils/data/{dataset_name}/{n_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{cid}/idx_train_{cid}.pickle"
-        self.filename_test = f"dataset_utils/data/{dataset_name}/{n_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{cid}/idx_test_{cid}.pickle"
+        self.filename_train = f"dataset_utils/data/{dataset_name.replace('CIFAR-10', 'CIFAR10')}/{n_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{cid}/idx_train_{cid}.pickle"
+        self.filename_test = f"dataset_utils/data/{dataset_name.replace('CIFAR-10', 'CIFAR10')}/{n_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{cid}/idx_test_{cid}.pickle"
         self.alpha = alpha
-        self.dataset = dataset_name
+        self.dataset = dataset_name.replace("CIFAR10", "CIFAR-10")
         self.classes = classes
-        self.samples_per_class = {i: 0 for i in range(classes)}
-        self.samples_per_class_percentage = {i: 0 for i in range(classes)}
+        self.samples_per_class = {}
+        self.samples_per_class_percentage = {}
         self.unique_classes = 0
+        self.min_samples_per_class = 100
+        self.imbalance_level = 0
 
     def start(self):
 
@@ -53,7 +58,7 @@ class CLient:
             # transform_train = transform
             # transform_test = transform
 
-            if self.dataset == "CIFAR10":
+            if self.dataset == "CIFAR-10":
                 dir_path = "dataset_utils/data/CIFAR10/raw_data/"
                 training_dataset = datasets.CIFAR10(root=dir_path, train=True, download=False,
                                                     transform=transform_train)  # Data augmentation is only done on training images
@@ -79,6 +84,13 @@ class CLient:
                 # antigo
 
                 training_dataset, validation_dataset = self.load_data_gtsrb(dir_path)
+                dataset_image = []
+                dataset_label = []
+                for i in range(3):
+                    dataset_image.extend(training_dataset.samples)
+                    dataset_label.extend(training_dataset.targets)
+                dataset_image = np.array(dataset_image)
+                y = np.array(dataset_label)
                 validation_dataset = copy.deepcopy(training_dataset)
                 validation_dataset.targets = np.array([])
 
@@ -88,21 +100,40 @@ class CLient:
             with open(self.filename_test, 'rb') as handle:
                 idx_test = pickle.load(handle)
 
-            y = training_dataset.targets
-            y = np.concatenate((y, validation_dataset.targets))
+            if self.dataset != 'GTSRB':
+                y = training_dataset.targets
+                y = np.concatenate((y, validation_dataset.targets))
             y_train = y[idx_train]
             y_test = y[idx_test]
             y = np.concatenate((y_train, y_test))
             total = len(y)
+            self.unique_classes = len(pd.Series(y).unique().tolist())
+            self.unique_classes_list = pd.Series(y).unique().tolist()
+            self.samples_per_class = {i: 0 for i in self.unique_classes_list}
             for i in y:
                 self.samples_per_class[int(i)] += 1
 
-            self.unique_classes = len(pd.Series(y).unique().tolist())
+            self.imbalance_level = 0
+            # self.min_samples_per_class = total/self.classes
+            for class_ in self.samples_per_class:
+                if self.samples_per_class[class_] < self.min_samples_per_class:
+                    self.imbalance_level += 1
+
+            self.imbalance_level = self.imbalance_level / len(self.samples_per_class)
 
 
-            for i in range(self.classes):
+
+
+            for i in self.unique_classes_list:
 
                 self.samples_per_class_percentage[i] = (self.samples_per_class[i]/total) * 100
+
+            percentages = list(self.samples_per_class_percentage.values())
+            base = 2  # work in units of bits
+
+            H = entropy(percentages, base=base)
+            balance = H/np.log2(self.unique_classes)
+
 
             client =  []
             samples = []
@@ -118,7 +149,8 @@ class CLient:
                 dataset.append(self.dataset)
                 alpha.append(self.alpha)
 
-            return client, samples, classs, dataset, alpha, self.unique_classes
+            # print(client, samples, classs, dataset, alpha, [self.unique_classes], [self.imbalance_level], [self.dataset])
+            return client, samples, classs, dataset, alpha, [self.unique_classes], balance, self.dataset, self.imbalance_level
 
 
         except Exception as e:
@@ -174,7 +206,7 @@ class Varying_Shared_layers:
 
         for alpha in self.alpha:
             for dataset in self.dataset:
-                classes = {'CIFAR10': 10, 'EMNIST': 47, 'GTSRB': 43}[dataset]
+                classes = {'CIFAR-10': 10, 'EMNIST': 47, 'GTSRB': 43}[dataset]
                 for i in range(self.num_clients[dataset]):
                     self.clients.append(CLient(i, dataset_name=dataset, n_clients=self.num_clients[dataset], class_per_client=class_per_client, alpha=alpha, classes=classes))
 
@@ -191,38 +223,49 @@ class Varying_Shared_layers:
         alpha_summary = {dataset: {i: [] for i in self.alpha} for dataset in self.dataset}
         unique_classes_summary = []
         alpha_unique_classes_summary_total_clients = {}
+        unique_classes_list = []
+        dt_list = []
+        alpha_list = []
+        balance_level_list = []
+        imbalance_level_list = []
 
         for client in self.clients:
-            client, percentage, classs, dataset, alpha, uc = client.start()
+            client, percentage, classs, dataset, alpha, uc, balance_level, dt, imbalance_level = client.start()
             clients += client
             percentages += percentage
             classes += classs
             datasets += dataset
+            dt_list.append(dt)
             alphas += alpha
             alpha_summary[dataset[0]][alpha[0]].append(uc)
+            clas = {'CIFAR-10': 10, 'EMNIST': 47, 'GTSRB': 43}[dt]
+            unique_classes_list += [uc[0]*100/clas]
+            alpha_list.append(alpha[0])
+            balance_level_list.append(balance_level)
+            imbalance_level_list.append(imbalance_level)
 
-        for dataset in self.dataset:
-            alphas_list = []
-            classes_list = []
-            count = []
-            media = {alpha: [] for alpha in self.alpha}
-            for alpha in self.alpha:
-                unique_classes = alpha_summary[dataset][alpha]
-                classes = {'CIFAR10': 10, 'EMNIST': 47, 'GTSRB': 43}[dataset]
-                unique_classes_count = {i: 0 for i in range(1, classes + 1)}
-                for unique in unique_classes:
-                    unique_classes_count[unique] += 1
-
-                media[alpha].append(uc)
-
-                alphas_list += [alpha] * len(list(unique_classes_count.keys()))
-                classes_list += list(unique_classes_count.keys())
-                count += list(unique_classes_count.values())
-
-            print("Dataset: ", dataset)
-            for alpha in self.alpha:
-
-                print("Media: ", np.mean(media[alpha]))
+        # for dataset in self.dataset:
+        #     alphas_list = []
+        #     classes_list = []
+        #     count = []
+        #     media = {alpha: [] for alpha in self.alpha}
+        #     for alpha in self.alpha:
+        #         unique_classes = alpha_summary[dataset][alpha]
+        #         classes = {'CIFAR10': 10, 'EMNIST': 47, 'GTSRB': 43}[dataset]
+        #         unique_classes_count = {i: 0 for i in range(1, classes + 1)}
+        #         for unique in unique_classes:
+        #             unique_classes_count[unique] += 1
+        #
+        #         media[alpha].append(uc)
+        #
+        #         alphas_list += [alpha] * len(list(unique_classes_count.keys()))
+        #         classes_list += list(unique_classes_count.keys())
+        #         count += list(unique_classes_count.values())
+        #
+        #     print("Dataset: ", dataset)
+        #     for alpha in self.alpha:
+        #
+        #         print("Media: ", np.mean(media[alpha]))
 
 
 
@@ -239,18 +282,24 @@ class Varying_Shared_layers:
             # for alp, clas, coun in zip(alphas_list, classes_list, count):
 
 
-            self.df_summary = pd.DataFrame({'\u03B1': alphas_list, 'Unique_classes': classes_list, 'Total of clients': count})
-            self.df_summary['Total_of_clients_(%)'] = (self.df_summary['Total of clients']/self.num_clients[dataset])*100
-            print("sumario antes: ")
-            print(self.df_summary)
+            # self.df_summary = pd.DataFrame({'\u03B1': alphas_list, 'Unique_classes': classes_list, 'Total of clients': count})
+            # self.df_summary['Total_of_clients_(%)'] = (self.df_summary['Total of clients']/self.num_clients[dataset])*100
+            # print("sumario antes: ")
+            # print(self.df_summary)
+
+        df_unique_classes = pd.DataFrame({'\u03B1': alpha_list, 'Dataset': dt_list, 'Classes (%)': unique_classes_list, 'Balance level': balance_level_list, 'Imbalance level': imbalance_level_list})
 
 
             # self.df_summary = self.df_summary.groupby('\u03B1').mean().reset_index()
             # print("sumario")
             # print(self.df_summary)
-            stacked_plot(df=self.df_summary, base_dir=self.base_dir, file_name="""unique_classes_{}""".format(dataset), x_column='\u03B1', y_column='Total_of_clients_(%)', title="""{}""".format(dataset), hue='Unique_classes')
-
-            bar_plot(df=self.df_summary, base_dir=self.base_dir, file_name="""unique_classes_{}""".format(dataset), x_column='\u03B1', y_column='Total_of_clients_(%)', hue='Unique_classes', title="""{}""".format(dataset))
+            # stacked_plot(df=df_unique_classes, base_dir=self.base_dir, file_name="""unique_classes_{}""".format(dataset), x_column='\u03B1', y_column='Classes (%)', title="""{}""".format(dataset), hue='Dataset')
+        print(df_unique_classes)
+        bar_plot(df=df_unique_classes, base_dir=self.base_dir, file_name="""unique_classes_{}""".format(self.dataset), x_column='\u03B1', y_column='Classes (%)', title="""Clients' local classes""", tipo="classes", y_max=100, hue='Dataset', hue_order=['EMNIST', 'CIFAR-10', 'GTSRB'])
+        bar_plot(df=df_unique_classes, base_dir=self.base_dir, file_name="""balance_level_{}""".format(self.dataset),
+                 x_column='\u03B1', y_column='Balance level', title="""""", y_max=1, hue='Dataset', tipo="balance")
+        bar_plot(df=df_unique_classes, base_dir=self.base_dir, file_name="""imbalance_level_{}""".format(self.dataset),
+                 x_column='\u03B1', y_column='Imbalance level', title="""""", y_max=1, hue='Dataset', tipo="balance")
 
     # def summary_alphas_clients_unique_classes(self):
     #
@@ -335,9 +384,9 @@ if __name__ == '__main__':
     type_model = "torch"
     aggregation_method = "None"
     fraction_fit = 0.3
-    num_clients = {'GTSRB': 10, 'EMNIST': 20, 'CIFAR10': 20}
-    dataset = ["GTSRB", "EMNIST", "CIFAR10"]
-    alpha = [0.1, 1.0, 3.0, 5.0]
+    num_clients = {'GTSRB': 20, 'EMNIST': 20, 'CIFAR-10': 20}
+    dataset = ["GTSRB", "EMNIST", "CIFAR-10"]
+    alpha = [0.1, 0.5, 1.0]
     num_rounds = 50
 
     Varying_Shared_layers(tp=type_model, num_clients=num_clients,  dataset=dataset, class_per_client=2, alpha=alpha).start()

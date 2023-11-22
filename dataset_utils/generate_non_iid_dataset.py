@@ -15,7 +15,7 @@ def parse_arguments():
     argParser = argparse.ArgumentParser()
     argParser.add_argument("--sim_id", help="Simulation identifier", default=0)
     argParser.add_argument("--clients", help="Number of clients", default=10)
-    argParser.add_argument("--batch_size", help="Batch size", default=32)
+    argParser.add_argument("--batch_size", help="Batch size", default=10)
     argParser.add_argument("--data_dir", help="Dataset directory", default="dataset/")
     argParser.add_argument("--dataset", help="Options: CIFAR10, MNIST", default="CIFAR10")
     argParser.add_argument("--num_classes", help="Number of dataset classes to use", default=10)

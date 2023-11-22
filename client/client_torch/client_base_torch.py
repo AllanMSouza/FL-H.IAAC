@@ -10,6 +10,7 @@ from models.torch import DNN, Logistic, CNN, MobileNet, resnet20, CNN_EMNIST, Mo
 import csv
 import torch.nn as nn
 import warnings
+import pandas as pd
 warnings.simplefilter("ignore")
 
 # logging.getLogger("torch").setLevel(logging.ERROR)
@@ -122,6 +123,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			self.predictions_client_filename = f"{self.base}/predictions_client.csv"
 
 			self.trainloader, self.testloader, self.traindataset, self.testdataset = self.load_data(self.dataset, n_clients=self.n_clients)
+			self.local_classes = self.calculate_imbalance_level()
 			print("leu dados")
 			self.model                                           = self.create_model().to(self.device)
 			if self.dataset in ['EMNIST', 'CIFAR10', 'GTSRB']:
@@ -148,6 +150,14 @@ class ClientBaseTorch(fl.client.NumPyClient):
 	def _create_base_directory(self, type, strategy_name, new_clients, new_clients_train, n_clients, model_name, dataset, class_per_client, alpha, n_rounds, local_epochs, comment, compression, args):
 
 		return f"logs/{type}/{strategy_name}/new_clients_{new_clients}_train_{new_clients_train}/{n_clients}/{model_name}/{dataset}/classes_per_client_{class_per_client}/alpha_{alpha}/{n_rounds}_rounds/{local_epochs}_local_epochs/{comment}_comment/{str(compression)}_compression"
+
+	def calculate_imbalance_level(self):
+
+		targets = self.traindataset.targets
+		local_classes = len(pd.Series(targets).unique())/self.num_classes
+
+		return local_classes
+
 
 	def load_data(self, dataset_name, n_clients, batch_size=32):
 		try:
@@ -366,7 +376,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				data=data)
 
 			fit_response = {
-				'cid': self.cid
+				'cid': self.cid,
+				'local_classes': self.local_classes
 			}
 
 			if self.use_gradient and server_round > 1:
