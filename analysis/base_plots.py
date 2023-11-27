@@ -39,8 +39,8 @@ def bar_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, hue_o
         figure.set_ylim(top=110)
     if tipo == "balance":
         for bars in figure.containers:
-            figure.bar_label(bars, fmt='%.2f', padding=9, fontsize=9)
-        figure.set_ylim(top=1.1)
+            figure.bar_label(bars, fmt='%.2f', padding=25, fontsize=9)
+        figure.set_ylim(top=y_max)
     if tipo == "nt":
         for bars in figure.containers:
             figure.bar_label(bars, fmt='%.f', padding=9, fontsize=9)
@@ -156,7 +156,7 @@ def violin_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, lo
         figure.savefig(base_dir + "svg/" + file_name + log + ".svg", bbox_inches='tight', dpi=400)
 
 
-def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_scale=False, ax=None, type=None, hue_order=None, style=None, y_lim=False, y_min=0, y_max=1, n=None, markers=None, size=None, sizes=None):
+def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_scale=False, ax=None, tipo=None, hue_order=None, style=None, y_lim=False, y_min=0, y_max=1, n=None, markers=None, size=None, sizes=None):
     Path(base_dir).mkdir(parents=True, exist_ok=True)
     file_name = """{}_lineplot""".format(file_name)
 
@@ -171,7 +171,7 @@ def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_
     x = df[x_column].tolist()
     # plt.xticks(np.arange(0, max(x) + 1, 2.0))
 
-    if type is not None:
+    if tipo is not None:
         palette = sns.color_palette()
         figure = sns.lineplot(x=x_column, y=y_column, data=df, hue=hue, ax=ax, palette=palette, hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes).set_title(title)
     else:
@@ -179,7 +179,7 @@ def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_
     print("nof")
 
     # plt.xticks(np.arange(min(x), max(x) + 1, max(x)//10))
-    if type == 2:
+    if tipo == 2:
         pass
     #     plt.legend(bbox_to_anchor=(0.5, 1), loc='upper left', borderaxespad=0, title='Rounds since the last training (nt)')
     #     plt.xticks(np.arange(0, max(x)+1, 50))
@@ -188,13 +188,52 @@ def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_
         # lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
         # plt.legend([3, 2, 1], label='Line 1', loc='upper left', ncol=3, bbox_to_anchor=(0.2, 1))
 
-    if type == 3:
+    if tipo == 3:
         figure.legend([l1, l2, l3, l4],  # The line objects
                    labels=line_labels,  # The labels for each line
                    loc="center right",  # Position of legend
                    borderaxespad=0.1,  # Small spacing around legend box
                    title="Legend Title"  # Title for the legend
                    )
+
+    if tipo == 'dls':
+        aa = figure.get_figure().axes[0]
+        # print(ax)
+        # exit()
+        lines_labels = [aa.get_legend_handles_labels()]
+        lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
+        colors = []
+        aa.get_legend().remove()
+        for i in range(len(lines)):
+            color = lines[i].get_color()
+            colors.append(color)
+            ls = lines[i].get_ls()
+            if ls not in ["o"]:
+                ls = "o"
+        markers = ["", "-", "--"]
+        # plt.grid()
+        new_labels = []
+        for i in range(len(labels)):
+            if i != n:
+                new_labels.append(labels[i])
+            else:
+                print("label: ", labels[i])
+        new_labels[-1] = '\u03B1=' + new_labels[-1]
+        new_labels[-2] = '\u03B1=' + new_labels[-2]
+
+        new_labels_2 = []
+
+        f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
+        handles = [f("o", colors[i]) for i in range(len(hue_order) + 1)]
+        handles += [plt.Line2D([], [], linestyle=markers[i], color="k") for i in range(3)]
+        new_handles = []
+        for i in range(len(handles)):
+            if i not in [0, 6]:
+                new_handles.append(handles[i])
+                if i <= 6:
+                    new_labels[i] = "nt=" + new_labels[i]
+                new_labels_2.append(new_labels[i])
+        aa.legend(new_handles, new_labels_2, fontsize=8, ncols=3)
 
     # sns.set(style='whitegrid', palette=palette)
 

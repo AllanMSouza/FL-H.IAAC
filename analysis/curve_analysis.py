@@ -21,7 +21,7 @@ class Verify:
             os.makedirs(self.base_dir + "svg/")
 
         self.server_analysis(0)
-        self.server_analysis(1)
+        # self.server_analysis(1)
 
     def curve(self, server_round, rounds_without_fit, start_round):
         # 0
@@ -203,14 +203,15 @@ class Verify:
             y_column = '$F(el, ul)$'
         else:
             y_column = 'Updated level (ul)'
-        hue = 'Rounds since the \n last training (nt)'
+        hue = 'nt'
         hue_order = [100, 10, 5, 2, 1]
         print(len(x), len(y), len(rounds_without_fit_list))
         df = pd.DataFrame({x_column: x, y_column: y, hue: rounds_without_fit_list})
         title = ""
+        print("Ola", self.base_dir)
         if index == 1:
             print(df.drop_duplicates(subset=[y_column, hue]))
-            print("Ola")
+
             df = df.round(4)
             bar_plot(df=df,
                       base_dir=self.base_dir,
@@ -227,7 +228,7 @@ class Verify:
                     style=hue,
                      title=title,
                         hue=hue,
-                      type=2,
+                      tipo=2,
                       hue_order=hue_order)
 
 if __name__ == '__main__':

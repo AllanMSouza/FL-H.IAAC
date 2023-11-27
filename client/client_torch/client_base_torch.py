@@ -106,6 +106,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 			# self.device = torch.device("cpu")
 			self.type = 'torch'
+			self.dynamic_data = args.dynamic_data
+			self.dynamic_data_filename = {'no': None, 'syntetic': "/dynamic_experiments_config/dynamic_data_config.csv"}[self.dynamic_data]
 
 			#params
 			if self.aggregation_method == 'POC':
@@ -161,6 +163,9 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 	def load_data(self, dataset_name, n_clients, batch_size=32):
 		try:
+
+			if self.dynamic_data_filename is not None:
+				clients_pattern = pd.read_csv(self.dynamic_data_filename)
 			if dataset_name in ['MNIST', 'CIFAR10', 'CIFAR100', 'EMNIST', 'GTSRB', 'State Farm']:
 				trainLoader, testLoader, traindataset, testdataset = ManageDatasets(self.cid, self.model_name).select_dataset(
 					dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid, batch_size)

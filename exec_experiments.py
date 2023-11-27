@@ -48,7 +48,7 @@ TYPE = 'torch'
 # DATASETS      				= ['MNIST', 'CIFAR10', 'Tiny-ImageNet']
 DATASETS = ['GTSRB']
 # DATASETS      					= ['UCIHAR', 'MotionSense']
-MODELS = ['CNN_3']
+MODELS = ['CNN_2', 'CNN_3']
 ALGORITHMS = ['None', 'POC', 'FedLTA']
 EPOCHS = {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2], '6': [1], '7': [1], '8': [1], '9': [1], '10': [1],
           '11': [1], '12': [1], '13': [1], '14': [1], '15': [1], '16': [1], '17': [1], '18': [1], '19': [1], '20': [1],
@@ -57,8 +57,8 @@ EPOCHS = {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2], '6': [1], '7': [1], 
 # CLIENTS       				= {'MNIST': 50, 'CIFAR10': 50, 'CIFAR100': 50, 'MotionSense': 50, 'UCIHAR': 50}
 CLASSES = {'MNIST': 10, 'CIFAR10': 10, 'Tiny-ImageNet': 200, 'EMNIST': 47, 'State Farm': 10, 'GTSRB': 43}
 CLIENTS = {'MNIST': [8], 'CIFAR10': [20], 'EMNIST': [20], 'CIFAR100': [50], 'MotionSense': [24], 'UCIHAR': [30],
-           'Tiny-ImageNet': [2], 'State Farm': [10], 'GTSRB': [10]}
-ALPHA = [3.0]
+           'Tiny-ImageNet': [2], 'State Farm': [10], 'GTSRB': [20]}
+ALPHA = [5.0]
 # ALPHA = [1]
 FRACTION_FIT = {'None': [0.3], 'POC': [0], 'FedLTA': [0]}
 SPECIFIC_PARAMETERS = {'FedAVG': {'use_gradient': 'True', 'bits': 8}, 'FedKD': {'use_gradient': '', 'bits': 8},
@@ -78,7 +78,7 @@ ROUNDS = 100
 # STRATEGIES_FOR_ANALYSIS = ['FedKD', 'FedAVG', 'FedPAQ']
 # STRATEGIES_TO_EXECUTE = ['FedKD', 'FedAVG']
 STRATEGIES_FOR_ANALYSIS = {'2': [], '3': [], '6': ['FedPredict'], '7': ['FedPredict'], '14': ['FedSparsification'], '15': ['FedPredict'], '16': ['FedAVG'], '17': ['FedPredict'], '19': ['FedPredict'], '22': ['FedPredict'], '26': ['FedPredict'], '30': ['FedPredict'], '31': ['FedPredict'], '32': ['FedPredict']}
-STRATEGIES_TO_EXECUTE = {'2': ['FedPredict', 'FedAVG'],'3': ['FedPer'],  '6': ['FedPredict'], '7': ['FedPredict'], '14': ['FedPredict'], '15': ['FedPredict'], '16': ['FedPredict'], '17': ['FedPredict'], '19': ['FedPredict'], '22': ['FedPredict'], '26': ['FedPredict'], '30': ['FedPredict'], '31': ['FedPredict'], '32': ['FedPredict']}
+STRATEGIES_TO_EXECUTE = {'2': ['FedPredict'],'3': ['FedPer'],  '6': ['FedPredict'], '7': ['FedPredict'], '14': ['FedPredict'], '15': ['FedPredict'], '16': ['FedAVG'], '17': ['FedPredict'], '19': ['FedPredict'], '22': ['FedPredict'], '26': ['FedPredict'], '30': ['FedPredict'], '31': ['FedPredict'], '32': ['FedPredict']}
 N_CLUSTERS = [3]
 CLUSTERING = "Yes"
 CLUSTER_ROUND = [17]
@@ -88,77 +88,77 @@ LAYER_METRIC = [-1]
 
 EXPERIMENTS = {
     1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '',
-        'compression_method': 4},
+        'compression_method': 4, 'dynamic_data': "no"},
     2: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'compression_method': "dls_compredict"},
+         'comment': 'set', 'compression_method': "dls_compredict", 'dynamic_data': "no"},
     3: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'False',
         'class_per_client': 2,
-        'comment': 'set', 'compression_method': "dls_compredict"},
+        'comment': 'set', 'compression_method': "dls_compredict", 'dynamic_data': "no"},
     4: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'True',
         'class_per_client': 2,
-        'comment': """apos a rodada {}, apenas novos clientes sao testados - novos clientes treinam apenas 1 vez (um round) - """.format(
-            int(ROUNDS * 0.7)), 'compression_method': 4},
+        'comment': """apos a rodada {, 'dynamic_data': "no"}, apenas novos clientes sao testados - novos clientes treinam apenas 1 vez (um round) - """.format(
+            int(ROUNDS * 0.7)), 'compression_method': 4, 'dynamic_data': "no"},
     5: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'True',
         'class_per_client': 2,
-        'comment': """apos a rodada {}, apenas novos clientes sao testados - novos clientes treinam apenas 1 vez (um round) com duas épocas locais """.format(
-            int(ROUNDS * 0.7)), 'compression_method': 4},
+        'comment': """apos a rodada {, 'dynamic_data': "no"}, apenas novos clientes sao testados - novos clientes treinam apenas 1 vez (um round) com duas épocas locais """.format(
+            int(ROUNDS * 0.7)), 'compression_method': 4, 'dynamic_data': "no"},
     6: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'compression_method': "dls"},
+         'comment': 'set', 'compression_method': "dls", 'dynamic_data': "no"},
     7: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'compression_method': "compredict"},
+         'comment': 'set', 'compression_method': "compredict", 'dynamic_data': "no"},
     8: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '',
-        'compression_methods': 3},
+        'compression_methods': 3, 'dynamic_data': "no"},
     9: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2, 'comment': '',
-        'compression_methods': 4},
+        'compression_methods': 4, 'dynamic_data': "no"},
     10: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'inverted', 'compression_methods': 1},
+         'comment': 'inverted', 'compression_methods': 1, 'dynamic_data': "no"},
     11: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'inverted', 'compression_methods': 2},
+         'comment': 'inverted', 'compression_methods': 2, 'dynamic_data': "no"},
     12: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'inverted', 'compression_methods': 3},
+         'comment': 'inverted', 'compression_methods': 3, 'dynamic_data': "no"},
     13: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'inverted', 'compression_methods': 4},
+         'comment': 'inverted', 'compression_methods': 4, 'dynamic_data': "no"},
     14: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'compression_method': "sparsification"},
+         'comment': 'set', 'compression_method': "sparsification", 'dynamic_data': "no"},
     15: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'compression_method': "no"},
+         'comment': 'set', 'compression_method': "no", 'dynamic_data': "no"},
     16: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'compression_method': "dls"},
+         'comment': 'set', 'compression_method': "dls", 'dynamic_data': "no"},
     17: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'compression_method': "per"},
+         'comment': 'set', 'compression_method': "per", 'dynamic_data': "no"},
     19: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'compression_method': "fedkd"},
+         'comment': 'set', 'compression_method': "fedkd", 'dynamic_data': "no"},
     20: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'compression_methods': 13},
+         'comment': 'set', 'compression_methods': 13, 'dynamic_data': "no"},
     21: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'compression_methods': 14},
+         'comment': 'set', 'compression_methods': 14, 'dynamic_data': "no"},
     22: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'compression_methods': 10},
+         'comment': 'set', 'compression_methods': 10, 'dynamic_data': "no"},
     23: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'compression_methods': 24},
+         'comment': 'set', 'compression_methods': 24, 'dynamic_data': "no"},
     24: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'compression_methods': 123},
+         'comment': 'set', 'compression_methods': 123, 'dynamic_data': "no"},
     25: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'compression_methods': 50},
+         'comment': 'set', 'compression_methods': 50, 'dynamic_data': "no"},
     26: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'compression_methods': 10},
+         'comment': 'set', 'compression_methods': 10, 'dynamic_data': "no"},
     27: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'compression_methods': 234},
+         'comment': 'set', 'compression_methods': 234, 'dynamic_data': "no"},
     28: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'compression_methods': 34},
+         'comment': 'set', 'compression_methods': 34, 'dynamic_data': "no"},
     29: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'compression_methods': 134},
+         'comment': 'set', 'compression_methods': 134, 'dynamic_data': "no"},
     30: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'compression_methods': -1},
+         'comment': 'set', 'compression_methods': -1, 'dynamic_data': "no"},
     31: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'compression_methods': -2},
+         'comment': 'set', 'compression_methods': -2, 'dynamic_data': "no"},
     32: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'compression_methods': -3}
+         'comment': 'set', 'compression_methods': -3, 'dynamic_data': "no"}
     }
 
 
 def execute_experiment(experiment, algorithm, new_client, new_client_train, comment, type, class_per_client,
-                       compression):
+                       compression, dynamic_data):
     if experiment == 9:
         comment = ROUNDS - 10
     elif experiment == 10:
@@ -197,12 +197,12 @@ def execute_experiment(experiment, algorithm, new_client, new_client_train, comm
                                                             print(
                                                                 f'Starting {strategy} fraction_fit-{fraction_fit} simulation for {dataset} clients with {model} model ...',
                                                                 os.getcwd())
-                                                            test_config = """python {}/simulation.py --dataset='{}' --model='{}' --strategy='{}' --epochs={} --round={} --client={} --type='{}' --non-iid={} --aggregation_method='{}' --fraction_fit={} --poc={} --new_clients={} --new_clients_train={} --decay={} --comment={} --class_per_client={} --alpha={} --compression_method={} --classes={} --use_gradient={} --n_clusters={} --clustering={} --cluster_round={} --cluster_metric={} --metric_layer={} --cluster_method={}""".format(
+                                                            test_config = """python {}/simulation.py --dataset='{}' --model='{}' --strategy='{}' --epochs={} --round={} --client={} --type='{}' --non-iid={} --aggregation_method='{}' --fraction_fit={} --poc={} --new_clients={} --new_clients_train={} --decay={} --comment={} --class_per_client={} --alpha={} --compression_method={} --classes={} --use_gradient={} --n_clusters={} --clustering={} --cluster_round={} --cluster_metric={} --metric_layer={} --cluster_method={} --dynamic_data={}""".format(
                                                                 os.getcwd(), dataset, model,
                                                                 strategy, epochs, ROUNDS, clients, TYPE, True, algorithm, fraction_fit, poc,
                                                                 new_client, new_client_train, decay, comment, class_per_client, alpha,
                                                                 compression, classes, use_gradient, n_cluster, clustering,
-                                                                cluster_round, cluster_metric, layer_metric, cluster_method)
+                                                                cluster_round, cluster_metric, layer_metric, cluster_method, dynamic_data)
                                                             print("=====================================\nExecutando... \n", test_config,
                                                                   "\n=====================================")
                                                             # exit()
@@ -214,11 +214,11 @@ def execute_experiment(experiment, algorithm, new_client, new_client_train, comm
                                                         for i in STRATEGIES_FOR_ANALYSIS[experiment]:
                                                             strategies_arg = strategies_arg + """ --strategy='{}'""".format(i)
                                                         if len(STRATEGIES_FOR_ANALYSIS) > 0:
-                                                            analytics_result_dir = """python analysis/non_iid.py --dataset='{}' --model='{}' --round={} --client={} --aggregation_method='{}' --poc={} --new_clients={} --new_clients_train={} --non-iid={} --comment='{}' --epochs={} --decay={} --fraction_fit={} --class_per_client={} --alpha={} --compression={}  --experiment={} {}""".format(
+                                                            analytics_result_dir = """python analysis/non_iid.py --dataset='{}' --model='{}' --round={} --client={} --aggregation_method='{}' --poc={} --new_clients={} --new_clients_train={} --non-iid={} --comment='{}' --epochs={} --decay={} --fraction_fit={} --class_per_client={} --alpha={} --compression={}  --dynamic_data={} --experiment={} {}""".format(
                                                                 dataset, model, ROUNDS, clients, algorithm, poc, new_client,
                                                                 new_client_train,
                                                                 True, comment, epochs, decay, fraction_fit, class_per_client, alpha,
-                                                                compression, experiment, strategies_arg)
+                                                                compression, dynamic_data, experiment, strategies_arg)
                                                             print("=====================================\nExecutando analytics... \n",
                                                                   analytics_result_dir,
                                                                   "\n=====================================")
@@ -245,7 +245,8 @@ def main():
                        new_client=experiment['new_client'],
                        new_client_train=experiment['new_client_train'], comment=experiment['comment'], type=opt.type,
                        class_per_client=experiment['class_per_client'],
-                       compression=experiment['compression_method'])
+                       compression=experiment['compression_method'],
+                       dynamic_data=experiment['dynamic_data'])
     # remove_lines("""execution_log/experiment_{}.txt""".format(opt.experiment_id))
 
 

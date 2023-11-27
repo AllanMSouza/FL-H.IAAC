@@ -30,6 +30,7 @@ class NonIid:
         self.epochs = epochs
         self.decay = decay
         self.type = type
+        self.dynamic_data = args.dynamic_data
         self.base_files_names = {'evaluate_client': 'evaluate_client.csv',
                                  'server': 'server.csv',
                                  'train_client': 'train_client.csv',
@@ -154,7 +155,7 @@ class NonIid:
                   y_column=y_column,
                   title=title,
                   hue=hue,
-                  type=1,
+                  tipo=1,
                   y_lim=False,
                   y_max=0.01,
                   y_min=0)
@@ -177,7 +178,7 @@ class NonIid:
                   y_column=y_column,
                   title=title,
                   hue=hue,
-                  type=1,
+                  tipo=1,
                   y_lim=False,
                   y_max=1,
                   y_min=0)
@@ -207,7 +208,7 @@ class NonIid:
                   x_column=x_column,
                   y_column=y_column,
                   title=title,
-                  type='1',
+                  tipo='1',
                   hue=hue,
                   hue_order=hue_order)
 
@@ -365,7 +366,7 @@ class NonIid:
                   title=title,
                   hue=hue,
                   hue_order=hue_order,
-                  type=type,
+                  tipo=type,
                   y_lim=False,
                   y_min=y_min)
 
@@ -459,6 +460,8 @@ if __name__ == '__main__':
     parser.add_option("--epochs", dest="epochs", default=1)
     parser.add_option("", "--fraction_fit", dest="fraction_fit", default=0,
                       help="fraction of selected clients to be trained", metavar="FLOAT")
+    parser.add_option("", "--dynamic_data", dest="dynamic_data", default="no",
+                      help="Dynamic data")
     parser.add_option("--class_per_client", help="Number of classes per client", default=2)
     parser.add_option("--alpha", help="Dirichlet alpha parameter", default=0.1)
     parser.add_option("--compression", help="", default=0)

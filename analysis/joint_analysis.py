@@ -191,7 +191,7 @@ class JointAnalysis():
         columns = df.columns.tolist()
         indexes = df.index.tolist()
 
-        datasets = ['EMNIST', 'GTSRB']
+        datasets = ['EMNIST', 'CIFAR-10', 'GTSRB']
         solutions = pd.Series([i[1] for i in indexes]).unique().tolist()
         reference_solutions = {}
         for solution_key in solutions:
@@ -396,7 +396,7 @@ class JointAnalysis():
         df['Strategy'] = np.array(["$" + i + "$" for i in df['Strategy'].tolist()])
 
         print("filtrado: ", df, df[hue].unique().tolist())
-        line_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, type='1', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes)
+        line_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, tipo='1', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes)
 
     def joint_plot_acc_four_plots(self, df, experiment, alphas):
         print("Joint plot exeprimento: ", experiment)
@@ -648,7 +648,7 @@ if __name__ == '__main__':
                    2: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'False', 'class_per_client': 2,
          'comment': 'set', 'compression': 'dls_compredict', 'local_epochs': '1_local_epochs'}}
 
-    strategies = ['FedAVG', 'FedPredict', 'FedYogi', 'FedKD', 'FedKD_with_FedPredict', 'FedPer', 'FedProto']
+    strategies = ['FedAVG', 'FedPredict', 'FedYogi', 'FedYogi_with_FedPredict', 'FedKD', 'FedKD_with_FedPredict', 'FedPer', 'FedProto']
     # 'FedPredict', 'FedYogi_with_FedPredict', 'FedKD_with_FedPredict', 'FedAVG', 'FedYogi', 'FedPer', 'FedProto', 'FedKD'
     # pocs = [0.1, 0.2, 0.3]
     fractions_fit = [0.3]

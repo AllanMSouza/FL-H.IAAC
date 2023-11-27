@@ -268,9 +268,9 @@ class FedPredictBaseServer(FedAvgBaseServer):
 								 num_rounds=self.num_rounds, comment=self.comment, 
 								 compression=self.compression, layers_compression_range=self.layers_compression_range)
 
-	# def end_evaluate_function(self):
-	# 	self._write_similarity()
-	# 	#self._write_norm()
+	def end_evaluate_function(self):
+		self._write_similarity()
+		#self._write_norm()
 
 	# def _write_norm(self):
 	#
@@ -283,22 +283,22 @@ class FedPredictBaseServer(FedAvgBaseServer):
 	# 	df = pd.DataFrame(data)
 	# 	df.to_csv(self.similarity_filename, index=False)
 
-	# def _write_similarity(self):
-	#
-	# 	columns = ["Server round", "Layer", "Similarity"]
-	# 	data = {column: [] for column in columns}
-	#
-	# 	for round in self.similarity_between_layers_per_round:
-	#
-	# 		for layer in self.similarity_between_layers_per_round[round]:
-	#
-	# 			data['Server round'].append(round)
-	# 			data['Layer'].append(layer)
-	# 			data['Similarity'].append(self.similarity_between_layers_per_round[round][layer]['mean'])
-	#
-	# 	self.similarity_filename = f"{self.base}/similarity_between_layers.csv"
-	# 	df = pd.DataFrame(data)
-	# 	df.to_csv(self.similarity_filename, index=False)
+	def _write_similarity(self):
+
+		columns = ["Server round", "Layer", "Similarity"]
+		data = {column: [] for column in columns}
+
+		for round in self.similarity_between_layers_per_round:
+
+			for layer in self.similarity_between_layers_per_round[round]:
+
+				data['Server round'].append(round)
+				data['Layer'].append(layer)
+				data['Similarity'].append(self.similarity_between_layers_per_round[round][layer]['mean'])
+
+		self.similarity_filename = f"{self.base}/similarity_between_layers.csv"
+		df = pd.DataFrame(data)
+		df.to_csv(self.similarity_filename, index=False)
 
 	def _gradient_metric(self, updated_global_parameters, server_round):
 

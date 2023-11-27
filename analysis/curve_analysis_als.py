@@ -223,10 +223,10 @@ class Verify:
         #               y_column=y_column,
         #               title=title)
         # else:
-        fig, ax = plt.subplots(1,1)
+        # fig, ax = plt.subplots(1,1)
         line_plot(df=df,
                  base_dir=self.base_dir,
-                 file_name="curve_als" + str(index),
+                 file_name="curve_als",
                  x_column=x_column,
                  y_column=y_column,
                  title=title,
@@ -235,29 +235,28 @@ class Verify:
                   y_lim=True,
                   y_max=1,
                   y_min=0,
-                  type=2,
-                  ax=ax,
-                  hue_order=hue_order)
+                  hue_order=hue_order,
+                  tipo='dls')
 
-        lines_labels = [ax.get_legend_handles_labels()]
-        lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-        colors = []
-        ax.get_legend().remove()
-        for i in range(len(lines)):
-            color = lines[i].get_color()
-            colors.append(color)
-            ls = lines[i].get_ls()
-            if ls not in ["o"]:
-                ls = "o"
-        markers = ["", "-", "--"]
-        plt.grid()
-
-        f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
-        handles = [f("o", colors[i]) for i in range(len(hue_order) + 1)]
-        handles += [plt.Line2D([], [], linestyle=markers[i], color="k") for i in range(3)]
-        ax.legend(handles, labels, fontsize=8, ncols=5)
-        fig.savefig("""{}/png/curve_als.png""".format(self.base_dir), bbox_inches='tight', dpi=400)
-        fig.savefig("""{}/svg/curve_als.svg""".format(self.base_dir,), bbox_inches='tight', dpi=400)
+        # lines_labels = [ax.get_legend_handles_labels()]
+        # lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
+        # colors = []
+        # ax.get_legend().remove()
+        # for i in range(len(lines)):
+        #     color = lines[i].get_color()
+        #     colors.append(color)
+        #     ls = lines[i].get_ls()
+        #     if ls not in ["o"]:
+        #         ls = "o"
+        # markers = ["", "-", "--"]
+        # plt.grid()
+        #
+        # f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
+        # handles = [f("o", colors[i]) for i in range(len(hue_order) + 1)]
+        # handles += [plt.Line2D([], [], linestyle=markers[i], color="k") for i in range(3)]
+        # ax.legend(handles, labels, fontsize=8, ncols=5)
+        # fig.savefig("""{}/png/curve_als.png""".format(self.base_dir), bbox_inches='tight', dpi=400)
+        # fig.savefig("""{}/svg/curve_als.svg""".format(self.base_dir,), bbox_inches='tight', dpi=400)
 
 if __name__ == '__main__':
 

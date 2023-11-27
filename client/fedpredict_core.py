@@ -468,7 +468,7 @@ def fedpredict_server(parameters, client_evaluate_list, fedpredict_clients_metri
             else:
                 config['decompress'] = False
                 print("nao igual")
-            config['decompress'] = False
+            # config['decompress'] = False
             print("Novos parametros para nt: ", nt)
             decompress = config['decompress']
             previously_reduced_parameters[nt] = [copy.deepcopy(parameters_to_send), M, layers_fraction, decompress]
@@ -667,9 +667,11 @@ def fedpredict_client(filename, model, global_parameters, config={}, mode=None, 
             model_shape = [i.detach().cpu().numpy().shape for i in model.student.parameters()]
         else:
             model_shape = [i.detach().cpu().numpy().shape for i in model.parameters()]
+        print("comprimido: ", len(model_shape))
         global_parameters = decompress_global_parameters(global_parameters, model_shape, M, decompress)
         print("shape modelo: ", model_shape)
         print("descomprimido: ", [i.shape for i in global_parameters])
+        print("M: ", M)
         parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
 
         if len(parameters) != len(M):

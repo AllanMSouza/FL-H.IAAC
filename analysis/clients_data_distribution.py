@@ -32,6 +32,7 @@ class CLient:
         self.unique_classes = 0
         self.min_samples_per_class = 100
         self.imbalance_level = 0
+        self.n_clients = n_clients
 
     def start(self):
 
@@ -115,11 +116,12 @@ class CLient:
 
             self.imbalance_level = 0
             # self.min_samples_per_class = total/self.classes
+            self.min_samples_per_class = int(len(y)/3/len(self.unique_classes_list))
             for class_ in self.samples_per_class:
                 if self.samples_per_class[class_] < self.min_samples_per_class:
                     self.imbalance_level += 1
 
-            self.imbalance_level = self.imbalance_level / len(self.samples_per_class)
+            self.imbalance_level = self.imbalance_level * 100/ len(self.samples_per_class)
 
 
 
@@ -287,7 +289,7 @@ class Varying_Shared_layers:
             # print("sumario antes: ")
             # print(self.df_summary)
 
-        df_unique_classes = pd.DataFrame({'\u03B1': alpha_list, 'Dataset': dt_list, 'Classes (%)': unique_classes_list, 'Balance level': balance_level_list, 'Imbalance level': imbalance_level_list})
+        df_unique_classes = pd.DataFrame({'\u03B1': alpha_list, 'Dataset': dt_list, 'Classes (%)': unique_classes_list, 'Balance level': balance_level_list, 'Imbalance level (%)': imbalance_level_list})
 
 
             # self.df_summary = self.df_summary.groupby('\u03B1').mean().reset_index()
@@ -295,11 +297,12 @@ class Varying_Shared_layers:
             # print(self.df_summary)
             # stacked_plot(df=df_unique_classes, base_dir=self.base_dir, file_name="""unique_classes_{}""".format(dataset), x_column='\u03B1', y_column='Classes (%)', title="""{}""".format(dataset), hue='Dataset')
         print(df_unique_classes)
+        print(self.base_dir)
         bar_plot(df=df_unique_classes, base_dir=self.base_dir, file_name="""unique_classes_{}""".format(self.dataset), x_column='\u03B1', y_column='Classes (%)', title="""Clients' local classes""", tipo="classes", y_max=100, hue='Dataset', hue_order=['EMNIST', 'CIFAR-10', 'GTSRB'])
         bar_plot(df=df_unique_classes, base_dir=self.base_dir, file_name="""balance_level_{}""".format(self.dataset),
                  x_column='\u03B1', y_column='Balance level', title="""""", y_max=1, hue='Dataset', tipo="balance")
         bar_plot(df=df_unique_classes, base_dir=self.base_dir, file_name="""imbalance_level_{}""".format(self.dataset),
-                 x_column='\u03B1', y_column='Imbalance level', title="""""", y_max=1, hue='Dataset', tipo="balance")
+                 x_column='\u03B1', y_column='Imbalance level (%)', title="""Dataset imbalance level""", y_max=100, hue='Dataset', tipo="balance", hue_order=['EMNIST', 'CIFAR-10', 'GTSRB'])
 
     # def summary_alphas_clients_unique_classes(self):
     #

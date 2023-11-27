@@ -262,7 +262,7 @@ class JointAnalysis():
         df = self.filter(df, experiment, dataset, alpha)
 
         print("filtrado: ", df, df[hue].unique().tolist())
-        line_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, type='1', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes, y_min=y_min, y_max=y_max)
+        line_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, tipo='1', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes, y_min=y_min, y_max=y_max)
 
     def joint_plot_acc_four_plots(self, df, experiment, alphas):
         print("Joint plot exeprimento: ", experiment)

@@ -45,6 +45,10 @@ class Varying_Shared_layers:
         df = self.df_concat
         df_aux = copy.deepcopy(df)
 
+        print("refe")
+        print(df.query("""Round == {} and Dataset == '{}' and \u03B1 == {} and Model == '{}' and Solution == '{}'""".format(1, 'GTSRB', '0.1', 'CNN-b', "$FedAvg+FP_{dc}$")))
+
+
         print("e1: ", df.query("Solution=='$FedAvg+FP$' and Model=='CNN-b' and Dataset=='EMNIST'")[
             'Size of parameters (MB)'])
         print("e2: ", df.query("Solution=='$FedAvg+FP_{s}$' and Model=='CNN-b' and Dataset=='EMNIST'")[[
@@ -65,7 +69,7 @@ class Varying_Shared_layers:
             target_size = target['Size of parameters (MB)'].mean()
 
             if len(target) != len(df):
-                print("oioi", len(target), len(df), "co: ", round, dataset, alpha, model, "\n", df_aux.query("""Dataset == '{}' and \u03B1 == {} and Model == '{}'""".format(dataset, alpha, model))[['Dataset', 'Round', 'Solution', 'Strategy', '\u03B1', 'Model']].drop_duplicates())
+                print("oioi", len(target), len(df), "co: ", "\n", df[['Cid', 'Dataset', 'Round', 'Solution', 'Strategy', '\u03B1', 'Model']], "\n", df_aux.query("""Dataset == '{}' and \u03B1 == {} and Model == '{}'""".format(dataset, alpha, model))[['Dataset', 'Round', 'Solution', 'Strategy', '\u03B1', 'Model']].drop_duplicates())
                 exit()
 
             acc = df['Accuracy (%)'].mean()
@@ -94,7 +98,7 @@ class Varying_Shared_layers:
             return pd.DataFrame({'Accuracy reduction (%)': [acc_reduction], 'Parameters reduction (MB)': [size_reduction],
                                  'Parameters reduction (%)': [size_reduction_percentage], 'Accuracy (%)': [accuracy], 'Size of parameters (MB)': [size]})
 
-        df = df[['Accuracy (%)', 'Size of parameters (MB)', 'Strategy', 'Solution', 'Round', '\u03B1', 'Dataset',
+        df = df[['Accuracy (%)', 'Size of parameters (MB)', 'Cid', 'Strategy', 'Solution', 'Round', '\u03B1', 'Dataset',
                  'Model']].groupby(
             by=['Strategy', 'Round', 'Solution', 'Dataset', '\u03B1', 'Model']).apply(
             lambda e: comparison_with_shared_layers(df=e)).reset_index()
@@ -134,22 +138,20 @@ class Varying_Shared_layers:
         # print(df_concat['Strategy'].unique().tolist())
         # exit()
         self.evaluate_client_joint_parameter_reduction(self.df_concat)
+
         alphas = self.df_concat['\u03B1'].unique().tolist()
         models = self.df_concat['Model'].unique().tolist()
-        # print(self.df_concat.columns)
-        # print(self.df_concat.isna())
+
         self.df_concat = self.build_filename_fedavg(self.df_concat)
-        # print(self.df_concat.columns)
-        # print(self.df_concat.isna())
+
         # exit()
 
         for alpha in alphas:
             self.evaluate_client_joint_accuracy(self.df_concat, alpha)
+            # exit()
             self.joint_table(self.df_concat, alpha=alpha, models=models)
             self.joint_table(self.df_concat, alpha=alpha, models=models, target_col='Size of parameters (MB)')
 
-        # for alpha in alphas:
-        #     self.evaluate_client_joint_accuracy(df_concat, alpha)
         self.similarity()
         # for alpha in alphas:
         #     self.evaluate_client_norm_analysis_nt(alpha)
@@ -204,7 +206,7 @@ class Varying_Shared_layers:
         df_concat_norm = None
         for file in files:
             for compression in self.compression:
-                for a in self.alpha:
+                for a in self.alpha + [5.0]:
                     for model in self.model_name:
                         for dataset in self.dataset:
 
@@ -225,7 +227,7 @@ class Varying_Shared_layers:
                             print("leu: ", filename)
                             model_name = model.replace("CNN_2", "CNN-a").replace("CNN_3", "CNN-b")
                             dataset_name = dataset.replace("CIFAR10", "CIFAR-10")
-                            if "evaluate" in file:
+                            if "evaluate" in file and a not in [5.0]:
                                 df['Solution'] = np.array([compression] * len(df))
                                 df['Strategy'] = np.array([self.strategy_name] * len(df))
                                 df['\u03B1'] = np.array([a]*len(df))
@@ -623,244 +625,68 @@ class Varying_Shared_layers:
 
         if len(self.dataset) >= 2:
             fig, ax = plt.subplots(3, 2, sharex='all', sharey='all', figsize=(6, 6))
-            title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[0])
             x = df[x_column].tolist()
             y = df[y_column].tolist()
-            print("jointplot: \n", df.query("""Dataset == '{}'""".format(self.dataset_name_list[0])))
-            line_plot(ax=ax[0, 0],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[0])),
-                      base_dir=base_dir,
-                      file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
-                      x_column=x_column,
-                      y_column=y_column,
-                      title=title,
-                      hue=hue,
-                      style=style,
-                      hue_order=compression,
-                      type=1,
-                      log_scale=False,
-                      y_lim=True,
-                      y_max=y_max,
-                      y_min=y_min,
-                      n=1)
 
-            ax[0, 0].get_legend().remove()
-            ax[0, 0].set_xlabel('')
-            ax[0, 0].set_ylabel('')
-            title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[1])
-            line_plot(ax=ax[0, 1],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[1])),
-                      base_dir=base_dir,
-                      file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
-                      x_column=x_column,
-                      y_column=y_column,
-                      title=title,
-                      hue=hue,
-                      style=style,
-                      hue_order=compression,
-                      type=1,
-                      log_scale=False,
-                      y_lim=True,
-                      y_max=y_max,
-                      y_min=y_min,
-                      n=1)
+            for i in range(3):
+                for j in range(2):
+                    title = """{}; {}""".format(self.dataset_name_list[i], self.model_name_list[j])
+                    print("jointplot: \n", df.query("""Dataset == '{}'""".format(self.dataset_name_list[i])))
+                    line_plot(ax=ax[i, j],
+                              df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[i], self.model_name_list[j])),
+                              base_dir=base_dir,
+                              file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
+                              x_column=x_column,
+                              y_column=y_column,
+                              title=title,
+                              hue=hue,
+                              style=style,
+                              hue_order=compression,
+                              tipo=1,
+                              log_scale=False,
+                              y_lim=True,
+                              y_max=y_max,
+                              y_min=y_min,
+                              n=1)
 
-            ax[0, 1].get_legend().remove()
-            ax[0, 1].set_xlabel('')
-            ax[0, 1].set_ylabel('')
+                    ax[i, j].get_legend().remove()
+                    ax[i, j].set_xlabel('')
+                    ax[i, j].set_ylabel('')
 
-            title = """{}; {}""".format(self.dataset_name_list[1], self.model_name_list[0])
-            line_plot(ax=ax[1, 0],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[1], self.model_name_list[0])),
-                      base_dir=base_dir,
-                      file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
-                      x_column=x_column,
-                      y_column=y_column,
-                      title=title,
-                      hue=hue,
-                      style=style,
-                      hue_order=compression,
-                      type=1,
-                      log_scale=False,
-                      y_lim=True,
-                      y_max=y_max,
-                      y_min=y_min,
-                      n=1)
-
-            ax[1, 0].get_legend().remove()
-            # ax[1, 0].legend(fontsize=7, ncol=2)
-            ax[1, 0].set_xlabel('')
-            ax[1, 0].set_ylabel('')
-
-            title = """{}; {}""".format(self.dataset_name_list[1], self.model_name_list[1])
-            line_plot(ax=ax[1, 1],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[1], self.model_name_list[1])),
-                      base_dir=base_dir,
-                      file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
-                      x_column=x_column,
-                      y_column=y_column,
-                      title=title,
-                      hue=hue,
-                      style=style,
-                      hue_order=compression,
-                      type=1,
-                      log_scale=False,
-                      y_lim=True,
-                      y_max=y_max,
-                      y_min=y_min,
-                      n=1)
-
-            ax[1, 1].get_legend().remove()
-            ax[1, 1].set_xlabel('')
-            ax[1, 1].set_ylabel('')
-
+            # fig.suptitle("", fontsize=16)
+            # fig.supxlabel(x_column, y=-0.02)
+            # fig.supylabel(y_column, x=-0.005)
+            # lines_labels = [ax[0, 1].get_legend_handles_labels()]
+            # lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
+            # print("linhas")
+            # print(lines)
+            # print(lines[0].get_color(), lines[0].get_ls())
+            # print("rotulos")
+            # print(labels)
+            # colors = []
+            # for i in range(len(lines)):
+            #     color = lines[i].get_color()
+            #     colors.append(color)
+            #     ls = lines[i].get_ls()
+            #     if ls not in ["o"]:
+            #         ls = "o"
+            # markers = ["-", "--"]
             #
-
-            title = """{}; {}""".format(self.dataset_name_list[2], self.model_name_list[0])
-            line_plot(ax=ax[2, 0],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[2],
-                                                                                 self.model_name_list[0])),
-                      base_dir=base_dir,
-                      file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
-                      x_column=x_column,
-                      y_column=y_column,
-                      title=title,
-                      hue=hue,
-                      style=style,
-                      hue_order=compression,
-                      type=1,
-                      log_scale=False,
-                      y_lim=True,
-                      y_max=y_max,
-                      y_min=y_min,
-                      n=1)
-
-            ax[2, 0].get_legend().remove()
-            # ax[1, 0].legend(fontsize=7, ncol=2)
-            ax[2, 0].set_xlabel('')
-            ax[2, 0].set_ylabel('')
-
-            title = """{}; {}""".format(self.dataset_name_list[2], self.model_name_list[1])
-            line_plot(ax=ax[2, 1],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[2],
-                                                                                 self.model_name_list[1])),
-                      base_dir=base_dir,
-                      file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
-                      x_column=x_column,
-                      y_column=y_column,
-                      title=title,
-                      hue=hue,
-                      style=style,
-                      hue_order=compression,
-                      type=1,
-                      log_scale=False,
-                      y_lim=True,
-                      y_max=y_max,
-                      y_min=y_min,
-                      n=1)
-
-            ax[2, 1].get_legend().remove()
-            ax[2, 1].set_xlabel('')
-            ax[2, 1].set_ylabel('')
-
-            fig.suptitle("", fontsize=16)
-            fig.supxlabel(x_column, y=-0.02)
-            fig.supylabel(y_column, x=-0.005)
-            lines_labels = [ax[0, 1].get_legend_handles_labels()]
-            lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-            print("linhas")
-            print(lines)
-            print(lines[0].get_color(), lines[0].get_ls())
-            print("rotulos")
-            print(labels)
-            colors = []
-            for i in range(len(lines)):
-                color = lines[i].get_color()
-                colors.append(color)
-                ls = lines[i].get_ls()
-                if ls not in ["o"]:
-                    ls = "o"
-            markers = ["-", "--"]
-
-            f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
-            n = len(compression) + 1
-            handles = [f("o", colors[i]) for i in range(n)]
-            new_labels = []
-            for i in range(len(labels)):
-                if i != n:
-                    new_labels.append(labels[i])
-                else:
-                    print("label: ", labels[i])
-            new_labels[-1] = '\u03B1=' + new_labels[-1]
-            new_labels[-2] = '\u03B1=' + new_labels[-2]
-            new_labels = new_labels[1:]
-
-            handles += [plt.Line2D([], [], linestyle=markers[i], color="k") for i in range(len(markers))]
-            fig.legend(handles[1:], new_labels, fontsize=9, ncols=4, bbox_to_anchor=(0.90, 1.02))
-            figure = fig.get_figure()
-            Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
-            Path(base_dir + "svg/").mkdir(parents=True, exist_ok=True)
-            filename = """parameters_reduction_percentage_{}_varying_shared_layers_lineplot_joint_{}""".format(self.experiment, str(self.dataset))
-            figure.savefig(base_dir + "png/" + filename + ".png", bbox_inches='tight', dpi=400)
-            figure.savefig(base_dir + "svg/" + filename + ".svg", bbox_inches='tight', dpi=400)
-
-        else:
-            fig, ax = plt.subplots(1, 2, sharex='all', sharey='all', figsize=(8, 6))
-            title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[0])
-            x = df[x_column].tolist()
-            y = df[y_column].tolist()
-            print("jointplot: \n", df.query("""Dataset == '{}'""".format(self.dataset_name_list[0])))
-            line_plot(ax=ax[0],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[0])),
-                      base_dir=base_dir,
-                      file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
-                      x_column=x_column,
-                      y_column=y_column,
-                      title=title,
-                      hue=hue,
-                      style=style,
-                      # hue_order=compression_methods,
-                      type=1,
-                      log_scale=False,
-                      y_lim=True,
-                      y_max=100,
-                      y_min=20,
-                      n=1)
-
-            ax[0].get_legend().remove()
-            ax[0].set_xlabel('')
-            ax[0].set_ylabel('')
-            title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[1])
-            line_plot(ax=ax[1],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[1])),
-                      base_dir=base_dir,
-                      file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
-                      x_column=x_column,
-                      y_column=y_column,
-                      title=title,
-                      hue=hue,
-                      style=style,
-                      # hue_order=compression_methods,
-                      type=1,
-                      log_scale=False,
-                      y_lim=True,
-                      y_max=100,
-                      y_min=20,
-                      n=1)
-
-            ax[1].get_legend().remove()
-            ax[1].set_xlabel('')
-            ax[1].set_ylabel('')
-
-            fig.suptitle("", fontsize=16)
-            fig.supxlabel(x_column, y=-0.02)
-            fig.supylabel(y_column, x=-0.005)
-            # plt.tight_layout(pad=0.5)
-
-            plt.subplots_adjust(wspace=0.07, hspace=0.14)
-            lines_labels = [ax[0].get_legend_handles_labels()]
-            lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-            # fig.legend(lines, labels, loc='upper center', ncol=4, bbox_to_anchor=(0.5, 1.06))
+            # f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
+            # n = len(compression) + 1
+            # handles = [f("o", colors[i]) for i in range(n)]
+            # new_labels = []
+            # for i in range(len(labels)):
+            #     if i != n:
+            #         new_labels.append(labels[i])
+            #     else:
+            #         print("label: ", labels[i])
+            # new_labels[-1] = '\u03B1=' + new_labels[-1]
+            # new_labels[-2] = '\u03B1=' + new_labels[-2]
+            # new_labels = new_labels[1:]
+            #
+            # handles += [plt.Line2D([], [], linestyle=markers[i], color="k") for i in range(len(markers))]
+            # fig.legend(handles[1:], new_labels, fontsize=9, ncols=4, bbox_to_anchor=(0.90, 1.02))
             figure = fig.get_figure()
             Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
             Path(base_dir + "svg/").mkdir(parents=True, exist_ok=True)
@@ -889,7 +715,7 @@ class Varying_Shared_layers:
         columns = df.columns.tolist()
         indexes = df.index.tolist()
 
-        datasets = ['EMNIST', 'GTSRB']
+        datasets = ['EMNIST', 'CIFAR-10', 'GTSRB']
         solutions = pd.Series([i[1] for i in indexes]).unique().tolist()
         reference_solutions = {}
         for solution_key in solutions:
@@ -951,7 +777,7 @@ class Varying_Shared_layers:
 
         columns = shared_layers
 
-        index = [np.array(['EMNIST'] * len(columns) + ['GTSRB'] * len(columns)), np.array(columns * 2)]
+        index = [np.array(['EMNIST'] * len(columns) +  ['CIFAR-10'] * len(columns) +  ['GTSRB'] * len(columns)), np.array(columns * 3)]
 
         models_dict = {}
         ci = 0.95
@@ -959,14 +785,18 @@ class Varying_Shared_layers:
 
             mnist_acc = {}
             cifar10_acc = {}
+            gtsrb_acc = {}
             for column in columns:
 
                 # mnist_acc[column] = (self.filter(df_test, experiment, 'MNIST', float(column), strategy=model_name)['Accuracy (%)']*100).mean().round(6)
                 # cifar10_acc[column] = (self.filter(df_test, experiment, 'CIFAR10', float(column), strategy=model_name)['Accuracy (%)']*100).mean().round(6)
                 mnist_acc[column] = self.t_distribution((self.filter(df_test, model=shared_layer, dataset='EMNIST', alpha=alpha, shared_layer=column)[
                                          target_col]).tolist(), ci)
-                cifar10_acc[column] = self.t_distribution((self.filter(df_test,model=shared_layer, dataset='GTSRB', alpha=alpha, shared_layer=column)[
+                cifar10_acc[column] = self.t_distribution((self.filter(df_test,model=shared_layer, dataset='CIFAR-10', alpha=alpha, shared_layer=column)[
                                            target_col]).tolist(), ci)
+                gtsrb_acc[column] = self.t_distribution(
+                    (self.filter(df_test, model=shared_layer, dataset='GTSRB', alpha=alpha, shared_layer=column)[
+                        target_col]).tolist(), ci)
 
             model_metrics = []
 
@@ -974,6 +804,8 @@ class Varying_Shared_layers:
                 model_metrics.append(mnist_acc[column])
             for column in columns:
                 model_metrics.append(cifar10_acc[column])
+            for column in columns:
+                model_metrics.append(gtsrb_acc[column])
 
             models_dict[shared_layer] = model_metrics
 
@@ -1030,7 +862,7 @@ class Varying_Shared_layers:
 
             df_accuracy_improvements.iloc[i] = row
 
-        latex = df_accuracy_improvements.to_latex().replace("\\\nEMNIST", "\\\n\hline\nEMNIST").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}").replace("\$", "$").replace("textuparrow", "\oitextuparrow").replace("textdownarrow", "\oitextdownarrow").replace("\&", "&").replace("\_", "_")
+        latex = df_accuracy_improvements.to_latex().replace("\\\nEMNIST", "\\\n\hline\nEMNIST").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\\nGTSRB", "\\\n\hline\nGTSRB").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}").replace("\$", "$").replace("textuparrow", "\oitextuparrow").replace("textdownarrow", "\oitextdownarrow").replace("\&", "&").replace("\_", "_")
         if 'Acc' in target_col:
             latex = latex.replace("\oitextuparrow0.0", "0.0")
         else:
@@ -1135,114 +967,45 @@ class Varying_Shared_layers:
         else:
             compression = ["$FedAvg+FP_{c}$", 'FedPredict', 'FedAvg']
 
-        # print(compression)
-        # exit()
-
         if len(self.dataset) >= 2:
 
             print("testar1")
             print(df[df['Solution'] == "$FedAvg+FP_{d}$"])
 
-            fig, ax = plt.subplots(2, 2, sharex='all', sharey='all', figsize=(6, 6))
+            fig, ax = plt.subplots(3, 2, sharex='all', sharey='all', figsize=(6, 6))
             title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[0])
             x = df[x_column].tolist()
             y = df[y_column].tolist()
-            print("jointplot: \n", df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[0])))
-            line_plot(ax=ax[0, 0],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[0])),
-                      base_dir=base_dir,
-                      file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
-                      x_column=x_column,
-                      y_column=y_column,
-                      title=title,
-                      hue=hue,
-                      style=style,
-                      hue_order=compression,
-                      type=1,
-                      log_scale=False,
-                      y_lim=True,
-                      y_max=100,
-                      y_min=0,
-                      n=1)
+            for i in range(3):
+                for j in range(2):
+                    line_plot(ax=ax[i, j],
+                              df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[i], self.model_name_list[j])),
+                              base_dir=base_dir,
+                              file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
+                              x_column=x_column,
+                              y_column=y_column,
+                              title=title,
+                              hue=hue,
+                              style=style,
+                              hue_order=compression,
+                              tipo=1,
+                              log_scale=False,
+                              y_lim=True,
+                              y_max=100,
+                              y_min=0,
+                              n=1)
 
-            ax[0, 0].get_legend().remove()
-            ax[0, 0].set_xlabel('')
-            ax[0, 0].set_ylabel('')
+                    ax[i, j].get_legend().remove()
+                    ax[i, j].set_xlabel('')
+                    ax[i, j].set_ylabel('')
             # ax[0, 0].set_xticks([])
             # ax[0, 0].set_yticks(np.arange(0, 101, 10))
 
-            title = """{}; {}""".format(self.dataset_name_list[1], self.model_name_list[0])
-            line_plot(ax=ax[0, 1],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[1], self.model_name_list[0])),
-                      base_dir=base_dir,
-                      file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
-                      x_column=x_column,
-                      y_column=y_column,
-                      title=title,
-                      hue=hue,
-                      style=style,
-                      hue_order=compression,
-                      type=1,
-                      log_scale=False,
-                      y_lim=True,
-                      y_max=100,
-                      y_min=0,
-                      n=1)
 
-            ax[0, 1].get_legend().remove()
-            ax[0, 1].set_xlabel('')
-            ax[0, 1].set_ylabel('')
-            fig.suptitle("", fontsize=16)
-            fig.supxlabel(x_column, y=-0.02)
-            fig.supylabel(y_column, x=-0.005)
+            # fig.suptitle("", fontsize=9)
+            # fig.supxlabel(x_column, y=-0.02)
+            # fig.supylabel(y_column, x=-0.005)
 
-            title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[1])
-            line_plot(ax=ax[1, 0],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[1])),
-                      base_dir=base_dir,
-                      file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
-                      x_column=x_column,
-                      y_column=y_column,
-                      title=title,
-                      hue=hue,
-                      style=style,
-                      hue_order=compression,
-                      type=1,
-                      log_scale=False,
-                      y_lim=True,
-                      y_max=100,
-                      y_min=0,
-                      n=1)
-
-            ax[1, 0].get_legend().remove()
-            # ax[1, 0].legend(fontsize=7)
-            ax[1, 0].set_xlabel('')
-            ax[1, 0].set_ylabel('')
-
-            title = """{}; {}""".format(self.dataset_name_list[1], self.model_name_list[1])
-            line_plot(ax=ax[1, 1],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[1], self.model_name_list[1])),
-                      base_dir=base_dir,
-                      file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
-                      x_column=x_column,
-                      y_column=y_column,
-                      title=title,
-                      hue=hue,
-                      style=style,
-                      hue_order=compression,
-                      type=1,
-                      log_scale=False,
-                      y_lim=True,
-                      y_max=100,
-                      y_min=0,
-                      n=1)
-
-            ax[1, 1].get_legend().remove()
-            ax[1, 1].set_xlabel('')
-            ax[1, 1].set_ylabel('')
-            fig.suptitle("", fontsize=9)
-            fig.supxlabel(x_column, y=-0.02)
-            fig.supylabel(y_column, x=-0.005)
 
             lines_labels = [ax[1, 0].get_legend_handles_labels()]
             lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
@@ -1270,72 +1033,6 @@ class Varying_Shared_layers:
             Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
             Path(base_dir + "svg/").mkdir(parents=True, exist_ok=True)
             print("de intere: ", base_dir)
-            filename = """accuracy_varying_shared_layers_{}_lineplot_joint_{}_alpha_{}""".format(self.experiment, str(self.dataset), str(alpha))
-            figure.savefig(base_dir + "png/" + filename + ".png", bbox_inches='tight', dpi=400)
-            figure.savefig(base_dir + "svg/" + filename + ".svg", bbox_inches='tight', dpi=400)
-
-        else:
-            fig, ax = plt.subplots(1, 2, sharex='all', sharey='all', figsize=(10, 6))
-            title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[0])
-            x = df[x_column].tolist()
-            y = df[y_column].tolist()
-            print("jointplot: \n",
-                  df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[0])))
-            line_plot(ax=ax[0],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[0])),
-                      base_dir=base_dir,
-                      file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
-                      x_column=x_column,
-                      y_column=y_column,
-                      title=title,
-                      hue=hue,
-                      style=style,
-                      hue_order=compression,
-                      type=1,
-                      log_scale=False,
-                      y_lim=True,
-                      y_max=100,
-                      y_min=0,
-                      n=1)
-
-            ax[0].get_legend().remove()
-            ax[0].set_xlabel('')
-            ax[0].set_ylabel('')
-
-            title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[1])
-            line_plot(ax=ax[1],
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[1])),
-                      base_dir=base_dir,
-                      file_name="evaluate_client_Parameters_reduction_percentage_varying_shared_layers_lineplot_joint",
-                      x_column=x_column,
-                      y_column=y_column,
-                      title=title,
-                      hue=hue,
-                      style=style,
-                      hue_order=compression,
-                      type=1,
-                      log_scale=False,
-                      y_lim=True,
-                      y_max=100,
-                      y_min=0,
-                      n=1)
-
-            ax[1].get_legend().remove()
-            ax[1].set_xlabel('')
-            ax[1].set_ylabel('')
-            fig.suptitle("", fontsize=16)
-            fig.supxlabel(x_column, y=-0.02)
-            fig.supylabel(y_column, x=-0.005)
-
-            plt.subplots_adjust(wspace=0.07, hspace=0.14)
-            lines_labels = [ax[0].get_legend_handles_labels()]
-            lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-            fig.legend(lines, labels, loc='upper center', ncol=4, title="""\u03B1={}""".format(alpha),
-                       bbox_to_anchor=(0.5, 1.05))
-            # plt.xticks(np.arange(min(x), max(x) + 1, max(x) // 5))
-            figure = fig.get_figure()
-            Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
-            Path(base_dir + "svg/").mkdir(parents=True, exist_ok=True)
             filename = """accuracy_varying_shared_layers_{}_lineplot_joint_{}_alpha_{}""".format(self.experiment, str(self.dataset), str(alpha))
             figure.savefig(base_dir + "png/" + filename + ".png", bbox_inches='tight', dpi=400)
             figure.savefig(base_dir + "svg/" + filename + ".svg", bbox_inches='tight', dpi=400)
@@ -1392,7 +1089,7 @@ class Varying_Shared_layers:
             str(self.alpha), self.comment)
         print("agrupou: ", df)
 
-        if len(self.dataset) == 2:
+        if len(self.dataset) >= 2:
             os.makedirs(base_dir + "png/", exist_ok=True)
             os.makedirs(base_dir + "svg/", exist_ok=True)
             os.makedirs(base_dir + "csv/", exist_ok=True)
@@ -1401,55 +1098,27 @@ class Varying_Shared_layers:
             x_column = 'Round'
             y_column = 'df'
             hue = '\u03B1'
-            order = sorted(self.alpha)
+            order = sorted(self.alpha + [5.0])
             sci = True
             filename = """df_similarity_{}""".format(str(self.dataset))
 
-            title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[0])
-
-            fig, ax = plt.subplots(2, 2,  sharex='all', sharey='all', figsize=(6, 6))
+            fig, ax = plt.subplots(3, 2,  sharex='all', sharey='all', figsize=(6, 6))
             print("endereco: ", base_dir)
             print("filename: ", filename)
             x = df[x_column].tolist()
             y = df[y_column].tolist()
-            # print("filtrado:")
-            # print(df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[0])).to_string())
-            line_plot(ax=ax[0, 0], base_dir=base_dir, file_name=filename, title=title, df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[0])),
-                     x_column=x_column, y_column=y_column, y_lim=True, y_max=1,
-                     y_min=0, hue=hue, hue_order=order, type=1)
-            ax[0, 0].get_legend().remove()
-            ax[0, 0].set_xlabel('')
-            ax[0, 0].set_ylabel('')
-            # ax[0, 0].set_xticks([])
-            # ax[0, 0].set_yticks(np.arange(0, 0.6, 0.1))
-            title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[1])
-
-            line_plot(ax=ax[0, 1], base_dir=base_dir, file_name=filename, title=title, df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[1], self.model_name_list[0])),
-                      x_column=x_column, y_column=y_column, y_lim=True, y_max=1,
-                      y_min=0, hue=hue, hue_order=order, type=1)
-            ax[0, 1].get_legend().remove()
-            ax[0, 1].set_xlabel('')
-            ax[0, 1].set_ylabel('')
-
-            title = """{}; {}""".format(self.dataset_name_list[1], self.model_name_list[0])
-            line_plot(ax=ax[1, 0], base_dir=base_dir, file_name=filename, title=title,
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[0], self.model_name_list[1])),
-                      x_column=x_column, y_column=y_column, y_lim=True, y_max=1,
-                      y_min=0, hue=hue, hue_order=order, type=1)
-            ax[1, 0].get_legend().remove()
-            ax[1, 0].set_xlabel('')
-            ax[1, 0].set_ylabel('')
-            # ax[0, 0].set_xticks([])
-            # ax[0, 0].set_yticks(np.arange(0, 0.6, 0.1))
-            title = """{}; {}""".format(self.dataset_name_list[1], self.model_name_list[1])
-
-            line_plot(ax=ax[1, 1], base_dir=base_dir, file_name=filename, title=title,
-                      df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[1], self.model_name_list[1])),
-                      x_column=x_column, y_column=y_column, y_lim=True, y_max=1,
-                      y_min=0, hue=hue, hue_order=order, type=1)
-            ax[1, 1].get_legend().remove()
-            ax[1, 1].set_xlabel('')
-            ax[1, 1].set_ylabel('')
+            i = 0
+            j = 0
+            for i in range(3):
+                for j in range(2):
+                    title = """{}; {}""".format(self.dataset_name_list[i], self.model_name_list[j])
+                    line_plot(ax=ax[i, j], base_dir=base_dir, file_name=filename, title=title, df=df.query(
+                        """Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[i], self.model_name_list[j])),
+                              x_column=x_column, y_column=y_column, y_lim=True, y_max=1,
+                              y_min=0, hue=hue, hue_order=order, tipo=1)
+                    ax[i, j].get_legend().remove()
+                    ax[i, j].set_xlabel('')
+                    ax[i, j].set_ylabel('')
 
             fig.suptitle("", fontsize=16)
             fig.supxlabel(x_column, y=-0.02)
@@ -1480,8 +1149,8 @@ class Varying_Shared_layers:
             markers = ["", "-", "--"]
 
             f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
-            handles = [f("o", colors[i]) for i in range(2)]
-            ax[0, 0].legend(handles, labels, fontsize=7, ncols=2, title='\u03B1')
+            handles = [f("o", colors[i]) for i in range(3)]
+            ax[0, 0].legend(handles, labels, fontsize=7, ncols=3, title='\u03B1')
 
 
             figure = fig.get_figure()
@@ -1780,7 +1449,6 @@ class Varying_Shared_layers:
         if dataset == 'EMNIST' and model == 'CNN-b':
             print("e2: ", df.query("Solution=='$FedAvg+FP$' and Model=='CNN-b' and Dataset=='EMNIST'")[
                 'Size of parameters (MB)'])
-            exit()
         df_preprocessed = copy.deepcopy(df)
 
         df = df[df['Solution'] != "$FedAvg+FP$"]
