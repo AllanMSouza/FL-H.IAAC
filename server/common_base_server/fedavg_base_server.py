@@ -57,6 +57,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.alpha = float(args.alpha)
 		self.compression = args.compression_method
 		self.use_gradient = args.use_gradient
+		self.dynamic_data = args.dynamic_data
 		self.list_of_clients    = []
 		self.list_of_accuracies = []
 		self.selected_clients   = []
@@ -642,7 +643,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 	def _create_base_directory(self, args):
 
-		return f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(self.compression)}_compression"
+		return f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}_dynamic_data_{self.dynamic_data}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(self.compression)}_compression"
 
 	def _write_output_files_headers(self, args):
 

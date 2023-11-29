@@ -119,7 +119,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			elif self.aggregation_method == 'None':
 				self.solution_name = f"{solution_name}-{aggregation_method}-{self.fraction_fit}"
 
-			self.base = self._create_base_directory(self.type, self.solution_name, new_clients, new_clients_train, n_clients, model_name, dataset, str(args.class_per_client), str(args.alpha), str(args.rounds), str(args.local_epochs), str(args.comment), str(args.compression_method), args)
+			self.base = self._create_base_directory(self.type, self.solution_name, new_clients, new_clients_train, self.dynamic_data, n_clients, model_name, dataset, str(args.class_per_client), str(args.alpha), str(args.rounds), str(args.local_epochs), str(args.comment), str(args.compression_method), args)
 			self.evaluate_client_filename = f"{self.base}/evaluate_client.csv"
 			self.train_client_filename = f"{self.base}/train_client.csv"
 			self.predictions_client_filename = f"{self.base}/predictions_client.csv"
@@ -149,9 +149,10 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			print("init client")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def _create_base_directory(self, type, strategy_name, new_clients, new_clients_train, n_clients, model_name, dataset, class_per_client, alpha, n_rounds, local_epochs, comment, compression, args):
+	def _create_base_directory(self, type, strategy_name, new_clients, new_clients_train, dynamic_data, n_clients, model_name, dataset, class_per_client, alpha, n_rounds, local_epochs, comment, compression, args):
 
-		return f"logs/{type}/{strategy_name}/new_clients_{new_clients}_train_{new_clients_train}/{n_clients}/{model_name}/{dataset}/classes_per_client_{class_per_client}/alpha_{alpha}/{n_rounds}_rounds/{local_epochs}_local_epochs/{comment}_comment/{str(compression)}_compression"
+		return f"logs/{type}/{strategy_name}/new_clients_{new_clients}_train_{new_clients_train}_dynamic_data_{dynamic_data}/{n_clients}/{model_name}/{dataset}/classes_per_client_{class_per_client}/alpha_{alpha}/{n_rounds}_rounds/{local_epochs}_local_epochs/{comment}_comment/{str(compression)}_compression"
+
 
 	def calculate_imbalance_level(self):
 
@@ -215,7 +216,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 					mid_dim = 16
 				elif self.dataset == 'State Farm':
 					mid_dim = 16
-					# return CNN_3_GTSRB(input_shape=input_shape, mid_dim=mid_dim, num_classes=self.num_classes)
+				# return CNN_3_GTSRB(input_shape=input_shape, mid_dim=mid_dim, num_classes=self.num_classes)
 				else:
 					mid_dim = 4
 				return  CNN_3(input_shape=input_shape, mid_dim=mid_dim, num_classes=self.num_classes)

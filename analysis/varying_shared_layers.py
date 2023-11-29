@@ -11,8 +11,8 @@ import os
 
 class Varying_Shared_layers:
 
-    def __init__(self, tp, strategy_name, new_clients, aggregation_method, fraction_fit, new_clients_train, num_clients, model_name, dataset,
-                 class_per_client, alpha, num_rounds, epochs, comment, compression):
+    def __init__(self, tp, strategy_name, new_clients, aggregation_method, fraction_fit, new_clients_train, dynamic_data,
+                 num_clients, model_name, dataset, class_per_client, alpha, num_rounds, epochs, comment, compression):
 
         self.type = tp
         self.strategy_name = strategy_name
@@ -20,6 +20,7 @@ class Varying_Shared_layers:
         self.fraction_fit = fraction_fit
         self.new_clients = new_clients
         self.new_clients_train = new_clients_train
+        self.dynamic_data = dynamic_data
         self.num_clients = num_clients
         self.model_name = model_name
         self.dataset = dataset
@@ -120,37 +121,37 @@ class Varying_Shared_layers:
 
 
 
-        self.parameters_reduction()
-
-        self.df_concat = self.df_concat[['Strategy', 'Round', 'Solution', 'Dataset', 'α', 'Model', 'level_6',
-       'Accuracy reduction (%)', 'Parameters reduction (MB)',
-       'Parameters reduction (%)', 'Accuracy (%)', 'Size of parameters (MB)']]
-
-        # df_concat = None
-
-        # for model in self.model_name:
-        #     for dataset in self.dataset:
-        #         model_name = model.replace("CNN_2", "CNN-a").replace("CNN_3", "CNN-b")
-        #         dataset_name = dataset.replace("CIFAR10", "CIFAR-10")
-        #         self.evaluate_client_analysis_shared_layers(model_name, dataset_name)
-
-        # self.evaluate_client_analysis_differnt_models(df_concat)
-        # print(df_concat['Strategy'].unique().tolist())
-        # exit()
-        self.evaluate_client_joint_parameter_reduction(self.df_concat)
-
-        alphas = self.df_concat['\u03B1'].unique().tolist()
-        models = self.df_concat['Model'].unique().tolist()
-
-        self.df_concat = self.build_filename_fedavg(self.df_concat)
-
-        # exit()
-
-        for alpha in alphas:
-            self.evaluate_client_joint_accuracy(self.df_concat, alpha)
-            # exit()
-            self.joint_table(self.df_concat, alpha=alpha, models=models)
-            self.joint_table(self.df_concat, alpha=alpha, models=models, target_col='Size of parameters (MB)')
+       #  self.parameters_reduction()
+       #
+       #  self.df_concat = self.df_concat[['Strategy', 'Round', 'Solution', 'Dataset', 'α', 'Model', 'level_6',
+       # 'Accuracy reduction (%)', 'Parameters reduction (MB)',
+       # 'Parameters reduction (%)', 'Accuracy (%)', 'Size of parameters (MB)']]
+       #
+       #  # df_concat = None
+       #
+       #  # for model in self.model_name:
+       #  #     for dataset in self.dataset:
+       #  #         model_name = model.replace("CNN_2", "CNN-a").replace("CNN_3", "CNN-b")
+       #  #         dataset_name = dataset.replace("CIFAR10", "CIFAR-10")
+       #  #         self.evaluate_client_analysis_shared_layers(model_name, dataset_name)
+       #
+       #  # self.evaluate_client_analysis_differnt_models(df_concat)
+       #  # print(df_concat['Strategy'].unique().tolist())
+       #  # exit()
+       #  self.evaluate_client_joint_parameter_reduction(self.df_concat)
+       #  # exit()
+       #  alphas = self.df_concat['\u03B1'].unique().tolist()
+       #  models = self.df_concat['Model'].unique().tolist()
+       #
+       #  self.df_concat = self.build_filename_fedavg(self.df_concat)
+       #
+       #  # exit()
+       #
+       #  for alpha in alphas:
+       #      self.evaluate_client_joint_accuracy(self.df_concat, alpha)
+       #      # exit()
+       #      self.joint_table(self.df_concat, alpha=alpha, models=models)
+       #      self.joint_table(self.df_concat, alpha=alpha, models=models, target_col='Size of parameters (MB)')
 
         self.similarity()
         # for alpha in alphas:
@@ -210,21 +211,27 @@ class Varying_Shared_layers:
                     for model in self.model_name:
                         for dataset in self.dataset:
 
-
-
-                            filename = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/" + f"logs/{self.type}/{self.strategy_name}-{self.aggregation_method}-{self.fraction_fit}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{model}/{dataset}/classes_per_client_{self.class_per_client}/alpha_{a}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(compression)}_compression/{file}"
+                            filename1 = os.path.abspath(os.path.join(os.getcwd(),
+                                                                    os.pardir)) + "/FL-H.IAAC/" + f"logs/{self.type}/{self.strategy_name}-{self.aggregation_method}-{self.fraction_fit}/new_clients_{self.new_clients}_train_{self.new_clients_train}_dynamic_data_{self.dynamic_data}/{self.num_clients}/{model}/{dataset}/classes_per_client_{self.class_per_client}/alpha_{a}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(compression)}_compression/{file}"
+                            filename2 = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/" + f"logs/{self.type}/{self.strategy_name}-{self.aggregation_method}-{self.fraction_fit}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{model}/{dataset}/classes_per_client_{self.class_per_client}/alpha_{a}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(compression)}_compression/{file}"
                             # if "/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/logs/torch/FedPredict-None-0.3/new_clients_False_train_False/20/CNN_3/EMNIST/classes_per_client_2/alpha_5.0/100_rounds/1_local_epochs/set_comment/no_compression" not in filename:
                             #     continue
                             try:
-                                df = pd.read_csv(filename).dropna()
+                                if Path(filename1).exists():
+                                    df = pd.read_csv(filename1).dropna()
+                                elif Path(filename2).exists():
+                                    df = pd.read_csv(filename2).dropna()
+                                else:
+                                    raise
                             except:
                                 print("arquivo inexistente")
-                                print(filename)
+                                print(filename1)
+                                print(filename2)
                                 continue
 
                             # model_name = model.replace("CNN_2", "CNN-a").replace("CNN_3", "CNN-b")
                             # dataset_name = dataset.replace("CIFAR10", "CIFAR-10")
-                            print("leu: ", filename)
+                            print("leu: ", filename1)
                             model_name = model.replace("CNN_2", "CNN-a").replace("CNN_3", "CNN-b")
                             dataset_name = dataset.replace("CIFAR10", "CIFAR-10")
                             if "evaluate" in file and a not in [5.0]:
@@ -605,6 +612,8 @@ class Varying_Shared_layers:
             str(self.model_name),
             str(self.alpha), self.comment)
 
+        print("base dir: ", base_dir)
+
         df['Parameters saving (%)'] = np.array(df['Parameters reduction (%)'].tolist())
         x_column = 'Round'
         y_column = 'Parameters saving (%)'
@@ -862,7 +871,7 @@ class Varying_Shared_layers:
 
             df_accuracy_improvements.iloc[i] = row
 
-        latex = df_accuracy_improvements.to_latex().replace("\\\nEMNIST", "\\\n\hline\nEMNIST").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\\nGTSRB", "\\\n\hline\nGTSRB").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}").replace("\$", "$").replace("textuparrow", "\oitextuparrow").replace("textdownarrow", "\oitextdownarrow").replace("\&", "&").replace("\_", "_")
+        latex = df_accuracy_improvements.to_latex().replace("\\\nEMNIST", "\\\n\hline\nEMNIST").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\\nGTSRB", "\\\n\hline\nGTSRB").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}").replace("\$", "$").replace("textuparrow", "\oitextuparrow").replace("textdownarrow", "\oitextdownarrow").replace("\&", "&").replace("\_", "_").replace("&  &", "& - &").replace("&  \\", "& - \\").replace(" - " + r"\textbf", " " + r"\textbf")
         if 'Acc' in target_col:
             latex = latex.replace("\oitextuparrow0.0", "0.0")
         else:
@@ -973,11 +982,12 @@ class Varying_Shared_layers:
             print(df[df['Solution'] == "$FedAvg+FP_{d}$"])
 
             fig, ax = plt.subplots(3, 2, sharex='all', sharey='all', figsize=(6, 6))
-            title = """{}; {}""".format(self.dataset_name_list[0], self.model_name_list[0])
+
             x = df[x_column].tolist()
             y = df[y_column].tolist()
             for i in range(3):
                 for j in range(2):
+                    title = """{}; {}""".format(self.dataset_name_list[i], self.model_name_list[j])
                     line_plot(ax=ax[i, j],
                               df=df.query("""Dataset == '{}' and Model == '{}'""".format(self.dataset_name_list[i], self.model_name_list[j])),
                               base_dir=base_dir,
@@ -1081,6 +1091,10 @@ class Varying_Shared_layers:
 
         print("simi: ", max_layer)
         # print(df.to_string())
+        # print(df)
+        df = df.query("Solution == 'dls'")
+        # print(df)
+        # exit()
         df = df.groupby(['Round', 'Dataset', '\u03B1', 'Model']).apply(lambda e: summary(ag=e, d_f=df)).reset_index()
 
         base_dir = """analysis/output/torch/varying_shared_layers/{}/{}/{}_clients/{}_rounds/{}_fraction_fit/model_{}/alpha_{}/{}_comment/""".format(
@@ -1533,6 +1547,7 @@ if __name__ == '__main__':
     num_clients = 20
     model_name = ["CNN_2", "CNN_3"]
     dataset = ["EMNIST", "CIFAR10", "GTSRB"]
+    dynamic_data = "no"
     alpha = [0.1, 1.0]
     num_rounds = 100
     epochs = 1
@@ -1543,6 +1558,6 @@ if __name__ == '__main__':
     # "fedkd", "sparsification", "per",
     comment = "set"
 
-    Varying_Shared_layers(tp=type_model, strategy_name=strategy, fraction_fit=fraction_fit, aggregation_method=aggregation_method, new_clients=False, new_clients_train=False, num_clients=num_clients,
+    Varying_Shared_layers(tp=type_model, strategy_name=strategy, fraction_fit=fraction_fit, aggregation_method=aggregation_method, new_clients=False, new_clients_train=False, dynamic_data=dynamic_data, num_clients=num_clients,
                           model_name=model_name, dataset=dataset, class_per_client=2, alpha=alpha, num_rounds=num_rounds, epochs=epochs,
                           comment=comment, compression=compression).start()

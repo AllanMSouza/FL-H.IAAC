@@ -35,12 +35,12 @@ def bar_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, hue_o
     figure = sns.barplot(ax=ax, x=x_column, y=y_column, hue=hue, data=df, hue_order=hue_order,  order=x_order, palette=palette)
     if tipo == "classes":
         for bars in figure.containers:
-            figure.bar_label(bars, fmt='%.f', padding=15, fontsize=9)
-        figure.set_ylim(top=110)
+            figure.bar_label(bars, fmt='%.f', padding=10, fontsize=9)
+        figure.set_ylim(top=115)
     if tipo == "balance":
         for bars in figure.containers:
-            figure.bar_label(bars, fmt='%.2f', padding=25, fontsize=9)
-        figure.set_ylim(top=y_max)
+            figure.bar_label(bars, fmt='%.f', padding=10, fontsize=9)
+        figure.set_ylim(top=115)
     if tipo == "nt":
         for bars in figure.containers:
             figure.bar_label(bars, fmt='%.f', padding=9, fontsize=9)

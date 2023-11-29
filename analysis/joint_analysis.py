@@ -6,6 +6,7 @@ from base_plots import bar_plot, line_plot, ecdf_plot
 import matplotlib.pyplot as plt
 import seaborn as sns
 import scipy.stats as st
+from pathlib import Path
 import os
 import sys
 from matplotlib.lines import Line2D
@@ -28,6 +29,7 @@ class JointAnalysis():
             local_epochs = experiment['local_epochs']
             comment = experiment['comment']
             compression_list = [experiment['compression']]
+            dynamic_data = experiment['dynamic_data']
 
             for dataset in datasets:
 
@@ -47,13 +49,14 @@ class JointAnalysis():
 
                             for alpha in alphas:
 
-                                filename = """{}/{}/{}-None-{}/new_clients_{}_train_{}/{}/{}/{}/{}/alpha_{}/{}_rounds/{}/{}_comment/{}_compression/{}""".format(os.path.abspath(os.path.join(os.getcwd(),
+                                filename1 = """{}/{}/{}-None-{}/new_clients_{}_train_{}_dynamic_data_{}/{}/{}/{}/{}/alpha_{}/{}_rounds/{}/{}_comment/{}_compression/{}""".format(os.path.abspath(os.path.join(os.getcwd(),
                                                                                                                         os.pardir)) + "/FL-H.IAAC/logs",
                                                                                                                         type,
                                                                                                                         strategy,
                                                                                                                         fraction_fit,
                                                                                                                         new_clients,
                                                                                                                         new_clients_train,
+                                                                                                                        dynamic_data,
                                                                                                                         clients,
                                                                                                                         model,
                                                                                                                         dataset,
@@ -65,8 +68,37 @@ class JointAnalysis():
                                                                                                                         compression,
                                                                                                                         file_type)
 
+                                filename2 = """{}/{}/{}-None-{}/new_clients_{}_train_{}/{}/{}/{}/{}/alpha_{}/{}_rounds/{}/{}_comment/{}_compression/{}""".format(
+                                    os.path.abspath(os.path.join(os.getcwd(),
+                                                                 os.pardir)) + "/FL-H.IAAC/logs",
+                                    type,
+                                    strategy,
+                                    fraction_fit,
+                                    new_clients,
+                                    new_clients_train,
+                                    clients,
+                                    model,
+                                    dataset,
+                                    "classes_per_client_2",
+                                    alpha,
+                                    rounds,
+                                    local_epochs,
+                                    comment,
+                                    compression,
+                                    file_type)
+
                                 try:
-                                    df = pd.read_csv(filename)
+                                    flag = False
+                                    if Path(filename1).exists():
+                                        df = pd.read_csv(filename1).dropna()
+                                        flag = True
+
+                                    elif Path(filename2).exists():
+                                        df = pd.read_csv(filename2).dropna()
+                                        flag = False
+                                    if dataset == "GTSRB" and not flag and new_clients == 'train':
+                                        print("nao achou: ", filename1)
+                                        exit()
                                 except:
                                     continue
                                 if strategy == "FedPredict" and compression == "dls_compredict":
@@ -105,7 +137,7 @@ class JointAnalysis():
         # self.joint_plot_acc_two_plots(df=df_concat, experiment=1, pocs=pocs)
 
         self.joint_plot_acc_four_plots(df=df_concat, experiment=1, alphas=alphas)
-        # self.joint_plot_acc_four_plots(df=df_concat, experiment=2, alphas=alphas)
+        self.joint_plot_acc_four_plots(df=df_concat, experiment=2, alphas=alphas)
         # self.joint_plot_acc_four_plots(df=df_concat, experiment=3, alphas=alphas)
         # self.joint_plot_acc_four_plots(df=df_concat, experiment=4, fractions_fit=fractions_fit)
         # table
@@ -128,7 +160,7 @@ class JointAnalysis():
         print("Experimento 1")
         self.joint_table(df_concat, alphas, strategies, experiment=1)
         print("Experimento 2")
-        # self.joint_table(df_concat, alphas, strategies, experiment=2)
+        self.joint_table(df_concat, alphas, strategies, experiment=2)
         # self.joint_table(df_concat, fractions_fit, strategies, experiment=3)
         # self.joint_table(df_concat, fractions_fit, strategies, experiment=4)
 
@@ -328,7 +360,7 @@ class JointAnalysis():
 
             df_accuracy_improvements.iloc[i] = row
 
-        latex = df_accuracy_improvements.to_latex().replace("\\\nEMNIST", "\\\n\hline\nEMNIST").replace("\\\nGTSRB", "\\\n\hline\nGTSRB").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}").replace("\$", "$").replace("textuparrow", "\oitextuparrow").replace("textdownarrow", "\oitextdownarrow").replace("\&", "&").replace("\_", "_")
+        latex = df_accuracy_improvements.to_latex().replace("\\\nEMNIST", "\\\n\hline\nEMNIST").replace("\\\nGTSRB", "\\\n\hline\nGTSRB").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}").replace("\$", "$").replace("textuparrow", "\oitextuparrow").replace("textdownarrow", "\oitextdownarrow").replace("\&", "&").replace("&  &", "& - &").replace("\_", "_").replace("&  \\", "& - \\").replace(" - " + r"\textbf", " " + r"\textbf")
 
         base_dir = """analysis/output/experiment_{}/""".format(str(experiment + 1))
         filename = """{}latex_{}.txt""".format(base_dir, str(experiment))
@@ -644,9 +676,10 @@ if __name__ == '__main__':
     #               3: {'new_clients': 'new_clients_True_train_True', 'local_epochs': '1_local_epochs'},
     #               4: {'new_clients': 'new_clients_True_train_True', 'local_epochs': '2_local_epochs'}}
     experiments = {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'compression': 'dls_compredict', 'local_epochs': '1_local_epochs'},
-                   2: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'compression': 'dls_compredict', 'local_epochs': '1_local_epochs'}}
+         'comment': 'set', 'compression': 'dls_compredict', 'local_epochs': '1_local_epochs', 'dynamic_data': "no"},
+                   2: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'False',
+        'class_per_client': 2,
+        'comment': 'set', 'compression': "dls_compredict", 'local_epochs': '1_local_epochs', 'dynamic_data': "no"}}
 
     strategies = ['FedAVG', 'FedPredict', 'FedYogi', 'FedYogi_with_FedPredict', 'FedKD', 'FedKD_with_FedPredict', 'FedPer', 'FedProto']
     # 'FedPredict', 'FedYogi_with_FedPredict', 'FedKD_with_FedPredict', 'FedAVG', 'FedYogi', 'FedPer', 'FedProto', 'FedKD'
