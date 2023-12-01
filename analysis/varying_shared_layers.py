@@ -119,9 +119,9 @@ class Varying_Shared_layers:
 
         self.build_filenames()
 
-
-
-       #  self.parameters_reduction()
+        # self.parameters_reduction()
+        #
+        # self.evaluate_client_joint_parameter_reduction(self.df_concat)
        #
        #  self.df_concat = self.df_concat[['Strategy', 'Round', 'Solution', 'Dataset', 'α', 'Model', 'level_6',
        # 'Accuracy reduction (%)', 'Parameters reduction (MB)',
@@ -136,27 +136,25 @@ class Varying_Shared_layers:
        #  #         self.evaluate_client_analysis_shared_layers(model_name, dataset_name)
        #
        #  # self.evaluate_client_analysis_differnt_models(df_concat)
-       #  # print(df_concat['Strategy'].unique().tolist())
-       #  # exit()
-       #  self.evaluate_client_joint_parameter_reduction(self.df_concat)
-       #  # exit()
-       #  alphas = self.df_concat['\u03B1'].unique().tolist()
-       #  models = self.df_concat['Model'].unique().tolist()
-       #
-       #  self.df_concat = self.build_filename_fedavg(self.df_concat)
-       #
-       #  # exit()
-       #
-       #  for alpha in alphas:
-       #      self.evaluate_client_joint_accuracy(self.df_concat, alpha)
-       #      # exit()
-       #      self.joint_table(self.df_concat, alpha=alpha, models=models)
-       #      self.joint_table(self.df_concat, alpha=alpha, models=models, target_col='Size of parameters (MB)')
+
+        # alphas = self.df_concat['\u03B1'].unique().tolist()
+        # models = self.df_concat['Model'].unique().tolist()
+        # #
+        # self.df_concat = self.build_filename_fedavg(self.df_concat)
+        # #
+        # for alpha in alphas:
+        #     self.evaluate_client_joint_accuracy(self.df_concat, alpha)
+        # #     # exit()
+        #     self.joint_table(self.df_concat, alpha=alpha, models=models)
+        #     # exit()
+        #     self.joint_table(self.df_concat, alpha=alpha, models=models, target_col='Size of parameters (MB)')
 
         self.similarity()
         # for alpha in alphas:
         #     self.evaluate_client_norm_analysis_nt(alpha)
         # self.evaluate_client_norm_analysis()
+
+        # self.evaluate_client_joint_parameter_reduction(self.df_concat)
 
     def convert_shared_layers(self, df):
 
@@ -750,20 +748,19 @@ class Varying_Shared_layers:
                             difference = difference
                         elif float(difference[1:4]) > 0:
                             difference = difference.replace("-", "")
-                    print("solucao: ", solution)
+
                     if solution in ["$FedAvg$", "$FedAvg+FP$"] and 'Acc' not in target_col:
-                        print("foi:", difference)
+
                         difference = difference.replace("0.0", "")
-                        print("depois:", difference)
+                        # print("depois:", difference)
                         df_difference.loc[reference_index, column] = difference + df.loc[
                             reference_index, column]
                     else:
                         df_difference.loc[reference_index, column] = str("(" + difference + "%)" + df.loc[
                             reference_index, column])
 
-        print(indexes)
-        print(indexes[0])
-        print(df_difference)
+        # print(indexes)
+        # print(indexes[0])
 
         return df_difference
 
@@ -799,9 +796,11 @@ class Varying_Shared_layers:
 
                 # mnist_acc[column] = (self.filter(df_test, experiment, 'MNIST', float(column), strategy=model_name)['Accuracy (%)']*100).mean().round(6)
                 # cifar10_acc[column] = (self.filter(df_test, experiment, 'CIFAR10', float(column), strategy=model_name)['Accuracy (%)']*100).mean().round(6)
-                mnist_acc[column] = self.t_distribution((self.filter(df_test, model=shared_layer, dataset='EMNIST', alpha=alpha, shared_layer=column)[
+                mnist_acc[column] = self.t_distribution((self.filter(df_test, model=shared_layer, dataset='EMNIST',
+                                                                     alpha=alpha, shared_layer=column)[
                                          target_col]).tolist(), ci)
-                cifar10_acc[column] = self.t_distribution((self.filter(df_test,model=shared_layer, dataset='CIFAR-10', alpha=alpha, shared_layer=column)[
+                cifar10_acc[column] = self.t_distribution((self.filter(df_test,model=shared_layer, dataset='CIFAR-10',
+                                                                       alpha=alpha, shared_layer=column)[
                                            target_col]).tolist(), ci)
                 gtsrb_acc[column] = self.t_distribution(
                     (self.filter(df_test, model=shared_layer, dataset='GTSRB', alpha=alpha, shared_layer=column)[
@@ -827,7 +826,7 @@ class Varying_Shared_layers:
 
 
         indexes = df_table.index.tolist()
-        n_solutions = len(pd.Series([i[1] for i in indexes]).unique().tolist()) + 1
+        n_solutions = len(pd.Series([i[1] for i in indexes]).unique().tolist())
 
         max_values = self.idmax(df_table, n_solutions, range_of_string, target_col)
         print("max values", max_values)
@@ -871,7 +870,7 @@ class Varying_Shared_layers:
 
             df_accuracy_improvements.iloc[i] = row
 
-        latex = df_accuracy_improvements.to_latex().replace("\\\nEMNIST", "\\\n\hline\nEMNIST").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\\nGTSRB", "\\\n\hline\nGTSRB").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}").replace("\$", "$").replace("textuparrow", "\oitextuparrow").replace("textdownarrow", "\oitextdownarrow").replace("\&", "&").replace("\_", "_").replace("&  &", "& - &").replace("&  \\", "& - \\").replace(" - " + r"\textbf", " " + r"\textbf")
+        latex = df_accuracy_improvements.to_latex().replace("\\\nEMNIST", "\\\n\hline\nEMNIST").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\\nGTSRB", "\\\n\hline\nGTSRB").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}").replace("\$", "$").replace("textuparrow", "\oitextuparrow").replace("textdownarrow", "\oitextdownarrow").replace("\&", "&").replace("\_", "_").replace("&  &", "& - &").replace("&  \\", "& - \\").replace(r" - \textbf", r" \textbf")
         if 'Acc' in target_col:
             latex = latex.replace("\oitextuparrow0.0", "0.0")
         else:
@@ -914,24 +913,26 @@ class Varying_Shared_layers:
             maximum = value + interval
             list_of_means.append((value, minimum, maximum))
 
-        for i in range(0, len(list_of_means), n_solutions):
-
-            dataset_values = list_of_means[i: i + n_solutions]
+        print("list means: ", len(list_of_means))
+        for i in range(0, 3):
+            index_i = i*n_solutions
+            dataset_values = list_of_means[index_i: index_i + n_solutions]
             if 'Acc' in target_col:
                 max_tuple = max(dataset_values, key=lambda e: e[0])
             else:
                 max_tuple = min(dataset_values, key=lambda e: e[0])
             column_min_value = max_tuple[1]
             column_max_value = max_tuple[2]
-            print("maximo: ", column_max_value)
+            print("maximo: ", max_tuple, index_i, " tamanho: ", len(dataset_values), ' solucoes: ', n_solutions)
+            print(dataset_values)
             for j in range(len(list_of_means)):
                 value_tuple = list_of_means[j]
                 min_value = value_tuple[1]
                 max_value = value_tuple[2]
-                if j >= i and j < i + n_solutions:
+                if j >= index_i and j < index_i + n_solutions:
                     if not (max_value < column_min_value or min_value > column_max_value):
                         indexes.append([j, columns[index]])
-
+        #exit()
         return indexes
 
     def filter(self, df, model, dataset, alpha, shared_layer=None):
@@ -1163,7 +1164,7 @@ class Varying_Shared_layers:
             markers = ["", "-", "--"]
 
             f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
-            handles = [f("o", colors[i]) for i in range(3)]
+            handles = [f("o", colors[i]) for i in range(len(order))]
             ax[0, 0].legend(handles, labels, fontsize=7, ncols=3, title='\u03B1')
 
 

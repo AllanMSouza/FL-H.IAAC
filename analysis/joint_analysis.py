@@ -291,9 +291,11 @@ class JointAnalysis():
 
                 # mnist_acc[column] = (self.filter(df_test, experiment, 'MNIST', float(column), strategy=model_name)['Accuracy (%)']*100).mean().round(6)
                 # cifar10_acc[column] = (self.filter(df_test, experiment, 'CIFAR10', float(column), strategy=model_name)['Accuracy (%)']*100).mean().round(6)
-                mnist_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'EMNIST', float(model_name), strategy=column)[
+                mnist_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'EMNIST',
+                                                                     float(model_name), strategy=column)[
                                          'Accuracy (%)']).tolist(), ci)
-                cifar10_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'CIFAR10', float(model_name), strategy=column)[
+                cifar10_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'CIFAR10',
+                                                                       float(model_name), strategy=column)[
                                            'Accuracy (%)']).tolist(), ci)
                 gtsrb_acc[column] = self.t_distribution(
                     (self.filter(df_test, experiment, 'GTSRB', float(model_name), strategy=column)[

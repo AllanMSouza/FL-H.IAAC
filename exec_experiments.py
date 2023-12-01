@@ -78,7 +78,7 @@ ROUNDS = 100
 # STRATEGIES_FOR_ANALYSIS = ['FedKD', 'FedAVG', 'FedPAQ']
 # STRATEGIES_TO_EXECUTE = ['FedKD', 'FedAVG']
 STRATEGIES_FOR_ANALYSIS = {'2': [], '3': [], '6': ['FedPredict'], '7': ['FedPredict'], '14': ['FedSparsification'], '15': ['FedPredict'], '16': ['FedAVG'], '17': ['FedPredict'], '19': ['FedPredict'], '22': ['FedPredict'], '26': ['FedPredict'], '30': ['FedPredict'], '31': ['FedPredict'], '32': ['FedPredict']}
-STRATEGIES_TO_EXECUTE = {'2': ['FedPredict'],'3': ['FedPer'],  '6': ['FedPredict'], '7': ['FedPredict'], '14': ['FedPredict'], '15': ['FedPredict'], '16': ['FedAVG'], '17': ['FedPredict'], '19': ['FedPredict'], '22': ['FedPredict'], '26': ['FedPredict'], '30': ['FedPredict'], '31': ['FedPredict'], '32': ['FedPredict']}
+STRATEGIES_TO_EXECUTE = {'2': ['FedPredict'],'3': ['FedPredict', 'FedAVG', 'FedYogi_with_FedPredict', 'FedYogi', 'FedKD_with_FedPredict', 'FedKD', 'FedProto', 'FedPer'],  '6': ['FedPredict'], '7': ['FedPredict'], '14': ['FedPredict'], '15': ['FedPredict'], '16': ['FedAVG'], '17': ['FedPredict'], '19': ['FedPredict'], '22': ['FedPredict'], '26': ['FedPredict'], '30': ['FedPredict'], '31': ['FedPredict'], '32': ['FedPredict']}
 N_CLUSTERS = [3]
 CLUSTERING = "Yes"
 CLUSTER_ROUND = [17]
@@ -96,11 +96,11 @@ EXPERIMENTS = {
         'comment': 'set', 'compression_method': "dls_compredict", 'dynamic_data': "no"},
     4: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'True',
         'class_per_client': 2,
-        'comment': """apos a rodada {, 'dynamic_data': "no"}, apenas novos clientes sao testados - novos clientes treinam apenas 1 vez (um round) - """.format(
+        'comment': """apos a rodada {}, apenas novos clientes sao testados - novos clientes treinam apenas 1 vez (um round) - """.format(
             int(ROUNDS * 0.7)), 'compression_method': 4, 'dynamic_data': "no"},
     5: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'True',
         'class_per_client': 2,
-        'comment': """apos a rodada {, 'dynamic_data': "no"}, apenas novos clientes sao testados - novos clientes treinam apenas 1 vez (um round) com duas épocas locais """.format(
+        'comment': """apos a rodada {}, apenas novos clientes sao testados - novos clientes treinam apenas 1 vez (um round) com duas épocas locais """.format(
             int(ROUNDS * 0.7)), 'compression_method': 4, 'dynamic_data': "no"},
     6: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
          'comment': 'set', 'compression_method': "dls", 'dynamic_data': "no"},
