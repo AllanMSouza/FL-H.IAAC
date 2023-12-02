@@ -101,6 +101,33 @@ def fedpredict_core(t, T, nt, local_classes):
         print("fedpredict core")
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
+def fedpredict_dynamic_core(t, T, nt, local_classes):
+    try:
+
+        # 9
+        print("local classes: ", local_classes)
+        if nt == 0:
+            global_model_weight = 0
+        elif nt == t:
+            global_model_weight = 1
+        else:
+            update_level = 1 / nt
+            evolution_level = t / 100
+            eq1 = (-update_level - evolution_level) # v1 pior
+            eq2 = round(np.exp(eq1), 6)
+            global_model_weight = eq2
+
+        local_model_weights = 1 - global_model_weight
+
+        print("rodada: ", t, " rounds sem fit: ", nt, "\npeso global: ", global_model_weight, " peso local: ",
+              local_model_weights)
+
+        return local_model_weights, global_model_weight
+
+    except Exception as e:
+        print("fedpredict core")
+        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
 def fedpredict_core_layer_selection(t, T, nt, n_layers, size_per_layer, df):
     try:
 
@@ -699,6 +726,64 @@ def fedpredict_client(filename, model, global_parameters, config={}, mode=None, 
         print("FedPredict client")
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
+def fedpredict_dynamic_client(filename, model, global_parameters, config={}, mode=None, local_classes=1):
+    # Using 'torch.load'
+    try:
+        # filename = """./fedpredict_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
+        t = int(config['round'])
+        T = int(config['total_server_rounds'])
+        client_metrics = config['metrics']
+        # Client's metrics
+        nt = int(client_metrics['nt'])
+        cid = int(config['cid'])
+        round_of_last_fit = client_metrics['round_of_last_fit']
+        round_of_last_evaluate = client_metrics['round_of_last_evaluate']
+        first_round = client_metrics['first_round']
+        acc_of_last_fit = client_metrics['acc_of_last_fit']
+        acc_of_last_evaluate = client_metrics['acc_of_last_evaluate']
+        # Server's metrics
+        last_global_accuracy = config['last_global_accuracy']
+        # print("chegou")
+        M = config['M']
+
+        decompress = config['decompress']
+        layers_fraction = config['layers_fraction']
+        if mode == "kd":
+            model_shape = [i.detach().cpu().numpy().shape for i in model.student.parameters()]
+        else:
+            model_shape = [i.detach().cpu().numpy().shape for i in model.parameters()]
+        print("comprimido: ", len(model_shape))
+        global_parameters = decompress_global_parameters(global_parameters, model_shape, M, decompress)
+        print("shape modelo: ", model_shape)
+        print("descomprimido: ", [i.shape for i in global_parameters])
+        print("M: ", M)
+        parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
+
+        if len(parameters) != len(M):
+            print("diferente", len(parameters), len(M))
+            raise Exception("Lenght of parameters is different from M")
+
+        if os.path.exists(filename):
+            # Load local parameters to 'self.model'
+            print("existe modelo local")
+            model.load_state_dict(torch.load(filename))
+            model = fedpredict_dynamic_combine_models(global_parameters, model, t, T, nt, M, local_classes)
+        else:
+            print("usar modelo global: ", cid)
+            if mode is None:
+                for old_param, new_param in zip(model.parameters(), global_parameters):
+                    old_param.data = new_param.data.clone()
+            else:
+                model.new_client = True
+                for old_param, new_param in zip(model.student.parameters(), global_parameters):
+                    old_param.data = new_param.data.clone()
+
+        return model
+
+    except Exception as e:
+        print("FedPredict client")
+        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
 def decompress_global_parameters(compressed_global_model_gradients, model_shape, M, decompress):
     try:
         if decompress and len(compressed_global_model_gradients) > 0:
@@ -719,6 +804,26 @@ def fedpredict_combine_models(global_parameters, model, t, T, nt, M, local_class
     try:
 
         local_model_weights, global_model_weight = fedpredict_core(t, T, nt, local_classes)
+        count = 0
+        for new_param, old_param in zip(global_parameters, model.parameters()):
+            if count in M:
+                if new_param.shape == old_param.shape:
+                    old_param.data = (
+                                global_model_weight * new_param.data.clone() + local_model_weights * old_param.data.clone())
+                else:
+                    print("Não combinou, CNN student: ", new_param.shape, " CNN 3 proto: ", old_param.shape)
+            count += 1
+
+        return model
+
+    except Exception as e:
+        print("FedPredict combine models")
+        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+def fedpredict_dynamic_combine_models(global_parameters, model, t, T, nt, M, local_classes):
+    try:
+
+        local_model_weights, global_model_weight = fedpredict_dynamic_core(t, T, nt, local_classes)
         count = 0
         for new_param, old_param in zip(global_parameters, model.parameters()):
             if count in M:

@@ -19,6 +19,7 @@ from server.server_torch.fedclustering_server_torch import FedClusteringServerTo
 from server.server_torch.fedala_server_torch import FedAlaServerTorch
 from server.server_torch.fedkd_with_fedpredict_server_torch import FedKDWithFedPredictServerTorch
 from server.server_torch.fedsparsification_server_torch import FedSparsificationServerTorch
+from server.server_torch.fedpredict_dynamic_server_torch import FedPredictDynamicServerTorch
 
 __all__ = [
     "FedProtoServerTorch",
@@ -30,6 +31,7 @@ __all__ = [
     "FedYogiServerTorch",
     "FedClassAvgServerTorch",
     "FedPredictServerTorch",
+    "FedPredictDynamicServerTorch",
     "FedPer_with_FedPredictServerTorch",
     "FedClassAvg_with_FedPredictServerTorch",
     "FedProxServerTorch",

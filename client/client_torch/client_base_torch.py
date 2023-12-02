@@ -107,7 +107,9 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			# self.device = torch.device("cpu")
 			self.type = 'torch'
 			self.dynamic_data = args.dynamic_data
-			self.dynamic_data_filename = {'no': None, 'syntetic': "/dynamic_experiments_config/dynamic_data_config.csv"}[self.dynamic_data]
+			self.rounds_to_change_pattern = [7]
+			self.dynamic_data_filename = {'no': None, 'synthetic': """/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/dynamic_experiments_config/dynamic_data_synthetic_config_{}_clients_{}_rounds_change_pattern_{}_total_rounds.csv""".format(n_clients, self.rounds_to_change_pattern, self.n_rounds)}[self.dynamic_data]
+			self.clients_pattern = pd.read_csv(self.dynamic_data_filename)
 
 			#params
 			if self.aggregation_method == 'POC':
@@ -124,7 +126,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			self.train_client_filename = f"{self.base}/train_client.csv"
 			self.predictions_client_filename = f"{self.base}/predictions_client.csv"
 
-			self.trainloader, self.testloader, self.traindataset, self.testdataset = self.load_data(self.dataset, n_clients=self.n_clients)
+			if self.dynamic_data == "no":
+				self.trainloader, self.testloader, self.traindataset, self.testdataset = self.load_data(self.dataset, n_clients=self.n_clients)
 			self.local_classes = self.calculate_imbalance_level()
 			print("leu dados")
 			self.model                                           = self.create_model().to(self.device)
@@ -162,18 +165,21 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		return local_classes
 
 
-	def load_data(self, dataset_name, n_clients, batch_size=32):
+	def load_data(self, dataset_name, n_clients, batch_size=32, server_round=None):
 		try:
-
-			if self.dynamic_data_filename is not None:
-				clients_pattern = pd.read_csv(self.dynamic_data_filename)
+			pattern = self.cid
+			if server_round is not None:
+				row = self.clients_pattern.query("""Round == {} and Cid == {}""".format(server_round, self.cid))['Pattern'].tolist()
+				if len(row) != 1:
+					raise ValueError("""Pattern not found for client {}. The pattern may not exist or is duplicated""".format(pattern))
+				pattern = row[0]
 			if dataset_name in ['MNIST', 'CIFAR10', 'CIFAR100', 'EMNIST', 'GTSRB', 'State Farm']:
-				trainLoader, testLoader, traindataset, testdataset = ManageDatasets(self.cid, self.model_name).select_dataset(
+				trainLoader, testLoader, traindataset, testdataset = ManageDatasets(pattern, self.model_name).select_dataset(
 					dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid, batch_size)
 				self.input_shape = (3,64,64)
 			else:
 				print("gerar")
-				trainLoader, testLoader, traindataset, testdataset = ManageDatasets(self.cid, self.model_name).select_dataset(
+				trainLoader, testLoader, traindataset, testdataset = ManageDatasets(pattern, self.model_name).select_dataset(
 					dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid, batch_size)
 				self.input_shape = (32, 0)
 				# exit()
@@ -314,6 +320,10 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 			start_time = time.process_time()
 			server_round = int(config['round'])
+
+			if self.dynamic_data != "no":
+				self.trainloader, self.testloader, self.traindataset, self.testdataset = self.load_data(self.dataset,
+																									n_clients=self.n_clients, server_round=server_round)
 			original_parameters = copy.deepcopy(parameters)
 			print("dataloader: ", self.trainloader)
 			if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
@@ -440,6 +450,10 @@ class ClientBaseTorch(fl.client.NumPyClient):
 	def evaluate(self, parameters, config):
 		try:
 			server_round = int(config['round'])
+			if self.dynamic_data != "no":
+				self.trainloader, self.testloader, self.traindataset, self.testdataset = self.load_data(self.dataset,
+																									n_clients=self.n_clients,
+																									server_round=server_round)
 			n_rounds = int(config['n_rounds'])
 			nt = int(config['nt'])
 			config['cid'] = self.cid

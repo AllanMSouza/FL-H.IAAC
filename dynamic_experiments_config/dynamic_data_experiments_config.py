@@ -22,7 +22,7 @@ def change_pattern(n_patterns, n_clients, seed):
 if __name__ == "__main__":
 
     n_rounds = 100
-    n_clients = 4
+    n_clients = 20
     n_patterns = n_clients
 
     clients_ids = []
@@ -46,6 +46,6 @@ if __name__ == "__main__":
 
     df = pd.DataFrame({'Round': rounds, 'Cid': clients_ids, 'Pattern': pattern})
 
-    df.to_csv("dynamic_data_config.csv", index=False)
+    df.to_csv("""/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/dynamic_experiments_config/dynamic_data_synthetic_config_{}_clients_{}_rounds_change_pattern_{}_total_rounds.csv""".format(n_clients, rounds_to_change_pattern, n_rounds), index=False)
 
 
