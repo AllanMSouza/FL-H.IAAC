@@ -101,14 +101,18 @@ def fedpredict_core(t, T, nt, local_classes):
         print("fedpredict core")
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-def fedpredict_dynamic_core(t, T, nt, local_classes):
+def fedpredict_dynamic_core(t, T, nt, local_client_information):
     try:
 
         # 9
-        print("local classes: ", local_classes)
+        similarity = local_client_information['similarity']
+        imbalance_level = local_client_information['imbalance_level']
+        fraction_of_classes = local_client_information['fraction_of_classes']
+        print("local classes: ", similarity)
+        similarity = float(np.round(similarity,1))
         if nt == 0:
             global_model_weight = 0
-        elif nt == t:
+        elif nt == t or similarity != 1.0:
             global_model_weight = 1
         else:
             update_level = 1 / nt
@@ -726,7 +730,7 @@ def fedpredict_client(filename, model, global_parameters, config={}, mode=None, 
         print("FedPredict client")
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-def fedpredict_dynamic_client(filename, model, global_parameters, config={}, mode=None, local_classes=1):
+def fedpredict_dynamic_client(filename, model, global_parameters, config={}, mode=None, local_client_information={}):
     # Using 'torch.load'
     try:
         # filename = """./fedpredict_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
@@ -767,7 +771,7 @@ def fedpredict_dynamic_client(filename, model, global_parameters, config={}, mod
             # Load local parameters to 'self.model'
             print("existe modelo local")
             model.load_state_dict(torch.load(filename))
-            model = fedpredict_dynamic_combine_models(global_parameters, model, t, T, nt, M, local_classes)
+            model = fedpredict_dynamic_combine_models(global_parameters, model, t, T, nt, M, local_client_information)
         else:
             print("usar modelo global: ", cid)
             if mode is None:
@@ -820,10 +824,10 @@ def fedpredict_combine_models(global_parameters, model, t, T, nt, M, local_class
         print("FedPredict combine models")
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-def fedpredict_dynamic_combine_models(global_parameters, model, t, T, nt, M, local_classes):
+def fedpredict_dynamic_combine_models(global_parameters, model, t, T, nt, M, local_client_information):
     try:
 
-        local_model_weights, global_model_weight = fedpredict_dynamic_core(t, T, nt, local_classes)
+        local_model_weights, global_model_weight = fedpredict_dynamic_core(t, T, nt, local_client_information)
         count = 0
         for new_param, old_param in zip(global_parameters, model.parameters()):
             if count in M:

@@ -1,6 +1,6 @@
 import flwr as fl
-from client import FedAvgClientTf, FedPerClientTf, FedProtoClientTf, FedLocalClientTf, FedAvgClientTorch, FedProtoClientTorch, FedPerClientTorch, FedLocalClientTorch, FedAvgMClientTorch, QFedAvgClientTorch, FedYogiClientTorch, FedClassAvgClientTorch, FedPredictClientTorch, FedPer_with_FedPredictClientTorch, FedClassAvg_with_FedPredictClientTorch, FedProxClientTorch, FedPAQClientTorch, FetSGDClientTorch, FedKDClientTorch, FedDistillClientTorch, FedYogiWithFedPredictClientTorch, FedClusteringClientTorch, FedAlaClientTorch, FedKDWithFedPredictClientTorch, FedSparsificationClientTorch
-from server import FedPerServerTf, FedProtoServerTf, FedAvgServerTf, FedLocalServerTf, FedAvgServerTorch, FedProtoServerTorch, FedPerServerTorch, FedLocalServerTorch, FedAvgMServerTorch, QFedAvgServerTorch, FedYogiServerTorch, FedClassAvgServerTorch, FedPredictServerTorch, FedPer_with_FedPredictServerTorch, FedClassAvg_with_FedPredictServerTorch, FedProxServerTorch, FedPAQServerTorch, FetSGDServerTorch, FedKDServerTorch, FedDistillServerTorch, FedYogiWithFedPredictServerTorch, FedClusteringServerTorch, FedAlaServerTorch, FedKDWithFedPredictServerTorch, FedSparsificationServerTorch
+from client import FedAvgClientTf, FedPerClientTf, FedProtoClientTf, FedLocalClientTf, FedAvgClientTorch, FedProtoClientTorch, FedPerClientTorch, FedLocalClientTorch, FedAvgMClientTorch, QFedAvgClientTorch, FedYogiClientTorch, FedClassAvgClientTorch, FedPredictClientTorch, FedPer_with_FedPredictClientTorch, FedClassAvg_with_FedPredictClientTorch, FedProxClientTorch, FedPAQClientTorch, FetSGDClientTorch, FedKDClientTorch, FedDistillClientTorch, FedYogiWithFedPredictClientTorch, FedClusteringClientTorch, FedAlaClientTorch, FedKDWithFedPredictClientTorch, FedSparsificationClientTorch, FedPredictDynamicClientTorch
+from server import FedPerServerTf, FedProtoServerTf, FedAvgServerTf, FedLocalServerTf, FedAvgServerTorch, FedProtoServerTorch, FedPerServerTorch, FedLocalServerTorch, FedAvgMServerTorch, QFedAvgServerTorch, FedYogiServerTorch, FedClassAvgServerTorch, FedPredictServerTorch, FedPer_with_FedPredictServerTorch, FedClassAvg_with_FedPredictServerTorch, FedProxServerTorch, FedPAQServerTorch, FetSGDServerTorch, FedKDServerTorch, FedDistillServerTorch, FedYogiWithFedPredictServerTorch, FedClusteringServerTorch, FedAlaServerTorch, FedKDWithFedPredictServerTorch, FedSparsificationServerTorch, FedPredictDynamicServerTorch
 
 from optparse import OptionParser
 import tensorflow as tf
@@ -187,6 +187,25 @@ class SimulationFL():
 											 m_combining_layers=self.m_combining_layers,
                                              new_clients=self.new_clients,
                                              new_clients_train=self.new_clients_train)
+			if self.strategy_name == 'FedPredict_Dynamic':
+				# print("foi cliente")
+				return FedPredictDynamicClientTorch(cid=cid,
+											 args=self.args,
+											 n_clients=self.n_clients,
+											 n_classes=self.n_classes,
+											 epochs=self.epochs,
+											 model_name=self.model_name,
+											 client_selection=self.client_selection,
+											 strategy_name=self.strategy_name,
+											 aggregation_method=self.aggregation_method,
+											 dataset=self.dataset,
+											 perc_of_clients=self.poc,
+											 fraction_fit=self.fraction_fit,
+											 decay=self.decay,
+											 non_iid=self.non_iid,
+											 m_combining_layers=self.m_combining_layers,
+											 new_clients=self.new_clients,
+											 new_clients_train=self.new_clients_train)
 			if self.strategy_name == 'FedKD_with_FedPredict':
 				# print("foi cliente")
 				return FedKDWithFedPredictClientTorch(cid=cid,
@@ -616,6 +635,24 @@ class SimulationFL():
 											 new_clients=self.new_clients,
 											 new_clients_train=self.new_clients_train
 									  		)
+			if self.strategy_name == 'FedPredict_Dynamic':
+				# print("foi servidor")
+				return FedPredictDynamicServerTorch(aggregation_method=self.aggregation_method,
+											 n_classes=self.n_classes,
+											 fraction_fit=self.fraction_fit,
+											 num_clients=self.n_clients,
+											 num_rounds=self.rounds,
+											 args=self.args,
+											 num_epochs=self.epochs,
+											 model=copy.deepcopy(self.create_client(0).create_model()),
+											 decay=self.decay,
+											 perc_of_clients=self.poc,
+											 strategy_name=self.strategy_name,
+											 dataset=self.dataset,
+											 model_name=self.model_name,
+											 new_clients=self.new_clients,
+											 new_clients_train=self.new_clients_train
+									  		)
 			if self.strategy_name == 'FedKD_with_FedPredict':
 				# print("foi servidor")
 				return FedKDWithFedPredictServerTorch(aggregation_method=self.aggregation_method,
@@ -948,6 +985,9 @@ def main():
 	parser.add_option("-y", "--classes",     		dest="n_classes",          default=10,        help="Number of classes",                      metavar="INT")
 	parser.add_option("-t", "--type",               dest="type",               default='tf',      help="Neural network framework (tf or torch)", metavar="STR")
 	parser.add_option("", "--new_clients", dest="new_clients", default='False', help="Add new clients after a specific number of rounds",
+					  metavar="STR")
+	parser.add_option("", "--dynamic_data", dest="dynamic_data", default='no',
+					  help="Change local data",
 					  metavar="STR")
 	parser.add_option("", "--new_clients_train", dest="new_clients_train", default='False',
 					  help="wheter to train or not new clients",

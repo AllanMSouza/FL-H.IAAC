@@ -128,7 +128,6 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 			if self.dynamic_data == "no":
 				self.trainloader, self.testloader, self.traindataset, self.testdataset = self.load_data(self.dataset, n_clients=self.n_clients)
-			self.local_classes = self.calculate_imbalance_level()
 			print("leu dados")
 			self.model                                           = self.create_model().to(self.device)
 			if self.dataset in ['EMNIST', 'CIFAR10', 'GTSRB']:
@@ -155,15 +154,6 @@ class ClientBaseTorch(fl.client.NumPyClient):
 	def _create_base_directory(self, type, strategy_name, new_clients, new_clients_train, dynamic_data, n_clients, model_name, dataset, class_per_client, alpha, n_rounds, local_epochs, comment, compression, args):
 
 		return f"logs/{type}/{strategy_name}/new_clients_{new_clients}_train_{new_clients_train}_dynamic_data_{dynamic_data}/{n_clients}/{model_name}/{dataset}/classes_per_client_{class_per_client}/alpha_{alpha}/{n_rounds}_rounds/{local_epochs}_local_epochs/{comment}_comment/{str(compression)}_compression"
-
-
-	def calculate_imbalance_level(self):
-
-		targets = self.traindataset.targets
-		local_classes = len(pd.Series(targets).unique())/self.num_classes
-
-		return local_classes
-
 
 	def load_data(self, dataset_name, n_clients, batch_size=32, server_round=None):
 		try:
@@ -193,7 +183,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 		try:
 			# print("tamanho: ", self.input_shape, " dispositivo: ", self.device)
-			input_shape = self.input_shape
+			# input_shape = self.input_shape
 			model = None
 			if self.dataset in ['MNIST', 'EMNIST']:
 				input_shape = 1
@@ -252,6 +242,9 @@ class ClientBaseTorch(fl.client.NumPyClient):
 		except Exception as e:
 			print("create model")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+	def save_client_information_fit(self, server_round, acc_of_last_fit):
+		pass
 
 	def save_parameters(self):
 		pass
@@ -325,7 +318,6 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				self.trainloader, self.testloader, self.traindataset, self.testdataset = self.load_data(self.dataset,
 																									n_clients=self.n_clients, server_round=server_round)
 			original_parameters = copy.deepcopy(parameters)
-			print("dataloader: ", self.trainloader)
 			if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
 				self.set_parameters_to_model_fit(parameters)
 				# self.save_parameters_global_model(parameters)
@@ -336,6 +328,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				self.model.train()
 
 				max_local_steps = self.local_epochs
+
+				self.classes_proportion, self.imbalance_level = self._calculate_classes_proportion()
 
 
 				print("Cliente: ", self.cid, " rodada: ", server_round, " Quantidade de camadas: ", len([i for i in self.model.parameters()]), " device: ", self.device)
@@ -387,13 +381,15 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 			data = [config['round'], self.cid, selected, total_time, size_of_parameters, avg_loss_train, avg_acc_train]
 
+			self.save_client_information_fit(server_round, avg_acc_train)
+
 			self._write_output(
 				filename=self.train_client_filename,
 				data=data)
 
 			fit_response = {
 				'cid': self.cid,
-				'local_classes': self.local_classes
+				'local_classes': self.classes_proportion
 			}
 
 			if self.use_gradient and server_round > 1:
@@ -450,10 +446,11 @@ class ClientBaseTorch(fl.client.NumPyClient):
 	def evaluate(self, parameters, config):
 		try:
 			server_round = int(config['round'])
-			if self.dynamic_data != "no":
-				self.trainloader, self.testloader, self.traindataset, self.testdataset = self.load_data(self.dataset,
-																									n_clients=self.n_clients,
-																									server_round=server_round)
+			# if self.dynamic_data != "no":
+			self.trainloader, self.testloader, self.traindataset, self.testdataset = self.load_data(self.dataset,
+																								n_clients=self.n_clients,
+																								server_round=server_round)
+			self.classes_proportion, self.imbalance_level = self._calculate_classes_proportion()
 			n_rounds = int(config['n_rounds'])
 			nt = int(config['nt'])
 			config['cid'] = self.cid
@@ -479,6 +476,35 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			return loss, test_num, evaluation_response
 		except Exception as e:
 			print("evaluate")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+	def _calculate_classes_proportion(self):
+
+		try:
+			correction = 3 if self.dataset == 'GTSRB' else 1
+			traindataset = self.traindataset
+			y_train = list(traindataset.targets)
+			proportion = np.array([0] * self.num_classes)
+
+			unique_classes_list = pd.Series(y_train).unique().tolist()
+
+			for i in y_train:
+				proportion[i] += 1
+
+			proportion_ = proportion / np.sum(proportion)
+
+			imbalance_level = 0
+			min_samples_per_class = int(len(y_train) / correction / len(unique_classes_list))
+			for class_ in proportion:
+				if class_ < min_samples_per_class:
+					imbalance_level += 1
+
+			imbalance_level = imbalance_level/ len(proportion)
+
+			return list(proportion_), imbalance_level
+
+		except Exception as e:
+			print("calculate classes proportion")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def save_parameters_global_model(self, global_model):

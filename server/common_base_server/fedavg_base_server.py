@@ -363,8 +363,8 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		clients_ids = []
 		for _, fit_res in results:
 			client_id = str(fit_res.metrics['cid'])
-			local_classes = float(fit_res.metrics['local_classes'])
-			self.fedpredict_clients_metrics[client_id]['local_classes'] = local_classes
+			# local_classes = float(fit_res.metrics['local_classes'])
+			# self.fedpredict_clients_metrics[client_id]['local_classes'] = local_classes
 			clients_ids.append(client_id)
 			# print("Parametros aggregate fit: ", len(fl.common.parameters_to_ndarrays(fit_res.parameters)))
 			# print("Fit respons", fit_res.metrics)

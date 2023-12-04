@@ -70,10 +70,32 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 		self.global_model_filename = """./{}_saved_weights/{}/{}/global_model.pth""".format(strategy_name.lower(), self.model_name,
 																		self.cid)
 
+
+	def save_client_information_fit(self, server_round, acc_of_last_fit):
+
+		try:
+			self.classes_proportion, self.imbalance_level = self._calculate_classes_proportion()
+			df = pd.read_csv(self.client_information_filename)
+			row = df.iloc[0]
+			if int(row['first_round']) == -1:
+				first_round = -1
+			else:
+				first_round = int(row['first_round'])
+
+			pd.DataFrame(
+				{'current_round': [server_round], 'classes_distribution': [str(self.classes_proportion)], 'round_of_last_fit': [server_round],
+				 'round_of_last_evaluate': [-1], 'acc_of_last_fit': [acc_of_last_fit], 'first_round': [first_round],
+				 'acc_of_last_evaluate': [0]}).to_csv(self.client_information_filename,
+													  index=False)
+
+		except Exception as e:
+			print("save client information fit")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+
 	def save_parameters(self):
 		# Using 'torch.save'
 		try:
-			# filename = """./fedpredict_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid)
 			if Path(self.filename).exists():
 				os.remove(self.filename)
 			torch.save(self.model.state_dict(), self.filename)
@@ -96,66 +118,90 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 			print("save parameters global model")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def _calculate_classes_proportion(self):
+	# def _calculate_classes_proportion(self):
+	#
+	# 	try:
+	# 		traindataset = self.traindataset
+	# 		y_train = list(traindataset.targets)
+	# 		proportion = np.array([0] * self.num_classes)
+	#
+	# 		for i in y_train:
+	#
+	# 			proportion[i] += 1
+	#
+	# 		proportion = proportion/np.sum(proportion)
+	#
+	# 		return proportion
+	#
+	# 	except Exception as e:
+	# 		print("calculate classes proportion")
+	# 		print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-		traindataset = self.traindataset
-		y_train = list(traindataset.targets)
-		proportion = np.array([0] * self.num_classes)
-
-		for i in y_train:
-
-			proportion[i] += 1
-
-		proportion = proportion/np.sum(proportion)
-
-		return proportion
-
-	def _detect_context_change(self):
-
-		similarity_between_contexts = self._calculate_contexts_similarities()
-
-		threshold = 0.8
-
-		print("similaridade de contextos: ", similarity_between_contexts)
+	# def _detect_context_change(self):
+	#
+	# 	similarity_between_contexts, imbalance_level, fraction_of_classes = self._calculate_contexts_similarities()
+	#
+	# 	threshold = 0.8
+	#
+	# 	print("similaridade de contextos: ", similarity_between_contexts)
+	#
+	# 	return similarity_between_contexts, imbalance_level, fraction_of_classes
 
 	def _calculate_contexts_similarities(self):
 
-		"""
-			It measures the cosine similarity between the last and current class distribution of the local dataset
-		"""
-		n = len(self.client_information_file['classes_distribution'])
-		last_proportion = ast.literal_eval(self.client_information_file['classes_distribution'].tolist()[-1])
-		last_training = self.client_information_file['last_round_of_training'].tolist()[-1]
+		try:
+			"""
+				It measures the cosine similarity between the last and current class distribution of the local dataset
+			"""
+			n = len(self.client_information_file['classes_distribution'])
+			print("antes ", self.client_information_file['classes_distribution'].tolist()[-1])
+			last_proportion = ast.literal_eval(self.client_information_file['classes_distribution'].tolist()[-1])
+			last_training = self.client_information_file['round_of_last_fit'].tolist()[-1]
 
-		current_proportion = self._calculate_classes_proportion()
+			current_proportion, imbalance_level = self._calculate_classes_proportion()
+			fraction_of_classes = sum([1 if i > 0 else 0 for i in current_proportion])/self.num_classes
 
-		if len(last_proportion) != len(current_proportion) or last_training == -1:
-			return 1
+			if len(last_proportion) != len(current_proportion) or last_training == -1:
+				return 1, imbalance_level, fraction_of_classes
 
-		dot_product = np.dot(last_proportion, current_proportion)
+			dot_product = np.dot(last_proportion, current_proportion)
 
-		norm_vector1 = np.linalg.norm(last_proportion)
+			norm_vector1 = np.linalg.norm(last_proportion)
 
-		norm_vector2 = np.linalg.norm(current_proportion)
+			norm_vector2 = np.linalg.norm(current_proportion)
 
-		cosine_similarity = dot_product / (norm_vector1 * norm_vector2)
+			cosine_similarity = dot_product / (norm_vector1 * norm_vector2)
 
-		return cosine_similarity
+			return cosine_similarity, imbalance_level, fraction_of_classes
+
+		except Exception as e:
+			print("calculate contexts similarities")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def read_client_file(self):
 
-		df = pd.read_csv(self.client_information_filename)
+		try:
 
-		return df
+			df = pd.read_csv(self.client_information_filename)
+
+			return df
+
+		except Exception as e:
+			print("read client file")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def set_parameters_to_model_evaluate(self, global_parameters, config={}):
 		# Using 'torch.load'
 		try:
-			local_classes = self.local_classes
-			self.model = fedpredict_dynamic_client(self.filename, self.model, global_parameters, config, mode=None, local_classes=local_classes)
+			local_classes = self.classes_proportion
+			print("Rodada: ", config['round'])
+			similarity, imbalance_level, fraction_of_classes = self._calculate_contexts_similarities()
+			print("similaridade: ", similarity, ' imbalance level: ', imbalance_level, ' fraction of classes:', fraction_of_classes)
+			local_data_information = {'similarity': similarity, 'imbalance_level': imbalance_level, 'fraction_of_classes': fraction_of_classes}
+			self.model = fedpredict_dynamic_client(self.filename, self.model, global_parameters, config, mode=None, local_client_information=local_data_information)
 
 		except Exception as e:
-			print("Set parameters to model")
+			print("Set parameters to model evaluate dyn")
 			print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, self.cid), type(e).__name__, e)
 
 	def calculate_bytes(self, parameters):
