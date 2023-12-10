@@ -112,12 +112,12 @@ def fedpredict_dynamic_core(t, T, nt, local_client_information):
         similarity = float(np.round(similarity,1))
         if nt == 0:
             global_model_weight = 0
-        elif nt == t or similarity != 1.0:
+        elif nt == t or similarity != 1.0 or fraction_of_classes >= 0.95:
             global_model_weight = 1
         else:
             update_level = 1 / nt
             evolution_level = t / 100
-            eq1 = (-update_level - evolution_level) # v1 pior
+            eq1 = (-update_level - evolution_level)*similarity # v1 pior
             eq2 = round(np.exp(eq1), 6)
             global_model_weight = eq2
 

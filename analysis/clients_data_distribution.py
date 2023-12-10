@@ -389,7 +389,7 @@ if __name__ == '__main__':
     fraction_fit = 0.3
     num_clients = {'GTSRB': 20, 'EMNIST': 20, 'CIFAR-10': 20}
     dataset = ["GTSRB", "EMNIST", "CIFAR-10"]
-    alpha = [0.1, 0.5, 1.0]
+    alpha = [0.1, 0.5, 1.0, 5.0]
     num_rounds = 50
 
     Varying_Shared_layers(tp=type_model, num_clients=num_clients,  dataset=dataset, class_per_client=2, alpha=alpha).start()
