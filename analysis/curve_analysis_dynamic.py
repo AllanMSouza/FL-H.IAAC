@@ -185,7 +185,7 @@ class Verify:
             x.append(i)
         # x = [i for i in range(1, rounds + 1)]
         # rounds_without_fit_list = rounds_without_fit_list + [rounds_without_fit] * len(x)
-        sm = [0.4, 0.6]
+        sm = [1, 0.5]
         sm_list = []
         y = []
         x_new = []
@@ -199,10 +199,10 @@ class Verify:
         print("tamanho y: ", len(y), len(rounds_without_fit_list), len(x_new), len(sm_list))
         x_column = 'Round (t)'
         if index == 0:
-            y_column = '$F(ul, el, df)$'
+            y_column = '$gw$'
         else:
-            y_column = 'Updated level (ul)'
-        hue = 'Rounds since the \n last training (nt)'
+            y_column = 'ul'
+        hue = 'nt'
         style = 'df'
         hue_order = [100, 10, 5, 2, 1]
         print(len(x), len(y), len(rounds_without_fit_list))
@@ -226,7 +226,7 @@ class Verify:
         # fig, ax = plt.subplots(1,1)
         line_plot(df=df,
                  base_dir=self.base_dir,
-                 file_name="curve_als",
+                 file_name="curve_dynamic",
                  x_column=x_column,
                  y_column=y_column,
                  title=title,
@@ -236,7 +236,7 @@ class Verify:
                   y_max=1,
                   y_min=0,
                   hue_order=hue_order,
-                  tipo='dls')
+                  tipo='dynamic')
 
         # lines_labels = [ax.get_legend_handles_labels()]
         # lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]

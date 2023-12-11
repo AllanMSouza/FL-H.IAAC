@@ -298,7 +298,14 @@ class Varying_Shared_layers:
             # stacked_plot(df=df_unique_classes, base_dir=self.base_dir, file_name="""unique_classes_{}""".format(dataset), x_column='\u03B1', y_column='Classes (%)', title="""{}""".format(dataset), hue='Dataset')
         print(df_unique_classes)
         print(self.base_dir)
+
+        self.plot_(df_unique_classes)
+        self.plot_(df_unique_classes)
+
+    def plot_(self, df_unique_classes):
         x_order = [0.1, 0.5, 1.0]
+
+
         fig, axs = plt.subplots(2, 1, sharex='all', sharey='all', figsize=(6, 6))
         bar_plot(df=df_unique_classes, base_dir=self.base_dir, ax=axs[0], x_order=x_order, file_name="""unique_classes_{}""".format(self.dataset), x_column='\u03B1', y_column='Classes (%)', title="""Clients' local classes""", tipo="classes", y_max=100, hue='Dataset', hue_order=['EMNIST', 'CIFAR-10', 'GTSRB'])
         i = 0
@@ -324,13 +331,6 @@ class Varying_Shared_layers:
         fig.savefig(
             """{}unique_imbalance_level_{}_clients.svg""".format(self.base_dir,
                                                                             self.num_clients), bbox_inches='tight', dpi=400)
-
-    # def summary_alphas_clients_unique_classes(self):
-    #
-    #     self.un
-
-    # def rotate_df(self, df):
-
 
 
 

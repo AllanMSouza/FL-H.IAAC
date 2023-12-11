@@ -118,7 +118,7 @@ class CLient:
             # self.min_samples_per_class = total/self.classes
             self.min_samples_per_class = int(len(y)/3/len(self.unique_classes_list))
             for class_ in self.samples_per_class:
-                if self.samples_per_class[class_] < self.min_samples_per_class:
+                if self.samples_per_class[class_] < self.min_samples_per_class*0.95:
                     self.imbalance_level += 1
 
             self.imbalance_level = self.imbalance_level * 100/ len(self.samples_per_class)

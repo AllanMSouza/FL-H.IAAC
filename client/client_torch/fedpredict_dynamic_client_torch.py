@@ -164,12 +164,16 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 			if len(last_proportion) != len(current_proportion) or last_training == -1:
 				return 1, imbalance_level, fraction_of_classes
 
-			if np.equal((last_proportion, current_proportion)):
+			last_proportion = np.array(last_proportion)
+			current_proportion = np.array(current_proportion)
+
+			if (last_proportion == current_proportion).all():
+				print("igual")
 
 				cosine_similarity = 1
 
 			else:
-
+				print("diferente ")
 				dot_product = np.dot(last_proportion, current_proportion)
 
 				norm_vector1 = np.linalg.norm(last_proportion)
