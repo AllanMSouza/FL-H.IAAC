@@ -67,68 +67,70 @@ class FedPerClientTorch(ClientBaseTorch):
 
 	def save_parameters(self):
 		# Using json
-		# try:
-		# 	filename = """./fedper_saved_weights/{}/{}/{}.json""".format(self.model_name, self.cid, self.cid)
-		# 	weights = self.get_parameters(config={})
-		# 	personalized_layers_weights = []
-		# 	for i in range(self.n_personalized_layers):
-		# 		personalized_layers_weights.append(weights[len(weights)-self.n_personalized_layers+i])
-		# 	data = json.dumps([i.tolist() for i in personalized_layers_weights])
-		# 	jsonFile = open(filename, "w")
-		# 	jsonFile.write(data)
-		# 	jsonFile.close()
-		# except Exception as e:
-		# 	print("save parameters")
-		# 	print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
-
-		#======================================================================================
-		# usando 'torch.save'
 		try:
-			filename = """./fedper_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid)
-			if Path(filename).exists():
-				os.remove(filename)
-			torch.save(self.model.state_dict(), filename)
+			filename = """./fedper_saved_weights/{}/{}/{}.json""".format(self.model_name, self.cid, self.cid)
+			weights = self.get_parameters(config={})
+			personalized_layers_weights = []
+			for i in range(self.n_personalized_layers):
+				personalized_layers_weights.append(weights[len(weights)-self.n_personalized_layers+i])
+			data = json.dumps([i.tolist() for i in personalized_layers_weights])
+			jsonFile = open(filename, "w")
+			jsonFile.write(data)
+			jsonFile.close()
 		except Exception as e:
 			print("save parameters")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def set_parameters_to_model(self, parameters, config={}):
-		# usando json
+		#======================================================================================
+		# usando 'torch.save'
 		# try:
-		# 	filename = """./fedper_saved_weights/{}/{}/{}.json""".format( self.model_name, self.cid, self.cid)
-		# 	if os.path.exists(filename):
-		# 		fileObject = open(filename, "r")
-		# 		jsonContent = fileObject.read()
-		# 		aList = [np.array(i) for i in json.loads(jsonContent)]
-		# 		# Updating only the personalized layers, which were previously saved in a file
-		# 		# for i in range(self.n_personalized_layers):
-		# 		# 	parameters[size-self.n_personalized_layers+i] = aList[i]
-		# 		parameters = parameters + aList
-		# 		parameters = [Parameter(torch.Tensor(i.tolist())) for i in parameters]
-		# 		for new_param, old_param in zip(parameters, self.model.parameters()):
-		# 			old_param.data = new_param.data.clone()
+		# 	filename = """./fedper_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid)
+		# 	if Path(filename).exists():
+		# 		os.remove(filename)
+		# 	print("state dict: ", len(self.model.state_dict()), self.model.state_dict())
+		# 	exit()
+		# 	torch.save(self.model.state_dict(), filename)
 		# except Exception as e:
-		# 	print("Set parameters to model")
+		# 	print("save parameters")
 		# 	print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-		# ======================================================================================
-		# usando 'torch.load'
+	def set_parameters_to_model(self, parameters, config={}):
+		# usando json
 		try:
-			filename = """./fedper_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
+			filename = """./fedper_saved_weights/{}/{}/{}.json""".format( self.model_name, self.cid, self.cid)
 			if os.path.exists(filename):
-				self.model.load_state_dict(torch.load(filename))
-				# size = len(parameters)
-				# # updating only the personalized layers, which were previously saved in a file
+				fileObject = open(filename, "r")
+				jsonContent = fileObject.read()
+				aList = [np.array(i) for i in json.loads(jsonContent)]
+				# Updating only the personalized layers, which were previously saved in a file
+				# for i in range(self.n_personalized_layers):
+				# 	parameters[size-self.n_personalized_layers+i] = aList[i]
+				parameters = parameters + aList
 				parameters = [Parameter(torch.Tensor(i.tolist())) for i in parameters]
-				# i = 0
-				# for new_param, old_param in zip(parameters, self.model.parameters()):
-				# 	if i < len(parameters) - self.n_personalized_layers:
-				# 		old_param.data = new_param.data.clone()
-				i = 0
 				for new_param, old_param in zip(parameters, self.model.parameters()):
-					if i < len(parameters) - self.n_personalized_layers:
-						old_param.data = new_param.data.clone()
-					i += 1
+					old_param.data = new_param.data.clone()
 		except Exception as e:
 			print("Set parameters to model")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+		# ======================================================================================
+		# usando 'torch.load'
+		# try:
+		# 	filename = """./fedper_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
+		# 	if os.path.exists(filename):
+		# 		self.model.load_state_dict(torch.load(filename))
+		# 		# size = len(parameters)
+		# 		# # updating only the personalized layers, which were previously saved in a file
+		# 		parameters = [Parameter(torch.Tensor(i.tolist())) for i in parameters]
+		# 		# i = 0
+		# 		# for new_param, old_param in zip(parameters, self.model.parameters()):
+		# 		# 	if i < len(parameters) - self.n_personalized_layers:
+		# 		# 		old_param.data = new_param.data.clone()
+		# 		i = 0
+		# 		for new_param, old_param in zip(parameters, self.model.parameters()):
+		# 			if i < len(parameters) - self.n_personalized_layers:
+		# 				old_param.data = new_param.data.clone()
+		# 			i += 1
+		# except Exception as e:
+		# 	print("Set parameters to model")
+		# 	print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)

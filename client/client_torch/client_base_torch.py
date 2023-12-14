@@ -109,7 +109,10 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			self.dynamic_data = args.dynamic_data
 			self.rounds_to_change_pattern = [70]
 			self.dynamic_data_filename = {'no': None, 'synthetic': """/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/dynamic_experiments_config/dynamic_data_synthetic_config_{}_clients_{}_rounds_change_pattern_{}_total_rounds.csv""".format(n_clients, self.rounds_to_change_pattern, self.n_rounds)}[self.dynamic_data]
-			self.clients_pattern = pd.read_csv(self.dynamic_data_filename)
+			if self.dynamic_data_filename is not None:
+				self.clients_pattern = pd.read_csv(self.dynamic_data_filename)
+			else:
+				self.clients_pattern = None
 
 			#params
 			if self.aggregation_method == 'POC':
@@ -158,7 +161,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 	def load_data(self, dataset_name, n_clients, batch_size=32, server_round=None):
 		try:
 			pattern = self.cid
-			if server_round is not None:
+			if server_round is not None and self.clients_pattern is not None:
 				row = self.clients_pattern.query("""Round == {} and Cid == {}""".format(server_round, self.cid))['Pattern'].tolist()
 				if len(row) != 1:
 					raise ValueError("""Pattern not found for client {}. The pattern may not exist or is duplicated""".format(pattern))

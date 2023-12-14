@@ -218,8 +218,8 @@ def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_
                 new_labels.append(labels[i])
             else:
                 print("label: ", labels[i])
-        new_labels[-1] = 's=' + new_labels[-1]
-        new_labels[-2] = 's=' + new_labels[-2]
+        new_labels[-1] = 'df=' + new_labels[-1]
+        new_labels[-2] = 'df=' + new_labels[-2]
 
         new_labels_2 = []
 

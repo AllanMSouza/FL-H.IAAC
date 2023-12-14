@@ -178,12 +178,10 @@ class FedKDClientTorch(FedAvgClientTorch):
 	def create_model_distillation(self):
 
 		try:
-			# print("tamanho: ", self.input_shape, " dispositivo: ", self.device)
-			input_shape = self.input_shape
-			if self.dataset in ['MNIST', 'CIFAR10', 'CIFAR100']:
-				input_shape = self.input_shape[1]*self.input_shape[2]
-			elif self.dataset in ['MotionSense', 'UCIHAR']:
-				input_shape = self.input_shape[1]
+			if self.dataset in ['MNIST', 'EMNIST']:
+				input_shape = 1
+			elif self.dataset in ['CIFAR10', 'GTSRB', 'State Farm']:
+				input_shape = 3
 			if self.model_name == 'Logist Regression':
 				return Logistic(input_shape=input_shape, num_classes=self.num_classes)
 			elif self.model_name == 'DNN':
@@ -332,6 +330,10 @@ class FedKDClientTorch(FedAvgClientTorch):
 			original_parameters = copy.deepcopy(parameters)
 
 			if self.cid in selected_clients or self.client_selection == False or server_round == 1:
+				if self.dynamic_data != "no":
+					self.trainloader, self.testloader, self.traindataset, self.testdataset = self.load_data(
+						self.dataset,
+						n_clients=self.n_clients, server_round=server_round)
 				self.load_parameters_to_model()
 				self.set_parameters_to_model_fit(original_parameters)
 

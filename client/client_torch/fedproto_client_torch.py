@@ -67,8 +67,6 @@ class FedProtoClientTorch(ClientBaseTorch):
 	def create_model(self):
 
 		try:
-			# print("tamanho: ", self.input_shape, " dispositivo: ", self.device)
-			input_shape = self.input_shape
 			model = None
 			if self.dataset in ['MNIST', 'EMNIST']:
 				input_shape = 1
@@ -138,6 +136,7 @@ class FedProtoClientTorch(ClientBaseTorch):
 			train_loss = 0
 			train_acc = 0
 			protos = defaultdict(list)
+			server_round = int(config['round'])
 
 			start_time = time.process_time()
 			if config['selected_clients'] != '':
@@ -147,6 +146,11 @@ class FedProtoClientTorch(ClientBaseTorch):
 				# the parameters are saved in a file because in each round new instances of client are created
 				# if int(config['round']) == 1:
 				# 	self.inicial(parameters)
+				if self.cid in selected_clients or self.client_selection == False or server_round == 1:
+					if self.dynamic_data != "no":
+						self.trainloader, self.testloader, self.traindataset, self.testdataset = self.load_data(
+							self.dataset,
+							n_clients=self.n_clients, server_round=server_round)
 				if int(config['round']) > 1:
 					self.set_parameters_to_model()
 					self.set_proto(parameters)
@@ -256,9 +260,14 @@ class FedProtoClientTorch(ClientBaseTorch):
 
 	def evaluate(self, parameters, config):
 		try:
+			server_round = int(config['round'])
 			self.set_proto(parameters)
 			# loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
 			self.set_parameters_to_model()
+			if self.dynamic_data != "no":
+				self.trainloader, self.testloader, self.traindataset, self.testdataset = self.load_data(
+					self.dataset,
+					n_clients=self.n_clients, server_round=server_round)
 			self.model.eval()
 
 			test_acc = 0
