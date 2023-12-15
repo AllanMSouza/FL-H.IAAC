@@ -19,6 +19,7 @@ from server.common_base_server.fedala_base_server import FedAlaBaseServer
 from server.common_base_server.fedkd_with_fedpredict_base_server import FedKDWithFedPredictBaseServer
 from server.common_base_server.fedsparsification_base_server import FedSparsificationBaseServer
 from server.common_base_server.fedpredict_dynamic_base_server import FedPredictDynamicBaseServer
+from server.common_base_server.cda_fedavg_base_server import CDAFedAvgBaseServer
 
 __all__ = [
     'FedAvgBaseServer',
@@ -41,5 +42,6 @@ __all__ = [
     "FedClusteringBaseServer",
     "FedAlaBaseServer",
     "FedKDWithFedPredictBaseServer",
-    "FedSparsificationBaseServer"
+    "FedSparsificationBaseServer",
+    "CDAFedAvgBaseServer"
     ]

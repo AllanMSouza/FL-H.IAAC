@@ -21,6 +21,7 @@ from client.client_torch.fedala_client_torch import FedAlaClientTorch
 from client.client_torch.fedkd_with_fedpredict_client_torch import FedKDWithFedPredictClientTorch
 from client.client_torch.fedsparsification_client_torch import FedSparsificationClientTorch
 from client.client_torch.fedpredict_dynamic_client_torch import FedPredictDynamicClientTorch
+from client.client_torch.cda_fedavg_client_torch import CDAFedAvgClientTorch
 
 __all__ = [
     "ClientBaseTorch",
@@ -45,5 +46,6 @@ __all__ = [
     "FedClusteringClientTorch",
     "FedAlaClientTorch",
     "FedKDWithFedPredictClientTorch",
-    "FedSparsificationClientTorch"
+    "FedSparsificationClientTorch",
+    "CDAFedAvgClientTorch"
 ]

@@ -266,6 +266,9 @@ class JointAnalysis():
         #     ['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset']).apply(
         #     lambda e: self.groupb_by_table(e)).reset_index()[
         #     ['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)']]
+        elif experiment == 2:
+            # df = df[df['Round (t)'] >= 70]
+            pass
         df_test = df[
             ['Round (t)', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset', 'Alpha']]
 
