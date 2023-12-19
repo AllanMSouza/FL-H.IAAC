@@ -1,18 +1,18 @@
 import os
-import numpy as np
-import pandas as pd
 import pickle
-import torch
+import warnings
 
-from torch.utils.data import DataLoader, ConcatDataset, Subset, Dataset
 from select_dataset import ManageDatasets
 from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import seaborn.objects as so
 import numpy as np
-from sklearn.utils import resample
+from partition.centralized import CentralizedPartition
+from partition.dirichlet import DirichletPartition
+from partition.uniform import UniformPartition
+from partition.user_index import UserPartition
+import wisdm
 
 def bar_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, hue_order=None, y_lim=False, y_min=0, y_max=100, log_scale=False, sci=False, x_order=None, ax=None, tipo=None, palette=None):
     Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
@@ -287,3 +287,83 @@ def save_dataloaders(dataset_name="CIFAR10", num_clients=10, num_classes=10, nii
              x_column='label', y_column='count', x_order=x_order)
 
     print("total: ", count)
+
+def save_dataloaders_widsm(dataset_name="WISDM-WATCH", num_clients=10, num_classes=10, niid=True, balance=False, partition="dir",
+                 class_per_client=2,
+                 batch_size=10, train_size=0.8, alpha=0.1, dataset_dir="./dataset/", sim_id=0):
+
+    num_classes = 12
+
+    # transform = get_transform(dataset_name)
+    dataset = wisdm.load_dataset(reprocess=False, modality='watch')
+    num_classes = 12
+    partition_type = 'dirichlet'
+    dataset_name = 'WISDM-WATCH'
+    client_num_per_round = 6
+
+    partition, client_num_in_total, client_num_per_round = get_partition(partition_type,
+                                                                         dataset_name,
+                                                                         num_classes,
+                                                                         num_clients,
+                                                                         client_num_per_round,
+                                                                         alpha,
+                                                                         dataset)
+
+    client_datasets_train = partition(dataset['train'])
+    client_datasets_test = partition(dataset['test'])
+    final_target = []
+    classes_list = []
+
+    for client_id in range(len(client_datasets_train)):
+        index_train = client_datasets_train[client_id].indices
+        index_test = client_datasets_test[client_id].indices
+        target_train = client_datasets_train[client_id].targets
+        target_test = client_datasets_test[client_id].targets
+        final_target += list(target_train) + list(target_test)
+        classes = len(pd.Series(target_train).unique().tolist())
+        classes_list.append(classes)
+        print("Original: ", len(index_train), " Sem duplicadas: ", len(pd.Series(index_train).drop_duplicates()),
+              " classes: ", classes, " teste: ", len(index_test))
+        print("Suporte: ", pd.Series(target_train).astype(str).value_counts())
+        filename_train = """data/{}/{}_clients/classes_per_client_{}/alpha_{}/{}/idx_train_{}.pickle""".format(dataset_name,
+                                                                                                               num_clients,
+                                                                                                               class_per_client,
+                                                                                                               alpha,
+                                                                                                               client_id,
+                                                                                                               client_id)
+        filename_test = """data/{}/{}_clients/classes_per_client_{}/alpha_{}/{}/idx_test_{}.pickle""".format(dataset_name,
+                                                                                                             num_clients,
+                                                                                                             class_per_client,
+                                                                                                             alpha,
+                                                                                                             client_id,
+                                                                                                             client_id)
+
+        print("escrever: ", filename_train)
+        os.makedirs(os.path.dirname(filename_train), exist_ok=True)
+        os.makedirs(os.path.dirname(filename_test), exist_ok=True)
+
+        with open(filename_train, 'wb') as handle:
+            pickle.dump(index_train, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+        with open(filename_test, 'wb') as handle:
+            pickle.dump(index_test, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+def get_partition(partition_type, dataset_name, num_classes, client_num_in_total, client_num_per_round, alpha, dataset):
+    if partition_type == 'user' and dataset_name in {'wisdm', 'widar', 'visdrone'}:
+        partition = UserPartition(dataset['split']['train'])
+        client_num_in_total = len(dataset['split']['train'].keys())
+    elif partition_type == 'uniform':
+        partition = UniformPartition(num_class=num_classes, num_clients=client_num_in_total)
+    elif partition_type == 'dirichlet':
+        if alpha is None:
+            warnings.warn('alpha is not set, using default value 0.1')
+            alpha = 0.1
+        partition = DirichletPartition(num_class=num_classes, num_clients=client_num_in_total, alpha=alpha)
+    elif partition_type == 'central':
+        partition = CentralizedPartition()
+        client_num_per_round = 1
+        client_num_in_total = 1
+    else:
+        raise ValueError(f'Partition {partition_type} type not supported')
+
+    return partition, client_num_in_total, client_num_per_round

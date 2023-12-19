@@ -126,6 +126,50 @@ class CNN_2(torch.nn.Module):
         return self.model(x)
 
 # ====================================================================================================================
+
+class GRU(torch.nn.Module):
+    def __init__(self, input_shape, num_layers=2, hidden_size=64, sequence_length=28, num_classes=10):
+        super().__init__()
+        try:
+            self.hidden_dim = hidden_size
+            self.layer_dim = num_layers
+            self.rnn = nn.GRU(input_shape, hidden_size, num_layers, batch_first=True)
+            self.fc = nn.Linear(hidden_size, num_classes)
+            self.batch_size = None
+            self.hidden = None
+        except Exception as e:
+            print("GRU init")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+    def forward(self, x):
+        try:
+            h0, c0 = self.init_hidden(x)
+            out, hn = self.rnn(x, h0)
+            out = self.fc(out[:, -1, :])
+            return out
+        except Exception as e:
+            print("GRU forward")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+    def init_hidden(self, x):
+        try:
+            device = 'cpu'
+            # is_cuda = torch.cuda.is_available()
+            #
+            # # If we have a GPU available, we'll set our device to GPU. We'll use this device variable later in our code.
+            # if is_cuda:
+            #     device = torch.device("cuda")
+            # else:
+            #     device = torch.device("cpu")
+            h0 = torch.zeros(self.layer_dim, x.size(0), self.hidden_dim)
+            c0 = torch.zeros(self.layer_dim, x.size(0), self.hidden_dim)
+            return [t for t in (h0, c0)]
+        except Exception as e:
+            print("gru init hidden")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+# ====================================================================================================================
+
 class CNN_3(torch.nn.Module):
     def __init__(self, input_shape, mid_dim=64, num_classes=10):
         super().__init__()

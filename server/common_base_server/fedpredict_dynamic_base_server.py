@@ -148,7 +148,7 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
 
 			return el
 		except Exception as e:
-			print("calcula evolution level")
+			print("calculate evolution level")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 

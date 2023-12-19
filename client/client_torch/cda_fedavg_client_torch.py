@@ -127,11 +127,11 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 						indices = np.where(targets == class_)[0]
 						if len(indices) == 0:
 							continue
-						print("ind: ", indices)
+						# print("ind: ", indices)
 						indices = np.random.choice(indices, size=missing_data)
 						targets = targets[indices]
-						data = data[indices]
-						data_target[class_].append(data)
+						data = data[indices].tolist()
+						data_target[class_] += data
 
 			l_old_samples = []
 			l_old_targets = []
@@ -147,15 +147,18 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 			l_old_targets = np.array(l_old_targets)
 
 			if dataset_name == 'GTSRB':
-				current_samples = current_traindataset.samples
+				current_samples = np.array(current_traindataset.samples)
 			else:
-				current_samples = current_traindataset.data
+				current_samples = np.array(current_traindataset.data)
 			current_targets = current_traindataset.targets
+			print("shapes: ", current_samples.shape, l_old_samples.shape)
 			current_samples = np.concatenate((current_samples, l_old_samples), axis=0)
 			current_targets = np.concatenate((current_targets, l_old_targets), axis=0)
 
 			current_traindataset.samples = current_samples
 			current_traindataset.targets = current_targets
+
+			return current_traindataset
 
 
 		except Exception as e:

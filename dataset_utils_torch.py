@@ -1,22 +1,23 @@
-import copy
-
 import tensorflow as tf
-import torch
-import numpy as np
 import random
 import pickle
-import pandas as pd
-import os
-from torch.utils.data import TensorDataset, DataLoader
-from sklearn.model_selection import train_test_split
+from torch.utils.data import TensorDataset
 import torchvision.transforms as transforms
-import subprocess
-from torchvision.datasets import ImageFolder, DatasetFolder, ImageNet
 import torchvision.datasets as datasets
-import time
 import sys
+import os
+import dataset_utils.wisdm
+from dataset_utils.partition.utils import IndexedSubset
 
-#from sklearn.preprocessing import Normalizer
+import numpy as np
+import pandas as pd
+
+from dataset_utils.utils import get_partition
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+import torch
+from torch.utils.data import TensorDataset, DataLoader
 
 import logging
 logging.getLogger("tensorflow").setLevel(logging.ERROR)
@@ -479,6 +480,168 @@ class ManageDatasets():
             print("load statefarm")
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
+    def load_gowalla(self, n_clients, filename_train, filename_test, non_iid=False, batch_size=32):
+
+        try:
+            batch_size = 64
+            # The scaler objects will be stored in this dictionary so that our output test data from the model can be re-scaled during evaluation
+
+
+            data_dir = "/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/dataset_utils/data/Gowalla/raw data/"
+
+            SAMPLE = data_dir + 'gowalla_7_categories_sequences.csv'
+            TRAIN = data_dir + 'X_train.csv'
+            TARGET = data_dir + 'y_train.csv'
+            TEST = data_dir + 'X_test.csv'
+            group_col = 'series_id'
+
+            ID_COLS = ['id', 'sequence']
+            # [category, hour, country, distance, duration, week_day, user_id[i], locationid
+            # x_cols = {
+            #     'series_id': np.uint32,
+            #     'measurement_number': np.uint32,
+            #     'orientation_X': np.float32,
+            #     'orientation_Y': np.float32,
+            #     'orientation_Z': np.float32,
+            #     'orientation_W': np.float32,
+            #     'angular_velocity_X': np.float32,
+            #     'angular_velocity_Y': np.float32,
+            #     'angular_velocity_Z': np.float32,
+            #     'linear_acceleration_X': np.float32,
+            #     'linear_acceleration_Y': np.float32,
+            #     'linear_acceleration_Z': np.float32
+            # }
+            #
+            # y_cols = {
+            #     'series_id': np.uint32,
+            #     'group_id': np.uint32,
+            #     'surface': str
+            # }
+            #
+            # x_trn = pd.read_csv(TRAIN, usecols=x_cols.keys(), dtype=x_cols)
+            # x_tst = pd.read_csv(TEST, usecols=x_cols.keys(), dtype=x_cols)
+            # y_trn = pd.read_csv(TARGET, usecols=y_cols.keys(), dtype=y_cols)
+            #
+            # X = x_trn
+            # y = y_trn['surface']
+            #
+            # # create_datasets
+            # enc = LabelEncoder()
+            # y_enc = enc.fit_transform(y)
+            # print("treino antes: ", X.shape)
+            # print("unicos series id: ", len(X['series_id'].unique()))
+            # X_grouped = np.row_stack([
+            #     group.drop(columns=ID_COLS).values[None]
+            #     for _, group in X.groupby(group_col)])
+            # print("depois: ", X_grouped.shape)
+            # # exit()
+            # time_dim_first = False
+            # if time_dim_first:
+            #     X_grouped = X_grouped.transpose(0, 2, 1)
+            X_train, X_valid, y_train, y_valid = train_test_split(X_grouped, y_enc, test_size=0.2)
+            X_train, X_valid = [torch.tensor(arr, dtype=torch.float32) for arr in (X_train, X_valid)]
+            y_train, y_valid = [torch.tensor(arr, dtype=torch.long) for arr in (y_train, y_valid)]
+            training_dataset = TensorDataset(X_train, y_train)
+            validation_dataset = TensorDataset(X_valid, y_valid)
+            X_grouped = np.row_stack([
+                group.drop(columns=ID_COLS).values[None]
+                for _, group in X.groupby('series_id')])
+            X_grouped = torch.tensor(X_grouped.transpose(0, 2, 1)).float()
+            y_fake = torch.tensor([0] * len(X_grouped)).long()
+            # validation_dataset = TensorDataset(X_grouped, y_fake)
+            # create_loaders
+            trainLoader = DataLoader(training_dataset, batch_size, shuffle=True)
+            testLoader = DataLoader(validation_dataset, batch_size, shuffle=False)
+
+            print("validacao: ")
+
+            return trainLoader, testLoader, training_dataset, validation_dataset
+
+        except Exception as e:
+            print("load gowalla")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+    def load_extrasensory(self, n_clients, filename_train, filename_test, non_iid=False, batch_size=32):
+
+        try:
+            batch_size = 64
+            # The scaler objects will be stored in this dictionary so that our output test data from the model can be re-scaled during evaluation
+
+
+            data_dir = "dataset_utils/data/career/raw_data/career-con-2019/"
+
+            SAMPLE = data_dir + 'sample_submission.csv'
+            TRAIN = data_dir + 'X_train.csv'
+            TARGET = data_dir + 'y_train.csv'
+            TEST = data_dir + 'X_test.csv'
+            group_col = 'series_id'
+
+            ID_COLS = ['series_id', 'measurement_number']
+
+            x_cols = {
+                'series_id': np.uint32,
+                'measurement_number': np.uint32,
+                'orientation_X': np.float32,
+                'orientation_Y': np.float32,
+                'orientation_Z': np.float32,
+                'orientation_W': np.float32,
+                'angular_velocity_X': np.float32,
+                'angular_velocity_Y': np.float32,
+                'angular_velocity_Z': np.float32,
+                'linear_acceleration_X': np.float32,
+                'linear_acceleration_Y': np.float32,
+                'linear_acceleration_Z': np.float32
+            }
+
+            y_cols = {
+                'series_id': np.uint32,
+                'group_id': np.uint32,
+                'surface': str
+            }
+
+            x_trn = pd.read_csv(TRAIN, usecols=x_cols.keys(), dtype=x_cols)
+            x_tst = pd.read_csv(TEST, usecols=x_cols.keys(), dtype=x_cols)
+            y_trn = pd.read_csv(TARGET, usecols=y_cols.keys(), dtype=y_cols)
+
+            X = x_trn
+            y = y_trn['surface']
+
+            # create_datasets
+            enc = LabelEncoder()
+            y_enc = enc.fit_transform(y)
+            print("treino antes: ", X.shape)
+            print("unicos series id: ", len(X['series_id'].unique()))
+            X_grouped = np.row_stack([
+                group.drop(columns=ID_COLS).values[None]
+                for _, group in X.groupby(group_col)])
+            print("depois: ", X_grouped.shape)
+            # exit()
+            time_dim_first = False
+            if time_dim_first:
+                X_grouped = X_grouped.transpose(0, 2, 1)
+            X_train, X_valid, y_train, y_valid = train_test_split(X_grouped, y_enc, test_size=0.2)
+            X_train, X_valid = [torch.tensor(arr, dtype=torch.float32) for arr in (X_train, X_valid)]
+            y_train, y_valid = [torch.tensor(arr, dtype=torch.long) for arr in (y_train, y_valid)]
+            training_dataset = TensorDataset(X_train, y_train)
+            validation_dataset = TensorDataset(X_valid, y_valid)
+            X_grouped = np.row_stack([
+                group.drop(columns=ID_COLS).values[None]
+                for _, group in X.groupby('series_id')])
+            X_grouped = torch.tensor(X_grouped.transpose(0, 2, 1)).float()
+            y_fake = torch.tensor([0] * len(X_grouped)).long()
+            # validation_dataset = TensorDataset(X_grouped, y_fake)
+            # create_loaders
+            trainLoader = DataLoader(training_dataset, batch_size, shuffle=True)
+            testLoader = DataLoader(validation_dataset, batch_size, shuffle=False)
+
+            print("validacao: ")
+
+            return trainLoader, testLoader, training_dataset, validation_dataset
+
+        except Exception as e:
+            print("load extrasensory")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
     def load_gtsrb(self, n_clients, filename_train, filename_test, non_iid=False, batch_size=32):
 
         try:
@@ -643,6 +806,31 @@ class ManageDatasets():
             print("load gtsrb")
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
+    def load_wisdm(self, n_clients, filename_train, filename_test, non_iid=False, batch_size=32, alpha=0.1):
+
+        dataset = dataset_utils.wisdm.load_dataset(reprocess=False, modality='watch')
+
+        with open(filename_train, 'rb') as handle:
+            idx_train = pickle.load(handle)
+
+        with open(filename_test, 'rb') as handle:
+            idx_test = pickle.load(handle)
+
+        training_dataset = IndexedSubset(
+                dataset,
+                indices=idx_train,
+            )
+
+        validation_dataset = IndexedSubset(
+                dataset,
+                indices=idx_test,
+            )
+
+        trainLoader = DataLoader(training_dataset, batch_size, shuffle=True)
+        testLoader = DataLoader(validation_dataset, batch_size, shuffle=False)
+
+        return trainLoader, testLoader, training_dataset, validation_dataset
+
     def load_CIFAR100(self, n_clients, filename_train, filename_test, non_iid=False):
         (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar100.load_data()
         x_train, x_test                      = x_train/255.0, x_test/255.0
@@ -701,12 +889,18 @@ class ManageDatasets():
             elif dataset_name == 'GTSRB':
                 return self.load_gtsrb(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test,
                                          non_iid=non_iid)
+            elif dataset_name == 'ExtraSensory':
+                return self.load_extrasensory(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test,
+                                         non_iid=non_iid)
 
             elif dataset_name == 'MotionSense':
                 return self.load_MotionSense(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
 
             elif dataset_name == 'UCIHAR':
                 return self.load_UCIHAR(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
+
+            elif dataset_name == 'WISDM-WATCH':
+                return self.load_wisdm(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
 
         except Exception as e:
             print("select_dataset")

@@ -3,7 +3,7 @@ import os
 import random
 import time
 
-from utils import save_dataloaders
+from utils import save_dataloaders, save_dataloaders_widsm
 
 trainloaders = []
 valloaders = []
@@ -41,7 +41,8 @@ if __name__ == '__main__':
 
     args = parse_arguments()
 
-    save_dataloaders(args.dataset, int(args.clients),
+    if args.dataset == "WISDM-WATCH":
+        save_dataloaders_widsm(args.dataset, int(args.clients),
                      int(args.num_classes),
                      bool(args.niid),
                      bool(args.balance), args.partition,
@@ -50,5 +51,16 @@ if __name__ == '__main__':
                      float(args.train_perc),
                      float(args.alpha),
                      args.data_dir,
-                     int(args.sim_id)
-                     )
+                     int(args.sim_id))
+    else:
+        save_dataloaders(args.dataset, int(args.clients),
+                         int(args.num_classes),
+                         bool(args.niid),
+                         bool(args.balance), args.partition,
+                         int(args.class_per_client),
+                         int(args.batch_size),
+                         float(args.train_perc),
+                         float(args.alpha),
+                         args.data_dir,
+                         int(args.sim_id)
+                         )

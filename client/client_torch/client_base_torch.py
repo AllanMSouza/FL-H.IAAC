@@ -6,7 +6,7 @@ import time
 import sys
 
 from dataset_utils_torch import ManageDatasets
-from models.torch import DNN, Logistic, CNN, MobileNet, resnet20, CNN_EMNIST, MobileNetV2, CNN_X, CNN_5, CNN_2, CNN_3, CNN_3_GTSRB, MobileNet_V3
+from models.torch import DNN, Logistic, CNN, MobileNet, resnet20, CNN_EMNIST, MobileNetV2, CNN_X, CNN_5, CNN_2, CNN_3, CNN_3_GTSRB, MobileNet_V3, GRU
 import csv
 import torch.nn as nn
 import warnings
@@ -146,6 +146,10 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				self.learning_rate = 0.01
 				self.optimizer = torch.optim.SGD(
 					self.model.parameters(), lr=self.learning_rate, momentum=0.9)
+			elif self.dataset == 'ExtraSensory':
+				self.learning_rate = 0.001
+				# self.loss = nn.MSELoss()
+				self.optimizer = torch.optim.RMSprop(self.model.parameters(), lr=self.learning_rate)
 			# self.device = 'cpu'
 			# self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate) if self.model_name == "Mobilenet" else torch.optim.SGD(self.model.parameters(), lr=self.learning_rate)
 			# self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
@@ -166,16 +170,9 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				if len(row) != 1:
 					raise ValueError("""Pattern not found for client {}. The pattern may not exist or is duplicated""".format(pattern))
 				pattern = row[0]
-			if dataset_name in ['MNIST', 'CIFAR10', 'CIFAR100', 'EMNIST', 'GTSRB', 'State Farm']:
-				trainLoader, testLoader, traindataset, testdataset = ManageDatasets(pattern, self.model_name).select_dataset(
-					dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid, batch_size)
-				self.input_shape = (3,64,64)
-			else:
-				print("gerar")
-				trainLoader, testLoader, traindataset, testdataset = ManageDatasets(pattern, self.model_name).select_dataset(
-					dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid, batch_size)
-				self.input_shape = (32, 0)
-				# exit()
+			trainLoader, testLoader, traindataset, testdataset = ManageDatasets(pattern, self.model_name).select_dataset(
+				dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid, batch_size)
+			self.input_shape = (3,64,64)
 
 			return trainLoader, testLoader, traindataset, testdataset
 		except Exception as e:
@@ -236,6 +233,18 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				else:
 					mid_dim = 400
 				model =  CNN(input_shape=input_shape, num_classes=self.num_classes, mid_dim=mid_dim)
+			elif self.model_name == 'GRU' and self.dataset in ['ExtraSensory']:
+				# if self.dataset in ['EMNIST', 'MNIST']:
+				# 	mid_dim = 256
+				# else:
+				# 	mid_dim = 400
+				model =  GRU(input_shape=10, num_classes=self.num_classes)
+			elif self.model_name == 'GRU' and self.dataset in ['WISDM-WATCH']:
+				# if self.dataset in ['EMNIST', 'MNIST']:
+				# 	mid_dim = 256
+				# else:
+				# 	mid_dim = 400
+				model =  GRU(input_shape=10, num_classes=self.num_classes)
 
 			if model is not None:
 				model.to(self.device)
@@ -255,6 +264,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 	def get_parameters(self, config):
 		try:
 			parameters = [i.detach().cpu().numpy() for i in self.model.parameters()]
+			print("tamanho parametros: ", [i.shape for i in self.model.parameters()])
 			return parameters
 		except Exception as e:
 			print("get parameters")
@@ -446,6 +456,40 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			print("model_eval")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
+	def model_eval_rnn(self):
+		try:
+			self.model.to(self.device)
+			self.model.eval()
+
+			test_acc = 0
+			test_loss = 0
+			test_num = 0
+
+			predictions = np.array([])
+			labels = np.array([])
+
+			outputs = []
+			targets = []
+			start_time = time.clock()
+			for i in self.testdataset.keys():
+				inp = torch.from_numpy(np.array(self.testdataset[i]))
+				labs = torch.from_numpy(np.array(self.testloader[i]))
+				h = self.model.init_hidden(inp.shape[0])
+				out, h = self.model(inp.to(self.device).float(), h)
+				outputs.append(self.label_scalers[i].inverse_transform(out.cpu().detach().numpy()).reshape(-1))
+				targets.append(self.label_scalers[i].inverse_transform(labs.numpy()).reshape(-1))
+			print("Evaluation Time: {}".format(str(time.clock() - start_time)))
+			sMAPE = 0
+			for i in range(len(outputs)):
+				sMAPE += np.mean(abs(outputs[i] - targets[i]) / (targets[i] + outputs[i]) / 2) / len(outputs)
+			print("sMAPE: {}%".format(sMAPE * 100))
+			return outputs, targets, sMAPE
+
+			# return loss, accuracy, test_num, predictions, labels
+		except Exception as e:
+			print("model_eval_rnn")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
 	def evaluate(self, parameters, config):
 		try:
 			server_round = int(config['round'])
@@ -462,7 +506,10 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			size_of_parameters = self.calculate_bytes(parameters)
 			# size_of_parameters = sum([sum(map(sys.getsizeof, parameters[i])) for i in range(len(parameters))])
 			size_of_config = self._get_size_of_dict(config)
-			loss, accuracy, test_num, predictions, labels = self.model_eval()
+			if self.model_name in ['GRU']:
+				loss, accuracy, test_num, predictions, labels = self.model_eval()
+			else:
+				loss, accuracy, test_num, predictions, labels = self.model_eval()
 			data = [config['round'], self.cid, size_of_parameters, size_of_config, loss, accuracy, nt]
 			self._write_output(filename=self.evaluate_client_filename,
 							   data=data)
@@ -484,6 +531,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 	def _calculate_classes_proportion(self):
 
 		try:
+			return [1] * self.num_classes, 0
 			correction = 3 if self.dataset == 'GTSRB' else 1
 			traindataset = self.traindataset
 			y_train = list(traindataset.targets)
