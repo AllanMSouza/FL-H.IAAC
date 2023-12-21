@@ -21,15 +21,15 @@ def change_pattern(n_patterns, n_clients, seed):
 
 if __name__ == "__main__":
 
-    n_rounds = 10
-    n_clients = 1
+    n_rounds = 50
+    n_clients = 20
     n_patterns = n_clients
 
     clients_ids = []
     rounds = []
     pattern = []
 
-    rounds_to_change_pattern = [7]
+    rounds_to_change_pattern = [35]
     client_pattern_dict = {i: i for i in range(n_clients)}
 
     for i in range(1, n_rounds + 1):

@@ -107,7 +107,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			# self.device = torch.device("cpu")
 			self.type = 'torch'
 			self.dynamic_data = args.dynamic_data
-			self.rounds_to_change_pattern = [7]
+			self.rounds_to_change_pattern = [int(0.7 * self.n_rounds)]
 			self.dynamic_data_filename = {'no': None, 'synthetic': """/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/dynamic_experiments_config/dynamic_data_synthetic_config_{}_clients_{}_rounds_change_pattern_{}_total_rounds.csv""".format(n_clients, self.rounds_to_change_pattern, self.n_rounds)}[self.dynamic_data]
 			if self.dynamic_data_filename is not None:
 				self.clients_pattern = pd.read_csv(self.dynamic_data_filename)
@@ -146,7 +146,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				self.learning_rate = 0.01
 				self.optimizer = torch.optim.SGD(
 					self.model.parameters(), lr=self.learning_rate, momentum=0.9)
-			elif self.dataset == 'ExtraSensory':
+			elif self.dataset in ['ExtraSensory', 'WISDM-WATCH']:
 				self.learning_rate = 0.001
 				# self.loss = nn.MSELoss()
 				self.optimizer = torch.optim.RMSprop(self.model.parameters(), lr=self.learning_rate)
@@ -244,7 +244,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				# 	mid_dim = 256
 				# else:
 				# 	mid_dim = 400
-				model =  GRU(input_shape=10, num_classes=self.num_classes)
+				model =  GRU(input_shape=6, num_classes=self.num_classes)
 
 			if model is not None:
 				model.to(self.device)
@@ -344,7 +344,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 				self.classes_proportion, self.imbalance_level = self._calculate_classes_proportion()
 
-
+				# self.device = 'cuda:0'
 				print("Cliente: ", self.cid, " rodada: ", server_round, " Quantidade de camadas: ", len([i for i in self.model.parameters()]), " device: ", self.device)
 				for step in range(max_local_steps):
 					start_time = time.process_time()
@@ -356,6 +356,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 							x[0] = x[0].to(self.device)
 						else:
 							x = x.to(self.device)
+
 						# if self.dataset == 'EMNIST':
 						# 	x = x.view(-1, 28 * 28)
 						y = np.array(y).astype(int)
@@ -436,10 +437,12 @@ class ClientBaseTorch(fl.client.NumPyClient):
 					# 	x = x.view(-1, 28 * 28)
 					if type(y) == tuple:
 						y = torch.from_numpy(np.array(y).astype(int))
+					y = torch.from_numpy(np.array(y).astype(int))
 					self.optimizer.zero_grad()
 					y = y.to(self.device)
 					y = torch.tensor(y)
 					output = self.model(x)
+					print("dtypes: ", output.dtype, y.dtype)
 					loss = self.loss(output, y)
 					test_loss += loss.item() * y.shape[0]
 					prediction = torch.argmax(output, dim=1)

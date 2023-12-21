@@ -200,6 +200,12 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 			if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
 				self.set_parameters_to_model(parameters)
 
+				if self.dynamic_data != "no":
+					server_round = int(config['round'])
+					self.trainloader, self.testloader, self.traindataset, self.testdataset = self.load_data(
+						self.dataset,
+						n_clients=self.n_clients, server_round=server_round)
+
 				selected = 1
 				self.model.train()
 
@@ -215,12 +221,14 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 						else:
 							x = x.to(self.device)
 						y = y.to(self.device)
+
 						classes += list(y.detach().cpu().numpy())
 						train_num += y.shape[0]
 
 						self.optimizer.zero_grad()
 						output = self.model(x)
-						y = torch.tensor(y)
+						y = torch.tensor(np.array(y).astype(int))
+						# y = np.array(y).astype(int)
 						loss = self.loss(output, y)
 						local_parameters = [torch.Tensor(i) for i in self.get_parameters_of_model()]
 						global_parameters = [torch.Tensor(i) for i in parameters]
@@ -266,7 +274,11 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 		try:
 			nt = int(config['nt'])
 			self.set_parameters_to_model_evaluate(parameters, config)
+			server_round = int(config['round'])
 			# loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
+			if self.dynamic_data != "no":
+				self.trainloader, self.testloader, self.traindataset, self.testdataset = self.load_data(self.dataset,
+																									n_clients=self.n_clients, server_round=server_round)
 			self.model.eval()
 			clone_model_fedclassavg = self.clone_model_fedclassavg
 			self.clone_model_classavg(self.model, clone_model_fedclassavg, parameters)
@@ -285,6 +297,7 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 					self.optimizer.zero_grad()
 					y = y.to(self.device)
 					y = torch.tensor(y)
+					y = torch.from_numpy(np.array(y).astype(int))
 					output = self.model(x)
 					output2 = self.clone_model_fedclassavg(x)
 					output = output + torch.mul(output2, 4/int(server_round))

@@ -8,7 +8,7 @@ import torch
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
-from utils_wisdm import train_test_split, make_split
+from dataset_utils.utils_wisdm import train_test_split, make_split
 
 
 class WISDMDataset(Dataset):
@@ -22,8 +22,8 @@ class WISDMDataset(Dataset):
         Args:
             data (Mapping[str, list[np.ndarray | int]]): A dictionary containing the data and targets.
         """
-        self.data = data
-        self.targets = self.data['Y']
+        self.data = np.array(data[0], dtype=np.float32)
+        self.targets = np.array(data[1], dtype=np.float32)
 
     def __getitem__(self, index):
         """
@@ -34,7 +34,7 @@ class WISDMDataset(Dataset):
         Returns:
             Tuple[torch.Tensor, torch.Tensor]: The data and target tensors for the specified index.
         """
-        return torch.tensor(self.data['X'][index], dtype=torch.float), torch.tensor(self.data['Y'][index])
+        return self.data[index], self.targets[index]
 
     def __len__(self):
         """
@@ -43,7 +43,7 @@ class WISDMDataset(Dataset):
         Returns:
             int: The length of the dataset.
         """
-        return len(self.data['Y'])
+        return len(self.data[1])
 
 
 def define_cols(df: pandas.DataFrame, prefix='acc'):
@@ -146,7 +146,7 @@ def get_processed_dataframe(reprocess=False, modality='watch'):
     Returns:
         pandas.DataFrame: The processed DataFrame.
     """
-    dir_path = "data/WISDM/"
+    dir_path = "dataset_utils/data/WISDM/"
     if os.path.exists(dir_path + f'processed_{modality}.csv') and not reprocess:
         return pd.read_csv(dir_path + f'processed_{modality}.csv', index_col=0)
     act_df = pd.read_csv(dir_path + 'activity_key_filtered.txt', index_col=0)
@@ -156,7 +156,7 @@ def get_processed_dataframe(reprocess=False, modality='watch'):
     return processed_df
 
 
-def create_dataset(df, clients=None, window=200, overlap=0.5):
+def create_dataset(df, clients=None, window=200, overlap=1):
     """
     Create a dataset from the input DataFrame based on the specified parameters.
 
@@ -177,18 +177,24 @@ def create_dataset(df, clients=None, window=200, overlap=0.5):
     Y = []
     for client in tqdm(clients):
         c_idxs[client] = []
-        data = df[df.subject == client].sort_values(by='timestamp')
+        data = df[df.subject == client].sort_values(by='timestamp').sample(frac=0.3, random_state=0)
         activities = data.activity.unique()
         for activity in activities:
             df_f = data[data.activity == activity]
             for i in range(window, len(df_f), int(window * overlap)):
                 if i + window > len(df_f):
                     continue
-                X.append(df_f[df_f.columns[3:10]].iloc[i:i + window].to_numpy())
+                # x_data = df_f[df_f.columns[3:10]].iloc[i:i + window].to_numpy().tolist()
+                # print(x_data)
+                # print()
+                # print(x_data[2])
+                # print(x_data[5])
+                # exit()
+                X.append(df_f[df_f.columns[3:10]].iloc[i:i + window].to_numpy().tolist())
                 Y.append(activity)
                 c_idxs[client].append(idx)
                 idx += 1
-    return {'X': X, 'Y': Y}, c_idxs
+    return (X, Y), c_idxs
 
 
 def split_dataset(data: dict, client_mapping_train: dict, client_mapping_test: dict):
@@ -205,13 +211,14 @@ def split_dataset(data: dict, client_mapping_train: dict, client_mapping_test: d
     """
     all_train, mapping_train = make_split(client_mapping_train)
     all_test, mapping_test = make_split(client_mapping_test)
-
-    train_data = {'X': [data['X'][i] for i in all_train], 'Y': [data['Y'][i] for i in all_train]}
-    test_data = {'X': [data['X'][i] for i in all_test], 'Y': [data['Y'][i] for i in all_test]}
+    x = data[0]
+    y = data[1]
+    train_data = ([x[i] for i in all_train], [y[i] for i in all_train])
+    test_data = ([x[i] for i in all_test], [y[i] for i in all_test])
     return WISDMDataset(train_data), WISDMDataset(test_data), {'train': mapping_train, 'test': mapping_test}
 
 
-def load_dataset(window=200, overlap=0.3, reprocess=True, split=0.8, modality='watch'):
+def load_dataset(window=200, overlap=0.6, reprocess=True, split=0.8, modality='watch'):
     """
     Load the WISDM dataset, either from disk or by reprocessing it based on the specified parameters.
 
@@ -225,12 +232,13 @@ def load_dataset(window=200, overlap=0.3, reprocess=True, split=0.8, modality='w
     Returns:
         dict: A dictionary containing the full dataset, train and test datasets, client mapping, and split.
     """
-    dir_path = "/data/WISDM/"
+    dir_path = "/dataset_utils/data/WISDM/"
     if os.path.exists(dir_path+f'wisdm_{modality}.dt') and not reprocess:
         return torch.load(dir_path + f'wisdm_{modality}.dt')
-    processed_df = get_processed_dataframe(reprocess=reprocess, modality=modality)
-    print(processed_df)
+
     if reprocess or not os.path.exists(dir_path + f'wisdm_{modality}.dt'):
+        processed_df = get_processed_dataframe(reprocess=reprocess, modality=modality)
+        print(processed_df)
         clients = list(range(1600, 1651))
         data, idx = create_dataset(processed_df, clients=clients, window=window, overlap=overlap)
         # print(data['X'][0].shape, data['X'][0][0])
@@ -238,6 +246,9 @@ def load_dataset(window=200, overlap=0.3, reprocess=True, split=0.8, modality='w
         dataset = WISDMDataset(data)
         client_mapping_train, client_mapping_test = train_test_split(idx, split)
         train_dataset, test_dataset, split = split_dataset(data, client_mapping_train, client_mapping_test)
+        print("Count treino: ", np.unique(train_dataset.targets, return_counts=True))
+        print("Count teste: ", np.unique(test_dataset.targets, return_counts=True))
+        # exit()
 
         torch.save({
             'full_dataset': dataset,
@@ -245,8 +256,10 @@ def load_dataset(window=200, overlap=0.3, reprocess=True, split=0.8, modality='w
             'test': test_dataset,
             'client_mapping': idx,
             'split': split
-        }, "data/WISDM/" + f'wisdm_{modality}.dt')
-    data = torch.load("data/WISDM/"+ f'wisdm_{modality}.dt')
+        }, "dataset_utils/data/WISDM/" + f'wisdm_{modality}.dt')
+    data = torch.load("dataset_utils/data/WISDM/"+ f'wisdm_{modality}.dt')
+    # print("ler data")
+    # exit()
     return data
 
 

@@ -65,7 +65,7 @@ class FedPerBaseServer(FedAvgBaseServer):
 						 new_clients_train=new_clients_train,
 						 type=type)
 
-		self.filename = """fedper_saved_weights/{}/""".format(strategy_name.lower(), self.model_name)
+		self.filename = """{}_saved_weights/{}/""".format(strategy_name.lower(), model_name, self.model_name)
 		self.create_folder(strategy_name)
 
 	def create_folder(self, strategy_name):

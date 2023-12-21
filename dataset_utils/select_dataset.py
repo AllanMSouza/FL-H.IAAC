@@ -2,20 +2,16 @@ import tensorflow as tf
 import torch
 import numpy as np
 import random
-import pickle
-import pandas as pd
-from torch.utils.data import TensorDataset, DataLoader
-from sklearn.model_selection import train_test_split
+from torch.utils.data import TensorDataset
 import os
 import torchvision
 import torchvision.transforms as transforms
 import subprocess
-from torchvision.datasets import ImageFolder, DatasetFolder, ImageNet
+from torchvision.datasets import ImageFolder, DatasetFolder
 import torchvision.datasets as datasets
 from PIL import Image
 from torch.utils import data
-import time
-import sys
+import dataset_utils.wisdm
 
 def load_data_eminist(data_path):
     """Load Emnist (training and val set)."""
@@ -624,6 +620,21 @@ class ManageDatasets():
         dataset_image = np.array(dataset_image)
         dataset_label = np.array(dataset_label)
 
+    def load_wisdm(self):
+
+        dataset = wisdm.load_dataset(reprocess=False, modality='watch')
+        num_classes = 12
+        partition_type = 'dirichlet'
+        dataset_name = 'WISDM-WATCH'
+        client_num_per_round = 6
+        partition, client_num_in_total, client_num_per_round = get_partition(partition_type,
+                                                                             dataset_name,
+                                                                             num_classes,
+                                                                             n_clients,
+                                                                             client_num_per_round,
+                                                                             alpha,
+                                                                             dataset)
+
     def select_dataset(self, dataset_name):
 
         if dataset_name == 'MNIST':
@@ -646,6 +657,9 @@ class ManageDatasets():
 
         elif dataset_name == 'EMNIST':
             return self.load_emnist()
+
+        elif dataset_name == 'WISDM-WATCH':
+            return self.load_wisdm()
 
         # elif dataset_name == 'MotionSense':
         #     return self.load_MotionSense()

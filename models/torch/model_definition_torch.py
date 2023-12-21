@@ -128,24 +128,27 @@ class CNN_2(torch.nn.Module):
 # ====================================================================================================================
 
 class GRU(torch.nn.Module):
-    def __init__(self, input_shape, num_layers=2, hidden_size=64, sequence_length=28, num_classes=10):
+    def __init__(self, input_shape, num_layers=1, hidden_size=4, sequence_length=28, num_classes=10):
         super().__init__()
         try:
-            self.hidden_dim = hidden_size
-            self.layer_dim = num_layers
-            self.rnn = nn.GRU(input_shape, hidden_size, num_layers, batch_first=True)
-            self.fc = nn.Linear(hidden_size, num_classes)
-            self.batch_size = None
-            self.hidden = None
+            self.input_size = input_shape
+            self.hidden_size = hidden_size
+            self.num_layers = num_layers
+            self.output_size = num_classes
+            self.time_length = 200
+
+            self.gru = nn.GRU(self.input_size, self.hidden_size, self.num_layers, batch_first=True)
+
+            self.net = nn.Sequential(nn.Flatten(),
+                                     nn.Linear(self.time_length * self.hidden_size, self.output_size, bias=True))
         except Exception as e:
             print("GRU init")
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
     def forward(self, x):
         try:
-            h0, c0 = self.init_hidden(x)
-            out, hn = self.rnn(x, h0)
-            out = self.fc(out[:, -1, :])
+            x, h = self.gru(x)
+            out = self.net(x)
             return out
         except Exception as e:
             print("GRU forward")

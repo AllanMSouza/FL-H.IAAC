@@ -5,7 +5,7 @@ from typing import List
 import numpy as np
 from torch.utils.data import Dataset
 
-from partition.utils import IndexedSubset
+from dataset_utils.partition.utils import IndexedSubset
 
 
 class UserPartition:

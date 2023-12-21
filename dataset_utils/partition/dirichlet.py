@@ -4,7 +4,7 @@ from typing import List
 import numpy as np
 from torch.utils.data import Dataset
 
-from partition.utils import IndexedSubset
+from dataset_utils.partition.utils import IndexedSubset
 
 
 class DirichletPartition:
@@ -25,6 +25,7 @@ class DirichletPartition:
         self.partitions = None
 
     def __call__(self, dataset):
+
         it = 0
         if not isinstance(dataset.targets, np.ndarray):
             dataset.targets = np.array(
@@ -38,22 +39,36 @@ class DirichletPartition:
             idx_batch = [[] for _ in range(self.num_clients)]
             # for each class in the dataset
             for k in range(self.num_class):
+                # print("""\n==== iteracao {}""".format(k))
                 idx_k = np.where(dataset.targets == k)[0]
                 np.random.shuffle(idx_k)
                 proportions = self.distributions[k]
+                # print("inicial: ", k, " proportions: ", proportions)
                 ## Balance
                 proportions = np.array(
                     [
-                        p * (len(idx_j) < len(dataset) / self.num_clients)
+                        p * (len(idx_j) < len(dataset.targets) / self.num_clients)
                         for p, idx_j in zip(proportions, idx_batch)
                     ]
                 )
+
+                # print("meio: ", k, " proportions: ", proportions)
                 proportions = proportions / proportions.sum()
                 proportions = (np.cumsum(proportions) * len(idx_k)).astype(int)[:-1]
+                # print("meio 2: ", k, " proportions: ", proportions)
                 idx_batch = [
                     idx_j + idx.tolist()
                     for idx_j, idx in zip(idx_batch, np.split(idx_k, proportions))
                 ]
+                # print("""//// idx_k {} ////""".format(k, len(idx_k)))
+                # print("proporcao: ", proportions)
+                for j in range(self.num_clients):
+                    # print("""=cliente {}""".format(j))
+                    np.random.shuffle(idx_batch[j])
+                    net_dataidx_map[j] = idx_batch[j]
+                    # if len(net_dataidx_map[j]) > 0:
+                    #     print("Quantidade cliente: ", j, len(net_dataidx_map[j]),
+                    #           np.unique(dataset.targets[np.array(net_dataidx_map[j])], return_counts=True))
             min_size = min([len(idx_j) for idx_j in idx_batch])
 
         # Redistribution loop
@@ -74,6 +89,8 @@ class DirichletPartition:
         for j in range(self.num_clients):
             np.random.shuffle(idx_batch[j])
             net_dataidx_map[j] = idx_batch[j]
+            print("Quantidade cliente: ", j, len(net_dataidx_map[j]),
+                  np.unique(dataset.targets[np.array(net_dataidx_map[j])], return_counts=True))
         dataset_ref = dataset
         return [
             IndexedSubset(
@@ -82,13 +99,3 @@ class DirichletPartition:
             )
             for i in range(self.num_clients)
         ]
-
-        # return {
-        #     i: net_dataidx_map[i]
-        #     for i in range(self.num_clients)
-        #      }
-
-        # return {
-        #     i: net_dataidx_map[i]
-        #     for i in range(self.num_clients)
-        #      }

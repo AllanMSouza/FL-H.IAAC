@@ -1,3 +1,5 @@
+import json
+
 import tensorflow as tf
 import random
 import pickle
@@ -6,6 +8,7 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import sys
 import os
+import ast
 import dataset_utils.wisdm
 from dataset_utils.partition.utils import IndexedSubset
 
@@ -808,28 +811,52 @@ class ManageDatasets():
 
     def load_wisdm(self, n_clients, filename_train, filename_test, non_iid=False, batch_size=32, alpha=0.1):
 
-        dataset = dataset_utils.wisdm.load_dataset(reprocess=False, modality='watch')
+        try:
 
-        with open(filename_train, 'rb') as handle:
-            idx_train = pickle.load(handle)
+            # dataset = dataset_utils.wisdm.load_dataset(reprocess=False, modality='watch')
 
-        with open(filename_test, 'rb') as handle:
-            idx_test = pickle.load(handle)
+            # with open(filename_train, 'rb') as handle:
+            #     idx_train = pickle.load(handle)
+            #
+            # with open(filename_test, 'rb') as handle:
+            #     idx_test = pickle.load(handle)
+            # print("treino: ", dataset)
+            # exit()
 
-        training_dataset = IndexedSubset(
-                dataset,
-                indices=idx_train,
-            )
+            filename_train = filename_train.replace("pickle", "csv")
+            filename_test = filename_test.replace("pickle", "csv")
 
-        validation_dataset = IndexedSubset(
-                dataset,
-                indices=idx_test,
-            )
+            # training_dataset = IndexedSubset(
+            #         dataset,
+            #         indices=idx_train,
+            #     )
+            #
+            # validation_dataset = IndexedSubset(
+            #         dataset,
+            #         indices=idx_test,
+            #     )
 
-        trainLoader = DataLoader(training_dataset, batch_size, shuffle=True)
-        testLoader = DataLoader(validation_dataset, batch_size, shuffle=False)
+            train = pd.read_csv(filename_train)
+            test = pd.read_csv(filename_test)
+            print("col: ", train.columns)
+            # print("leu: ", train['X'], type(train['X']), type(train['X'].to_numpy()[0]))
+            x_train = np.array([ast.literal_eval(i) for i in train['X'].tolist()], dtype=np.float32)
+            # print("ola: ", x_train[0], x_train.shape, type(x_train[0][0]), type(x_train[0][0][0]))
+            x_test = np.array([ast.literal_eval(i) for i in test['X'].tolist()], dtype=np.float32)
+            y_train = np.array([i for i in train['Y'].to_numpy().astype(np.int32)])
+            y_test = np.array([i for i in test['Y'].to_numpy().astype(np.int32)])
+            # print("leu: ", x_train[0], type(x_train[0]))
+            training_dataset = torch.utils.data.TensorDataset(torch.from_numpy(x_train).to(dtype=torch.float32), torch.from_numpy(y_train))
+            validation_dataset = torch.utils.data.TensorDataset(torch.from_numpy(x_test).to(dtype=torch.float32), torch.from_numpy(y_test))
 
-        return trainLoader, testLoader, training_dataset, validation_dataset
+            trainLoader = DataLoader(training_dataset, batch_size, shuffle=True)
+            testLoader = DataLoader(validation_dataset, batch_size, shuffle=False)
+
+            return trainLoader, testLoader, training_dataset, validation_dataset
+
+        except Exception as e:
+            print("load WISDM")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
     def load_CIFAR100(self, n_clients, filename_train, filename_test, non_iid=False):
         (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar100.load_data()
