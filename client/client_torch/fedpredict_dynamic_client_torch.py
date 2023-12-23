@@ -200,6 +200,26 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 			print("read client file")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
+	# def fit(self, parameters, config):
+	# 	try:
+	# 		trained_parameters, train_num, fit_response = super().fit(parameters, config)
+	# 		server_round = int(config['round'])
+	#
+	# 		if self.dynamic_data != "no":
+	# 			self.trainloader, self.testloader, self.traindataset, self.testdataset = self.load_data(self.dataset,
+	# 																								n_clients=self.n_clients, server_round=server_round)
+	#
+	#
+	# 		fit_response = {
+	# 			'cid': self.cid,
+	# 			'local_classes': self.classes_proportion
+	# 		}
+	#
+	# 		return trained_parameters, train_num, fit_response
+	# 	except Exception as e:
+	# 		print("fit fedpredict dynamic")
+	# 		print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
 	def set_parameters_to_model_evaluate(self, global_parameters, config={}):
 		# Using 'torch.load'
 		try:

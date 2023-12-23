@@ -8,6 +8,7 @@ import random
 import sys
 import pandas as pd
 import copy
+from functools import reduce
 
 from server.common_base_server import FedAvgBaseServer
 from client.fedpredict_core import fedpredict_core_layer_selection, fedpredict_layerwise_similarity, fedpredict_core_compredict, dls, layer_compression_range, compredict, fedpredict_server
@@ -179,6 +180,23 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
 			print("update fedpredict metrics")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
+	def weigthed_classes_proportion(self, num_examples_list, classes_proportion_list):
+
+		num_examples_total = sum([num_examples for num_examples in num_examples_list])
+
+		# Create a list of weights, each multiplied by the related number of examples
+		weighted_weights = [
+			[layer * num_examples for layer in weights] for weights, num_examples in zip(classes_proportion_list, num_examples_list)
+		]
+
+		# Compute average weights of each layer
+		weights_prime: NDArrays = [
+			reduce(np.add, layer_updates) / num_examples_total
+			for layer_updates in zip(*weighted_weights)
+		]
+
+		return weights_prime
+
 	def aggregate_fit(self, server_round, results, failures):
 
 		parameters_aggregated, metrics_aggregated = super().aggregate_fit(server_round, results, failures)
@@ -193,19 +211,27 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
 			print("range: ", self.layers_compression_range)
 		weights_results = []
 		clients_parameters = []
+		clients_num_examples_list = []
 		clients_ids = []
+		classes_proportion_list = []
 		for _, fit_res in results:
 			client_id = str(fit_res.metrics['cid'])
 			clients_ids.append(client_id)
 			parameters = fl.common.parameters_to_ndarrays(fit_res.parameters)
-			# self.clients_model_non_zero_indexes = client_model_non_zero_indexes(client_id, parameters,
-			# 																	self.clients_model_non_zero_indexes)
-			clients_parameters.append(fl.common.parameters_to_ndarrays(fit_res.parameters))
+			num_examples = fit_res.num_examples
+			classes_proportion = list(fit_res.metrics['local_classes'])
+			clients_parameters.append(parameters)
+			clients_num_examples_list.append(num_examples)
+			classes_proportion_list.append(classes_proportion)
 
 		if self.use_gradient:
 			global_parameter = [current - previous for current, previous in zip(parameters_to_ndarrays(parameters_aggregated), self.previous_global_parameters[server_round-1])]
 		else:
 			global_parameter = self.previous_global_parameters[server_round]
+
+		aggregated_classes_proportion = self.weigthed_classes_proportion(clients_num_examples_list, classes_proportion_list)
+
+		print("proporcao: ", aggregated_classes_proportion)
 
 		np.random.seed(server_round)
 		flag = bool(int(np.random.binomial(1, 0.2, 1)))

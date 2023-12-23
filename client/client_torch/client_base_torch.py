@@ -125,6 +125,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				self.solution_name = f"{solution_name}-{aggregation_method}-{self.fraction_fit}"
 
 			self.base = self._create_base_directory(self.type, self.solution_name, new_clients, new_clients_train, self.dynamic_data, n_clients, model_name, dataset, str(args.class_per_client), str(args.alpha), str(args.rounds), str(args.local_epochs), str(args.comment), str(args.compression_method), args)
+			print("base: ", self.base)
 			self.evaluate_client_filename = f"{self.base}/evaluate_client.csv"
 			self.train_client_filename = f"{self.base}/train_client.csv"
 			self.predictions_client_filename = f"{self.base}/predictions_client.csv"
@@ -534,10 +535,15 @@ class ClientBaseTorch(fl.client.NumPyClient):
 	def _calculate_classes_proportion(self):
 
 		try:
-			return [1] * self.num_classes, 0
+			# return [1] * self.num_classes, 0
 			correction = 3 if self.dataset == 'GTSRB' else 1
 			traindataset = self.traindataset
-			y_train = list(traindataset.targets)
+			if self.dataset in ['WISDM-WATCH']:
+				y_train = []
+				for i, (x, y) in enumerate(self.trainloader):
+					y_train += np.array(y).astype(int).tolist()
+			else:
+				y_train = list(traindataset.targets)
 			proportion = np.array([0] * self.num_classes)
 
 			unique_classes_list = pd.Series(y_train).unique().tolist()
