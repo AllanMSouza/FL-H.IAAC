@@ -9,7 +9,9 @@ import sys
 import pandas as pd
 import numpy as np
 import ast
+from scipy.special import softmax
 from utils.compression_methods.sparsification import calculate_bytes, sparse_bytes, sparse_matrix
+from client.cda_fedavg_concept_drift import cda_fedavg_drift_detection
 
 import warnings
 warnings.simplefilter("ignore")
@@ -56,10 +58,14 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 						 new_clients=new_clients,
 						 new_clients_train=new_clients_train)
 
-		self.client_information_filename = """{}_saved_weights/{}/{}/{}.csv""".format(strategy_name.lower(),
-																					  self.model_name, self.cid,
-																					  self.cid)
-		self.client_information_file = self.read_client_file()
+		self.client_information_train_filename = """{}_saved_weights/{}/{}/{}_train.csv""".format(strategy_name.lower(),
+																							self.model_name, self.cid,
+																							self.cid)
+		self.client_information_val_filename = """{}_saved_weights/{}/{}/{}_val.csv""".format(strategy_name.lower(),
+																								  self.model_name,
+																								  self.cid,
+																								  self.cid)
+		self.client_information_train_file, self.client_information_val_file = self.read_client_file()
 
 
 
@@ -68,6 +74,7 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 			pattern = self.cid
 			if self.clients_pattern is not None:
 				if server_round is not None:
+					# It does the concept drift
 					current_pattern = self.clients_pattern.query("""Round == {} and Cid == {}""".format(server_round, self.cid))['Pattern'].tolist()
 					if len(current_pattern) != 1:
 						raise ValueError("""Pattern not found for client {}. The pattern may not exist or is duplicated""".format(pattern))
@@ -83,19 +90,20 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 				self.input_shape = (32, 0)
 				# exit()
 
-			if self.clients_pattern is not None:
-				past_pattern = \
+			if self.drift_detected:
+				# After drift detection, it recovers the past data and concatenate it with the new one
+				past_patterns = \
 					self.clients_pattern.query("""Round < {} and Cid == {}""".format(server_round, self.cid))[
 						'Pattern'].tolist()
-				if len(past_pattern) >= 1:
-					traindataset = self.previous_balanced_dataset(traindataset, past_pattern, batch_size, dataset_name, n_clients)
+				if len(past_patterns) >= 1:
+					traindataset = self.previous_balanced_dataset(traindataset, past_patterns, batch_size, dataset_name, n_clients)
 
 			return trainLoader, testLoader, traindataset, testdataset
 		except Exception as e:
 			print("load data")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def previous_balanced_dataset(self, current_traindataset, past_pattern, batch_size, dataset_name, n_clients):
+	def previous_balanced_dataset(self, current_traindataset, past_patterns, batch_size, dataset_name, n_clients):
 
 		try:
 
@@ -103,7 +111,7 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 			M = self.num_classes
 			samples_per_class = int(L/(2*M))
 
-			for pattern in past_pattern:
+			for pattern in past_patterns:
 				trainLoader, testLoader, traindataset, testdataset = ManageDatasets(pattern,
 																					self.model_name).select_dataset(
 					dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid, batch_size)
@@ -165,11 +173,17 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 			print("previous balanced dataset")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def save_client_information_fit(self, server_round, acc_of_last_fit):
+	def save_client_information_fit(self, server_round, acc_of_last_fit, predictions):
 
 		try:
+			Q = np.array([softmax(i).tolist() for i in predictions]).flatten().tolist()
 			self.classes_proportion, self.imbalance_level = self._calculate_classes_proportion()
-			df = pd.read_csv(self.client_information_filename)
+			drift_detected = self._drift_detection(Q)
+			print("rodada: ", server_round, " drift detected: ", drift_detected)
+			df = pd.read_csv(self.client_information_train_filename)
+			already_detected_drift = True if df['drift_detected'].tolist()[0] == "True" else False
+			if drift_detected or already_detected_drift:
+				drift_detected = True
 			row = df.iloc[0]
 			if int(row['first_round']) == -1:
 				first_round = -1
@@ -178,51 +192,34 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 
 			pd.DataFrame(
 				{'current_round': [server_round], 'classes_distribution': [str(self.classes_proportion)],
-				 'round_of_last_fit': [server_round],
-				 'round_of_last_evaluate': [-1], 'acc_of_last_fit': [acc_of_last_fit], 'first_round': [first_round],
-				 'acc_of_last_evaluate': [0]}).to_csv(self.client_information_filename,
+				 'round_of_last_fit': [server_round], 'drift_detected': [drift_detected], 'Q': [str(Q)],
+				 'acc_of_last_fit': [acc_of_last_fit], 'first_round': [first_round]}).to_csv(self.client_information_train_filename,
 													  index=False)
 
 		except Exception as e:
 			print("save client information fit")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def _calculate_contexts_similarities(self):
+	def _drift_detection(self, Q):
 
 		try:
 			"""
-				It measures the cosine similarity between the last and current class distribution of the local dataset
+				
 			"""
-			n = len(self.client_information_file['classes_distribution'])
-			print("antes ", self.client_information_file['classes_distribution'].tolist()[-1])
-			last_proportion = ast.literal_eval(self.client_information_file['classes_distribution'].tolist()[-1])
-			last_training = self.client_information_file['round_of_last_fit'].tolist()[-1]
+			row = self.client_information_train_file['Q'].tolist()
+			if len(row) > 0:
+				Q_old = ast.literal_eval(self.client_information_train_file['Q'].tolist()[-1])
+				print("antigo: ", Q_old[:5])
+				print("novo: ", Q[:5])
+				Q = Q + Q_old
 
-			current_proportion, imbalance_level = self._calculate_classes_proportion()
-			fraction_of_classes = sum([1 if i > 0 else 0 for i in current_proportion])/self.num_classes
+			lamda = 0.05
+			delta = 50
+			n_max = len(Q)
+			drif_detection = cda_fedavg_drift_detection(Q, lamda, delta, n_max)
 
-			if len(last_proportion) != len(current_proportion) or last_training == -1:
-				return 1, imbalance_level, fraction_of_classes
+			return drif_detection
 
-			last_proportion = np.array(last_proportion)
-			current_proportion = np.array(current_proportion)
-
-			if (last_proportion == current_proportion).all():
-				print("igual")
-
-				cosine_similarity = 1
-
-			else:
-				print("diferente ")
-				dot_product = np.dot(last_proportion, current_proportion)
-
-				norm_vector1 = np.linalg.norm(last_proportion)
-
-				norm_vector2 = np.linalg.norm(current_proportion)
-
-				cosine_similarity = dot_product / (norm_vector1 * norm_vector2)
-
-			return cosine_similarity, imbalance_level, fraction_of_classes
 
 		except Exception as e:
 			print("calculate contexts similarities")
@@ -232,11 +229,19 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 
 		try:
 
-			df = pd.read_csv(self.client_information_filename)
+			df_train = pd.read_csv(self.client_information_train_filename)
+			df_val = pd.read_csv(self.client_information_val_filename)
 
-			return df
+			self.drift_detected = True if df_train['drift_detected'].tolist()[0] == "True" else False
+
+			return df_train, df_val
 
 		except Exception as e:
 			print("read client file")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+			return pd.DataFrame({'current_round': [-1], 'classes_distribution': ["[]"], 'round_of_last_fit': [-1],
+						  'drift_detected': ['False'], 'Q': [[]], 'acc_of_last_fit': [0], 'first_round': [-1]}), pd.DataFrame({'current_round': [-1], 'classes_distribution': ["[]"],
+						  'drift_detected': ['False'], 'round_of_last_evaluate': [-1],
+						  'first_round': [-1],
+						  'acc_of_last_evaluate': [0]})
 

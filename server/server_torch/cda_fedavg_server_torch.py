@@ -70,29 +70,3 @@ class CDAFedAvgServerTorch(CDAFedAvgBaseServer):
         except Exception as e:
             print("load data")
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
-
-    def test(self, model, testloader, steps: int = None, device: str = "cpu"):
-        """Validate the network on the entire test set."""
-        print("Starting evalutation...")
-        model.to(device)  # move model to GPU if available
-        criterion = torch.nn.CrossEntropyLoss()
-        correct, total, loss = 0, 0, 0.0
-        model.eval()
-        with torch.no_grad():
-            for batch_idx, (x, y) in enumerate(testloader):
-                x, y = x.to(device), y.to(device)
-                y = y.long()
-                outputs = model(x)
-                loss += criterion(outputs, y).item()
-                _, predicted = torch.max(outputs.data, 1)
-                total += y.size(0)
-                correct += (predicted == y).sum().item()
-                if steps is not None and batch_idx == steps:
-                    break
-        if steps is None:
-            loss /= len(testloader.dataset)
-        else:
-            loss /= total
-        accuracy = correct / total
-        model.to("cpu")  # move model back to CPU
-        return loss, accuracy

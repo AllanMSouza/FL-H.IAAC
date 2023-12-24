@@ -1,27 +1,40 @@
+import sys
 import numpy as np
 from scipy.stats import beta
 
 def pdf_beta_distribution(x, a, b):
 
-    if (x < 1 and x > 0 and a > 0 and b > 0):
+    try:
 
-        vals = beta.pdf(x, a, b)
+        if (x < 1 and x > 0 and a > 0 and b > 0):
 
-        return vals
+            vals = beta.pdf(x, a, b)
 
-    else:
+            return vals
 
-        return 0
+        else:
+
+            return 0
+
+    except Exception as e:
+        print("pdf betadistribution")
+        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 def estimate_params(Q):
 
-    mean = np.mean(Q)
-    var = np.var(Q)
+    try:
 
-    alpha = mean * (mean + var * var)
-    beta = (1 - mean) * (mean + var * var)
+        mean = np.mean(Q)
+        var = np.var(Q)
 
-    return alpha, beta
+        alpha = mean * (mean + var * var)
+        beta = (1 - mean) * (mean + var * var)
+
+        return alpha, beta
+
+    except Exception as e:
+        print("estimate params")
+        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 def cda_fedavg_drift_detection(Q, lamda, delta, n_max):
     """
@@ -32,39 +45,45 @@ def cda_fedavg_drift_detection(Q, lamda, delta, n_max):
     :param delta:
     :param n_max:
     """
-    s_f = 0
-    t_h = -np.log(lamda)
-    N = len(Q)
 
-    for k in range(delta, N - delta):
+    try:
+        s_f = 0
+        t_h = -np.log(lamda)
+        N = len(Q)
 
-        m_b = np.mean(Q)
-        m_a = np.mean(Q[k + 1:])
-        # print("==========================")
-        # print("m a: ", m_a, " m b: ", m_b)
-        #
-        # print("m a: ", m_a, " m b: ", (1 - lamda) * m_b)
+        for k in range(delta, N - delta):
 
-        if m_a <= (1 - lamda) * m_b:
+            m_b = np.mean(Q)
+            m_a = np.mean(Q[k + 1:])
+            # print("==========================")
+            # print("m a: ", m_a, " m b: ", m_b)
+            #
+            # print("m a: ", m_a, " m b: ", (1 - lamda) * m_b)
 
-            s_k = 0
-            alpha_b, beta_b = estimate_params(Q[:k + 1])
-            alpha_a, beta_a = estimate_params(Q[k + 1:])
+            if m_a <= (1 - lamda) * m_b:
 
-            for i in range(k+1, N):
+                s_k = 0
+                alpha_b, beta_b = estimate_params(Q[:k + 1])
+                alpha_a, beta_a = estimate_params(Q[k + 1:])
 
-                q = Q[i]
-                p1 = pdf_beta_distribution(q, alpha_a, beta_a)
-                p2 = pdf_beta_distribution(q, alpha_b, beta_b)
-                # print("p1: ", p1, " p2: ", p2)
-                # print("x: ", p1/p2)
-                s_k = s_k + np.log(p2/p1)
-            # print(" s k: ", s_k)
-            s_f = np.max([s_f, s_k])
+                for i in range(k+1, N):
 
-    print("s f: ", s_f)
-    print("t h: ", t_h)
-    if s_f > t_h:
-        return True
-    else:
-        return False
+                    q = Q[i]
+                    p1 = pdf_beta_distribution(q, alpha_a, beta_a)
+                    p2 = pdf_beta_distribution(q, alpha_b, beta_b)
+                    # print("p1: ", p1, " p2: ", p2)
+                    # print("x: ", p1/p2)
+                    s_k = s_k + np.log(p2/p1)
+                # print(" s k: ", s_k)
+                s_f = np.max([s_f, s_k])
+
+        print("s f: ", s_f)
+        print("t h: ", t_h)
+        if s_f > t_h:
+            return True
+        else:
+            return False
+
+    except Exception as e:
+        print("cda fedavg drift detection")
+        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)

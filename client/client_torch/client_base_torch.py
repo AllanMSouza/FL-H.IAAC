@@ -256,7 +256,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			print("create model")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def save_client_information_fit(self, server_round, acc_of_last_fit):
+	def save_client_information_fit(self, server_round, acc_of_last_fit, predictions):
 		pass
 
 	def save_parameters(self):
@@ -347,6 +347,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 				# self.device = 'cuda:0'
 				print("Cliente: ", self.cid, " rodada: ", server_round, " Quantidade de camadas: ", len([i for i in self.model.parameters()]), " device: ", self.device)
+				predictions = []
 				for step in range(max_local_steps):
 					start_time = time.process_time()
 					train_acc = 0
@@ -367,6 +368,11 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 						self.optimizer.zero_grad()
 						output = self.model(x)
+						print("forma: ", output.detach().numpy().shape)
+						if len(predictions) == 0:
+							predictions = output.detach().numpy().tolist()
+						else:
+							predictions += output.detach().numpy().tolist()
 						y = torch.tensor(y)
 						loss = self.loss(output, y)
 						train_loss += loss.item()
@@ -396,7 +402,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 			data = [config['round'], self.cid, selected, total_time, size_of_parameters, avg_loss_train, avg_acc_train]
 
-			self.save_client_information_fit(server_round, avg_acc_train)
+			self.save_client_information_fit(server_round, avg_acc_train, predictions)
 
 			self._write_output(
 				filename=self.train_client_filename,

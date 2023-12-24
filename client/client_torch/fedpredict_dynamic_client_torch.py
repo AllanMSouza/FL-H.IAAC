@@ -71,7 +71,7 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 																		self.cid)
 
 
-	def save_client_information_fit(self, server_round, acc_of_last_fit):
+	def save_client_information_fit(self, server_round, acc_of_last_fit, predictions):
 
 		try:
 			self.classes_proportion, self.imbalance_level = self._calculate_classes_proportion()
