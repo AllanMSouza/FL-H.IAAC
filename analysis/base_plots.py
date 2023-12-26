@@ -156,7 +156,7 @@ def violin_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, lo
         figure.savefig(base_dir + "svg/" + file_name + log + ".svg", bbox_inches='tight', dpi=400)
 
 
-def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_scale=False, ax=None, tipo=None, hue_order=None, style=None, y_lim=False, y_min=0, y_max=1, n=None, markers=None, size=None, sizes=None):
+def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_scale=False, ax=None, tipo=None, hue_order=None, style=None, y_lim=False, y_min=0, y_max=1, n=None, markers=None, size=None, sizes=None, style_order=None):
     Path(base_dir).mkdir(parents=True, exist_ok=True)
     file_name = """{}_lineplot""".format(file_name)
 
@@ -173,9 +173,9 @@ def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_
 
     if tipo is not None:
         palette = sns.color_palette()
-        figure = sns.lineplot(x=x_column, y=y_column, data=df, hue=hue, ax=ax, palette=palette, hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes).set_title(title)
+        figure = sns.lineplot(x=x_column, y=y_column, data=df, hue=hue, ax=ax, palette=palette, hue_order=hue_order, style=style, style_order=style_order, markers=markers, size=size, sizes=sizes).set_title(title)
     else:
-        figure = sns.lineplot(x=x_column, y=y_column, data=df, hue=hue, ax=ax, hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes).set_title(title)
+        figure = sns.lineplot(x=x_column, y=y_column, data=df, hue=hue, ax=ax, hue_order=hue_order, style=style, style_order=style_order, markers=markers, size=size, sizes=sizes).set_title(title)
     print("nof")
 
     # plt.xticks(np.arange(min(x), max(x) + 1, max(x)//10))

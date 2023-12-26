@@ -21,6 +21,7 @@ class JointAnalysis():
         self.clients = clients
         df_concat = None
         count = 0
+        original_model = copy.deepcopy(model)
         version_dict = {"FedPredict": {-2: "$FedPredict_{dc}"}}
         for i in experiments:
             experiment = experiments[i]
@@ -49,6 +50,10 @@ class JointAnalysis():
 
                             for alpha in alphas:
 
+                                if dataset in ['WISDM-WATCH']:
+                                    model = "GRU"
+                                else:
+                                    model = original_model
                                 filename1 = """{}/{}/{}-None-{}/new_clients_{}_train_{}_dynamic_data_{}/{}/{}/{}/{}/alpha_{}/{}_rounds/{}/{}_comment/{}_compression/{}""".format(os.path.abspath(os.path.join(os.getcwd(),
                                                                                                                         os.pardir)) + "/FL-H.IAAC/logs",
                                                                                                                         type,
@@ -104,6 +109,9 @@ class JointAnalysis():
                                 if strategy == "FedPredict" and compression == "no" and dynamic_data == "synthetic":
                                     st = "FedAvg"
                                     s = "$+FP$"
+                                elif strategy == "FedPredict_Dynamic" and compression == "no" and dynamic_data == "synthetic":
+                                    st = "FedAvg"
+                                    s = "$+FP_{dyn}$"
                                 elif strategy == "FedYogi_with_FedPredict" and compression == "no" and dynamic_data == "synthetic":
                                     st = "FedYogi"
                                     s = "$+FP$"
@@ -136,7 +144,7 @@ class JointAnalysis():
         # plots
         # self.joint_plot_acc_two_plots(df=df_concat, experiment=1, pocs=pocs)
         # self.joint_plot_acc_two_plots(df=df_concat, experiment=1, pocs=pocs)
-
+        print("versao1: ", df_concat[['Strategy', 'Version']].drop_duplicates())
         self.joint_plot_acc_four_plots(df=df_concat, experiment=1, alphas=alphas)
         # self.joint_plot_acc_four_plots(df=df_concat, experiment=2, alphas=alphas)
         # self.joint_plot_acc_four_plots(df=df_concat, experiment=3, alphas=alphas)
@@ -152,7 +160,7 @@ class JointAnalysis():
         strategies = df_concat['Strategy'].unique().tolist()
         print("versao2: ", df_concat['Strategy'].unique().tolist())
         aux = []
-        order = ['$FedAvg+FP_{dc}$', '$FedAvg$', '$FedYogi+FP_{dc}$', '$FedYogi$', '$FedKD+FP_{dc}$', '$FedKD$', '$FedPer$', '$FedProto$']
+        order = ['$FedAvg+FP_{dc}$', '$FedAvg$', '$FedYogi+FP_{dc}$', '$FedYogi$', '$FedKD+FP_{dc}$', '$FedKD$', '$FedPer$', '$FedProto$', 'CDA-FedAvg']
         for s in order:
             if s in strategies:
                 aux.append(s)
@@ -428,26 +436,26 @@ class JointAnalysis():
 
         return df
 
-    def filter_and_plot(self, ax, base_dir, filename, title, df, experiment, dataset, alpha, x_column, y_column, hue, hue_order=None, style=None, markers=None, size=None, sizes=None):
+    def filter_and_plot(self, ax, base_dir, filename, title, df, experiment, dataset, alpha, x_column, y_column, hue, hue_order=None, style=None, markers=None, size=None, sizes=None, y_max=1, y_lim=True, style_order=None):
 
         df = self.filter(df, experiment, dataset, alpha)
+        print("ttt: ", df)
         df['Strategy'] = np.array(["$" + i + "$" for i in df['Strategy'].tolist()])
 
         print("filtrado: ", df, df[hue].unique().tolist())
-        line_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, tipo='1', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes)
+        line_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, tipo='1', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes, y_max=y_max, y_lim=y_lim, style_order=style_order)
 
     def joint_plot_acc_four_plots(self, df, experiment, alphas):
         print("Joint plot exeprimento: ", experiment)
 
         df_test = df[['Round (t)', 'Loss', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset', 'Version', 'Alpha']].groupby(['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Version', 'Alpha']).apply(lambda e: self.groupb_by_plot(e)).reset_index()[['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)', 'Loss', 'Version', 'Alpha']]
-        datast = df['Dataset'].unique().tolist() + ['WISDM-WATCH']
+        datast = df['Dataset'].unique().tolist()
         print("agrupou plot")
         print(df_test[df_test['Round (t)']==100])
         # figsize=(12, 9),
         sns.set(style='whitegrid')
         rows = len(alphas)
         cols = len(datast)
-        print("aa: ", rows, cols)
         fig, axs = plt.subplots(rows, cols,  sharex='all', sharey='all', figsize=(9, 6))
 
         x_column = 'Round (t)'
@@ -463,17 +471,19 @@ class JointAnalysis():
                 title = """{}; \u03B1={}""".format(dataset, alpha)
                 filename = ''
                 # hue_order = ['$FedPredict_{dc}$', "$FedPredict$", 'FedClassAvg', 'FedAvg']
-                hue_order = ['$FedAvg$', '$FedYogi$', '$FedKD$', '$FedPer$', '$FedProto$']
+                hue_order = ['$FedAvg$', '$FedPer$', '$CDA-FedAvg$']
                 style = "Version"
+                style_order = ["$+FP_{dyn}$", "$+FP$", "$Original$"]
+                y_max = 100
                 # markers = [',', '.'
                 markers = None
                 size = None
                 sizes = (1, 1.8)
                 self.filter_and_plot(ax=axs[i,j], base_dir=base_dir, filename=filename, title=title, df=df_test,
                                      experiment=experiment, dataset=dataset, alpha=alpha, x_column=x_column, y_column=y_column,
-                                     hue='Strategy', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes)
-                # axs[i,j].get_legend().remove()
-                axs[i,j].legend(fontsize=7)
+                                     hue='Strategy', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes, y_max=y_max, style_order=style_order)
+                axs[i,j].get_legend().remove()
+                # axs[i,j].legend(fontsize=7)
                 axs[i,j].set_xlabel('')
                 axs[i,j].set_ylabel('')
 
@@ -506,11 +516,11 @@ class JointAnalysis():
             ls = lines[i].get_ls()
             if ls not in ["o"]:
                 ls = "o"
-        markers = ["", "-", "--"]
+        markers = ["", "-", "--", "dotted"]
 
         f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
         handles = [f("o", colors[i]) for i in range(len(hue_order) + 1)]
-        handles += [plt.Line2D([], [], linestyle=markers[i], color="k") for i in range(3)]
+        handles += [plt.Line2D([], [], linestyle=markers[i], color="k") for i in range(len(markers))]
         axs[0, 0].legend(handles, labels, fontsize=7)
         print("base: ", base_dir, """{}joint_plot_four_plot_{}_{}_rounds_{}_clients.png""".format(base_dir, str(experiment), self.rounds, self.clients))
         fig.savefig("""{}joint_plot_four_plot_{}_{}_rounds_{}_clients.png""".format(base_dir, str(experiment), self.rounds, self.clients), bbox_inches='tight', dpi=400)
@@ -594,16 +604,16 @@ if __name__ == '__main__':
         # 'comment': 'set', 'compression': "dls_compredict", 'local_epochs': '1_local_epochs', 'dynamic_data': "no"}
                    }
 
-    strategies = ['FedAVG', 'FedPredict']
+    strategies = ['FedAVG', 'FedPredict', 'FedPredict_Dynamic', 'CDA-FedAvg', 'FedPer']
     # 'FedPredict', 'FedYogi_with_FedPredict', 'FedKD_with_FedPredict', 'FedAVG', 'FedYogi', 'FedPer', 'FedProto', 'FedKD'
     # pocs = [0.1, 0.2, 0.3]
     fractions_fit = [0.3]
     # datasets = ['MNIST', 'CIFAR10']
-    datasets = ['WISDM-WATCH', 'WISDM-WATCH']
+    datasets = ['CIFAR10', 'EMNIST', 'WISDM-WATCH']
     alpha = [0.1, 0.1]
     rounds = 50
     clients = '20'
-    model = 'GRU'
+    model = 'CNN_3'
     type_t = 'torch'
     file_type = 'evaluate_client.csv'
 

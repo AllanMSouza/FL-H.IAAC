@@ -108,11 +108,13 @@ def fedpredict_dynamic_core(t, T, nt, local_client_information):
         similarity = local_client_information['similarity']
         imbalance_level = local_client_information['imbalance_level']
         fraction_of_classes = local_client_information['fraction_of_classes']
-        print("local classes: ", similarity)
+        print("rodada: ", t, "local classes: ", similarity)
         similarity = float(np.round(similarity,1))
         if nt == 0:
             global_model_weight = 0
         elif nt == t or (fraction_of_classes >= 0.98 and imbalance_level >= 30):
+            global_model_weight = 1
+        elif similarity != 1:
             global_model_weight = 1
         else:
             update_level = 1 / nt

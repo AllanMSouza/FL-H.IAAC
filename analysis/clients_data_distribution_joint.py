@@ -95,19 +95,36 @@ class CLient:
                 validation_dataset = copy.deepcopy(training_dataset)
                 validation_dataset.targets = np.array([])
 
-            with open(self.filename_train, 'rb') as handle:
-                idx_train = pickle.load(handle)
+            elif self.dataset == "WISDM-WATCH":
 
-            with open(self.filename_test, 'rb') as handle:
-                idx_test = pickle.load(handle)
+                filename_train = self.filename_train.replace("pickle", "csv")
+                filename_test = self.filename_test.replace("pickle", "csv")
 
-            if self.dataset != 'GTSRB':
-                y = training_dataset.targets
-                y = np.concatenate((y, validation_dataset.targets))
-            y_train = y[idx_train]
-            y_test = y[idx_test]
-            y = np.concatenate((y_train, y_test))
-            total = len(y)
+                train = pd.read_csv(filename_train)
+                test = pd.read_csv(filename_test)
+                y_train = np.array([i for i in train['Y'].to_numpy().astype(np.int32)])
+                y_test = np.array([i for i in test['Y'].to_numpy().astype(np.int32)])
+
+                y = np.concatenate((y_train, y_test))
+                total = len(y)
+
+            if self.dataset != "WISDM-WATCH":
+
+                with open(self.filename_train, 'rb') as handle:
+                    idx_train = pickle.load(handle)
+
+                with open(self.filename_test, 'rb') as handle:
+                    idx_test = pickle.load(handle)
+
+                if self.dataset != 'GTSRB':
+                    y = training_dataset.targets
+                    y = np.concatenate((y, validation_dataset.targets))
+                y_train = y[idx_train]
+                y_test = y[idx_test]
+                y = np.concatenate((y_train, y_test))
+                total = len(y)
+
+
             self.unique_classes = len(pd.Series(y).unique().tolist())
             self.unique_classes_list = pd.Series(y).unique().tolist()
             self.samples_per_class = {i: 0 for i in self.unique_classes_list}
@@ -208,7 +225,7 @@ class Varying_Shared_layers:
 
         for alpha in self.alpha:
             for dataset in self.dataset:
-                classes = {'CIFAR-10': 10, 'EMNIST': 47, 'GTSRB': 43}[dataset]
+                classes = {'CIFAR-10': 10, 'EMNIST': 47, 'GTSRB': 43, 'WISDM-WATCH': 12}[dataset]
                 for i in range(self.num_clients[dataset]):
                     self.clients.append(CLient(i, dataset_name=dataset, n_clients=self.num_clients[dataset], class_per_client=class_per_client, alpha=alpha, classes=classes))
 
@@ -240,7 +257,7 @@ class Varying_Shared_layers:
             dt_list.append(dt)
             alphas += alpha
             alpha_summary[dataset[0]][alpha[0]].append(uc)
-            clas = {'CIFAR-10': 10, 'EMNIST': 47, 'GTSRB': 43}[dt]
+            clas = {'CIFAR-10': 10, 'EMNIST': 47, 'GTSRB': 43, 'WISDM-WATCH': 12}[dt]
             unique_classes_list += [uc[0]*100/clas]
             alpha_list.append(alpha[0])
             balance_level_list.append(balance_level)
@@ -307,7 +324,7 @@ class Varying_Shared_layers:
 
 
         fig, axs = plt.subplots(2, 1, sharex='all', sharey='all', figsize=(6, 6))
-        bar_plot(df=df_unique_classes, base_dir=self.base_dir, ax=axs[0], x_order=x_order, file_name="""unique_classes_{}""".format(self.dataset), x_column='\u03B1', y_column='Classes (%)', title="""Clients' local classes""", tipo="classes", y_max=100, hue='Dataset', hue_order=['EMNIST', 'CIFAR-10', 'GTSRB'])
+        bar_plot(df=df_unique_classes, base_dir=self.base_dir, ax=axs[0], x_order=x_order, file_name="""unique_classes_{}""".format(self.dataset), x_column='\u03B1', y_column='Classes (%)', title="""Clients' local classes""", tipo="classes", y_max=100, hue='Dataset', hue_order=['EMNIST', 'CIFAR-10', 'GTSRB', 'WISDM-WATCH'])
         i = 0
         axs[i].get_legend().remove()
         axs[i].legend(fontsize=10)
@@ -316,7 +333,7 @@ class Varying_Shared_layers:
         # bar_plot(df=df_unique_classes, base_dir=self.base_dir, file_name="""balance_level_{}""".format(self.dataset),
         #          x_column='\u03B1', y_column='Balance level', title="""""", y_max=1, hue='Dataset', tipo="balance")
         bar_plot(df=df_unique_classes, base_dir=self.base_dir, ax=axs[1], x_order=x_order, file_name="""imbalance_level_{}""".format(self.dataset),
-                 x_column='\u03B1', y_column='Imbalance level (%)', title="""Dataset imbalance level""", y_max=100, hue='Dataset', tipo="balance", hue_order=['EMNIST', 'CIFAR-10', 'GTSRB'])
+                 x_column='\u03B1', y_column='Imbalance level (%)', title="""Dataset imbalance level""", y_max=100, hue='Dataset', tipo="balance", hue_order=['EMNIST', 'CIFAR-10', 'GTSRB', 'WISDM-WATCH'])
         i = 1
         axs[i].get_legend().remove()
         # axs[i].legend(fontsize=7)
@@ -408,8 +425,8 @@ if __name__ == '__main__':
     type_model = "torch"
     aggregation_method = "None"
     fraction_fit = 0.3
-    num_clients = {'GTSRB': 20, 'EMNIST': 20, 'CIFAR-10': 20}
-    dataset = ["GTSRB", "EMNIST", "CIFAR-10"]
+    num_clients = {'GTSRB': 20, 'EMNIST': 20, 'CIFAR-10': 20, 'WISDM-WATCH': 20}
+    dataset = ["GTSRB", "EMNIST", "CIFAR-10", "WISDM-WATCH"]
     alpha = [0.1, 0.5, 1.0]
     num_rounds = 50
 

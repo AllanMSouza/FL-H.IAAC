@@ -56,7 +56,7 @@ def cda_fedavg_drift_detection(Q, lamda, delta, n_max):
             m_b = np.mean(Q)
             m_a = np.mean(Q[k + 1:])
             # print("==========================")
-            # print("m a: ", m_a, " m b: ", m_b)
+            print("m a: ", m_a, " m b: ", m_b)
             #
             # print("m a: ", m_a, " m b: ", (1 - lamda) * m_b)
 
@@ -73,7 +73,7 @@ def cda_fedavg_drift_detection(Q, lamda, delta, n_max):
                     p2 = pdf_beta_distribution(q, alpha_b, beta_b)
                     # print("p1: ", p1, " p2: ", p2)
                     # print("x: ", p1/p2)
-                    s_k = s_k + np.log(p2/p1)
+                    s_k = s_k + np.log(p1/p2)
                 # print(" s k: ", s_k)
                 s_f = np.max([s_f, s_k])
 

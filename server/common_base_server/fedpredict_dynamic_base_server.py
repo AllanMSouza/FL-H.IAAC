@@ -118,6 +118,7 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
 		self.gradient_norm_nt = []
 		self.T = int(args.T)
 		self.clients_model_non_zero_indexes = {}
+		self.last_layer_parameters_per_class = {i: [np.array([]), 0, np.array([])] for i in range(self.n_classes)}
 
 	def create_folder(self, strategy_name):
 
@@ -197,6 +198,58 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
 
 		return weights_prime
 
+	def aggregate_last_layer_parameters(self, last_layer_parameters, clients_num_examples_list, classes_proportion_list):
+
+		current_last_layer_parameters_per_class = {i: [] for i in range(self.n_classes)}
+
+		for i in range(len(last_layer_parameters)):
+
+			parameter = np.array(last_layer_parameters[i])
+			num_examples = clients_num_examples_list[i]
+			classes_proportion = np.array(classes_proportion_list[i])
+
+			major_class = np.argmax(classes_proportion)
+
+			current_last_layer_parameters_per_class[major_class].append([parameter, num_examples, classes_proportion])
+
+		for i in self.last_layer_parameters_per_class:
+
+			current_major_class_parameter_list = []
+			previous_major_class_parameter = self.last_layer_parameters_per_class[i]
+			current_major_class_parameter_list += current_last_layer_parameters_per_class[i]
+
+			current_major_class_parameter_list.append(previous_major_class_parameter)
+
+			if len(current_major_class_parameter_list) == 0:
+				continue
+
+			total = 0
+			for parameter, num_examples, classes_proportion in current_major_class_parameter_list:
+
+				total += num_examples
+
+			parameters_weighted_sum = None
+			classes_proportion_weighted_sum = None
+			for parameter, num_examples, classes_proportion in current_major_class_parameter_list:
+
+				if parameters_weighted_sum is None:
+					print("wl: ", num_examples, total, type(parameter))
+					parameters_weighted_sum = parameter * num_examples / total
+					classes_proportion_weighted_sum = classes_proportion * num_examples / total
+				elif len(parameter) > 0:
+					print("wl2: ", parameters_weighted_sum.shape, parameter.shape, num_examples, total, type(parameter))
+					parameters_weighted_sum += parameter * num_examples / total
+					classes_proportion_weighted_sum += classes_proportion * num_examples / total
+
+			parameters_weighted_sum = parameters_weighted_sum / len(current_major_class_parameter_list)
+			classes_proportion_weighted_sum = classes_proportion_weighted_sum / len(current_major_class_parameter_list)
+
+			self.last_layer_parameters_per_class[i] = [parameters_weighted_sum, total, classes_proportion_weighted_sum]
+
+			print("agregou camada")
+
+
+
 	def aggregate_fit(self, server_round, results, failures):
 
 		parameters_aggregated, metrics_aggregated = super().aggregate_fit(server_round, results, failures)
@@ -214,6 +267,7 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
 		clients_num_examples_list = []
 		clients_ids = []
 		classes_proportion_list = []
+		last_layer_parameters = []
 		for _, fit_res in results:
 			client_id = str(fit_res.metrics['cid'])
 			clients_ids.append(client_id)
@@ -221,8 +275,11 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
 			num_examples = fit_res.num_examples
 			classes_proportion = list(fit_res.metrics['local_classes'])
 			clients_parameters.append(parameters)
+			last_layer_parameters.append(parameters[-1])
 			clients_num_examples_list.append(num_examples)
 			classes_proportion_list.append(classes_proportion)
+
+		self.aggregate_last_layer_parameters(last_layer_parameters, clients_num_examples_list, classes_proportion_list)
 
 		if self.use_gradient:
 			global_parameter = [current - previous for current, previous in zip(parameters_to_ndarrays(parameters_aggregated), self.previous_global_parameters[server_round-1])]

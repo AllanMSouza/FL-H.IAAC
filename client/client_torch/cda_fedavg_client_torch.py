@@ -197,7 +197,7 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 
 		try:
 			scaler = MinMaxScaler()
-			Q = np.array([softmax(i).tolist() for i in predictions]).flatten().tolist()
+			Q = np.array([np.max(softmax(i).tolist()) for i in predictions]).flatten().tolist()
 			self.classes_proportion, self.imbalance_level = self._calculate_classes_proportion()
 			drift_detected = self._drift_detection(Q)
 			print("rodada: ", server_round, " drift detected: ", drift_detected, " cid: ", self.cid)
@@ -234,8 +234,8 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 				print("novo: ", Q[:5], len(Q))
 				Q = Q + Q_old
 
-			lamda = 0.008 # descer aumenta a detecção
-			delta = 850
+			lamda = 0.01 # descer aumenta a detecção
+			delta = 150
 			n_max = len(Q)
 			drif_detection = cda_fedavg_drift_detection(Q, lamda, delta, n_max)
 
