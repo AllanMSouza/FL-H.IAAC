@@ -8,6 +8,7 @@ import os
 import sys
 import pandas as pd
 import numpy as np
+from sklearn.preprocessing import MinMaxScaler
 import ast
 from scipy.special import softmax
 from utils.compression_methods.sparsification import calculate_bytes, sparse_bytes, sparse_matrix
@@ -79,6 +80,7 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 					if len(current_pattern) != 1:
 						raise ValueError("""Pattern not found for client {}. The pattern may not exist or is duplicated""".format(pattern))
 					pattern = current_pattern[0]
+			# print("cid: ", self.cid, " padrao: ", pattern)
 			if dataset_name in ['MNIST', 'CIFAR10', 'CIFAR100', 'EMNIST', 'GTSRB', 'State Farm']:
 				trainLoader, testLoader, traindataset, testdataset = ManageDatasets(pattern, self.model_name).select_dataset(
 					dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid, batch_size)
@@ -102,6 +104,24 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 		except Exception as e:
 			print("load data")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+	def _min_max_scaler(self, X):
+
+		try:
+
+			X = np.array(X)
+			print("Tamanho de X: ", X.shape)
+			min_ = np.min(X)
+			max_ = np.max(X)
+			X_std = (X - min_) / (max_ - min_)
+			X_scaled = softmax(X_std)
+			print(" 1: ", X_scaled)
+			print(" 2: ", softmax(X))
+		except Exception as e:
+			print("min max scaler")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+		return X_scaled
 
 	def previous_balanced_dataset(self, current_traindataset, past_patterns, batch_size, dataset_name, n_clients):
 
@@ -176,10 +196,11 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 	def save_client_information_fit(self, server_round, acc_of_last_fit, predictions):
 
 		try:
+			scaler = MinMaxScaler()
 			Q = np.array([softmax(i).tolist() for i in predictions]).flatten().tolist()
 			self.classes_proportion, self.imbalance_level = self._calculate_classes_proportion()
 			drift_detected = self._drift_detection(Q)
-			print("rodada: ", server_round, " drift detected: ", drift_detected)
+			print("rodada: ", server_round, " drift detected: ", drift_detected, " cid: ", self.cid)
 			df = pd.read_csv(self.client_information_train_filename)
 			already_detected_drift = True if df['drift_detected'].tolist()[0] == "True" else False
 			if drift_detected or already_detected_drift:
@@ -209,12 +230,12 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 			row = self.client_information_train_file['Q'].tolist()
 			if len(row) > 0:
 				Q_old = ast.literal_eval(self.client_information_train_file['Q'].tolist()[-1])
-				print("antigo: ", Q_old[:5])
-				print("novo: ", Q[:5])
+				print("antigo: ", Q_old[:5], len(Q_old))
+				print("novo: ", Q[:5], len(Q))
 				Q = Q + Q_old
 
-			lamda = 0.05
-			delta = 50
+			lamda = 0.008 # descer aumenta a detecção
+			delta = 850
 			n_max = len(Q)
 			drif_detection = cda_fedavg_drift_detection(Q, lamda, delta, n_max)
 

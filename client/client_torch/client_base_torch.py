@@ -125,7 +125,6 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				self.solution_name = f"{solution_name}-{aggregation_method}-{self.fraction_fit}"
 
 			self.base = self._create_base_directory(self.type, self.solution_name, new_clients, new_clients_train, self.dynamic_data, n_clients, model_name, dataset, str(args.class_per_client), str(args.alpha), str(args.rounds), str(args.local_epochs), str(args.comment), str(args.compression_method), args)
-			print("base: ", self.base)
 			self.evaluate_client_filename = f"{self.base}/evaluate_client.csv"
 			self.train_client_filename = f"{self.base}/train_client.csv"
 			self.predictions_client_filename = f"{self.base}/predictions_client.csv"
@@ -449,7 +448,6 @@ class ClientBaseTorch(fl.client.NumPyClient):
 					y = y.to(self.device)
 					y = torch.tensor(y)
 					output = self.model(x)
-					print("dtypes: ", output.dtype, y.dtype)
 					loss = self.loss(output, y)
 					test_loss += loss.item() * y.shape[0]
 					prediction = torch.argmax(output, dim=1)
