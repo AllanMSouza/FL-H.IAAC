@@ -162,7 +162,7 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 			fraction_of_classes = sum([1 if i > 0 else 0 for i in current_proportion])/self.num_classes
 
 			if len(last_proportion) != len(current_proportion) or last_training == -1:
-				return 1, imbalance_level, fraction_of_classes
+				return 1, imbalance_level, fraction_of_classes, current_proportion
 
 			last_proportion = np.array(last_proportion)
 			current_proportion = np.array(current_proportion)
@@ -182,7 +182,7 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 
 				cosine_similarity = dot_product / (norm_vector1 * norm_vector2)
 
-			return cosine_similarity, imbalance_level, fraction_of_classes
+			return cosine_similarity, imbalance_level, fraction_of_classes, current_proportion
 
 		except Exception as e:
 			print("calculate contexts similarities")
@@ -225,10 +225,10 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 		try:
 			local_classes = self.classes_proportion
 			print("Rodada: ", config['round'])
-			similarity, imbalance_level, fraction_of_classes = self._calculate_contexts_similarities()
+			similarity, imbalance_level, fraction_of_classes, current_proportion = self._calculate_contexts_similarities()
 			print("similaridade: ", similarity, ' imbalance level: ', imbalance_level, ' fraction of classes:', fraction_of_classes)
 			local_data_information = {'similarity': similarity, 'imbalance_level': imbalance_level, 'fraction_of_classes': fraction_of_classes}
-			self.model = fedpredict_dynamic_client(self.filename, self.model, global_parameters, config, mode=None, local_client_information=local_data_information)
+			self.model = fedpredict_dynamic_client(self.filename, self.model, global_parameters, config, mode=None, local_client_information=local_data_information, current_proportion=current_proportion)
 
 		except Exception as e:
 			print("Set parameters to model evaluate dyn")

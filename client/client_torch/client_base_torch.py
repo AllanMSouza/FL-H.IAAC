@@ -367,7 +367,6 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 						self.optimizer.zero_grad()
 						output = self.model(x)
-						print("forma: ", output.detach().numpy().shape)
 						if len(predictions) == 0:
 							predictions = output.detach().numpy().tolist()
 						else:
