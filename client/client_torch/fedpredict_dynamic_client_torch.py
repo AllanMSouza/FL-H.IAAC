@@ -227,6 +227,11 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 			print("Rodada: ", config['round'])
 			similarity, imbalance_level, fraction_of_classes, current_proportion = self._calculate_contexts_similarities()
 			print("similaridade: ", similarity, ' imbalance level: ', imbalance_level, ' fraction of classes:', fraction_of_classes)
+			if config['round'] >= 7:
+				if similarity == 1:
+					print("cliente ", self.cid, " usou o modelo local rodada ", config['round'])
+				else:
+					print("cliente ", self.cid, " usou o modelo global rodada ", config['round'])
 			local_data_information = {'similarity': similarity, 'imbalance_level': imbalance_level, 'fraction_of_classes': fraction_of_classes}
 			self.model = fedpredict_dynamic_client(self.filename, self.model, global_parameters, config, mode=None, local_client_information=local_data_information, current_proportion=current_proportion)
 

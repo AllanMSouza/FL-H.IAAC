@@ -55,17 +55,27 @@ def get_size(parameter):
         print("get_size")
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-def aggregate(results):
+def aggregate(results, t):
     """Compute weighted average."""
     # Calculate the total number of examples used during training
     num_examples_total = sum([num_examples for parameters, num_examples, classes_proportion in results])
+
+    print("total ag: ", num_examples_total)
 
     # Create a list of weights, each multiplied by the related number of examples
     weighted_weights = [
         [layer * num_examples for layer in parameters] for parameters, num_examples, classes_proportion in results
     ]
 
-    weighted_class_proportion = [classes_proportion * num_examples  for parameters, num_examples, classes_proportion in results]
+    # weighted_weights = [
+    #     [layer * num_examples for layer in weights] for weights, num_examples in results
+    # ]
+
+    if len(results) == 2:
+        print("igual a 1 p1 round ", t)
+        print(results[0][0][0])
+
+    weighted_class_proportion = [np.array(classes_proportion) * num_examples  for parameters, num_examples, classes_proportion in results]
 
     # Compute average weights of each layer
     weights_prime: NDArrays = [
@@ -73,11 +83,24 @@ def aggregate(results):
         for layer_updates in zip(*weighted_weights)
     ]
 
+    if len(results) == 2:
+        print("igual a 1 p2")
+        print(weights_prime[0])
+
     classes_proportion_prime: NDArrays = [
         reduce(np.add, layer_updates) / num_examples_total
         for layer_updates in zip(*weighted_class_proportion)
     ]
 
+    classes_proportion_prime = None
+    for classes_proportion in weighted_class_proportion:
+        if classes_proportion_prime is None:
+            classes_proportion_prime = classes_proportion
+        else:
+            classes_proportion_prime = np.add(classes_proportion_prime, classes_proportion)
+
+
+    classes_proportion_prime = classes_proportion_prime / num_examples_total
 
     return weights_prime, classes_proportion_prime
 
@@ -229,7 +252,7 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
     #
     # 	for parameter, num_examples, classes_proportion in current_major_class_parameter_list:
 
-    def aggregate_last_layer_parameters(self, last_layer_parameters, clients_num_examples_list, classes_proportion_list, n_classes):
+    def aggregate_last_layer_parameters(self, last_layer_parameters, clients_num_examples_list, classes_proportion_list, n_classes, server_round):
 
         current_last_layer_parameters_per_class = {i: [] for i in range(n_classes)}
 
@@ -241,22 +264,32 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
 
             major_class = np.argmax(classes_proportion)
 
+            print("adiciona: ", num_examples)
+
             current_last_layer_parameters_per_class[major_class].append([parameters, num_examples, classes_proportion])
 
         for i in self.last_layer_parameters_per_class:
 
+            print("----------")
             current_major_class_parameter_list = []
             previous_major_class_parameter = self.last_layer_parameters_per_class[i]
+            print("antigo ag: ", len(previous_major_class_parameter))
             current_major_class_parameter_list += current_last_layer_parameters_per_class[i]
-
-            current_major_class_parameter_list.append(previous_major_class_parameter)
+            if len(current_major_class_parameter_list) >= 1:
+                print("atual maior: ", len(current_major_class_parameter_list))
+            if previous_major_class_parameter[1] > 0:
+                print("antigo maior")
+                current_major_class_parameter_list.append(previous_major_class_parameter)
 
             if len(current_major_class_parameter_list) == 0:
                 continue
 
-            total = 0
+            total = sum([num_examples for parameters, num_examples, classes_proportion in current_major_class_parameter_list])
 
-            parameters_weighted_sum, classes_proportion_weighted_sum = aggregate(current_major_class_parameter_list)
+            print("ta ag: ", [len(i) for i in current_major_class_parameter_list])
+            print("total aggg: ", [i[1] for i in current_major_class_parameter_list])
+
+            parameters_weighted_sum, classes_proportion_weighted_sum = aggregate(current_major_class_parameter_list, server_round)
             # for parameters, num_examples, classes_proportion in current_major_class_parameter_list:
             #
             # 	total += num_examples
@@ -276,7 +309,7 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
             #
             # parameters_weighted_sum = parameters_weighted_sum / len(current_major_class_parameter_list)
             # classes_proportion_weighted_sum = classes_proportion_weighted_sum / len(current_major_class_parameter_list)
-            print("as: ", total)
+            print("as: ", total, "classe p: ", i, " rodada: ", server_round, " total: ", total, "classes ag: ", len(classes_proportion_weighted_sum))
             self.last_layer_parameters_per_class[i] = [parameters_weighted_sum, total, classes_proportion_weighted_sum]
 
             print("agregou camada")
@@ -308,11 +341,11 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
             num_examples = fit_res.num_examples
             classes_proportion = list(fit_res.metrics['local_classes'])
             clients_parameters.append(parameters)
-            last_layer_parameters.append(parameters[-4:])
+            last_layer_parameters.append(parameters[-2:])
             clients_num_examples_list.append(num_examples)
             classes_proportion_list.append(classes_proportion)
 
-        self.aggregate_last_layer_parameters(last_layer_parameters, clients_num_examples_list, classes_proportion_list, self.n_classes)
+        self.aggregate_last_layer_parameters(last_layer_parameters, clients_num_examples_list, classes_proportion_list, self.n_classes, server_round)
 
         if self.use_gradient:
             global_parameter = [current - previous for current, previous in zip(parameters_to_ndarrays(parameters_aggregated), self.previous_global_parameters[server_round-1])]

@@ -525,6 +525,10 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				data = [[self.cid, server_round, int(p), int(l)] for p, l in zip(predictions, labels)]
 				self._write_outputs(self.predictions_client_filename, data, 'a')
 
+			if server_round >= 7:
+
+				print("Acurácia teste do cliente: ", self.cid, " ", accuracy)
+
 			evaluation_response = {
 				"cid": self.cid,
 				"accuracy": float(accuracy)

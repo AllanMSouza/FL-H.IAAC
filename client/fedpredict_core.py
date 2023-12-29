@@ -108,7 +108,7 @@ def fedpredict_dynamic_core(t, T, nt, local_client_information):
         similarity = local_client_information['similarity']
         imbalance_level = local_client_information['imbalance_level']
         fraction_of_classes = local_client_information['fraction_of_classes']
-        print("rodada: ", t, "local classes: ", similarity)
+        print("fedpredict_dynamic_core rodada: ", t, "local classes: ", similarity)
         similarity = float(np.round(similarity,1))
         if nt == 0:
             global_model_weight = 0
@@ -748,7 +748,7 @@ def fedpredict_dynamic_client(filename, model, global_parameters, config={}, mod
         print("similaridade chegou: ", similarity, type(similarity))
         if similarity != 1:
             print("calc:")
-            parameter_last_layer = find_near_model(last_layer_parameter_per_class, current_proportion)
+            parameter_last_layer = find_near_model(last_layer_parameter_per_class, current_proportion, t)
             print([i.shape for i in parameter_last_layer])
         else:
             parameter_last_layer = np.array([])
@@ -770,8 +770,13 @@ def fedpredict_dynamic_client(filename, model, global_parameters, config={}, mod
         print("comprimido: ", len(model_shape))
         global_parameters = decompress_global_parameters(global_parameters, model_shape, M, decompress)
         if len(parameter_last_layer) > 0:
-            print("assinalou")
-            global_parameters[-4:] = [Parameter(torch.Tensor(p.tolist())) for p in parameter_last_layer]
+            print("shape modelo antes: ", [i.detach().cpu().numpy().shape for i in global_parameters])
+            print("at: ", global_parameters[-2][0])
+            print("assinalou parâmetros dinâmicos")
+            last_layers = [Parameter(torch.Tensor(p.tolist())) for p in parameter_last_layer]
+            for i in range(len(last_layers)):
+                global_parameters[-2+i] += last_layers[i]/2
+            print("dps: ", global_parameters[-2][0])
         print("shape modelo: ", [i.detach().cpu().numpy().shape for i in global_parameters])
         print("descomprimido: ", [i.shape for i in global_parameters])
         print("M: ", M)
@@ -802,11 +807,11 @@ def fedpredict_dynamic_client(filename, model, global_parameters, config={}, mod
         print("FedPredict dynamic client")
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-def find_near_model(last_layer_parameter_per_class, current_class_proportion):
+def find_near_model(last_layer_parameter_per_class, current_class_proportion, t):
     # Using 'torch.load'
     try:
 
-        print("inicio")
+        print("inicio evaluate client rodada: ", t)
         highest_cosine_similarity = [0, 0]
         for class_ in last_layer_parameter_per_class:
 
@@ -816,7 +821,7 @@ def find_near_model(last_layer_parameter_per_class, current_class_proportion):
                 print("pp: ", len(classes_proportion), num_examples)
             if len(classes_proportion) == 0:
                 continue
-            if (np.array(classes_proportion) == np.array(current_class_proportion)):
+            if (np.array(classes_proportion) == np.array(current_class_proportion)).all():
                 print("igual")
 
                 cosine_similarity = 1
