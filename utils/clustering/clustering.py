@@ -113,7 +113,7 @@ def server_Hclusters2(matrix, plot_dendrogram=False):
 
 
 def server_AffinityClustering(matrix):
-    af = AffinityPropagation(random_state=0).fit(1 / matrix)
+    af = AffinityPropagation(random_state=0).fit(matrix)
     idx = af.labels_
 
     return idx
@@ -125,6 +125,7 @@ def server_OPTICSClustering(matrix):
 
 
 def server_KCenterClustering(weights, k):
+    print("k: ", k)
     KCenter = GreedyKCenter()
     KCenter.fit(weights, k)
     idx = KCenter.labels
@@ -203,6 +204,10 @@ def calcule_similarity(models, metric, n_clients):
             for j, b in enumerate(last):
                 x = int(models['cids'][i])
                 y = int(models['cids'][j])
+                cosine_similarity = np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+                if np.isnan(cosine_similarity):
+                    # print("nan: ", np.sum(a), np.sum(b))
+                    cosine_similarity = 0
                 matrix[x][y] = np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))  # cos similarity
     return matrix
 

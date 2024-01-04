@@ -154,7 +154,7 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 				It measures the cosine similarity between the last and current class distribution of the local dataset
 			"""
 			n = len(self.client_information_file['classes_distribution'])
-			print("antes ", self.client_information_file['classes_distribution'].tolist()[-1])
+			# print("antes ", self.client_information_file['classes_distribution'].tolist()[-1])
 			last_proportion = ast.literal_eval(self.client_information_file['classes_distribution'].tolist()[-1])
 			last_training = self.client_information_file['round_of_last_fit'].tolist()[-1]
 
@@ -224,16 +224,26 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 		# Using 'torch.load'
 		try:
 			local_classes = self.classes_proportion
-			print("Rodada: ", config['round'])
+
+			server_round = config['round']
 			similarity, imbalance_level, fraction_of_classes, current_proportion = self._calculate_contexts_similarities()
-			print("similaridade: ", similarity, ' imbalance level: ', imbalance_level, ' fraction of classes:', fraction_of_classes)
-			if config['round'] >= 7:
+			# print("similaridade: ", similarity, ' imbalance level: ', imbalance_level, ' fraction of classes:', fraction_of_classes)
+			if config['round'] >= int(0.7*self.n_rounds):
 				if similarity == 1:
 					print("cliente ", self.cid, " usou o modelo local rodada ", config['round'])
 				else:
 					print("cliente ", self.cid, " usou o modelo global rodada ", config['round'])
+			row = self.clients_pattern.query("""Round == {} and Cid == {}""".format(server_round, self.cid))[
+				'Pattern'].tolist()
+			if len(row) != 1:
+				raise ValueError(
+					"""Pattern not found for client {}. The pattern may not exist or is duplicated""".format(self.cid))
+			pattern = int(row[0])
+			if config['round'] >= int(0.7*self.n_rounds):
+				pattern = config['pattern']
+				print("""cliente {} mudou padrao {}""".format(self.cid, pattern))
 			local_data_information = {'similarity': similarity, 'imbalance_level': imbalance_level, 'fraction_of_classes': fraction_of_classes}
-			self.model = fedpredict_dynamic_client(self.filename, self.model, global_parameters, config, mode=None, local_client_information=local_data_information, current_proportion=current_proportion)
+			self.model = fedpredict_dynamic_client(self.filename, self.model, global_parameters, config, mode=None, local_client_information=local_data_information, current_proportion=current_proportion, pattern=pattern, cid=self.cid)
 
 		except Exception as e:
 			print("Set parameters to model evaluate dyn")
@@ -245,16 +255,14 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 
 			size = 0
 
-			print("contar3")
-			print([len(i[i == 0]) for i in parameters])
 			if self.comment == "sparsification":
 				for p in parameters:
 					aux = p[p==0]
-					print("quantidade zeros: ", len(aux))
+					# print("quantidade zeros: ", len(aux))
 					sparse = sparse_matrix(p)
-					print("Tamanho original: ", p.nbytes)
+					# print("Tamanho original: ", p.nbytes)
 					b = sparse_bytes(sparse)
-					print("Apos esparcificacao: ", b)
+					# print("Apos esparcificacao: ", b)
 					b = min(p.nbytes, b)
 					size += b
 			else:

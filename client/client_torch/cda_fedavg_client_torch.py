@@ -70,7 +70,7 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 
 
 
-	def load_data(self, dataset_name, n_clients, batch_size=32, server_round=None):
+	def load_data(self, dataset_name, n_clients, batch_size=32, server_round=None, train=None):
 		try:
 			pattern = self.cid
 			if self.clients_pattern is not None:

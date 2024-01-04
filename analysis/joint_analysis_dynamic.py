@@ -104,6 +104,8 @@ class JointAnalysis():
                                     if dataset == "GTSRB" and not flag and new_clients == 'train':
                                         print("nao achou: ", filename1)
                                         exit()
+                                    if dataset in ['EMNIST', 'CIFAR10'] and strategy == "CDA-FedAvg":
+                                        continue
                                 except:
                                     continue
                                 if strategy == "FedPredict" and compression == "no" and dynamic_data == "synthetic":
@@ -471,7 +473,7 @@ class JointAnalysis():
                 title = """{}; \u03B1={}""".format(dataset, alpha)
                 filename = ''
                 # hue_order = ['$FedPredict_{dc}$', "$FedPredict$", 'FedClassAvg', 'FedAvg']
-                hue_order = ['$FedAvg$', '$FedPer$', '$CDA-FedAvg$']
+                hue_order = ['$FedAvg$', '$CDA-FedAvg$']
                 style = "Version"
                 style_order = ["$+FP_{dyn}$", "$+FP$", "$Original$"]
                 y_max = 100
@@ -521,7 +523,7 @@ class JointAnalysis():
         f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
         handles = [f("o", colors[i]) for i in range(len(hue_order) + 1)]
         handles += [plt.Line2D([], [], linestyle=markers[i], color="k") for i in range(len(markers))]
-        axs[0, 0].legend(handles, labels, fontsize=7)
+        axs[1, 0].legend(handles, labels, fontsize=7)
         print("base: ", base_dir, """{}joint_plot_four_plot_{}_{}_rounds_{}_clients.png""".format(base_dir, str(experiment), self.rounds, self.clients))
         fig.savefig("""{}joint_plot_four_plot_{}_{}_rounds_{}_clients.png""".format(base_dir, str(experiment), self.rounds, self.clients), bbox_inches='tight', dpi=400)
         fig.savefig("""{}joint_plot_four_plot_{}_{}_rounds_{}_clients.svg""".format(base_dir, str(experiment), self.rounds, self.clients), bbox_inches='tight', dpi=400)
@@ -604,13 +606,13 @@ if __name__ == '__main__':
         # 'comment': 'set', 'compression': "dls_compredict", 'local_epochs': '1_local_epochs', 'dynamic_data': "no"}
                    }
 
-    strategies = ['FedAVG', 'FedPredict', 'FedPredict_Dynamic', 'CDA-FedAvg', 'FedPer']
+    strategies = ['FedAVG', 'FedPredict', 'FedPredict_Dynamic', 'CDA-FedAvg']
     # 'FedPredict', 'FedYogi_with_FedPredict', 'FedKD_with_FedPredict', 'FedAVG', 'FedYogi', 'FedPer', 'FedProto', 'FedKD'
     # pocs = [0.1, 0.2, 0.3]
     fractions_fit = [0.3]
     # datasets = ['MNIST', 'CIFAR10']
     datasets = ['CIFAR10', 'EMNIST', 'WISDM-WATCH']
-    alpha = [0.1, 0.1]
+    alpha = [0.1, 1.0]
     rounds = 50
     clients = '20'
     model = 'CNN_3'

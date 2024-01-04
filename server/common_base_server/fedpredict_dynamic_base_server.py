@@ -7,6 +7,8 @@ import csv
 import random
 import sys
 import pandas as pd
+import torch
+from torch.nn.parameter import Parameter
 import copy
 from functools import reduce
 
@@ -14,6 +16,7 @@ from server.common_base_server import FedAvgBaseServer
 from client.fedpredict_core import fedpredict_core_layer_selection, fedpredict_layerwise_similarity, fedpredict_core_compredict, dls, layer_compression_range, compredict, fedpredict_server
 from utils.compression_methods.parameters_svd import if_reduces_size
 from utils.compression_methods.sparsification import sparse_crs_top_k, to_dense, client_model_non_zero_indexes
+from analysis.base_plots import bar_plot, line_plot
 
 from pathlib import Path
 import shutil
@@ -58,24 +61,24 @@ def get_size(parameter):
 def aggregate(results, t):
     """Compute weighted average."""
     # Calculate the total number of examples used during training
-    num_examples_total = sum([num_examples for parameters, num_examples, classes_proportion in results])
+    num_examples_total = sum([num_examples for parameters, num_examples, classes_proportion, count, t, pattern in results])
 
     print("total ag: ", num_examples_total)
 
     # Create a list of weights, each multiplied by the related number of examples
     weighted_weights = [
-        [layer * num_examples for layer in parameters] for parameters, num_examples, classes_proportion in results
+        [layer * num_examples for layer in parameters] for parameters, num_examples, classes_proportion, count, t, pattern in results
     ]
 
     # weighted_weights = [
     #     [layer * num_examples for layer in weights] for weights, num_examples in results
     # ]
 
-    if len(results) == 2:
-        print("igual a 1 p1 round ", t)
-        print(results[0][0][0])
+    # if len(results) == 2:
+    #     print("igual a 1 p1 round ", t)
+    #     print(results[0][0][0])
 
-    weighted_class_proportion = [np.array(classes_proportion) * num_examples  for parameters, num_examples, classes_proportion in results]
+    weighted_class_proportion = [np.array(classes_proportion) * num_examples  for parameters, num_examples, classes_proportion, count, t, pattern in results]
 
     # Compute average weights of each layer
     weights_prime: NDArrays = [
@@ -83,9 +86,9 @@ def aggregate(results, t):
         for layer_updates in zip(*weighted_weights)
     ]
 
-    if len(results) == 2:
-        print("igual a 1 p2")
-        print(weights_prime[0])
+    # if len(results) == 2:
+    #     print("igual a 1 p2")
+    #     print(weights_prime[0])
 
     classes_proportion_prime: NDArrays = [
         reduce(np.add, layer_updates) / num_examples_total
@@ -168,7 +171,9 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
         self.gradient_norm_nt = []
         self.T = int(args.T)
         self.clients_model_non_zero_indexes = {}
-        self.last_layer_parameters_per_class = {i: [np.array([]), 0, np.array([])] for i in range(self.n_classes)}
+        self.last_layer_parameters_per_class = [[np.array([]), 0, np.array([]), -1, [], []] for i in range(self.num_clients)]
+        self.client_last_layer = [[]] * self.num_clients
+        self.report = ""
 
     def create_folder(self, strategy_name):
 
@@ -252,65 +257,44 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
     #
     # 	for parameter, num_examples, classes_proportion in current_major_class_parameter_list:
 
-    def aggregate_last_layer_parameters(self, last_layer_parameters, clients_num_examples_list, classes_proportion_list, n_classes, server_round):
+    def aggregate_last_layer_parameters(self, last_layer_parameters, patterns, clients_num_examples_list, classes_proportion_list, n_classes, server_round):
 
-        current_last_layer_parameters_per_class = {i: [] for i in range(n_classes)}
+        current_last_layer_parameters_per_class = {i: [] for i in range(self.num_clients)}
 
         for i in range(len(last_layer_parameters)):
 
             parameters = last_layer_parameters[i]
             num_examples = clients_num_examples_list[i]
             classes_proportion = np.array(classes_proportion_list[i])
+            pattern = patterns[i]
 
             major_class = np.argmax(classes_proportion)
 
-            print("adiciona: ", num_examples)
+            current_last_layer_parameters_per_class[pattern].append([parameters, num_examples, classes_proportion, 1, [server_round], [pattern]])
 
-            current_last_layer_parameters_per_class[major_class].append([parameters, num_examples, classes_proportion])
-
-        for i in self.last_layer_parameters_per_class:
+        for i in range(len(self.last_layer_parameters_per_class)):
 
             print("----------")
             current_major_class_parameter_list = []
             previous_major_class_parameter = self.last_layer_parameters_per_class[i]
-            print("antigo ag: ", len(previous_major_class_parameter))
+            # previous_major_class_parameter = [previous_major_class_parameter[0], int(pre)]
             current_major_class_parameter_list += current_last_layer_parameters_per_class[i]
             if len(current_major_class_parameter_list) >= 1:
-                print("atual maior: ", len(current_major_class_parameter_list))
+                print("""Atual adicinou a classe {} tamanho {}""".format(i, len(current_major_class_parameter_list)))
             if previous_major_class_parameter[1] > 0:
-                print("antigo maior")
-                current_major_class_parameter_list.append(previous_major_class_parameter)
+                print("""Antigo já existente classe {} tamanho {}""".format(i, len(previous_major_class_parameter)))
+                # current_major_class_parameter_list.append(previous_major_class_parameter)
 
             if len(current_major_class_parameter_list) == 0:
                 continue
 
-            total = sum([num_examples for parameters, num_examples, classes_proportion in current_major_class_parameter_list])
-
-            print("ta ag: ", [len(i) for i in current_major_class_parameter_list])
-            print("total aggg: ", [i[1] for i in current_major_class_parameter_list])
+            total_samples = sum([num_examples for parameters, num_examples, classes_proportion, count, t, pattern in current_major_class_parameter_list])
+            total_aggregations = sum([count for parameters, num_examples, classes_proportion, count, t, pattern in
+                                 current_major_class_parameter_list])
 
             parameters_weighted_sum, classes_proportion_weighted_sum = aggregate(current_major_class_parameter_list, server_round)
-            # for parameters, num_examples, classes_proportion in current_major_class_parameter_list:
-            #
-            # 	total += num_examples
-            #
-            # parameters_weighted_sum = None
-            # classes_proportion_weighted_sum = None
-            # for parameters, num_examples, classes_proportion in current_major_class_parameter_list:
-            #
-            # 	if parameters_weighted_sum is None:
-            # 		print("wl: ", num_examples, total, type(parameters))
-            # 		parameters_weighted_sum = parameters * num_examples / total
-            # 		classes_proportion_weighted_sum = classes_proportion * num_examples / total
-            # 	elif len(parameters) > 0:
-            # 		print("wl2: ", parameters_weighted_sum.shape, parameters.shape, num_examples, total, type(parameters))
-            # 		parameters_weighted_sum += parameters * num_examples / total
-            # 		classes_proportion_weighted_sum += classes_proportion * num_examples / total
-            #
-            # parameters_weighted_sum = parameters_weighted_sum / len(current_major_class_parameter_list)
-            # classes_proportion_weighted_sum = classes_proportion_weighted_sum / len(current_major_class_parameter_list)
-            print("as: ", total, "classe p: ", i, " rodada: ", server_round, " total: ", total, "classes ag: ", len(classes_proportion_weighted_sum))
-            self.last_layer_parameters_per_class[i] = [parameters_weighted_sum, total, classes_proportion_weighted_sum]
+            print("as: ", total_samples, "classe p: ", i, " rodada: ", server_round, " total: ", total_samples, "classes ag: ", len(classes_proportion_weighted_sum))
+            self.last_layer_parameters_per_class[i] = [parameters_weighted_sum, total_samples, classes_proportion_weighted_sum, total_aggregations, self.last_layer_parameters_per_class[i][4] + [server_round], self.last_layer_parameters_per_class[i][5] + [current_major_class_parameter_list[i][5] for i in range(len(current_major_class_parameter_list))]]
 
             print("agregou camada")
 
@@ -334,18 +318,37 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
         clients_ids = []
         classes_proportion_list = []
         last_layer_parameters = []
+        patterns = []
+        self.report += """\n ------- Rodada {} -------""".format(server_round)
+        self.report += """\n //// Treino ////"""
         for _, fit_res in results:
             client_id = str(fit_res.metrics['cid'])
+            pattern = int(fit_res.metrics['pattern'])
             clients_ids.append(client_id)
             parameters = fl.common.parameters_to_ndarrays(fit_res.parameters)
             num_examples = fit_res.num_examples
             classes_proportion = list(fit_res.metrics['local_classes'])
             clients_parameters.append(parameters)
-            last_layer_parameters.append(parameters[-2:])
+            last_layer_parameters.append(parameters)
+            patterns.append(pattern)
+            self.report += """\n cliente {} padrao {}""".format(client_id, pattern)
             clients_num_examples_list.append(num_examples)
             classes_proportion_list.append(classes_proportion)
+            print("""clientee {} padrao {} rodada {}""".format(client_id, pattern, server_round))
+            self.client_last_layer[pattern] = parameters
 
-        self.aggregate_last_layer_parameters(last_layer_parameters, clients_num_examples_list, classes_proportion_list, self.n_classes, server_round)
+        self.aggregate_last_layer_parameters(last_layer_parameters, patterns, clients_num_examples_list, classes_proportion_list,
+                                             self.n_classes, server_round)
+
+        if server_round == self.num_rounds:
+
+            print("informacao")
+            for i in range(len(self.last_layer_parameters_per_class)):
+
+                print("""padrao {} agregou {} vezes, treinado nas rodadas {}, padroes {}""".format(i, self.last_layer_parameters_per_class[i][3], self.last_layer_parameters_per_class[i][4], self.last_layer_parameters_per_class[i][5]))
+
+
+        self.pattern_prportion()
 
         if self.use_gradient:
             global_parameter = [current - previous for current, previous in zip(parameters_to_ndarrays(parameters_aggregated), self.previous_global_parameters[server_round-1])]
@@ -355,6 +358,11 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
         aggregated_classes_proportion = self.weigthed_classes_proportion(clients_num_examples_list, classes_proportion_list)
 
         print("proporcao: ", aggregated_classes_proportion)
+
+        # for i in range(len(self.client_last_layer)):
+        #
+        #
+        #     self.client_last_layer[i] = fl.common.parameters_to_ndarrays(parameters_aggregated)
 
         np.random.seed(server_round)
         flag = bool(int(np.random.binomial(1, 0.2, 1)))
@@ -379,7 +387,9 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
 
         # self.parameters_aggregated_checkpoint[server_round] = parameters_to_ndarrays(parameters_aggregated)
 
-
+        if server_round == self.num_rounds:
+            print("Relatório")
+            print(self.report)
 
         # if server_round == 3:
         # 	self.calculate_initial_similarity(server_round)
@@ -393,11 +403,34 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
             client = client_tuple[0]
             client_id = str(client.cid)
             config = copy.copy(self.evaluate_config)
-            config['last_layer'] = self.last_layer_parameters_per_class
-            for class_ in self.last_layer_parameters_per_class:
-                tuple = self.last_layer_parameters_per_class[class_]
-                if tuple[1] > 0:
-                    print("ii: ", tuple[1])
+            self.dynamic_data_filename = {'no': None,
+                                          'synthetic': """/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/dynamic_experiments_config/dynamic_data_synthetic_config_{}_clients_{}_rounds_change_pattern_{}_total_rounds.csv""".format(
+                                              self.num_clients, [int(0.7*self.num_rounds)], self.num_rounds)}[self.dynamic_data]
+            if self.dynamic_data_filename is not None:
+                self.clients_pattern = pd.read_csv(self.dynamic_data_filename)
+            row = self.clients_pattern.query("""Round == {} and Cid == {}""".format(server_round, client_id))[
+                'Pattern'].tolist()
+            if len(row) != 1:
+                raise ValueError(
+                    """Pattern not found for client {}. The pattern may not exist or is duplicated""".format(self.cid))
+            pattern = int(row[0])
+            config['pattern'] = pattern
+            if config['round'] >= int(0.7*self.num_rounds):
+                print("""cliente {} mudou padrao {}""".format(client_id, pattern))
+                send = self.last_layer_parameters_per_class[pattern][0]
+                # send = self.client_last_layer[pattern]
+                # print("tamanho 1 enviado: ", len(send), " tamanho 2 enviado: ", len(send[0]))
+                if len(send) == 0:
+                    # send = fl.common.parameters_to_ndarrays(parameters)
+                    print("""enviou global para {}""".format(client_id))
+                else:
+                    print("""Enviou personalizado para {} padrao {}""".format(client_id, pattern))
+                # print(len(send))
+                # print(len(send[0]), type(send[0]))
+                # config['last_layer'] = self.mean_parameters(fl.common.parameters_to_ndarrays(parameters), send)
+                config['last_layer'] = send
+            else:
+                config['last_layer'] = np.array([])
             self.evaluate_config = config
             evaluate_ins = EvaluateIns(parameters, config)
             # print("Evaluate enviar: ", client_id, [i.shape for i in parameters_to_ndarrays(parameters_to_send)])
@@ -408,6 +441,27 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
                                  evaluate_config=self.evaluate_config, server_round=server_round,
                                  num_rounds=self.num_rounds, comment=self.comment,
                                  compression=self.compression, layers_compression_range=self.layers_compression_range)
+
+    def aggregate_evaluate(
+        self,
+        server_round,
+        results,
+        failures,
+    ):
+
+        loss_aggregated, metrics_aggregated = super().aggregate_evaluate(server_round, results, failures)
+
+        self.report += """\n ///// Teste /////"""
+        for response in results:
+            client_id = response[1].metrics['cid']
+            client_accuracy = float(response[1].metrics['accuracy'])
+            pattern = int(response[1].metrics['pattern'])
+
+            self.report += """\n cliente {} padrao {} acurácia {}""".format(client_id, pattern, client_accuracy)
+
+
+
+        return loss_aggregated, metrics_aggregated
 
     def end_evaluate_function(self):
         self._write_similarity()
@@ -423,6 +477,32 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
     # 	self.similarity_filename = f"{self.base}/norm.csv"
     # 	df = pd.DataFrame(data)
     # 	df.to_csv(self.similarity_filename, index=False)
+
+    def pattern_prportion(self):
+
+        patterns = []
+        proportion_list = []
+        classes = []
+
+        for pattern in range(len(self.last_layer_parameters_per_class)):
+
+            tuple = self.last_layer_parameters_per_class[pattern]
+
+            proportion = tuple[2]
+
+            if len(proportion_list) > 0:
+                print("a: ", proportion_list, " b: ", proportion)
+                proportion_list = np.concatenate((proportion_list.flatten(), proportion.flatten()))
+            else:
+                proportion_list = np.array(proportion)
+            patterns += [pattern] * len(proportion)
+            classes += [i for i in range(len(proportion))]
+
+        df = pd.DataFrame({'pattern': patterns, 'classes': classes, 'proportion': proportion_list.tolist()})
+        base_dir = "analysis/output/experiment_2/dynamic/"
+        line_plot(
+            df=df, base_dir=base_dir, file_name="proportion", x_column='classes', y_column='proportion', hue='pattern', title='')
+
 
     def _write_similarity(self):
 
@@ -440,6 +520,35 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
         self.similarity_filename = f"{self.base}/similarity_between_layers.csv"
         df = pd.DataFrame(data)
         df.to_csv(self.similarity_filename, index=False)
+
+    def mean_parameters(self, global_model_parameters, pattern_model_parameters):
+
+        count = 0
+        final_parameters = []
+
+
+        print("tip: ", type(global_model_parameters[0][0][0]), type(pattern_model_parameters[0][0][0]))
+
+        # if type(global_model_parameters) == list:
+        #     global_model_parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_model_parameters]
+        # if type(pattern_model_parameters[0]) == np.array:
+        #     pattern_model_parameters = [Parameter(torch.Tensor(i.tolist())) for i in pattern_model_parameters]
+        for new_param, old_param in zip(global_model_parameters, pattern_model_parameters):
+            if count < len(global_model_parameters) - 2:
+                global_model_weight = 1
+                pattern_model_weights = 0
+            else:
+                global_model_weight = 1
+                pattern_model_weights = 0
+            if new_param.shape == old_param.shape:
+                final_parameters.append(
+                        global_model_weight * new_param +
+                        pattern_model_weights * old_param)
+            else:
+                raise print("Modelos com tamanhos diferentes")
+            count += 1
+
+        return final_parameters
 
     def _gradient_metric(self, updated_global_parameters, server_round):
 

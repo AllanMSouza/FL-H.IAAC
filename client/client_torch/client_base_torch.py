@@ -162,14 +162,17 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 		return f"logs/{type}/{strategy_name}/new_clients_{new_clients}_train_{new_clients_train}_dynamic_data_{dynamic_data}/{n_clients}/{model_name}/{dataset}/classes_per_client_{class_per_client}/alpha_{alpha}/{n_rounds}_rounds/{local_epochs}_local_epochs/{comment}_comment/{str(compression)}_compression"
 
-	def load_data(self, dataset_name, n_clients, batch_size=32, server_round=None):
+	def load_data(self, dataset_name, n_clients, batch_size=32, server_round=None, train=None):
 		try:
 			pattern = self.cid
 			if server_round is not None and self.clients_pattern is not None:
 				row = self.clients_pattern.query("""Round == {} and Cid == {}""".format(server_round, self.cid))['Pattern'].tolist()
 				if len(row) != 1:
 					raise ValueError("""Pattern not found for client {}. The pattern may not exist or is duplicated""".format(pattern))
-				pattern = row[0]
+				pattern = int(row[0])
+			if server_round is not None:
+				if server_round >= 7:
+					print("""load dados cliente {} padrao {} rodada {} treino {}""".format(self.cid, pattern, server_round, train))
 			trainLoader, testLoader, traindataset, testdataset = ManageDatasets(pattern, self.model_name).select_dataset(
 				dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid, batch_size)
 			self.input_shape = (3,64,64)
@@ -329,7 +332,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 			if self.dynamic_data != "no":
 				self.trainloader, self.testloader, self.traindataset, self.testdataset = self.load_data(self.dataset,
-																									n_clients=self.n_clients, server_round=server_round)
+																									n_clients=self.n_clients, server_round=server_round, train=True)
 			original_parameters = copy.deepcopy(parameters)
 			if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
 				self.set_parameters_to_model_fit(parameters)
@@ -406,9 +409,17 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				filename=self.train_client_filename,
 				data=data)
 
+			row = self.clients_pattern.query("""Round == {} and Cid == {}""".format(server_round, self.cid))[
+				'Pattern'].tolist()
+			if len(row) != 1:
+				raise ValueError(
+					"""Pattern not found for client {}. The pattern may not exist or is duplicated""".format(self.cid))
+			pattern = int(row[0])
+
 			fit_response = {
 				'cid': self.cid,
-				'local_classes': self.classes_proportion
+				'local_classes': self.classes_proportion,
+				'pattern': pattern
 			}
 
 			if self.use_gradient and server_round > 1:
@@ -503,7 +514,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			# if self.dynamic_data != "no":
 			self.trainloader, self.testloader, self.traindataset, self.testdataset = self.load_data(self.dataset,
 																								n_clients=self.n_clients,
-																								server_round=server_round)
+																								server_round=server_round,
+																									train=False)
 			self.classes_proportion, self.imbalance_level = self._calculate_classes_proportion()
 			n_rounds = int(config['n_rounds'])
 			nt = int(config['nt'])
@@ -525,13 +537,18 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				data = [[self.cid, server_round, int(p), int(l)] for p, l in zip(predictions, labels)]
 				self._write_outputs(self.predictions_client_filename, data, 'a')
 
-			if server_round >= 7:
+			# if server_round >= int(0.7*self.n_rounds):
 
-				print("Acurácia teste do cliente: ", self.cid, " ", accuracy)
+			print("""Acurácia teste rodada {} do cliente {}: {}""".format(server_round, self.cid, accuracy))
 
+			if self.strategy_name.lower() == "fedpredict_dynamic":
+				pattern = config['pattern']
+			else:
+				pattern = 0
 			evaluation_response = {
 				"cid": self.cid,
-				"accuracy": float(accuracy)
+				"accuracy": float(accuracy),
+				"pattern": pattern
 			}
 
 			return loss, test_num, evaluation_response

@@ -68,7 +68,7 @@ class FedClusteringBaseServer(FedAvgBaseServer):
 
 		self.filename = """{}_saved_weights/{}/""".format(strategy_name.lower(), self.model_name)
 		self.create_folder(strategy_name)
-		self.client_cluster = list(np.zeros(self.num_clients + 1))
+		self.client_cluster = np.zeros(shape=self.num_clients, dtype=np.int32)
 		self.clustering = args.clustering
 		self.cluster_round = int(args.cluster_round)
 		self.n_clusters = int(args.n_clusters)
@@ -86,6 +86,10 @@ class FedClusteringBaseServer(FedAvgBaseServer):
 		for i in range(self.num_clients):
 			Path("""{}{}/""".format(self.filename, i)).mkdir(parents=True, exist_ok=True)
 
+	def _create_base_directory(self, args):
+
+		return f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}_dynamic_data_{self.dynamic_data}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(self.compression)}_compression/{str(args.n_clusters)}_clusters/{str(args.cluster_round)}_cluster_round/{args.cluster_metric}_metric"
+
 	def configure_fit(
 			self, server_round, parameters, client_manager):
 
@@ -99,7 +103,7 @@ class FedClusteringBaseServer(FedAvgBaseServer):
 			return [(client_fit_ins[0], fit_ins) for client_fit_ins in client_fit_ins_list]
 
 		elif server_round <= self.cluster_round:
-			fit_ins = FitIns(parameters['0.0'], config)
+			fit_ins = FitIns(parameters['0'], config)
 			return [(client_fit_ins[0], fit_ins) for client_fit_ins in client_fit_ins_list]
 
 		else:
@@ -121,6 +125,7 @@ class FedClusteringBaseServer(FedAvgBaseServer):
 			client_id = str(fit_res.metrics['cid'])
 			parametros_client = fit_res.parameters
 			initial_clusters['cids'].append(client_id)
+			print("id cliente: ", client_id, len(self.client_cluster), self.num_clients)
 			idx_cluster = self.client_cluster[int(client_id)]
 
 			# save model weights in clusters (or create a new cluster)
@@ -147,9 +152,11 @@ class FedClusteringBaseServer(FedAvgBaseServer):
 		# similarity between clients (construct the similatity matrix)
 		if (server_round == self.cluster_round - 1) or (server_round == self.cluster_round):
 			matrix = calcule_similarity(models=initial_clusters, metric=self.cluster_metric, n_clients=self.num_clients)
+			print("si: ", matrix)
 
 		# use some clustering method in similarity metrix
 		if self.clustering:
+			print("fazer cluster")
 			if (server_round == self.cluster_round - 1) or (server_round == self.cluster_round):
 				self.client_cluster = make_clusters(matrix=matrix,
 													clustering_method=self.cluster_method,
@@ -162,7 +169,6 @@ class FedClusteringBaseServer(FedAvgBaseServer):
 													path=f'local_logs/{self.dataset}/{self.cluster_metric}-({self.metric_layer})-{self.cluster_method}-{self.aggregation_method}-{self.fraction_fit}/')
 				print("clus: ", self.client_cluster)
 				print("matriz: ")
-				print(matrix)
 				filename = f"local_logs/{self.dataset}/{self.cluster_metric}-({self.metric_layer})-{self.cluster_method}-{self.aggregation_method}-{self.fraction_fit}/clusters_{self.num_clients}clients_{self.n_clusters}clusters.txt"
 				os.makedirs(os.path.dirname(filename), exist_ok=True)
 				with open(filename, 'a') as arq:
@@ -197,7 +203,7 @@ class FedClusteringBaseServer(FedAvgBaseServer):
 			result = []
 			for client in clients:
 				config['nt'] = self.fedpredict_clients_metrics[str(client.cid)]['nt']
-				evaluate_ins = EvaluateIns(parameters['0.0'], config)
+				evaluate_ins = EvaluateIns(parameters['0'], config)
 				result.append((client, evaluate_ins))
 			return result
 
@@ -205,7 +211,7 @@ class FedClusteringBaseServer(FedAvgBaseServer):
 			result = []
 			for client in clients:
 				config['nt'] = self.fedpredict_clients_metrics[str(client.cid)]['nt']
-				evaluate_ins = EvaluateIns(parameters['0.0'], config)
+				evaluate_ins = EvaluateIns(parameters['0'], config)
 				result.append((client, evaluate_ins))
 			return result
 		else:
@@ -216,10 +222,5 @@ class FedClusteringBaseServer(FedAvgBaseServer):
 				evaluate_ins = EvaluateIns(parameters[str(self.client_cluster[int(client.cid)])], config)
 				result.append((client, evaluate_ins))
 			return result
-
-	def _create_base_directory(self, args):
-		print("criado")
-		print(f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(self.compression)}_compression/{str(args.n_clusters)}_clusters/{str(args.cluster_round)}_cluster_round/{args.cluster_metric}")
-		return f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(self.compression)}_compression/{str(args.n_clusters)}_clusters/{str(args.cluster_round)}_cluster_round/{args.cluster_metric}"
 
 
