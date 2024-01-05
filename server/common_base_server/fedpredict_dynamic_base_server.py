@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 import flwr as fl
 import numpy as np
 import math
@@ -174,6 +175,7 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
         self.last_layer_parameters_per_class = [[np.array([]), 0, np.array([]), -1, [], []] for i in range(self.num_clients)]
         self.client_last_layer = [[]] * self.num_clients
         self.report = ""
+        self.rounds_to_change_pattern = [int(0.7 * self.num_rounds)]
 
     def create_folder(self, strategy_name):
 
@@ -298,8 +300,6 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
 
             print("agregou camada")
 
-
-
     def aggregate_fit(self, server_round, results, failures):
 
         parameters_aggregated, metrics_aggregated = super().aggregate_fit(server_round, results, failures)
@@ -348,7 +348,7 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
                 print("""padrao {} agregou {} vezes, treinado nas rodadas {}, padroes {}""".format(i, self.last_layer_parameters_per_class[i][3], self.last_layer_parameters_per_class[i][4], self.last_layer_parameters_per_class[i][5]))
 
 
-        self.pattern_prportion()
+        # self.pattern_prportion()
 
         if self.use_gradient:
             global_parameter = [current - previous for current, previous in zip(parameters_to_ndarrays(parameters_aggregated), self.previous_global_parameters[server_round-1])]
@@ -399,6 +399,13 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
     def configure_evaluate(self, server_round, parameters, client_manager):
         client_evaluate_list = super().configure_evaluate(server_round, parameters, client_manager)
         client_evaluate_list_dynamic = []
+
+        if server_round in self.rounds_to_change_pattern:
+
+            parameters = self.server_fit(fl.common.parameters_to_ndarrays(parameters), server_round)
+            pass
+
+
         for client_tuple in client_evaluate_list:
             client = client_tuple[0]
             client_id = str(client.cid)
@@ -491,7 +498,7 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
             proportion = tuple[2]
 
             if len(proportion_list) > 0:
-                print("a: ", proportion_list, " b: ", proportion)
+                # print("a: ", proportion_list, " b: ", proportion)
                 proportion_list = np.concatenate((proportion_list.flatten(), proportion.flatten()))
             else:
                 proportion_list = np.array(proportion)
@@ -568,4 +575,8 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
     def _get_server_data(self, process_time, server_round, accuracy_aggregated, accuracy_std, top5, top1):
 
         return [process_time, server_round, accuracy_aggregated, accuracy_std, top5, top1, self.gradient_norm]
+
+    def server_fit(self, parameters, config):
+        pass
+
 
