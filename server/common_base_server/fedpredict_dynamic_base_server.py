@@ -156,7 +156,7 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
         self.server_opt = (self.server_momentum != 0.0) or (
                 self.server_learning_rate != 1.0)
 
-        self.set_initial_parameters()
+        # self.set_initial_parameters()
         self.create_folder(strategy_name)
         self.similarity_between_layers_per_round = {}
         self.similarity_between_layers_per_round_and_client = {}
@@ -459,12 +459,16 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
         loss_aggregated, metrics_aggregated = super().aggregate_evaluate(server_round, results, failures)
 
         self.report += """\n ///// Teste /////"""
+        acc_list = []
         for response in results:
             client_id = response[1].metrics['cid']
             client_accuracy = float(response[1].metrics['accuracy'])
             pattern = int(response[1].metrics['pattern'])
+            acc_list.append(client_accuracy)
 
             self.report += """\n cliente {} padrao {} acurácia {}""".format(client_id, pattern, client_accuracy)
+
+        print("""acurácia média de teste: {}""".format(sum(acc_list)/len(acc_list)))
 
 
 

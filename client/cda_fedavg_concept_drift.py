@@ -1,11 +1,13 @@
 import sys
 import numpy as np
 from scipy.stats import beta
+import scipy
 
-def pdf_beta_distribution(x, a, b):
+def pdf_beta_distribution(x, a, b, seed):
 
     try:
 
+        # np.random.seed(seed)
         if (x < 1 and x > 0 and a > 0 and b > 0):
 
             vals = beta.pdf(x, a, b)
@@ -36,7 +38,7 @@ def estimate_params(Q):
         print("estimate params")
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-def cda_fedavg_drift_detection(Q, lamda, delta, n_max):
+def cda_fedavg_drift_detection(Q, lamda, delta, n_max, seed):
     """
     Compute the
     FedAvg drift
@@ -69,8 +71,8 @@ def cda_fedavg_drift_detection(Q, lamda, delta, n_max):
                 for i in range(k+1, N):
 
                     q = Q[i]
-                    p1 = pdf_beta_distribution(q, alpha_a, beta_a)
-                    p2 = pdf_beta_distribution(q, alpha_b, beta_b)
+                    p1 = pdf_beta_distribution(q, alpha_a, beta_a, seed)
+                    p2 = pdf_beta_distribution(q, alpha_b, beta_b, seed)
                     # print("p1: ", p1, " p2: ", p2)
                     # print("x: ", p1/p2)
                     s_k = s_k + np.log(p1/p2)

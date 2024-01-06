@@ -844,7 +844,7 @@ class ManageDatasets():
             x_test = np.array([ast.literal_eval(i) for i in test['X'].tolist()], dtype=np.float32)
             y_train = np.array([i for i in train['Y'].to_numpy().astype(np.int32)])
             y_test = np.array([i for i in test['Y'].to_numpy().astype(np.int32)])
-            # print("leu: ", x_train[0], type(x_train[0]))
+            print("Tamanho original dataset: ", len(x_train))
             training_dataset = torch.utils.data.TensorDataset(torch.from_numpy(x_train).to(dtype=torch.float32), torch.from_numpy(y_train))
             validation_dataset = torch.utils.data.TensorDataset(torch.from_numpy(x_test).to(dtype=torch.float32), torch.from_numpy(y_test))
 

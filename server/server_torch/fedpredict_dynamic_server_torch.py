@@ -68,7 +68,7 @@ class FedPredictDynamicServerTorch(FedPredictDynamicBaseServer):
                          type='torch')
 
         self.model_shape = [i.shape for i in self.model.parameters()]
-        self.local_epochs = 10
+        self.local_epochs = 1
         self.loss = nn.CrossEntropyLoss()
         print("formato: ", self.model_shape)
         self.device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
@@ -89,6 +89,52 @@ class FedPredictDynamicServerTorch(FedPredictDynamicBaseServer):
             self.learning_rate = 0.001
             # self.loss = nn.MSELoss()
             self.optimizer = torch.optim.RMSprop(self.model.parameters(), lr=self.learning_rate)
+
+    def get_target_and_samples_from_dataset(self, traindataset, dataset_name):
+
+        try:
+
+            if dataset_name in ['WISDM-WATCH']:
+                data = []
+                targets = []
+                for sample in traindataset:
+                    # print("amostra: ", sample)
+                    data.append(sample[0].numpy())
+                    targets.append(int(sample[1]))
+                data = np.array(data)
+                print("dada: ", type(data), len(data), len(targets))
+                targets = np.array(targets)
+            else:
+                targets = np.array(traindataset.targets)
+                if dataset_name == 'GTSRB':
+                    data = np.array(traindataset.samples)
+                else:
+                    data = np.array(traindataset.data)
+
+            return data, targets
+
+        except Exception as e:
+            print("get target and samples from dataset")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+    def set_dataset(self, dataset, dataset_name, x, y):
+
+        try:
+
+            if dataset_name in ['WISDM-WATCH']:
+
+                return torch.utils.data.TensorDataset(torch.from_numpy(x).to(dtype=torch.float32), torch.from_numpy(y))
+
+            else:
+
+                dataset.samples = x
+                dataset.targets = y
+
+                return dataset
+
+        except Exception as e:
+            print("set dataset")
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
     def load_balanced_dataset(self, current_traindataset, batch_size, dataset_name, n_clients):
 
@@ -114,18 +160,12 @@ class FedPredictDynamicServerTorch(FedPredictDynamicBaseServer):
                 testLoader = None
                 testdataset = None
 
-
-
                 for class_ in data_target:
 
                     current_size = len(data_target[class_])
                     missing_data = samples_per_class - current_size
                     if missing_data > 0:
-                        targets = np.array(traindataset.targets)
-                        if dataset_name == 'GTSRB':
-                            data = np.array(traindataset.samples)
-                        else:
-                            data = np.array(traindataset.data)
+                        data, targets = self.get_target_and_samples_from_dataset(traindataset, dataset_name)
                         indices = np.where(targets == class_)[0]
                         if len(indices) == 0:
                             continue
@@ -135,11 +175,12 @@ class FedPredictDynamicServerTorch(FedPredictDynamicBaseServer):
                         data = data[indices].tolist()
                         data_target[class_] += data
 
+                        print("balanced 3")
+
             l_old_samples = []
             l_old_targets = []
 
             for class_ in data_target:
-
                 samples = list(data_target[class_])
                 print("""quantidade classe {} e {}""".format(class_, len(samples)))
                 targets = [class_] * len(samples)
@@ -149,18 +190,24 @@ class FedPredictDynamicServerTorch(FedPredictDynamicBaseServer):
             l_old_samples = np.array(l_old_samples)
             l_old_targets = np.array(l_old_targets)
 
-            if dataset_name == 'GTSRB':
-                current_samples = np.array(current_traindataset.samples)
-            else:
-                current_samples = np.array(current_traindataset.data)
-            current_targets = current_traindataset.targets
-
+            # if dataset_name == 'GTSRB':
+            # 	current_samples = np.array(current_traindataset.samples)
+            # else:
+            # 	current_samples = np.array(current_traindataset.data)
+            # current_targets = current_traindataset.targets
+            current_samples, current_targets = self.get_target_and_samples_from_dataset(current_traindataset,
+                                                                                        dataset_name)
+            print("shapes: ", current_samples.shape, current_targets.shape, l_old_samples.shape, l_old_targets.shape)
+            print("""antes juntar unique {} """.format(np.unique(current_targets, return_counts=True)))
             current_samples = np.concatenate((current_samples, l_old_samples), axis=0)
             current_targets = np.concatenate((current_targets, l_old_targets), axis=0)
-            print("shapes balanced : ", current_samples.shape, l_old_samples.shape)
 
-            current_traindataset.samples = current_samples
-            current_traindataset.targets = current_targets
+            print("""juntou unique {}""".format(np.unique(current_targets, return_counts=True)))
+
+            print("s t: ", current_samples.shape, current_targets.shape)
+
+            current_traindataset = self.set_dataset(current_traindataset, dataset_name, current_samples,
+                                                    current_targets)
 
             trainLoader = DataLoader(current_traindataset, batch_size, shuffle=True)
 
@@ -223,6 +270,15 @@ class FedPredictDynamicServerTorch(FedPredictDynamicBaseServer):
             selected = 1
             self.model.to(self.device)
             self.model.train()
+
+            count = 0
+
+            for param in self.model.parameters():
+                if count < len([i for i in self.model.parameters()]) - 2:
+                    param.requires_grad = False
+                else:
+                    param.requires_grad = True
+                count += 1
 
             max_local_steps = self.local_epochs
 
@@ -288,11 +344,6 @@ class FedPredictDynamicServerTorch(FedPredictDynamicBaseServer):
                 'local_classes': self.classes_proportion,
             }
 
-            if self.use_gradient and server_round > 1:
-                trained_parameters = [original - trained for trained, original in
-                                      zip(trained_parameters, original_parameters)]
-            # trained_parameters = parameters_quantization_write(trained_parameters, 8)
-            # print("quantizou: ", trained_parameters[0])
             return ndarrays_to_parameters(trained_parameters)
         except Exception as e:
             print("server fit")

@@ -97,12 +97,12 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 			if self.drift_detected:
 				# After drift detection, it recovers the past data and concatenate it with the new one
 				past_patterns = \
-					self.clients_pattern.query("""Round < {} and Cid == {}""".format(server_round, self.cid))[
-						'Pattern'].tolist()
-				print("dd 2")
+					self.clients_pattern.query("""Round < {} and Cid == {} and Pattern != {}""".format(server_round, self.cid, pattern))[
+						'Pattern'].unique().tolist()
+				print("dd 2", past_patterns, server_round)
 				if len(past_patterns) >= 1:
 					print("""Leu dataset maior do cliente {} na rodada {}""".format(self.cid, server_round))
-					traindataset = self.previous_balanced_dataset(traindataset, past_patterns, batch_size, dataset_name, n_clients)
+					traindataset = self.previous_balanced_dataset(traindataset, past_patterns, batch_size, dataset_name, n_clients, pattern)
 
 			return trainLoader, testLoader, traindataset, testdataset
 		except Exception as e:
@@ -173,11 +173,11 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 			print("set dataset")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def previous_balanced_dataset(self, current_traindataset, past_patterns, batch_size, dataset_name, n_clients):
+	def previous_balanced_dataset(self, current_traindataset, past_patterns, batch_size, dataset_name, n_clients, current_pattern):
 
 		try:
 
-			L = 1400
+			L = 3000
 			M = self.num_classes
 			samples_per_class = int(L/(M))
 
@@ -218,7 +218,7 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 			for class_ in data_target:
 
 				samples = list(data_target[class_])
-				print("""quantidade classe {} e {} cliente {}""".format(class_, len(samples), self.cid))
+				print("""quantidade classe {} e {} cliente {} leu padroes {} padrao atual {}""".format(class_, len(samples), self.cid, past_patterns, current_pattern))
 				targets = [class_] * len(samples)
 				l_old_samples += samples
 				l_old_targets += targets
@@ -233,8 +233,11 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 			# current_targets = current_traindataset.targets
 			current_samples, current_targets = self.get_target_and_samples_from_dataset(current_traindataset, dataset_name)
 			print("shapes: ", current_samples.shape, current_targets.shape, l_old_samples.shape, l_old_targets.shape)
+			print("""antes juntar unique {} cliente {}""".format(np.unique(current_targets, return_counts=True), self.cid))
 			current_samples = np.concatenate((current_samples, l_old_samples), axis=0)
 			current_targets = np.concatenate((current_targets, l_old_targets), axis=0)
+
+			print("""juntou unique {} cliente {}""".format(np.unique(current_targets, return_counts=True), self.cid))
 
 			print("s t: ", current_samples.shape, current_targets.shape)
 
@@ -253,7 +256,7 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 			scaler = MinMaxScaler()
 			Q = np.array([np.max(softmax(i).tolist()) for i in predictions]).flatten().tolist()
 			self.classes_proportion, self.imbalance_level = self._calculate_classes_proportion()
-			drift_detected = self._drift_detection(Q)
+			drift_detected = self._drift_detection(Q, server_round)
 			print("rodada: ", server_round, " drift detected: ", drift_detected, " cid: ", self.cid)
 			df = pd.read_csv(self.client_information_train_filename)
 			already_detected_drift = True if df['drift_detected'].tolist()[0] == "True" else False
@@ -275,7 +278,7 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 			print("save client information fit")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def _drift_detection(self, Q):
+	def _drift_detection(self, Q, server_round):
 
 		try:
 			"""
@@ -291,7 +294,7 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 			lamda = 0.01 # descer aumenta a detecção
 			delta = 150
 			n_max = len(Q)
-			drif_detection = cda_fedavg_drift_detection(Q, lamda, delta, n_max)
+			drif_detection = cda_fedavg_drift_detection(Q, lamda, delta, n_max, server_round)
 
 			return drif_detection
 

@@ -778,7 +778,7 @@ def fedpredict_dynamic_client(filename, model, global_parameters, config={}, mod
             # print("shape modelo antes: ", [i.detach().cpu().numpy().shape for i in global_parameters])
             print("assinalou parâmetros dinâmicos")
             last_layers = [Parameter(torch.Tensor(p.tolist())) for p in parameter_last_layer]
-            global_parameters = last_layers
+            #global_parameters = last_layers
             # for i in range(len(last_layers)):
             #     global_parameters[-2+i] = global_parameters[-2+i]*0.9 + 0.1* last_layers[i]
             # print("dps: ", global_parameters[-2][0])
