@@ -56,6 +56,7 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 						 new_clients_train=new_clients_train)
 
 		self.m_combining_layers = [i for i in range(len([i for i in self.create_model().parameters()]))]
+		self.similarity = 1
 		self.global_model = self.create_model().to(self.device)
 		self.lr_loss = torch.nn.MSELoss()
 		self.clone_model = self.create_model().to(self.device)
@@ -227,6 +228,8 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 
 			server_round = config['round']
 			similarity, imbalance_level, fraction_of_classes, current_proportion = self._calculate_contexts_similarities()
+			self.current_proportion = np.array(current_proportion)
+			self.similarity = similarity
 			# print("similaridade: ", similarity, ' imbalance level: ', imbalance_level, ' fraction of classes:', fraction_of_classes)
 			if config['round'] >= int(0.7*self.n_rounds):
 				if similarity == 1:
@@ -248,6 +251,51 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 		except Exception as e:
 			print("Set parameters to model evaluate dyn")
 			print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, self.cid), type(e).__name__, e)
+
+	def model_eval(self):
+		try:
+			self.model.to(self.device)
+			self.model.eval()
+
+			test_acc = 0
+			test_loss = 0
+			test_num = 0
+
+			predictions = np.array([])
+			labels = np.array([])
+
+			with torch.no_grad():
+				for x, y in self.testloader:
+					if type(x) == type([]):
+						x[0] = x[0].to(self.device)
+					else:
+						x = x.to(self.device)
+					# if self.dataset == 'EMNIST':
+					# 	x = x.view(-1, 28 * 28)
+					if type(y) == tuple:
+						y = torch.from_numpy(np.array(y).astype(int))
+					y = torch.from_numpy(np.array(y).astype(int))
+					self.optimizer.zero_grad()
+					y = y.to(self.device)
+					y = torch.tensor(y)
+					output = self.model(x)
+					if self.similarity != 1:
+						output = torch.multiply(output, torch.from_numpy(self.current_proportion))
+					loss = self.loss(output, y)
+					test_loss += loss.item() * y.shape[0]
+					prediction = torch.argmax(output, dim=1)
+					predictions = np.append(predictions, prediction.cpu())
+					labels = np.append(labels, y.cpu())
+					test_acc += (torch.sum(prediction == y)).item()
+					test_num += y.shape[0]
+
+			loss = test_loss / test_num
+			accuracy = test_acc / test_num
+
+			return loss, accuracy, test_num, predictions, labels
+		except Exception as e:
+			print("model_eval")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def calculate_bytes(self, parameters):
 

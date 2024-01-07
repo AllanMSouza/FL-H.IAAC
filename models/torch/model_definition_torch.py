@@ -148,7 +148,7 @@ class GRU(torch.nn.Module):
     def forward(self, x):
         try:
             x, h = self.gru(x)
-            out = self.net(x)
+            out = F.softmax(self.net(x))
             return out
         except Exception as e:
             print("GRU forward")
