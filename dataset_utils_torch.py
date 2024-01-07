@@ -838,6 +838,14 @@ class ManageDatasets():
 
             train = pd.read_csv(filename_train)
             test = pd.read_csv(filename_test)
+            df = pd.concat([train, test], ignore_index=True)
+            x = np.array([ast.literal_eval(i) for i in df['X'].tolist()], dtype=np.float32)
+            y = np.array([i for i in df['Y'].to_numpy().astype(np.int32)])
+            indexes = x[:, 0].argsort(kind='mergesort')
+            x = x[indexes]
+            x = x[: [1,2,3,4,5, 6]]
+            y = y[indexes]
+
             # print("leu: ", train['X'], type(train['X']), type(train['X'].to_numpy()[0]))
             x_train = np.array([ast.literal_eval(i) for i in train['X'].tolist()], dtype=np.float32)
             # print("ola: ", x_train[0], x_train.shape, type(x_train[0][0]), type(x_train[0][0][0]))
