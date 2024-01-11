@@ -41,7 +41,7 @@ class DirichletPartition:
             for k in range(self.num_class):
                 # print("""\n==== iteracao {}""".format(k))
                 idx_k = np.where(dataset.targets == k)[0]
-                np.random.shuffle(idx_k)
+                # np.random.shuffle(idx_k)
                 proportions = self.distributions[k]
                 # print("inicial: ", k, " proportions: ", proportions)
                 ## Balance
@@ -64,7 +64,7 @@ class DirichletPartition:
                 # print("proporcao: ", proportions)
                 for j in range(self.num_clients):
                     # print("""=cliente {}""".format(j))
-                    np.random.shuffle(idx_batch[j])
+                    # np.random.shuffle(idx_batch[j])
                     net_dataidx_map[j] = idx_batch[j]
                     # if len(net_dataidx_map[j]) > 0:
                     #     print("Quantidade cliente: ", j, len(net_dataidx_map[j]),
@@ -87,7 +87,7 @@ class DirichletPartition:
             it += 1
 
         for j in range(self.num_clients):
-            np.random.shuffle(idx_batch[j])
+            # np.random.shuffle(idx_batch[j])
             net_dataidx_map[j] = idx_batch[j]
             print("Quantidade cliente: ", j, len(net_dataidx_map[j]),
                   np.unique(dataset.targets[np.array(net_dataidx_map[j])], return_counts=True))

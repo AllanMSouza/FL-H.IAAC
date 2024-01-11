@@ -21,6 +21,7 @@ from server.server_torch.fedkd_with_fedpredict_server_torch import FedKDWithFedP
 from server.server_torch.fedsparsification_server_torch import FedSparsificationServerTorch
 from server.server_torch.fedpredict_dynamic_server_torch import FedPredictDynamicServerTorch
 from server.server_torch.cda_fedavg_server_torch import CDAFedAvgServerTorch
+from server.server_torch.fedcdm_server_torch import FedCDMServerTorch
 
 __all__ = [
     "FedProtoServerTorch",
@@ -45,5 +46,6 @@ __all__ = [
     "FedAlaServerTorch",
     "FedKDWithFedPredictServerTorch",
     "FedSparsificationServerTorch",
-    "CDAFedAvgServerTorch"
+    "CDAFedAvgServerTorch",
+    "FedCDMServerTorch"
 ]

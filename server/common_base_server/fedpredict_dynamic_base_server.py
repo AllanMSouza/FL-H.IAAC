@@ -402,7 +402,7 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
 
         if server_round in self.rounds_to_change_pattern:
 
-            parameters = self.server_fit(fl.common.parameters_to_ndarrays(parameters), server_round)
+            # parameters = self.server_fit(fl.common.parameters_to_ndarrays(parameters), server_round)
             pass
 
 

@@ -838,20 +838,48 @@ class ManageDatasets():
 
             train = pd.read_csv(filename_train)
             test = pd.read_csv(filename_test)
+
             df = pd.concat([train, test], ignore_index=True)
             x = np.array([ast.literal_eval(i) for i in df['X'].tolist()], dtype=np.float32)
             y = np.array([i for i in df['Y'].to_numpy().astype(np.int32)])
-            indexes = x[:, 0].argsort(kind='mergesort')
+            print("y ori: ", y.shape, x.shape)
+
+            for i in range(len(x)):
+                row = x[i]
+                indexes = row[:, 0].argsort(kind='mergesort')
+                row = row[indexes]
+                x[i] = row
+            print("origin: ", x.shape)
+            # x = x[:, [1,2,3,4,5, 6], :]
+            # y = y[indexes]
+
+            last_timestamp = []
+            for i in range(len(x)):
+
+                last_timestamp.append(x[i, -1, 0])
+
+            indexes = np.array(last_timestamp).argsort(kind='heapsort')
+
             x = x[indexes]
-            x = x[: [1,2,3,4,5, 6]]
             y = y[indexes]
 
-            # print("leu: ", train['X'], type(train['X']), type(train['X'].to_numpy()[0]))
-            x_train = np.array([ast.literal_eval(i) for i in train['X'].tolist()], dtype=np.float32)
-            # print("ola: ", x_train[0], x_train.shape, type(x_train[0][0]), type(x_train[0][0][0]))
-            x_test = np.array([ast.literal_eval(i) for i in test['X'].tolist()], dtype=np.float32)
-            y_train = np.array([i for i in train['Y'].to_numpy().astype(np.int32)])
-            y_test = np.array([i for i in test['Y'].to_numpy().astype(np.int32)])
+            new_x = []
+            for i in range(len(x)):
+                row = x[i]
+                new_x.append(row[:, [1, 2, 3, 4, 5, 6]])
+
+            x = np.array(new_x)
+
+            print("po: ", x.shape, y.shape)
+
+            size = int(len(x) * 0.8)
+            x_train, x_test = x[:size], x[size:]
+            y_train, y_test = y[:size], y[size:]
+
+            # x_train = np.array([ast.literal_eval(i) for i in train['X'].tolist()], dtype=np.float32)
+            # x_test = np.array([ast.literal_eval(i) for i in test['X'].tolist()], dtype=np.float32)
+            # y_train = np.array([i for i in train['Y'].to_numpy().astype(np.int32)])
+            # y_test = np.array([i for i in test['Y'].to_numpy().astype(np.int32)])
             print("Tamanho original dataset: ", len(x_train))
             training_dataset = torch.utils.data.TensorDataset(torch.from_numpy(x_train).to(dtype=torch.float32), torch.from_numpy(y_train))
             validation_dataset = torch.utils.data.TensorDataset(torch.from_numpy(x_test).to(dtype=torch.float32), torch.from_numpy(y_test))

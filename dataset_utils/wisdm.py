@@ -177,7 +177,7 @@ def create_dataset(df, clients=None, window=200, overlap=1):
     Y = []
     for client in tqdm(clients):
         c_idxs[client] = []
-        data = df[df.subject == client].sort_values(by='timestamp').sample(frac=0.3, random_state=0)
+        data = df[df.subject == client].sort_values(by='timestamp').sample(frac=0.5, random_state=None)
         activities = data.activity.unique()
         for activity in activities:
             df_f = data[data.activity == activity]
@@ -189,8 +189,9 @@ def create_dataset(df, clients=None, window=200, overlap=1):
                 # print()
                 # print(x_data[2])
                 # print(x_data[5])
+                print("colunas: ", df_f.columns)
                 # exit()
-                X.append(df_f[df_f.columns[3:10]].iloc[i:i + window].to_numpy().tolist())
+                X.append(df_f[df_f.columns[2:10]].iloc[i:i + window].to_numpy().tolist())
                 Y.append(activity)
                 c_idxs[client].append(idx)
                 idx += 1

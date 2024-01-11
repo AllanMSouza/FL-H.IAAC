@@ -1,6 +1,7 @@
 from client.client_torch import FedPredictClientTorch, FedClassAvgClientTorch
 from ..fedpredict_core import fedpredict_core
 from client.client_torch.fedper_client_torch import FedPerClientTorch
+from ..fedpredict_core import fedpredict_core, decompress_global_parameters, fedpredict_combine_models, fedpredict_client
 from torch.nn.parameter import Parameter
 import torch
 import json
@@ -21,8 +22,7 @@ import logging
 
 class FedClassAvg_with_FedPredictClientTorch(FedClassAvgClientTorch):
 
-	def __init__(self,
-				 cid,
+	def __init__(cid,
 				 n_clients,
 				 n_classes,
 				 args,
@@ -71,63 +71,10 @@ class FedClassAvg_with_FedPredictClientTorch(FedClassAvgClientTorch):
 		self.filename = """./{}_saved_weights/{}/{}/model.pth""".format(strategy_name.lower(), self.model_name,
 																		self.cid)
 
-
-
-
-	def _fedpredict_plugin(self, global_parameters, t, T, nt):
-
-		try:
-
-			local_model_weights, global_model_weight = fedpredict_core(t, T, nt)
-
-			# Load global parameters into 'self.clone_model' (global model)
-			global_parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
-			size_local_parameters = len([i for i in self.model.parameters()])
-			size_global_parameters = len(global_parameters)
-			size = size_local_parameters - size_global_parameters
-			# for new_param, old_param in zip(global_parameters, self.clone_model.parameters()):
-			# 	old_param.data = new_param.data.clone()
-			# self.clone_model.load_state_dict(torch.load(filename))
-			# Combine models
-			count = 0
-			global_parameter_count = 0
-			for local_param in self.model.parameters():
-				if count >= size:
-					global_param = global_parameters[global_parameter_count]
-					local_param.data = (global_model_weight*global_param.data.clone() + local_model_weights*local_param.data.clone())
-					global_parameter_count += 1
-				count += 1
-		except Exception as e:
-			print("merge models")
-			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
-
 	def set_parameters_to_model_evaluate(self, global_parameters, config={}):
 		# Using 'torch.load'
 		try:
-			# filename = """./fedpredict_saved_weights/{}/{}/model.pth""".format(self.model_name, self.cid, self.cid)
-			t = int(config['round'])
-			T = int(config['total_server_rounds'])
-			if self.T != 0:
-				T = self.T
-			client_metrics = config['metrics']
-			# Client's metrics
-			nt = client_metrics['nt']
-			round_of_last_fit = client_metrics['round_of_last_fit']
-			round_of_last_evaluate = client_metrics['round_of_last_evaluate']
-			first_round = client_metrics['first_round']
-			acc_of_last_fit = client_metrics['acc_of_last_fit']
-			acc_of_last_evaluate = client_metrics['acc_of_last_evaluate']
-			# Server's metrics
-			last_global_accuracy = config['last_global_accuracy']
-			# if t == 1:
-			parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
-			print("tamanho global: ", len(parameters))
-				#for new_param, old_param in zip(parameters, self.model.parameters()):
-				#	old_param.data = new_param.data.clone()
-			if os.path.exists(self.filename):
-				# Load local parameters to 'self.model'
-				self.model.load_state_dict(torch.load(self.filename))
-				self._fedpredict_plugin(global_parameters, t, T, nt)
+			self.model = fedpredict_client(self.filename, self.model, global_parameters, config)
 		except Exception as e:
 			print("Set parameters to model")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
