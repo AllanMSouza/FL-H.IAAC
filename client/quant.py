@@ -67,6 +67,14 @@ def get_stationary(npointsperclass: int, do_shuffle: bool = True):
 
     return _points, _labels
 
+def shuffle(_points, _labels):
+    idxs = np.arange(len(_labels))
+    np.random.shuffle(idxs)
+    _points = _points[idxs]
+    _labels = _labels[idxs]
+
+    return _points, _labels
+
 
 def get_postchange(npointsperclass: int, do_shuffle: bool = True):
     _points = np.concatenate([
@@ -85,6 +93,29 @@ def get_postchange(npointsperclass: int, do_shuffle: bool = True):
 
     return _points, _labels
 
+def upsample(training_data, training_labels, min_samples):
+
+    try:
+
+        counts = np.unique(training_data, return_counts=True)
+        remaining_samples_per_class = {i: max(0, min_samples - j) for i, j in zip(training_data[0], training_data[1])}
+
+        for class_ in remaining_samples_per_class.keys():
+
+            remaining = remaining_samples_per_class[class_]
+            if remaining > 0:
+
+                data = np.random.sample(training_data[training_labels == class_], size=remaining)
+
+                training_data = np.concatenate([training_data, data])
+                training_labels = np.concatenate([training_labels, np.array([class_]*len(data))])
+
+        return training_data, training_labels
+
+    except Exception as e:
+        print("quan cdm")
+        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
 
 def quan(stream, labels, training_data_, training_labels_, n_classes, r):
 
@@ -101,6 +132,7 @@ def quan(stream, labels, training_data_, training_labels_, n_classes, r):
         lam = 0.03                          # weight of incoming samples in QT-EWMA
         K = 32                              # number of histogram bins
 
+        sh1 = training_data_.shape[1]
         training_labels = []
         n_classes = 12
         for i in range(n_classes):
@@ -111,55 +143,50 @@ def quan(stream, labels, training_data_, training_labels_, n_classes, r):
         training_data = []
 
         for i in range(n_classes):
-            training_data = np.concatenate(
-                [training_data, np.random.uniform(low=0, high=1, size=training_points_per_class)])
+            if len(training_data) == 0:
+                training_data = np.random.uniform(low=0, high=2, size=(training_points_per_class, sh1))
+            else:
+                training_data = np.concatenate(
+                    [training_data, np.random.uniform(low=0, high=2, size=(training_points_per_class, sh1))])
 
         unique = np.unique(training_labels)
 
-        training_data = np.concatenate([training_data, np.random.uniform(low=0, high=1, size=len(training_data_))])
+        training_data = np.concatenate([training_data, training_data_])
         training_labels = np.concatenate([training_labels, training_labels_])
 
-        idxs = np.arange(len(training_labels))
-        np.random.shuffle(idxs)
-        training_data = training_data[idxs]
-        training_labels = training_labels[idxs]
+        training_data, training_labels = shuffle(training_data, training_labels)
 
         print("unicos 2: ", unique)
         # Generate stationary data
-        # stationary_data, stationary_labels = get_stationary(npointsperclass=tau//2)
+        # tem que ter todas as classes
 
         stationary_labels = []
         n_classes = 12
         for i in range(n_classes):
-            stationary_labels += [i] * training_points_per_class
+            stationary_labels += [i] * tau
 
         stationary_labels = np.array(stationary_labels)
 
         stationary_data = []
 
         for i in range(n_classes):
-            stationary_data = np.concatenate(
-                [stationary_data, np.random.uniform(low=0, high=1, size=training_points_per_class)])
+            if len(stationary_data) == 0:
+                stationary_data = np.random.uniform(low=0, high=1, size=(tau, sh1))
+            else:
+                stationary_data = np.concatenate(
+                    [stationary_data, np.random.uniform(low=0, high=1, size=(tau, sh1))])
 
-        idxs = np.arange(len(stationary_labels))
-        np.random.shuffle(idxs)
-        stationary_data = stationary_data[idxs]
-        stationary_labels = stationary_labels[idxs]
+        stationary_data, stationary_labels = shuffle(stationary_data, stationary_labels)
 
         # Generate post-change data
-        postchange_labels = []
-        n_classes = 12
-        for i in range(n_classes):
-            postchange_labels += [i] * (points_after_tau // 2)
-
-        postchange_labels = np.array(postchange_labels)
-
-        # postchange_data = []
-        #
+        # postchange_labels = []
+        # n_classes = 12
         # for i in range(n_classes):
-        #     postchange_data = np.concatenate(
-        #         [postchange_data, np.random.uniform(low=0, high=1, size=points_after_tau // 2)])
-        postchange_data = np.random.uniform(0, 1, size=len(labels))
+        #     postchange_labels += [i] * (points_after_tau // 2)
+
+        postchange_data = np.random.uniform(0, 1, size=(len(labels), sh1))
+
+        postchange_data, labels = shuffle(postchange_data, labels)
 
         # Concatenating in a datastream
         print("tamanho dados originais: ", stationary_data.shape, stationary_labels.shape)
@@ -171,20 +198,11 @@ def quan(stream, labels, training_data_, training_labels_, n_classes, r):
 
         # --- Training and monitoring
 
-        # QT-EWMA
-        qtewma = QT_EWMA(pi_values=K, transformation_type='pca', ARL_0=ARL_0, lam=lam, threshold_mode='polynomial')
-        # Training over the whole training set
-        qtewma.train_model(data=training_data.reshape(-1, 1))
-        # Class-agnostic monitoring
-        qtewma_tau_hat = qtewma.monitor(stream=stream)
-        qtewma_statistics = qtewma.compute_statistic(stream=stream)
-        # qtewma_thresholds = qtewma.get_thresholds(stream_length=stream.shape[0])
-
         # CDM (w/ QT-EWMA)
         cdm = CDM_QT_EWMA(nqtree=training_points_per_class, ARL_0=ARL_0, lam=lam, K=K)
         # Training (separately trains two QT-EWMA on the individual classes)
 
-        cdm.train(train_points=training_data.reshape(-1, 1), train_labels=training_labels)
+        cdm.train(train_points=training_data, train_labels=training_labels)
         # Independently monitors the streams
         cdm_tau_hat = cdm.monitor(stream=stream, labels=labels)
         print("tau hat: ", cdm_tau_hat)
