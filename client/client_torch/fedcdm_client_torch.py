@@ -389,10 +389,15 @@ class FedCDMClientTorch(FedAvgClientTorch):
 				print("novo: ", Q[:5], len(Q))
 				Q = Q + Q_old
 
+			round_of_last_fit = self.client_information_train_file['round_of_last_fit'].tolist()[0]
 			data, labels = self.get_target_and_samples_from_dataset(self.traindataset, self.dataset)
-			training_data, training_labels = self.get_target_and_samples_from_dataset(self.traindataset, self.dataset)
+			if round_of_last_fit >= 1:
+				trainLoader, testLoader, trained_dataset, testdataset = self.load_data(self.dataset, self.n_clients, server_round=round_of_last_fit)
+				training_data, training_labels = self.get_target_and_samples_from_dataset(trained_dataset, self.dataset)
+			else:
+				training_data, training_labels = data, labels
 
-			drift_position = quan(data, labels, training_data, training_labels, self.num_classes)
+			drift_position = quan(data, labels, training_data, training_labels, self.num_classes, server_round)
 
 			if drift_position == -1:
 				return False
