@@ -24,6 +24,12 @@ warnings.simplefilter("ignore")
 import logging
 # logging.getLogger("torch").setLevel(logging.ERROR)
 
+def flatten_data(data):
+    nsamples, nx, ny = data.shape
+    data = data.reshape((nsamples, nx * ny))
+
+    return data
+
 class FedCDMClientTorch(FedAvgClientTorch):
 
 	def __init__(self,
@@ -397,6 +403,11 @@ class FedCDMClientTorch(FedAvgClientTorch):
 			else:
 				training_data, training_labels = data, labels
 
+			print("dados shape: ", training_data.shape, labels.shape, data.shape)
+
+			data = flatten_data(data)
+			training_data = flatten_data(training_data)
+
 			drift_position = quan(data, labels, training_data, training_labels, self.num_classes, server_round)
 
 			if drift_position == -1:
@@ -407,7 +418,7 @@ class FedCDMClientTorch(FedAvgClientTorch):
 
 
 		except Exception as e:
-			print("calculate contexts similarities")
+			print("drift detection")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def read_client_file(self):
