@@ -93,22 +93,52 @@ def get_postchange(npointsperclass: int, do_shuffle: bool = True):
 
     return _points, _labels
 
-def upsample(training_data, training_labels, min_samples):
+def upsample(training_data, training_labels, min_samples, n_classes):
 
     try:
 
-        counts = np.unique(training_data, return_counts=True)
-        remaining_samples_per_class = {i: max(0, min_samples - j) for i, j in zip(training_data[0], training_data[1])}
+        counts = np.unique(training_labels, return_counts=True)
+        remaining_samples_per_class = {i: min_samples for i in range(n_classes)}
+        for i, j in zip(counts[0], counts[1]):
+            remaining_samples_per_class[i] = max(0, min_samples - j)
+        print("falta: ", remaining_samples_per_class)
+
+        # raise
 
         for class_ in remaining_samples_per_class.keys():
 
-            remaining = remaining_samples_per_class[class_]
+            print("ol", training_data.shape, np.array(training_labels == class_).shape)
+            r = np.take(training_data, np.array(training_labels == class_), axis=0)
+            remaining = int(remaining_samples_per_class[class_])
             if remaining > 0:
 
-                data = np.random.sample(training_data[training_labels == class_], size=remaining)
+                print("te", r.shape)
+                if len(r) == 0:
+
+                    # mean = np.mean(training_data, axis=0)
+                    mean = np.zeros(training_data.shape)
+                    data = []
+                    for i in range(remaining):
+                        data.append(mean)
+                    print("p1")
+                elif len(r) == 1:
+                    data = np.array(list(r[0]) * remaining)
+                    print("p2", r.shape, training_data.shape)
+                else:
+                    print("p3", r.shape)
+                    idx = np.random.choice(range(len(r)), size=remaining)
+                    data = np.take(r, idx, axis=0)
+                    print(data.shape)
+
+
+
+
+                print("dw", data.shape)
 
                 training_data = np.concatenate([training_data, data])
                 training_labels = np.concatenate([training_labels, np.array([class_]*len(data))])
+
+        print("unn: ", np.unique(training_labels, return_counts=True))
 
         return training_data, training_labels
 
@@ -133,30 +163,32 @@ def quan(stream, labels, training_data_, training_labels_, n_classes, r):
         K = 32                              # number of histogram bins
 
         sh1 = training_data_.shape[1]
-        training_labels = []
-        n_classes = 12
-        for i in range(n_classes):
-            training_labels += [i] * training_points_per_class
+        # training_labels = []
+        # n_classes = 12
+        # for i in range(n_classes):
+        #     training_labels += [i] * training_points_per_class
+        #
+        # training_labels = np.array(training_labels)
+        #
+        # training_data = []
+        #
+        # for i in range(n_classes):
+        #     if len(training_data) == 0:
+        #         training_data = np.random.uniform(low=0, high=2, size=(training_points_per_class, sh1))
+        #     else:
+        #         training_data = np.concatenate(
+        #             [training_data, np.random.uniform(low=0, high=2, size=(training_points_per_class, sh1))])
+        #
+        # unique = np.unique(training_labels)
+        #
+        # training_data = np.concatenate([training_data, training_data_])
+        # training_labels = np.concatenate([training_labels, training_labels_])
 
-        training_labels = np.array(training_labels)
-
-        training_data = []
-
-        for i in range(n_classes):
-            if len(training_data) == 0:
-                training_data = np.random.uniform(low=0, high=2, size=(training_points_per_class, sh1))
-            else:
-                training_data = np.concatenate(
-                    [training_data, np.random.uniform(low=0, high=2, size=(training_points_per_class, sh1))])
-
-        unique = np.unique(training_labels)
-
-        training_data = np.concatenate([training_data, training_data_])
-        training_labels = np.concatenate([training_labels, training_labels_])
+        training_data, training_labels = upsample(training_data_, training_labels_, training_points_per_class, n_classes)
 
         training_data, training_labels = shuffle(training_data, training_labels)
 
-        print("unicos 2: ", unique)
+        print("unicos 2: ", np.unique(training_labels, return_counts=True))
         # Generate stationary data
         # tem que ter todas as classes
 
