@@ -277,8 +277,7 @@ class JointAnalysis():
 
         model_report = {i: {} for i in df['Alpha'].unique().tolist()}
         if experiment == 1:
-            df = df[df['Round (t)'] >= 35]
-            df = df[df['Round (t)'] <= 39]
+            df = df[df['Round (t)'] == 35]
         # df_test = df[['Round (t)', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset']].groupby(
         #     ['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset']).apply(
         #     lambda e: self.groupb_by_table(e)).reset_index()[
