@@ -131,6 +131,9 @@ class GRU(torch.nn.Module):
     def __init__(self, input_shape, num_layers=1, hidden_size=4, sequence_length=28, num_classes=10):
         super().__init__()
         try:
+            random.seed(0)
+            np.random.seed(0)
+            torch.manual_seed(0)
             self.input_size = input_shape
             self.hidden_size = hidden_size
             self.num_layers = num_layers
@@ -147,6 +150,9 @@ class GRU(torch.nn.Module):
 
     def forward(self, x):
         try:
+            random.seed(0)
+            np.random.seed(0)
+            torch.manual_seed(0)
             x, h = self.gru(x)
             out = F.softmax(self.net(x))
             return out

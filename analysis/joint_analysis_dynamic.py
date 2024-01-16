@@ -22,7 +22,7 @@ class JointAnalysis():
         df_concat = None
         count = 0
         original_model = copy.deepcopy(model)
-        version_dict = {"FedPredict": {-2: "$FedPredict_{dc}"}}
+        version_dict = {"FedPredict": {-2: "FedPredict_{dc}"}}
         for i in experiments:
             experiment = experiments[i]
             new_clients = experiment['new_client']
@@ -110,19 +110,19 @@ class JointAnalysis():
                                     continue
                                 if strategy == "FedPredict" and compression == "no" and dynamic_data == "synthetic":
                                     st = "FedAvg"
-                                    s = "$+FP$"
+                                    s = "+FP"
                                 elif strategy == "FedPredict_Dynamic" and compression == "no" and dynamic_data == "synthetic":
                                     st = "FedAvg"
-                                    s = "$+FP_{dyn}$"
+                                    s = "+FP_{DYN}"
                                 elif strategy == "FedYogi_with_FedPredict" and compression == "no" and dynamic_data == "synthetic":
                                     st = "FedYogi"
-                                    s = "$+FP$"
+                                    s = "+FP"
                                 elif strategy == "FedKD_with_FedPredict" and compression == "no" and dynamic_data == "synthetic":
                                     st = "FedKD"
-                                    s = "$+FP$"
+                                    s = "+FP"
                                 else:
                                     st = copy.copy(strategy).replace('FedAVG', 'FedAvg')
-                                    s = "$Original$"
+                                    s = "Original"
 
                                 print("f1: ", filename1)
                                 print("f2: ", filename2)
@@ -162,14 +162,14 @@ class JointAnalysis():
         strategies = df_concat['Strategy'].unique().tolist()
         print("versao2: ", df_concat['Strategy'].unique().tolist())
         aux = []
-        order = ['$FedAvg+FP_{dc}$', '$FedAvg$', '$FedYogi+FP_{dc}$', '$FedYogi$', '$FedKD+FP_{dc}$', '$FedKD$', '$FedPer$', '$FedProto$', 'CDA-FedAvg']
+        order = ['FedAvg+FP_{DYN}', 'FedAvg+FP', 'FedAvg', 'CDA-FedAvg']
         for s in order:
             if s in strategies:
                 aux.append(s)
         strategies = aux
         print("finai: ", strategies)
         print("Experimento 1")
-        # self.joint_table(df_concat, alphas, strategies, experiment=1)
+        self.joint_table(df_concat, alphas, strategies, experiment=1)
         print("Experimento 2")
         # self.joint_table(df_concat, alphas, strategies, experiment=2)
         # self.joint_table(df_concat, fractions_fit, strategies, experiment=3)
@@ -184,11 +184,14 @@ class JointAnalysis():
             version = versions[i]
             strategy = strategies[i]
 
-            if version == "$+FP_{dc}$":
-                strategy = "$" + strategy + "+FP_{dc}$"
+            if version == "+FP_{DYN}":
+                strategy = "" + strategy + "+FP_{DYN}"
+                strategies[i] = strategy
+            elif version == "+FP":
+                strategy = "" + strategy + "+FP"
                 strategies[i] = strategy
             else:
-                strategy = "$" + strategy + "$"
+                strategy = "" + strategy + ""
                 strategies[i] = strategy
 
         df['Strategy'] = np.array(strategies)
@@ -204,16 +207,16 @@ class JointAnalysis():
             strategy = strategies[i]
             if "FedPredict" in strategy:
                 if "dls" in shared_layer:
-                    shared_layers_list[i] = "$FedPredict_{d}$"
+                    shared_layers_list[i] = "FedPredict_{d}"
                     continue
                 elif "dls_compredict" in shared_layer:
-                    shared_layers_list[i] = "$FedPredict_{dc}$"
+                    shared_layers_list[i] = "FedPredict_{dc}"
                     continue
                 elif "compredict" in shared_layer:
-                    shared_layers_list[i] = "$FedPredict_{c}$"
+                    shared_layers_list[i] = "FedPredict_{c}"
                     continue
                 elif "no" in shared_layer:
-                    shared_layers_list[i] = "$FedPredict$"
+                    shared_layers_list[i] = "FedPredict"
                     continue
             else:
                 shared_layers_list[i] = strategy
@@ -234,12 +237,14 @@ class JointAnalysis():
         columns = df.columns.tolist()
         indexes = df.index.tolist()
 
-        datasets = ['EMNIST', 'CIFAR-10', 'GTSRB']
+        datasets = ['WISDM-WATCH']
         solutions = pd.Series([i[1] for i in indexes]).unique().tolist()
         reference_solutions = {}
         for solution_key in solutions:
-            if "FP_{dc}" in solution_key:
-                reference_solutions[solution_key] = solution_key.replace("+FP_{dc}", "")
+            if "FP_{DYN}" in solution_key:
+                reference_solutions[solution_key] = solution_key.replace("+FP_{DYN}", "")
+            elif "FP" in solution_key:
+                reference_solutions[solution_key] = solution_key.replace("+FP", "")
 
         # print("indexes: ", indexes)
         # print("reference: ", reference_solutions)
@@ -272,7 +277,8 @@ class JointAnalysis():
 
         model_report = {i: {} for i in df['Alpha'].unique().tolist()}
         if experiment == 1:
-            df = df[df['Round (t)'] == 100]
+            df = df[df['Round (t)'] >= 35]
+            df = df[df['Round (t)'] <= 39]
         # df_test = df[['Round (t)', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset']].groupby(
         #     ['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset']).apply(
         #     lambda e: self.groupb_by_table(e)).reset_index()[
@@ -291,7 +297,7 @@ class JointAnalysis():
 
         columns = strategies
 
-        index = [np.array(['EMNIST'] * len(columns) +['CIFAR-10'] * len(columns) + ['GTSRB'] * len(columns)), np.array(columns * 3)]
+        index = [np.array(['WISDM-WATCH'] * len(columns)), np.array(columns * 1)]
 
         models_dict = {}
         ci = 0.95
@@ -300,32 +306,36 @@ class JointAnalysis():
 
             mnist_acc = {}
             cifar10_acc = {}
-            gtsrb_acc = {}
             for column in columns:
 
                 # mnist_acc[column] = (self.filter(df_test, experiment, 'MNIST', float(column), strategy=model_name)['Accuracy (%)']*100).mean().round(6)
                 # cifar10_acc[column] = (self.filter(df_test, experiment, 'CIFAR10', float(column), strategy=model_name)['Accuracy (%)']*100).mean().round(6)
-                mnist_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'EMNIST',
+                mnist_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'WISDM-WATCH',
                                                                      float(model_name), strategy=column)[
                                          'Accuracy (%)']).tolist(), ci)
-                cifar10_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'CIFAR10',
-                                                                       float(model_name), strategy=column)[
-                                           'Accuracy (%)']).tolist(), ci)
-                gtsrb_acc[column] = self.t_distribution(
-                    (self.filter(df_test, experiment, 'GTSRB', float(model_name), strategy=column)[
-                        'Accuracy (%)']).tolist(), ci)
+                # cifar10_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'WISDM-WATCH',
+                #                                                        float(model_name), strategy=column)[
+                #                            'Accuracy (%)']).tolist(), ci)
+                # gtsrb_acc[column] = self.t_distribution(
+                #     (self.filter(df_test, experiment, 'GTSRB', float(model_name), strategy=column)[
+                #         'Accuracy (%)']).tolist(), ci)
 
             model_metrics = []
 
             for column in columns:
+                print("pegou: ", len(mnist_acc[column]), type(mnist_acc[column]))
                 model_metrics.append(mnist_acc[column])
-            for column in columns:
-                model_metrics.append(cifar10_acc[column])
-            for column in columns:
-                model_metrics.append(gtsrb_acc[column])
+            # for column in columns:
+            #     print("pegou 2: ", len(mnist_acc[column]), type(mnist_acc[column]))
+            #     model_metrics.append(cifar10_acc[column])
 
             models_dict[model_name] = model_metrics
 
+        for key in models_dict:
+
+            print("""chave {} tamanho {} ti {}""".format(key, len(models_dict[key]), type(models_dict)))
+
+        print("indice: ", len(index))
         df_table = pd.DataFrame(models_dict, index=index).round(4)
         print("df table: ", df_table)
         print(df_table.to_string())
@@ -376,9 +386,9 @@ class JointAnalysis():
 
             df_accuracy_improvements.iloc[i] = row
 
-        latex = df_accuracy_improvements.to_latex().replace("\\\nEMNIST", "\\\n\hline\nEMNIST").replace("\\\nGTSRB", "\\\n\hline\nGTSRB").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}").replace("\$", "$").replace("textuparrow", "\oitextuparrow").replace("textdownarrow", "\oitextdownarrow").replace("\&", "&").replace("&  &", "& - &").replace("\_", "_").replace("&  \\", "& - \\").replace(" - " + r"\textbf", " " + r"\textbf")
+        latex = df_accuracy_improvements.to_latex().replace("\\\nEMNIST", "\\\n\hline\nEMNIST").replace("\\\nGTSRB", "\\\n\hline\nGTSRB").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}").replace("\$", "$").replace("textuparrow", "\oitextuparrow").replace("textdownarrow", "\oitextdownarrow").replace("\&", "&").replace("&  &", "& - &").replace("\_", "_").replace("&  \\", "& - \\").replace(" - " + r"\textbf", " " + r"\textbf").replace("_{DYN}", r"$_{\text{DYN}}$")
 
-        base_dir = """analysis/output/experiment_{}/""".format(str(experiment + 1))
+        base_dir = """analysis/output/experiment_{}/dynamic/""".format(str(experiment + 1))
         filename = """{}latex_{}.txt""".format(base_dir, str(experiment))
         pd.DataFrame({'latex': [latex]}).to_csv(filename, header=False, index=False)
 
@@ -390,8 +400,10 @@ class JointAnalysis():
 
     def improvements(self, df, experiment):
 
-        strategies = {"$FedAvg+FP_{dc}$": "$FedAvg$", "$FedYogi+FP_{dc}$": "$FedYogi$"}
-        datasets = ['EMNIST', 'GTSRB']
+        strategies = {"FedAvg+FP_{DYN}": "FedAvg", "FedAvg+FP": "FedAvg"}
+        datasets = ['WISDM-WATCH', 'WISDM-WATCH']
+        print(df)
+        # exit()
         columns = df.columns.tolist()
         improvements_dict = {'Dataset': [], 'Strategy': [], 'Original strategy': [], 'Alpha': [], 'Accuracy (%)': []}
         df_improvements = pd.DataFrame(improvements_dict)
@@ -404,7 +416,8 @@ class JointAnalysis():
 
                     index = (dataset, strategy)
                     index_original = (dataset, original_strategy)
-
+                    print(index)
+                    print(df.loc[index])
                     acc = float(df.loc[index].tolist()[j].replace("textbf{", "")[:4])
                     acc_original = float(df.loc[index_original].tolist()[j].replace("textbf{", "")[:4])
 
@@ -442,7 +455,7 @@ class JointAnalysis():
 
         df = self.filter(df, experiment, dataset, alpha)
         print("ttt: ", df)
-        df['Strategy'] = np.array(["$" + i + "$" for i in df['Strategy'].tolist()])
+        df['Strategy'] = np.array(["" + i + "" for i in df['Strategy'].tolist()])
 
         print("filtrado: ", df, df[hue].unique().tolist())
         line_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, tipo='1', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes, y_max=y_max, y_lim=y_lim, style_order=style_order)
@@ -472,10 +485,10 @@ class JointAnalysis():
                 dataset = datast[j]
                 title = """{}; \u03B1={}""".format(dataset, alpha)
                 filename = ''
-                # hue_order = ['$FedPredict_{dc}$', "$FedPredict$", 'FedClassAvg', 'FedAvg']
-                hue_order = ['$FedAvg$', '$CDA-FedAvg$']
+                # hue_order = ['FedPredict_{dc}', "FedPredict", 'FedClassAvg', 'FedAvg']
+                hue_order = ['FedAvg', 'CDA-FedAvg']
                 style = "Version"
-                style_order = ["$+FP_{dyn}$", "$+FP$", "$Original$"]
+                style_order = ["+FP_{DYN}", "+FP", "Original"]
                 y_max = 100
                 # markers = [',', '.'
                 markers = None
@@ -611,7 +624,7 @@ if __name__ == '__main__':
     # pocs = [0.1, 0.2, 0.3]
     fractions_fit = [0.3]
     # datasets = ['MNIST', 'CIFAR10']
-    datasets = ['CIFAR10', 'EMNIST', 'WISDM-WATCH']
+    datasets = ['EMNIST', 'CIFAR10', 'WISDM-WATCH']
     alpha = [0.1, 1.0]
     rounds = 50
     clients = '20'

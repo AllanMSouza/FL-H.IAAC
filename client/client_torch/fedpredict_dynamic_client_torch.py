@@ -279,8 +279,10 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 					y = y.to(self.device)
 					y = torch.tensor(y)
 					output = self.model(x)
+
+					print("""cliente {} rodada {} simi {}""".format(self.cid, self.server_round, self.similarity))
 					if self.similarity != 1:
-						output = torch.multiply(output, torch.from_numpy(self.current_proportion))
+						output = torch.multiply(output, torch.from_numpy(self.current_proportion * (1 - self.similarity)))
 					loss = self.loss(output, y)
 					test_loss += loss.item() * y.shape[0]
 					prediction = torch.argmax(output, dim=1)

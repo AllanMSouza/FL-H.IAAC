@@ -340,8 +340,14 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				self.round_of_last_fit = server_round
 
 				selected = 1
+				random.seed(0)
+				np.random.seed(0)
+				torch.manual_seed(0)
 				self.model.to(self.device)
 				self.model.train()
+				random.seed(0)
+				np.random.seed(0)
+				torch.manual_seed(0)
 
 				max_local_steps = self.local_epochs
 
@@ -525,6 +531,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			size_of_parameters = self.calculate_bytes(parameters)
 			# size_of_parameters = sum([sum(map(sys.getsizeof, parameters[i])) for i in range(len(parameters))])
 			size_of_config = self._get_size_of_dict(config)
+			self.server_round = server_round
 			if self.model_name in ['GRU']:
 				loss, accuracy, test_num, predictions, labels = self.model_eval()
 			else:

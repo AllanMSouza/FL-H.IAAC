@@ -884,7 +884,18 @@ class ManageDatasets():
             training_dataset = torch.utils.data.TensorDataset(torch.from_numpy(x_train).to(dtype=torch.float32), torch.from_numpy(y_train))
             validation_dataset = torch.utils.data.TensorDataset(torch.from_numpy(x_test).to(dtype=torch.float32), torch.from_numpy(y_test))
 
-            trainLoader = DataLoader(training_dataset, batch_size, shuffle=True)
+            random.seed(0)
+            np.random.seed(0)
+            torch.manual_seed(0)
+
+            def seed_worker(worker_id):
+                np.random.seed(0)
+                random.seed(0)
+
+            g = torch.Generator()
+            g.manual_seed(0)
+
+            trainLoader = DataLoader(training_dataset, batch_size, shuffle=True, worker_init_fn=seed_worker, generator=g)
             testLoader = DataLoader(validation_dataset, batch_size, shuffle=False)
 
             return trainLoader, testLoader, training_dataset, validation_dataset
