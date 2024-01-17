@@ -50,7 +50,7 @@ class JointAnalysis():
 
                             for alpha in alphas:
 
-                                if dataset in ['WISDM-WATCH']:
+                                if dataset in ['WISDM-WATCH', 'WISDM-P']:
                                     model = "GRU"
                                 else:
                                     model = original_model
@@ -103,7 +103,6 @@ class JointAnalysis():
                                         flag = False
                                     if dataset == "GTSRB" and not flag and new_clients == 'train':
                                         print("nao achou: ", filename1)
-                                        exit()
                                     if dataset in ['EMNIST', 'CIFAR10'] and strategy == "CDA-FedAvg":
                                         continue
                                 except:
@@ -113,7 +112,7 @@ class JointAnalysis():
                                     s = "+FP"
                                 elif strategy == "FedPredict_Dynamic" and compression == "no" and dynamic_data == "synthetic":
                                     st = "FedAvg"
-                                    s = "+FP_{DYN}"
+                                    s = r"+FP$_{DYN}$"
                                 elif strategy == "FedYogi_with_FedPredict" and compression == "no" and dynamic_data == "synthetic":
                                     st = "FedYogi"
                                     s = "+FP"
@@ -162,7 +161,7 @@ class JointAnalysis():
         strategies = df_concat['Strategy'].unique().tolist()
         print("versao2: ", df_concat['Strategy'].unique().tolist())
         aux = []
-        order = ['FedAvg+FP_{DYN}', 'FedAvg+FP', 'FedAvg', 'CDA-FedAvg']
+        order = [r'FedAvg+FP$_{DYN}$', 'FedAvg+FP', 'FedAvg', 'CDA-FedAvg']
         for s in order:
             if s in strategies:
                 aux.append(s)
@@ -184,8 +183,8 @@ class JointAnalysis():
             version = versions[i]
             strategy = strategies[i]
 
-            if version == "+FP_{DYN}":
-                strategy = "" + strategy + "+FP_{DYN}"
+            if version == r"+FP$_{DYN}$":
+                strategy = "" + strategy + r"+FP$_{DYN}$"
                 strategies[i] = strategy
             elif version == "+FP":
                 strategy = "" + strategy + "+FP"
@@ -237,12 +236,12 @@ class JointAnalysis():
         columns = df.columns.tolist()
         indexes = df.index.tolist()
 
-        datasets = ['WISDM-WATCH']
+        datasets = ['WISDM-P', 'WISDM-WATCH']
         solutions = pd.Series([i[1] for i in indexes]).unique().tolist()
         reference_solutions = {}
         for solution_key in solutions:
-            if "FP_{DYN}" in solution_key:
-                reference_solutions[solution_key] = solution_key.replace("+FP_{DYN}", "")
+            if r"FP$_{DYN}$" in solution_key:
+                reference_solutions[solution_key] = solution_key.replace(r"+FP$_{DYN}$", "")
             elif "FP" in solution_key:
                 reference_solutions[solution_key] = solution_key.replace("+FP", "")
 
@@ -296,7 +295,7 @@ class JointAnalysis():
 
         columns = strategies
 
-        index = [np.array(['WISDM-WATCH'] * len(columns)), np.array(columns * 1)]
+        index = [np.array(['WISDM-P'] * len(columns), ['WISDM-WATCH'] * len(columns)), np.array(columns * 2)]
 
         models_dict = {}
         ci = 0.95
@@ -309,12 +308,12 @@ class JointAnalysis():
 
                 # mnist_acc[column] = (self.filter(df_test, experiment, 'MNIST', float(column), strategy=model_name)['Accuracy (%)']*100).mean().round(6)
                 # cifar10_acc[column] = (self.filter(df_test, experiment, 'CIFAR10', float(column), strategy=model_name)['Accuracy (%)']*100).mean().round(6)
-                mnist_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'WISDM-WATCH',
+                mnist_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'WISDM-P',
                                                                      float(model_name), strategy=column)[
                                          'Accuracy (%)']).tolist(), ci)
-                # cifar10_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'WISDM-WATCH',
-                #                                                        float(model_name), strategy=column)[
-                #                            'Accuracy (%)']).tolist(), ci)
+                cifar10_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'WISDM-WATCH',
+                                                                       float(model_name), strategy=column)[
+                                           'Accuracy (%)']).tolist(), ci)
                 # gtsrb_acc[column] = self.t_distribution(
                 #     (self.filter(df_test, experiment, 'GTSRB', float(model_name), strategy=column)[
                 #         'Accuracy (%)']).tolist(), ci)
@@ -324,9 +323,9 @@ class JointAnalysis():
             for column in columns:
                 print("pegou: ", len(mnist_acc[column]), type(mnist_acc[column]))
                 model_metrics.append(mnist_acc[column])
-            # for column in columns:
-            #     print("pegou 2: ", len(mnist_acc[column]), type(mnist_acc[column]))
-            #     model_metrics.append(cifar10_acc[column])
+            for column in columns:
+                print("pegou 2: ", len(mnist_acc[column]), type(mnist_acc[column]))
+                model_metrics.append(cifar10_acc[column])
 
             models_dict[model_name] = model_metrics
 
@@ -399,8 +398,8 @@ class JointAnalysis():
 
     def improvements(self, df, experiment):
 
-        strategies = {"FedAvg+FP_{DYN}": "FedAvg", "FedAvg+FP": "FedAvg"}
-        datasets = ['WISDM-WATCH', 'WISDM-WATCH']
+        strategies = {r"FedAvg+FP$_{DYN}$": "FedAvg", "FedAvg+FP": "FedAvg"}
+        datasets = ['WISDM-P', 'WISDM-WATCH']
         print(df)
         # exit()
         columns = df.columns.tolist()
@@ -487,7 +486,7 @@ class JointAnalysis():
                 # hue_order = ['FedPredict_{dc}', "FedPredict", 'FedClassAvg', 'FedAvg']
                 hue_order = ['FedAvg', 'CDA-FedAvg']
                 style = "Version"
-                style_order = ["+FP_{DYN}", "+FP", "Original"]
+                style_order = [r"+FP$_{DYN}$", "+FP", "Original"]
                 y_max = 100
                 # markers = [',', '.'
                 markers = None
@@ -623,7 +622,7 @@ if __name__ == '__main__':
     # pocs = [0.1, 0.2, 0.3]
     fractions_fit = [0.3]
     # datasets = ['MNIST', 'CIFAR10']
-    datasets = ['EMNIST', 'CIFAR10', 'WISDM-WATCH']
+    datasets = ['EMNIST', 'WISDM-P', 'WISDM-WATCH']
     alpha = [0.1, 1.0]
     rounds = 50
     clients = '20'

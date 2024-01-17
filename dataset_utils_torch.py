@@ -972,7 +972,7 @@ class ManageDatasets():
             elif dataset_name == 'UCIHAR':
                 return self.load_UCIHAR(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
 
-            elif dataset_name == 'WISDM-WATCH':
+            elif dataset_name in ['WISDM-WATCH', 'WISDM-P']:
                 return self.load_wisdm(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
 
         except Exception as e:

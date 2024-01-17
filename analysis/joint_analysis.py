@@ -21,7 +21,7 @@ class JointAnalysis():
         self.clients = clients
         df_concat = None
         count = 0
-        version_dict = {"FedPredict": {-2: "$FedPredict_{dc}"}}
+        version_dict = {"FedPredict": {-2: "FedPredict_{dc}"}}
         for i in experiments:
             experiment = experiments[i]
             new_clients = experiment['new_client']
@@ -103,16 +103,16 @@ class JointAnalysis():
                                     continue
                                 if strategy == "FedPredict" and compression == "dls_compredict":
                                     st = "FedAvg"
-                                    s = "$+FP_{dc}$"
+                                    s = r'+FP$_{dc}$'
                                 elif strategy == "FedYogi_with_FedPredict" and compression == "dls_compredict":
                                     st = "FedYogi"
-                                    s = "$+FP_{dc}$"
+                                    s = r'+FP$_{dc}$'
                                 elif strategy == "FedKD_with_FedPredict" and compression == "dls_compredict":
                                     st = "FedKD"
-                                    s = "$+FP_{dc}$"
+                                    s = r'+FP$_{dc}$'
                                 else:
                                     st = copy.copy(strategy).replace('FedAVG', 'FedAvg')
-                                    s = "$Original$"
+                                    s = "Original"
 
 
                                 df['Strategy'] = np.array([st] * len(df))
@@ -151,7 +151,7 @@ class JointAnalysis():
         strategies = df_concat['Strategy'].unique().tolist()
         print("versao2: ", df_concat['Strategy'].unique().tolist())
         aux = []
-        order = ['$FedAvg+FP_{dc}$', '$FedAvg$', '$FedYogi+FP_{dc}$', '$FedYogi$', '$FedKD+FP_{dc}$', '$FedKD$', '$FedPer$', '$FedProto$']
+        order = ['FedAvg+FP$_{dc}$', 'FedAvg', 'FedYogi+FP$_{dc}$', 'FedYogi', 'FedKD+FP$_{dc}$', 'FedKD', 'FedPer', 'FedProto']
         for s in order:
             if s in strategies:
                 aux.append(s)
@@ -173,11 +173,11 @@ class JointAnalysis():
             version = versions[i]
             strategy = strategies[i]
 
-            if version == "$+FP_{dc}$":
-                strategy = "$" + strategy + "+FP_{dc}$"
+            if version == r"+FP$_{dc}$":
+                strategy = "" + strategy + r"+FP$_{dc}$"
                 strategies[i] = strategy
             else:
-                strategy = "$" + strategy + "$"
+                strategy = "" + strategy + ""
                 strategies[i] = strategy
 
         df['Strategy'] = np.array(strategies)
@@ -193,16 +193,16 @@ class JointAnalysis():
             strategy = strategies[i]
             if "FedPredict" in strategy:
                 if "dls" in shared_layer:
-                    shared_layers_list[i] = "$FedPredict_{d}$"
+                    shared_layers_list[i] = "FedPredict_{d}"
                     continue
                 elif "dls_compredict" in shared_layer:
-                    shared_layers_list[i] = "$FedPredict_{dc}$"
+                    shared_layers_list[i] = "FedPredict_{dc}"
                     continue
                 elif "compredict" in shared_layer:
-                    shared_layers_list[i] = "$FedPredict_{c}$"
+                    shared_layers_list[i] = "FedPredict_{c}"
                     continue
                 elif "no" in shared_layer:
-                    shared_layers_list[i] = "$FedPredict$"
+                    shared_layers_list[i] = "FedPredict"
                     continue
             else:
                 shared_layers_list[i] = strategy
@@ -227,8 +227,8 @@ class JointAnalysis():
         solutions = pd.Series([i[1] for i in indexes]).unique().tolist()
         reference_solutions = {}
         for solution_key in solutions:
-            if "FP_{dc}" in solution_key:
-                reference_solutions[solution_key] = solution_key.replace("+FP_{dc}", "")
+            if r"FP$_{dc}$" in solution_key:
+                reference_solutions[solution_key] = solution_key.replace(r"+FP$_{dc}$", "")
 
         # print("indexes: ", indexes)
         # print("reference: ", reference_solutions)
@@ -365,7 +365,7 @@ class JointAnalysis():
 
             df_accuracy_improvements.iloc[i] = row
 
-        latex = df_accuracy_improvements.to_latex().replace("\\\nEMNIST", "\\\n\hline\nEMNIST").replace("\\\nGTSRB", "\\\n\hline\nGTSRB").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}").replace("\$", "$").replace("textuparrow", "\oitextuparrow").replace("textdownarrow", "\oitextdownarrow").replace("\&", "&").replace("&  &", "& - &").replace("\_", "_").replace("&  \\", "& - \\").replace(" - " + r"\textbf", " " + r"\textbf")
+        latex = df_accuracy_improvements.to_latex().replace("\\\nEMNIST", "\\\n\hline\nEMNIST").replace("\\\nGTSRB", "\\\n\hline\nGTSRB").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}").replace("\$", "$").replace("textuparrow", r"\textuparrow").replace("textdownarrow", r"\textdownarrow").replace("\&", "&").replace("&  &", "& - &").replace("\_", "_").replace("&  \\", "& - \\").replace(" - " + r"\textbf", " " + r"\textbf").replace("_{dc}", r"_{\text{dc}}")
 
         base_dir = """analysis/output/experiment_{}/""".format(str(experiment + 1))
         filename = """{}latex_{}.txt""".format(base_dir, str(experiment))
@@ -379,7 +379,7 @@ class JointAnalysis():
 
     def improvements(self, df, experiment):
 
-        strategies = {"$FedAvg+FP_{dc}$": "$FedAvg$", "$FedYogi+FP_{dc}$": "$FedYogi$"}
+        strategies = {r"FedAvg+FP$_{dc}$": "FedAvg", r"FedYogi+FP$_{dc}$": "FedYogi"}
         datasets = ['EMNIST', 'GTSRB']
         columns = df.columns.tolist()
         improvements_dict = {'Dataset': [], 'Strategy': [], 'Original strategy': [], 'Alpha': [], 'Accuracy (%)': []}
@@ -393,7 +393,8 @@ class JointAnalysis():
 
                     index = (dataset, strategy)
                     index_original = (dataset, original_strategy)
-
+                    print(df)
+                    print("indice: ", index)
                     acc = float(df.loc[index].tolist()[j].replace("textbf{", "")[:4])
                     acc_original = float(df.loc[index_original].tolist()[j].replace("textbf{", "")[:4])
 
@@ -430,7 +431,7 @@ class JointAnalysis():
     def filter_and_plot(self, ax, base_dir, filename, title, df, experiment, dataset, alpha, x_column, y_column, hue, hue_order=None, style=None, markers=None, size=None, sizes=None):
 
         df = self.filter(df, experiment, dataset, alpha)
-        df['Strategy'] = np.array(["$" + i + "$" for i in df['Strategy'].tolist()])
+        df['Strategy'] = np.array(["" + i + "" for i in df['Strategy'].tolist()])
 
         print("filtrado: ", df, df[hue].unique().tolist())
         line_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, tipo='1', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes)
@@ -457,8 +458,8 @@ class JointAnalysis():
         filename = ''
         i = 0
         j = 0
-        # hue_order = ['$FedPredict_{dc}$', "$FedPredict$", 'FedClassAvg', 'FedAvg']
-        hue_order = ['$FedAvg$', '$FedYogi$', '$FedKD$', '$FedPer$', '$FedProto$']
+        # hue_order = ['FedPredict_{dc}', "FedPredict", 'FedClassAvg', 'FedAvg']
+        hue_order = ['FedAvg', 'FedYogi', 'FedKD', 'FedPer', 'FedProto']
         style = "Version"
         # markers = [',', '.'
         markers = None

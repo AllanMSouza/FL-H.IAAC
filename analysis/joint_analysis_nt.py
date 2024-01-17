@@ -52,13 +52,13 @@ class JointAnalysis():
 
                         if strategy == "FedPredict" and compression == 'dls_compredict':
                             strategy = "FedAvg"
-                            s = "$+FP_{dc}$"
+                            s = "+FP$_{dc}$"
                         elif strategy == "FedYogi_with_FedPredict" and compression == 'dls_compredict':
                             strategy = "FedYogi"
-                            s = "$+FP_{dc}$"
+                            s = "+FP$_{dc}$"
                         elif strategy == "FedKD_with_FedPredict" and compression == 'dls_compredict':
                             strategy = "FedKD"
-                            s = "$+FP_{dc}$"
+                            s = "+FP$_{dc}$"
                         else:
                             s = "Original"
 
@@ -108,8 +108,8 @@ class JointAnalysis():
             version = versions[i]
             strategy = strategies[i]
 
-            if version == "$+FP_{dc}$":
-                strategy = "$" + strategy + "+FP_{dc}$"
+            if version == "+FP$_{dc}$":
+                strategy = "" + strategy + "+FP$_{dc}$"
                 strategies[i] = strategy
 
         df['Strategy'] = np.array(strategies)
@@ -125,16 +125,16 @@ class JointAnalysis():
             strategy = strategies[i]
             if "FedPredict" in strategy:
                 if "-1" in shared_layer:
-                    shared_layers_list[i] = "$FedPredict_{d}$"
+                    shared_layers_list[i] = "FedPredict$_{d}$"
                     continue
                 elif "dls_compredict" in shared_layer:
-                    shared_layers_list[i] = "$FedPredict_{dc}$"
+                    shared_layers_list[i] = "FedPredict$_{dc}$"
                     continue
                 elif "-3" in shared_layer:
-                    shared_layers_list[i] = "$FedPredict_{c}$"
+                    shared_layers_list[i] = "FedPredict$_{c}$"
                     continue
                 elif "10" in shared_layer:
-                    shared_layers_list[i] = "$FedPredict$"
+                    shared_layers_list[i] = "FedPredict"
                     continue
             else:
                 shared_layers_list[i] = strategy
@@ -211,7 +211,7 @@ class JointAnalysis():
             df_table[column] = np.array(column_values)
 
         print(df_table)
-        df_table.columns = np.array(['$FedPredict_{dc}$', 'FedAvg', 'FedClassAvg'])
+        df_table.columns = np.array(['FedPredict_${dc}$', 'FedAvg', 'FedClassAvg'])
         print(df_table.columns)
 
         latex = df_table.to_latex().replace("\\\nEMNIST", "\\\n\hline\nEMNIST").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}")
@@ -288,7 +288,7 @@ class JointAnalysis():
         title = """{}""".format(dataset)
         filename = 'nt'
         i = 0
-        hue_order = ['$FedAvg+FP_{dc}$', 'FedAvg', '$FedYogi+FP_{dc}$', "FedYogi", '$FedKD+FP_{dc}$', "FedKD"]
+        hue_order = ['FedAvg+FP$_{dc}$', 'FedAvg', 'FedYogi+FP$_{dc}$', "FedYogi", 'FedKD+FP$_{dc}$', "FedKD"]
         colors = ["mediumblue", "lightblue", "green", "lightgreen", "red", "mistyrose"]
         palette = {i: j for i, j in zip(hue_order, colors)}
         print(df_test['Strategy'].unique().tolist())

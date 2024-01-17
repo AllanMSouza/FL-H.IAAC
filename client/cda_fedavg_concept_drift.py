@@ -58,12 +58,12 @@ def cda_fedavg_drift_detection(Q, lamda, delta, n_max, seed):
             m_b = np.mean(Q)
             m_a = np.mean(Q[k + 1:])
             # print("==========================")
-            print("m a: ", m_a, " m b: ", m_b)
+            print("m a: ", m_a, " m b: ", m_b, (1 - lamda) * m_b)
             #
             # print("m a: ", m_a, " m b: ", (1 - lamda) * m_b)
 
             if m_a <= (1 - lamda) * m_b:
-
+                print("dent:")
                 s_k = 0
                 alpha_b, beta_b = estimate_params(Q[:k + 1])
                 alpha_a, beta_a = estimate_params(Q[k + 1:])

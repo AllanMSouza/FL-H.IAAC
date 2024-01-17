@@ -10,6 +10,8 @@ import numpy as np
 def bar_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, hue_order=None, y_lim=False, y_min=0, y_max=100, log_scale=False, sci=False, x_order=None, ax=None, tipo=None, palette=None):
     Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
     Path(base_dir + "svg/").mkdir(parents=True, exist_ok=True)
+    params = {'mathtext.default': 'regular'}
+    plt.rcParams.update(params)
     max_value = df[y_column].max()
 
     sns.set(style='whitegrid')
@@ -159,6 +161,8 @@ def violin_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, lo
 def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_scale=False, ax=None, tipo=None, hue_order=None, style=None, y_lim=False, y_min=0, y_max=1, n=None, markers=None, size=None, sizes=None, style_order=None):
     Path(base_dir).mkdir(parents=True, exist_ok=True)
     file_name = """{}_lineplot""".format(file_name)
+    params = {'mathtext.default': 'regular'}
+    plt.rcParams.update(params)
 
     sns.set(style='whitegrid')
     log = ""

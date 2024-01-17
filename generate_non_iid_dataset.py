@@ -41,7 +41,7 @@ if __name__ == '__main__':
 
     args = parse_arguments()
 
-    if args.dataset == "WISDM-WATCH":
+    if args.dataset in ["WISDM-WATCH", "WISDM-P"]:
         save_dataloaders_widsm(args.dataset, int(args.clients),
                      int(args.num_classes),
                      bool(args.niid),

@@ -47,7 +47,7 @@ class Varying_Shared_layers:
         df_aux = copy.deepcopy(df)
 
         print("refe")
-        print(df.query("""Round == {} and Dataset == '{}' and \u03B1 == {} and Model == '{}' and Solution == '{}'""".format(1, 'GTSRB', '0.1', 'CNN-b', "$FedAvg+FP_{dc}$")))
+        print(df.query("""Round == {} and Dataset == '{}' and \u03B1 == {} and Model == '{}' and Solution == '{}'""".format(1, 'GTSRB', '0.1', 'CNN-b', "FedAvg+FP$_{dc}$")))
 
 
         print("e1: ", df.query("Solution=='$FedAvg+FP$' and Model=='CNN-b' and Dataset=='EMNIST'")[
@@ -65,7 +65,7 @@ class Varying_Shared_layers:
             # print("interes: ", round, dataset, alpha, model)
             df_copy = copy.deepcopy(df_aux.query("""Round == {} and Dataset == '{}' and \u03B1 == {} and Model == '{}'""".format(round, dataset, alpha, model)))
             # print("apos: ", df_copy.columns)
-            target = df_copy[df_copy['Solution'] == "$FedAvg+FP$"]
+            target = df_copy[df_copy['Solution'] == "FedAvg+FP"]
             target_acc = target['Accuracy (%)'].mean()
             target_size = target['Size of parameters (MB)'].mean()
 
@@ -119,9 +119,9 @@ class Varying_Shared_layers:
 
         self.build_filenames()
 
-        # self.parameters_reduction()
+        self.parameters_reduction()
         #
-        # self.evaluate_client_joint_parameter_reduction(self.df_concat)
+        self.evaluate_client_joint_parameter_reduction(self.df_concat)
        #
        #  self.df_concat = self.df_concat[['Strategy', 'Round', 'Solution', 'Dataset', 'α', 'Model', 'level_6',
        # 'Accuracy reduction (%)', 'Parameters reduction (MB)',
@@ -137,24 +137,24 @@ class Varying_Shared_layers:
        #
        #  # self.evaluate_client_analysis_differnt_models(df_concat)
 
-        # alphas = self.df_concat['\u03B1'].unique().tolist()
-        # models = self.df_concat['Model'].unique().tolist()
+        alphas = self.df_concat['\u03B1'].unique().tolist()
+        models = self.df_concat['Model'].unique().tolist()
         # #
-        # self.df_concat = self.build_filename_fedavg(self.df_concat)
+        self.df_concat = self.build_filename_fedavg(self.df_concat)
         # #
-        # for alpha in alphas:
-        #     self.evaluate_client_joint_accuracy(self.df_concat, alpha)
-        # #     # exit()
-        #     self.joint_table(self.df_concat, alpha=alpha, models=models)
+        for alpha in alphas:
+            self.evaluate_client_joint_accuracy(self.df_concat, alpha)
         #     # exit()
-        #     self.joint_table(self.df_concat, alpha=alpha, models=models, target_col='Size of parameters (MB)')
+            self.joint_table(self.df_concat, alpha=alpha, models=models)
+            # exit()
+            self.joint_table(self.df_concat, alpha=alpha, models=models, target_col='Size of parameters (MB)')
 
         self.similarity()
         # for alpha in alphas:
         #     self.evaluate_client_norm_analysis_nt(alpha)
         # self.evaluate_client_norm_analysis()
 
-        # self.evaluate_client_joint_parameter_reduction(self.df_concat)
+        self.evaluate_client_joint_parameter_reduction(self.df_concat)
 
     def convert_shared_layers(self, df):
 
@@ -162,20 +162,20 @@ class Varying_Shared_layers:
         for i in range(len(shared_layers_list)):
             shared_layer = str(shared_layers_list[i])
             if "dls_compredict" == shared_layer:
-                shared_layers_list[i] = "$FedAvg+FP_{dc}$"
+                shared_layers_list[i] = "FedAvg+FP$_{dc}$"
             elif "dls" == shared_layer:
-                shared_layers_list[i] = "$FedAvg+FP_{d}$"
+                shared_layers_list[i] = "FedAvg+FP$_{d}$"
 
             elif "compredict" == shared_layer:
-                shared_layers_list[i] = "$FedAvg+FP_{c}$"
+                shared_layers_list[i] = "FedAvg+FP$_{c}$"
             elif "fedkd" == shared_layer:
-                shared_layers_list[i] = "$FedAvg+FP_{kd}$"
+                shared_layers_list[i] = "FedAvg+FP$_{kd}$"
             elif "sparsification" == shared_layer:
-                shared_layers_list[i] = "$FedAvg+FP_{s}$"
+                shared_layers_list[i] = "FedAvg+FP$_{s}$"
             elif "per" == shared_layer:
-                shared_layers_list[i] = "$FedAvg+FP_{per}$"
+                shared_layers_list[i] = "FedAvg+FP$_{per}$"
             elif "no" == shared_layer:
-                shared_layers_list[i] = "$FedAvg+FP$"
+                shared_layers_list[i] = "FedAvg+FP"
             # new_shared_layer = "{"
             # for layer in shared_layer:
             #     if len(new_shared_layer) == 1:
@@ -314,7 +314,7 @@ class Varying_Shared_layers:
                             if "evaluate" in file:
                                 df['Solution'] = np.array([layers] * len(df))
                                 df['Strategy'] = np.array(['FedAvg'] * len(df))
-                                df['Solution'] = np.array(["$FedAvg$"] * len(df))
+                                df['Solution'] = np.array(["FedAvg"] * len(df))
                                 df['\u03B1'] = np.array([a]*len(df))
                                 df['Model'] = np.array([model_name]*len(df))
                                 df['Dataset'] = np.array([dataset_name]*len(df))
@@ -619,13 +619,13 @@ class Varying_Shared_layers:
         style = '\u03B1'
         y_min = 0
         if self.experiment == "dls_compredict":
-            compression = ["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$", "$FedAvg+FP_{kd}$", "$FedAvg+FP_{s}$", "$FedAvg+FP_{per}$"]
+            compression = ["FedAvg+FP$_{dc}$", "FedAvg+FP$_{d}$", "FedAvg+FP$_{c}$", "FedAvg+FP$_{kd}$", "FedAvg+FP$_{s}$", "FedAvg+FP$_{per}$"]
         elif "dls" in self.compression:
-            compression = ["$FedAvg+FP_{d}$", 'FedPredict', 'FedAvg']
+            compression = ["FedAvg+FP$_{d}$", 'FedPredict', 'FedAvg']
         else:
-            compression = ["$FedAvg+FP_{c}$", 'FedPredict', 'FedAvg']
+            compression = ["FedAvg+FP$_{c}$", 'FedPredict', 'FedAvg']
 
-        if "$FedAvg+FP_{dc}$" not in df['Solution'].tolist():
+        if "FedAvg+FP$_{dc}$" not in df['Solution'].tolist():
             y_max = 80
         else:
             y_max = 100
@@ -663,37 +663,37 @@ class Varying_Shared_layers:
             # fig.suptitle("", fontsize=16)
             # fig.supxlabel(x_column, y=-0.02)
             # fig.supylabel(y_column, x=-0.005)
-            # lines_labels = [ax[0, 1].get_legend_handles_labels()]
-            # lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-            # print("linhas")
-            # print(lines)
-            # print(lines[0].get_color(), lines[0].get_ls())
-            # print("rotulos")
-            # print(labels)
-            # colors = []
-            # for i in range(len(lines)):
-            #     color = lines[i].get_color()
-            #     colors.append(color)
-            #     ls = lines[i].get_ls()
-            #     if ls not in ["o"]:
-            #         ls = "o"
-            # markers = ["-", "--"]
-            #
-            # f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
-            # n = len(compression) + 1
-            # handles = [f("o", colors[i]) for i in range(n)]
-            # new_labels = []
-            # for i in range(len(labels)):
-            #     if i != n:
-            #         new_labels.append(labels[i])
-            #     else:
-            #         print("label: ", labels[i])
-            # new_labels[-1] = '\u03B1=' + new_labels[-1]
-            # new_labels[-2] = '\u03B1=' + new_labels[-2]
-            # new_labels = new_labels[1:]
-            #
-            # handles += [plt.Line2D([], [], linestyle=markers[i], color="k") for i in range(len(markers))]
-            # fig.legend(handles[1:], new_labels, fontsize=9, ncols=4, bbox_to_anchor=(0.90, 1.02))
+            lines_labels = [ax[0, 1].get_legend_handles_labels()]
+            lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
+            print("linhas")
+            print(lines)
+            print(lines[0].get_color(), lines[0].get_ls())
+            print("rotulos")
+            print(labels)
+            colors = []
+            for i in range(len(lines)):
+                color = lines[i].get_color()
+                colors.append(color)
+                ls = lines[i].get_ls()
+                if ls not in ["o"]:
+                    ls = "o"
+            markers = ["-", "--"]
+
+            f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
+            n = len(compression) + 1
+            handles = [f("o", colors[i]) for i in range(n)]
+            new_labels = []
+            for i in range(len(labels)):
+                if i != n:
+                    new_labels.append(labels[i])
+                else:
+                    print("label: ", labels[i])
+            new_labels[-1] = '\u03B1=' + new_labels[-1]
+            new_labels[-2] = '\u03B1=' + new_labels[-2]
+            new_labels = new_labels[1:]
+
+            handles += [plt.Line2D([], [], linestyle=markers[i], color="k") for i in range(len(markers))]
+            fig.legend(handles[1:], new_labels, fontsize=9, ncols=4, bbox_to_anchor=(0.91, 1.02))
             figure = fig.get_figure()
             Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
             Path(base_dir + "svg/").mkdir(parents=True, exist_ok=True)
@@ -727,7 +727,7 @@ class Varying_Shared_layers:
         reference_solutions = {}
         for solution_key in solutions:
             if "FP_{dc}" in solution_key or "FP_{d}" in solution_key or "FP_{c}" in solution_key or "FP_{kd}" in solution_key or "FP" in solution_key or "FP_{s}" in solution_key or "FP_{per}" in solution_key:
-                reference_solutions[solution_key] = solution_key.replace("+FP_{dc}", "").replace("+FP_{d}", "").replace("+FP_{c}", "").replace("+FP_{kd}", "").replace("+FP_{s}", "").replace("+FP_{per}", "").replace("+FP", "")
+                reference_solutions[solution_key] = solution_key.replace("+FP$_{dc}$", "").replace("+FP$_{d}$", "").replace("+FP$_{c}$", "").replace("+FP$_{kd}$", "").replace("+FP$_{s}$", "").replace("+FP$_{per}$", "").replace("+FP", "")
 
         for dataset in datasets:
             for solution in reference_solutions:
@@ -735,6 +735,8 @@ class Varying_Shared_layers:
                 target_index = (dataset, reference_solutions[solution])
 
                 for column in columns:
+                    print(df)
+                    print(reference_index, column, target_index)
                     difference = str(
                         round(float(df.loc[reference_index, column][:range_of_string]) - float(df.loc[target_index, column][:range_of_string]), 1))
                     difference = str(round(float(difference) * 100 / float(df.loc[target_index, column][:range_of_string]), 1))
@@ -749,7 +751,7 @@ class Varying_Shared_layers:
                         elif float(difference[1:4]) > 0:
                             difference = difference.replace("-", "")
 
-                    if solution in ["$FedAvg$", "$FedAvg+FP$"] and 'Acc' not in target_col:
+                    if solution in ["FedAvg", "FedAvg+FP"] and 'Acc' not in target_col:
 
                         difference = difference.replace("0.0", "")
                         # print("depois:", difference)
@@ -870,7 +872,7 @@ class Varying_Shared_layers:
 
             df_accuracy_improvements.iloc[i] = row
 
-        latex = df_accuracy_improvements.to_latex().replace("\\\nEMNIST", "\\\n\hline\nEMNIST").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\\nGTSRB", "\\\n\hline\nGTSRB").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}").replace("\$", "$").replace("textuparrow", "\oitextuparrow").replace("textdownarrow", "\oitextdownarrow").replace("\&", "&").replace("\_", "_").replace("&  &", "& - &").replace("&  \\", "& - \\").replace(r" - \textbf", r" \textbf")
+        latex = df_accuracy_improvements.to_latex().replace("\\\nEMNIST", "\\\n\hline\nEMNIST").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\\nGTSRB", "\\\n\hline\nGTSRB").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}").replace("\$", "$").replace("textuparrow", "\oitextuparrow").replace("textdownarrow", "\oitextdownarrow").replace("\&", "&").replace("\_", "_").replace("&  &", "& - &").replace("&  \\", "& - \\").replace(r" - \textbf", r" \textbf").replace("$_{c}$", r"$_{\text{c}}$").replace("$_{dc}$", r"$_{\text{dc}}$").replace("$_{kd}$", r"$_{\text{kd}}$").replace("$_{s}$", r"$_{\text{s}}$").replace("$_{d}$", r"$_{\text{d}}$").replace("$_{per}$", r"$_{\text{per}}$")
         if 'Acc' in target_col:
             latex = latex.replace("\oitextuparrow0.0", "0.0")
         else:
@@ -971,16 +973,16 @@ class Varying_Shared_layers:
         print("strategias unicas: ", df['Solution'].unique().tolist())
 
         if self.experiment == "dls_compredict":
-            compression = ["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$", "$FedAvg+FP$", "$FedAvg$", "$FedAvg+FP_{kd}$", "$FedAvg+FP_{s}$", "$FedAvg+FP_{per}$"]
+            compression = ["FedAvg+FP$_{dc}$", "FedAvg+FP$_{d}$", "FedAvg+FP$_{c}$", "FedAvg+FP", "FedAvg", "FedAvg+FP$_{kd}$", "FedAvg+FP$_{s}$", "FedAvg+FP$_{per}$"]
         elif -1 in self.compression:
-            compression = ["$FedAvg+FP_{d}$", 'FedPredict', 'FedAvg']
+            compression = ["FedAvg+FP$_{d}$", 'FedPredict', 'FedAvg']
         else:
-            compression = ["$FedAvg+FP_{c}$", 'FedPredict', 'FedAvg']
+            compression = ["FedAvg+FP$_{c}$", 'FedPredict', 'FedAvg']
 
         if len(self.dataset) >= 2:
 
             print("testar1")
-            print(df[df['Solution'] == "$FedAvg+FP_{d}$"])
+            print(df[df['Solution'] == "FedAvg+FP$_{d}$"])
 
             fig, ax = plt.subplots(3, 2, sharex='all', sharey='all', figsize=(6, 6))
 
@@ -1397,7 +1399,7 @@ class Varying_Shared_layers:
         #         sort.append(i)
         # compression_methods = sort
         # print("ord: ", compression_methods)
-        compression  = ["$FedAvg+FP_{dc}$", "$FedAvg+FP_{d}$", "$FedAvg+FP_{c}$", "$FedAvg+FP$", "$FedAvg$", "$FedAvg+FP_{s}$"]
+        compression  = ["FedAvg+FP$_{dc}$", "FedAvg+FP$_{d}$", "FedAvg+FP$_{c}$", "FedAvg+FP", "FedAvg", "FedAvg+FP$_{s}$"]
         style = '\u03B1'
 
         title = """Accuracy in {}; Model={}""".format(dataset, model)
@@ -1466,10 +1468,10 @@ class Varying_Shared_layers:
                 'Size of parameters (MB)'])
         df_preprocessed = copy.deepcopy(df)
 
-        df = df[df['Solution'] != "$FedAvg+FP$"]
+        df = df[df['Solution'] != "FedAvg+FP"]
         df = df[df['Solution'] != "{1}"]
         # compression_methods =  ['FedPredict (with ALS)']
-        compression = ["$FedAvg+FP_{dc}$"]
+        compression = ["FedAvg+FP_{dc}"]
         print("menor: ", df['Accuracy reduction (%)'].min())
         print("Fed", df[df['Solution'] == 'FedPredict (with ALS)'][['Accuracy reduction (%)', 'Round']])
         print("tra: ", df['Solution'].unique().tolist())

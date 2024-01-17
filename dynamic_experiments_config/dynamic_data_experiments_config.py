@@ -2,9 +2,12 @@ import pandas as pd
 import numpy as np
 
 
-def change_pattern(n_patterns, n_clients, seed):
+def change_pattern(n_patterns, n_clients, seed, return_):
 
     client_pattern_dict = {i: i for i in range(n_clients)}
+
+    if return_:
+        return client_pattern_dict
 
     np.random.seed(seed)
     # patterns = np.random.random_integers(low=0, high=n_patterns-1, size=n_clients)
@@ -30,13 +33,14 @@ if __name__ == "__main__":
     pattern = []
 
     rounds_to_change_pattern = [int(n_rounds * 0.3), int(n_rounds * 0.7)]
+    return_to_original = {int(n_rounds * 0.3): False, int(n_rounds * 0.7): True}
     client_pattern_dict = {i: i for i in range(n_clients)}
 
     for i in range(1, n_rounds + 1):
 
         if i in rounds_to_change_pattern:
-
-            client_pattern_dict = change_pattern(n_patterns, n_clients, i)
+            return_ = return_to_original[i]
+            client_pattern_dict = change_pattern(n_patterns, n_clients, i, return_)
 
         for j in range(n_clients):
 

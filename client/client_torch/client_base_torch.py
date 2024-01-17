@@ -107,7 +107,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			# self.device = torch.device("cpu")
 			self.type = 'torch'
 			self.dynamic_data = args.dynamic_data
-			self.rounds_to_change_pattern = [int(0.7 * self.n_rounds)]
+			self.rounds_to_change_pattern = [int(0.3 * self.n_rounds), int(0.7 * self.n_rounds)]
 			self.dynamic_data_filename = {'no': None, 'synthetic': """/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/dynamic_experiments_config/dynamic_data_synthetic_config_{}_clients_{}_rounds_change_pattern_{}_total_rounds.csv""".format(n_clients, self.rounds_to_change_pattern, self.n_rounds)}[self.dynamic_data]
 			if self.dynamic_data_filename is not None:
 				self.clients_pattern = pd.read_csv(self.dynamic_data_filename)
@@ -146,7 +146,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				self.learning_rate = 0.01
 				self.optimizer = torch.optim.SGD(
 					self.model.parameters(), lr=self.learning_rate, momentum=0.9)
-			elif self.dataset in ['ExtraSensory', 'WISDM-WATCH']:
+			elif self.dataset in ['ExtraSensory', 'WISDM-WATCH', 'WISDM-P']:
 				self.learning_rate = 0.001
 				# self.loss = nn.MSELoss()
 				self.optimizer = torch.optim.RMSprop(self.model.parameters(), lr=self.learning_rate)
@@ -242,7 +242,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				# else:
 				# 	mid_dim = 400
 				model =  GRU(input_shape=10, num_classes=self.num_classes)
-			elif self.model_name == 'GRU' and self.dataset in ['WISDM-WATCH']:
+			elif self.model_name == 'GRU' and self.dataset in ['WISDM-WATCH', 'WISDM-P']:
 				# if self.dataset in ['EMNIST', 'MNIST']:
 				# 	mid_dim = 256
 				# else:
@@ -569,7 +569,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			# return [1] * self.num_classes, 0
 			correction = 3 if self.dataset == 'GTSRB' else 1
 			traindataset = self.traindataset
-			if self.dataset in ['WISDM-WATCH']:
+			if self.dataset in ['WISDM-WATCH', 'WISDM-P']:
 				y_train = []
 				for i, (x, y) in enumerate(self.trainloader):
 					y_train += np.array(y).astype(int).tolist()

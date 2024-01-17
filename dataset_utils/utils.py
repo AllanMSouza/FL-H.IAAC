@@ -297,10 +297,14 @@ def save_dataloaders_widsm(dataset_name="WISDM-WATCH", num_clients=10, num_class
     num_classes = 12
 
     # transform = get_transform(dataset_name)
-    dataset = dataset_utils.wisdm.load_dataset(reprocess=False, modality='watch')
+    if dataset_name == "WISDM-WATCH":
+        modality = "watch"
+    elif dataset_name == "WISDM-P":
+        modality = "phone"
+    dataset = dataset_utils.wisdm.load_dataset(reprocess=False, modality=modality)
     num_classes = 12
     partition_type = 'dirichlet'
-    dataset_name = 'WISDM-WATCH'
+    # dataset_name = 'WISDM-WATCH'
     client_num_per_round = 6
 
     partition, client_num_in_total, client_num_per_round = get_partition(partition_type,
