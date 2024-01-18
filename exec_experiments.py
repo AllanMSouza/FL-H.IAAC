@@ -46,7 +46,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 # Configurations
 TYPE = 'torch'
 # DATASETS      				= ['MNIST', 'CIFAR10', 'Tiny-ImageNet']
-DATASETS = ['WISDM-WATCH', 'WISDM-P']
+DATASETS = ['WISDM-WATCH']
 # DATASETS      					= ['UCIHAR', 'MotionSense']
 MODELS = ['GRU']
 ALGORITHMS = ['None', 'POC', 'FedLTA']
@@ -58,7 +58,7 @@ EPOCHS = {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2], '6': [1], '7': [1], 
 CLASSES = {'MNIST': 10, 'CIFAR10': 10, 'Tiny-ImageNet': 200, 'UCI-HAR': 6, 'EMNIST': 47, 'State Farm': 10, 'GTSRB': 43, 'ExtraSensory': 9, 'WISDM-WATCH': 12, 'WISDM-P': 12}
 CLIENTS = {'MNIST': [8], 'CIFAR10': [20], 'EMNIST': [20], 'CIFAR100': [50], 'MotionSense': [24], 'UCI-HAR': [1],
            'Tiny-ImageNet': [2], 'State Farm': [10], 'GTSRB': [20], 'ExtraSensory': [1], 'WISDM-WATCH': [20], 'WISDM-P': [20]}
-ALPHA = [0.1, 1.0]
+ALPHA = [1.0]
 # ALPHA = [1]
 FRACTION_FIT = {'None': [0.3], 'POC': [0], 'FedLTA': [0]}
 SPECIFIC_PARAMETERS = {'FedAVG': {'use_gradient': 'True', 'bits': 8}, 'FedKD': {'use_gradient': '', 'bits': 8},
@@ -80,7 +80,7 @@ ROUNDS = 50
 # STRATEGIES_FOR_ANALYSIS = ['FedKD', 'FedAVG', 'FedPAQ']
 # STRATEGIES_TO_EXECUTE = ['FedKD', 'FedAVG']
 STRATEGIES_FOR_ANALYSIS = {'2': [], '3': [], '6': ['FedPredict'], '7': ['FedPredict'], '14': ['FedSparsification'], '10': [], '15': ['FedPredict'], '16': ['FedAVG'], '17': ['FedPredict'], '19': ['FedPredict'], '22': ['FedPredict'], '26': ['FedPredict'], '30': ['FedPredict'], '31': ['FedPredict'], '32': ['FedPredict']}
-STRATEGIES_TO_EXECUTE = {'2': ['FedPer'],'3': ['FedPer'],  '6': ['FedPredict'], '7': [], '10': ['FedAVG', 'FedPredict', 'FedPredict_Dynamic'], '14': ['FedAVG'], '15': ['FedPredict'], '16': ['FedAVG'], '17': ['FedPredict'], '19': ['FedPredict'], '22': ['FedPredict'], '26': ['FedPredict'], '30': ['FedPredict'], '31': ['FedPredict'], '32': ['FedPredict']}
+STRATEGIES_TO_EXECUTE = {'2': ['FedPer'],'3': ['FedPer'],  '6': ['FedPredict'], '7': [], '10': ['CDA-FedAvg'], '14': ['FedAVG'], '15': ['FedPredict'], '16': ['FedAVG'], '17': ['FedPredict'], '19': ['FedPredict'], '22': ['FedPredict'], '26': ['FedPredict'], '30': ['FedPredict'], '31': ['FedPredict'], '32': ['FedPredict']}
 N_CLUSTERS = [3]
 CLUSTERING = "Yes"
 CLUSTER_ROUND = [int(ROUNDS*0.5)]

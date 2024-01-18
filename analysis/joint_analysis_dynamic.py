@@ -295,7 +295,7 @@ class JointAnalysis():
 
         columns = strategies
 
-        index = [np.array(['WISDM-P'] * len(columns), ['WISDM-WATCH'] * len(columns)), np.array(columns * 2)]
+        index = [np.array(['WISDM-P'] * len(columns) + ['WISDM-WATCH'] * len(columns)), np.array(columns * 2)]
 
         models_dict = {}
         ci = 0.95
@@ -456,7 +456,7 @@ class JointAnalysis():
         df['Strategy'] = np.array(["" + i + "" for i in df['Strategy'].tolist()])
 
         print("filtrado: ", df, df[hue].unique().tolist())
-        line_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, tipo='1', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes, y_max=y_max, y_lim=y_lim, style_order=style_order)
+        line_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, tipo='dynamic', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes, y_max=y_max, y_lim=y_lim, style_order=style_order)
 
     def joint_plot_acc_four_plots(self, df, experiment, alphas):
         print("Joint plot exeprimento: ", experiment)

@@ -24,7 +24,7 @@ def change_pattern(n_patterns, n_clients, seed, return_):
 
 if __name__ == "__main__":
 
-    n_rounds = 50
+    n_rounds = 10
     n_clients = 20
     n_patterns = n_clients
 

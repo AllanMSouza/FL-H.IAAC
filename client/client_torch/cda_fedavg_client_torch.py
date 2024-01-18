@@ -1,3 +1,4 @@
+import random
 from client.client_torch import FedAvgClientTorch
 from ..fedpredict_core import fedpredict_dynamic_client
 from torch.nn.parameter import Parameter
@@ -102,7 +103,7 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 				print("dd 2", past_patterns, server_round)
 				if len(past_patterns) >= 1:
 					print("""Leu dataset maior do cliente {} na rodada {}""".format(self.cid, server_round))
-					traindataset = self.previous_balanced_dataset(traindataset, past_patterns, batch_size, dataset_name, n_clients, pattern)
+					trainLoader, traindataset = self.previous_balanced_dataset(traindataset, past_patterns, batch_size, dataset_name, n_clients, pattern)
 
 			return trainLoader, testLoader, traindataset, testdataset
 		except Exception as e:
@@ -177,7 +178,7 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 
 		try:
 
-			L = 3000
+			L = 1400
 			M = self.num_classes
 			samples_per_class = int(L/(M))
 
@@ -243,7 +244,17 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 
 			current_traindataset = self.set_dataset(current_traindataset, dataset_name, current_samples, current_targets)
 
-			return current_traindataset
+			def seed_worker(worker_id):
+				np.random.seed(0)
+				random.seed(0)
+
+			g = torch.Generator()
+			g.manual_seed(0)
+
+			trainLoader = DataLoader(current_traindataset, batch_size, shuffle=True, worker_init_fn=seed_worker,
+									 generator=g)
+
+			return trainLoader, current_traindataset
 
 
 		except Exception as e:
@@ -253,13 +264,54 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 	def save_client_information_fit(self, server_round, acc_of_last_fit, predictions):
 
 		try:
+			# scaler = MinMaxScaler()
+			# Q = np.array([np.max(i) for i in predictions]).flatten().tolist()
+			# self.classes_proportion, self.imbalance_level = self._calculate_classes_proportion()
+			# drift_detected = self._drift_detection(Q, server_round)
+			# print("rodada: ", server_round, " drift detected: ", drift_detected, " cid: ", self.cid)
+			# df = pd.read_csv(self.client_information_train_filename)
+			# already_detected_drift = True if df['drift_detected'].tolist()[0] == "True" else False
+			# if drift_detected or already_detected_drift:
+			# 	drift_detected = True
+			# row = df.iloc[0]
+			# if int(row['first_round']) == -1:
+			# 	first_round = -1
+			# else:
+			# 	first_round = int(row['first_round'])
+			#
+			# pd.DataFrame(
+			# 	{'current_round': [server_round], 'classes_distribution': [str(self.classes_proportion)],
+			# 	 'round_of_last_fit': [server_round], 'drift_detected': [drift_detected], 'Q': [str(Q)],
+			# 	 'acc_of_last_fit': [acc_of_last_fit], 'first_round': [first_round]}).to_csv(self.client_information_train_filename,
+			# 										  index=False)
+			pass
+
+		except Exception as e:
+			print("save client information fit")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+	def save_client_information_evaluate(self, server_round, accuracy, predictions):
+
+		try:
 			scaler = MinMaxScaler()
 			Q = np.array([np.max(i) for i in predictions]).flatten().tolist()
 			self.classes_proportion, self.imbalance_level = self._calculate_classes_proportion()
-			drift_detected = self._drift_detection(Q, server_round)
+			seed = self.cid + server_round
+			np.random.seed(seed)
+			r = np.random.uniform(0, 1)
+			l = np.exp(-2 * np.mean(Q))
+			print("l: ", l, " r: ", r)
+			# if server_round in [int(self.n_rounds*0.3), int(self.n_rounds*0.7)]:
+			df = pd.read_csv(self.client_information_val_filename)
+			already_detected_drift = True if True in df['drift_detected'].tolist() else False
+			if server_round in [13, 14, 15, 16, 32, 33, 34, 35, 36] and not already_detected_drift:
+			# if r <= 0.1:
+				print("testar:")
+				drift_detected = self._drift_detection(Q, server_round)
+				# drift_detected = True
+			else:
+				drift_detected = False
 			print("rodada: ", server_round, " drift detected: ", drift_detected, " cid: ", self.cid)
-			df = pd.read_csv(self.client_information_train_filename)
-			already_detected_drift = True if df['drift_detected'].tolist()[0] == "True" else False
 			if drift_detected or already_detected_drift:
 				drift_detected = True
 			row = df.iloc[0]
@@ -270,13 +322,14 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 
 			pd.DataFrame(
 				{'current_round': [server_round], 'classes_distribution': [str(self.classes_proportion)],
-				 'round_of_last_fit': [server_round], 'drift_detected': [drift_detected], 'Q': [str(Q)],
-				 'acc_of_last_fit': [acc_of_last_fit], 'first_round': [first_round]}).to_csv(self.client_information_train_filename,
-													  index=False)
+				 'round_of_last_evaluate': [server_round], 'drift_detected': [drift_detected], 'Q': [str(Q)],
+				 'acc_of_last_evaluate': [accuracy], 'first_round': [first_round]}).to_csv(self.client_information_val_filename,
+													  index=False, header=False ,mode='a')
 
 		except Exception as e:
-			print("save client information fit")
+			print("save client information evaluate")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
 
 	def _drift_detection(self, Q, server_round):
 
@@ -284,12 +337,14 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 			"""
 				
 			"""
-			row = self.client_information_train_file['Q'].tolist()
+			row = self.client_information_val_file['Q'].tolist()
+			n = len(Q)
 			if len(row) > 0:
-				Q_old = ast.literal_eval(self.client_information_train_file['Q'].tolist()[-1])
+				Q_old = ast.literal_eval(self.client_information_val_file['Q'].tolist()[-1])
 				print("antigo: ", Q_old[:5], len(Q_old))
 				print("novo: ", Q[:5], len(Q))
 				Q = Q + Q_old
+			print("""tamanho row {} q old {} q {} q concatenated {}""".format(len(row), len(Q_old), n, len(Q)))
 
 			lamda = 0.001 # descer aumenta a detecção
 			delta = 300
@@ -310,7 +365,7 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 			df_train = pd.read_csv(self.client_information_train_filename)
 			df_val = pd.read_csv(self.client_information_val_filename)
 
-			self.drift_detected = True if df_train['drift_detected'].tolist()[0] == True else False
+			self.drift_detected = True if True in df_val['drift_detected'].tolist() else False
 
 			return df_train, df_val
 

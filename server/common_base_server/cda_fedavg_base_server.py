@@ -73,9 +73,10 @@ class CDAFedAvgBaseServer(FedAvgBaseServer):
 				"""{}_saved_weights/{}/{}/{}_train.csv""".format(strategy_name.lower(), self.model_name, i, i),
 				index=False)
 
-			pd.DataFrame({'current_round': [-1], 'classes_distribution': ["[]"],
-						  'drift_detected': ['False'], 'round_of_last_evaluate': [-1],
-						  'first_round': [-1],
-						  'acc_of_last_evaluate': [0]}).to_csv(
+			pd.DataFrame(
+						{'current_round': [-1], 'classes_distribution': ["[]"],
+						 'round_of_last_evaluate': [-1], 'drift_detected': [False], 'Q': [[]],
+						 'acc_of_last_fit': [0], 'first_round': [-1]}
+			).to_csv(
 				"""{}_saved_weights/{}/{}/{}_val.csv""".format(strategy_name.lower(), self.model_name, i, i),
 				index=False)

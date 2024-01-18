@@ -294,7 +294,7 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 			loss = test_loss / test_num
 			accuracy = test_acc / test_num
 
-			return loss, accuracy, test_num, predictions, labels
+			return loss, accuracy, test_num, predictions, output, labels
 		except Exception as e:
 			print("model_eval")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)

@@ -261,6 +261,9 @@ class ClientBaseTorch(fl.client.NumPyClient):
 	def save_client_information_fit(self, server_round, acc_of_last_fit, predictions):
 		pass
 
+	def save_client_information_evaluate(self, server_round, accuracy, predictions):
+		pass
+
 	def save_parameters(self):
 		pass
 
@@ -447,6 +450,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			test_num = 0
 
 			predictions = np.array([])
+			outputs = np.array([])
 			labels = np.array([])
 
 			with torch.no_grad():
@@ -468,6 +472,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 					test_loss += loss.item() * y.shape[0]
 					prediction = torch.argmax(output, dim=1)
 					predictions = np.append(predictions, prediction.cpu())
+					outputs = np.append(outputs, output.cpu())
 					labels = np.append(labels, y.cpu())
 					test_acc += (torch.sum(prediction == y)).item()
 					test_num += y.shape[0]
@@ -475,7 +480,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			loss = test_loss / test_num
 			accuracy = test_acc / test_num
 
-			return loss, accuracy, test_num, predictions, labels
+			return loss, accuracy, test_num, predictions, outputs, labels
 		except Exception as e:
 			print("model_eval")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
@@ -533,9 +538,9 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			size_of_config = self._get_size_of_dict(config)
 			self.server_round = server_round
 			if self.model_name in ['GRU']:
-				loss, accuracy, test_num, predictions, labels = self.model_eval()
+				loss, accuracy, test_num, predictions, output, labels = self.model_eval()
 			else:
-				loss, accuracy, test_num, predictions, labels = self.model_eval()
+				loss, accuracy, test_num, predictions, output, labels = self.model_eval()
 			data = [config['round'], self.cid, size_of_parameters, size_of_config, loss, accuracy, nt]
 			self._write_output(filename=self.evaluate_client_filename,
 							   data=data)
@@ -543,6 +548,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			if server_round == n_rounds:
 				data = [[self.cid, server_round, int(p), int(l)] for p, l in zip(predictions, labels)]
 				self._write_outputs(self.predictions_client_filename, data, 'a')
+
+			self.save_client_information_evaluate(server_round, accuracy, output)
 
 			# if server_round >= int(0.7*self.n_rounds):
 
