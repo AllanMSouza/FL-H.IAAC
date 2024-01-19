@@ -112,10 +112,10 @@ class CDAFedAvgWithFedPredictClientTorch(CDAFedAvgClientTorch):
 			"""
 				It measures the cosine similarity between the last and current class distribution of the local dataset
 			"""
-			n = len(self.client_information_file['classes_distribution'])
+			n = len(self.client_information_filename['classes_distribution'])
 			# print("antes ", self.client_information_file['classes_distribution'].tolist()[-1])
-			last_proportion = ast.literal_eval(self.client_information_file['classes_distribution'].tolist()[-1])
-			last_training = self.client_information_file['round_of_last_fit'].tolist()[-1]
+			last_proportion = ast.literal_eval(self.client_information_filename['classes_distribution'].tolist()[-1])
+			last_training = self.client_information_filename['round_of_last_fit'].tolist()[-1]
 
 			current_proportion, imbalance_level = self._calculate_classes_proportion()
 			fraction_of_classes = sum([1 if i > 0 else 0 for i in current_proportion])/self.num_classes
@@ -150,28 +150,6 @@ class CDAFedAvgWithFedPredictClientTorch(CDAFedAvgClientTorch):
 	def set_parameters_to_model_evaluate(self, global_parameters, config={}):
 		# Using 'torch.load'
 		try:
-			local_classes = self.classes_proportion
-
-			server_round = config['round']
-			similarity, imbalance_level, fraction_of_classes, current_proportion = self._calculate_contexts_similarities()
-			self.current_proportion = np.array(current_proportion)
-			self.similarity = similarity
-			# print("similaridade: ", similarity, ' imbalance level: ', imbalance_level, ' fraction of classes:', fraction_of_classes)
-			if config['round'] >= int(0.7*self.n_rounds):
-				if similarity == 1:
-					print("cliente ", self.cid, " usou o modelo local rodada ", config['round'])
-				else:
-					print("cliente ", self.cid, " usou o modelo global rodada ", config['round'])
-			row = self.clients_pattern.query("""Round == {} and Cid == {}""".format(server_round, self.cid))[
-				'Pattern'].tolist()
-			if len(row) != 1:
-				raise ValueError(
-					"""Pattern not found for client {}. The pattern may not exist or is duplicated""".format(self.cid))
-			pattern = int(row[0])
-			# if config['round'] >= int(0.7*self.n_rounds):
-			# 	pattern = config['pattern']
-			# 	print("""cliente {} mudou padrao {}""".format(self.cid, pattern))
-			local_data_information = {'similarity': similarity, 'imbalance_level': imbalance_level, 'fraction_of_classes': fraction_of_classes}
 			self.model = fedpredict_client(self.filename, self.model, global_parameters, config, mode=None)
 
 		except Exception as e:

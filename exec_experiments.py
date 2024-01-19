@@ -58,7 +58,7 @@ EPOCHS = {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2], '6': [1], '7': [1], 
 CLASSES = {'MNIST': 10, 'CIFAR10': 10, 'Tiny-ImageNet': 200, 'UCI-HAR': 6, 'EMNIST': 47, 'State Farm': 10, 'GTSRB': 43, 'ExtraSensory': 9, 'WISDM-WATCH': 12, 'WISDM-P': 12}
 CLIENTS = {'MNIST': [8], 'CIFAR10': [20], 'EMNIST': [20], 'CIFAR100': [50], 'MotionSense': [24], 'UCI-HAR': [1],
            'Tiny-ImageNet': [2], 'State Farm': [10], 'GTSRB': [20], 'ExtraSensory': [1], 'WISDM-WATCH': [20], 'WISDM-P': [20]}
-ALPHA = [0.1, 1.0]
+ALPHA = [1.0]
 # ALPHA = [1]
 FRACTION_FIT = {'None': [0.3], 'POC': [0], 'FedLTA': [0]}
 SPECIFIC_PARAMETERS = {'FedAVG': {'use_gradient': 'True', 'bits': 8}, 'FedKD': {'use_gradient': '', 'bits': 8},

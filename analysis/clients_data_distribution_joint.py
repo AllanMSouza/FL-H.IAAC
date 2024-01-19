@@ -306,6 +306,8 @@ class Varying_Shared_layers:
             # print("sumario antes: ")
             # print(self.df_summary)
 
+        dt_list = [i.replace("WISDM-WATCH", "WISDM-W") for i in dt_list]
+
         df_unique_classes = pd.DataFrame({'\u03B1': alpha_list, 'Dataset': dt_list, 'Classes (%)': unique_classes_list, 'Balance level': balance_level_list, 'Imbalance level (%)': imbalance_level_list})
 
 
@@ -322,9 +324,11 @@ class Varying_Shared_layers:
     def plot_(self, df_unique_classes):
         x_order = [0.1, 0.5, 1.0]
 
+        # hue_order = ['EMNIST', 'CIFAR-10', 'GTSRB', 'WISDM-WATCH', 'WISDM-P']
+        hue_order = ['WISDM-W', 'WISDM-P']
 
         fig, axs = plt.subplots(2, 1, sharex='all', sharey='all', figsize=(6, 6))
-        bar_plot(df=df_unique_classes, base_dir=self.base_dir, ax=axs[0], x_order=x_order, file_name="""unique_classes_{}""".format(self.dataset), x_column='\u03B1', y_column='Classes (%)', title="""Clients' local classes""", tipo="classes", y_max=100, hue='Dataset', hue_order=['EMNIST', 'CIFAR-10', 'GTSRB', 'WISDM-WATCH', 'WISDM-P'])
+        bar_plot(df=df_unique_classes, base_dir=self.base_dir, ax=axs[0], x_order=x_order, file_name="""unique_classes_{}""".format(self.dataset), x_column='\u03B1', y_column='Classes (%)', title="""Clients' local classes""", tipo="classes", y_max=100, hue='Dataset', hue_order=hue_order)
         i = 0
         axs[i].get_legend().remove()
         axs[i].legend(fontsize=10)
@@ -333,7 +337,7 @@ class Varying_Shared_layers:
         # bar_plot(df=df_unique_classes, base_dir=self.base_dir, file_name="""balance_level_{}""".format(self.dataset),
         #          x_column='\u03B1', y_column='Balance level', title="""""", y_max=1, hue='Dataset', tipo="balance")
         bar_plot(df=df_unique_classes, base_dir=self.base_dir, ax=axs[1], x_order=x_order, file_name="""imbalance_level_{}""".format(self.dataset),
-                 x_column='\u03B1', y_column='Imbalance level (%)', title="""Dataset imbalance level""", y_max=100, hue='Dataset', tipo="balance", hue_order=['EMNIST', 'CIFAR-10', 'GTSRB', 'WISDM-WATCH', 'WISDM-P'])
+                 x_column='\u03B1', y_column='Imbalance level (%)', title="""Dataset imbalance level""", y_max=100, hue='Dataset', tipo="balance", hue_order=hue_order)
         i = 1
         axs[i].get_legend().remove()
         # axs[i].legend(fontsize=7)
@@ -344,10 +348,10 @@ class Varying_Shared_layers:
         plt.subplots_adjust(wspace=0.07, hspace=0.14)
         fig.savefig(
             """{}unique_imbalance_level_{}_clients.png""".format(self.base_dir,
-                                                                            self.num_clients), bbox_inches='tight', dpi=400)
+                                                                            list(self.num_clients.keys())), bbox_inches='tight', dpi=400)
         fig.savefig(
             """{}unique_imbalance_level_{}_clients.svg""".format(self.base_dir,
-                                                                            self.num_clients), bbox_inches='tight', dpi=400)
+                                                                            list(self.num_clients.keys())), bbox_inches='tight', dpi=400)
 
 
 
@@ -411,7 +415,7 @@ class Varying_Shared_layers:
             figure = fig.get_figure()
             Path(self.base_dir + "png/").mkdir(parents=True, exist_ok=True)
             Path(self.base_dir + "svg/").mkdir(parents=True, exist_ok=True)
-            filename = """datasets_alphas""".format(str(self.dataset), str(self.alpha))
+            filename = """datasets_alphas""".format(str(list(self.dataset.keys())), str(self.alpha))
             figure.savefig(self.base_dir + "png/" + filename + ".png", bbox_inches='tight', dpi=400)
             figure.savefig(self.base_dir + "svg/" + filename + ".svg", bbox_inches='tight', dpi=400)
 
@@ -426,7 +430,7 @@ if __name__ == '__main__':
     aggregation_method = "None"
     fraction_fit = 0.3
     num_clients = {'GTSRB': 20, 'EMNIST': 20, 'CIFAR-10': 20, 'WISDM-WATCH': 20, 'WISDM-P': 20}
-    dataset = ["GTSRB", "EMNIST", "CIFAR-10", "WISDM-WATCH", "WISDM-P"]
+    dataset = ["WISDM-WATCH", "WISDM-P"]
     alpha = [0.1, 0.5, 1.0]
     num_rounds = 50
 

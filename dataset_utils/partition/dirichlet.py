@@ -1,10 +1,14 @@
 from collections import defaultdict
 from typing import List
 
+import random
 import numpy as np
 from torch.utils.data import Dataset
 
 from dataset_utils.partition.utils import IndexedSubset
+
+np.random.seed(0)
+random.seed(0)
 
 
 class DirichletPartition:
