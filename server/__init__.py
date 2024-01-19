@@ -1,6 +1,6 @@
 from server.common_base_server import FedAvgBaseServer, FedProtoBaseServer
 from server.server_tf import FedAvgServerTf, FedLocalServerTf, FedPerServerTf, FedProtoServerTf, FedLocalServerTf
-from server.server_torch import FedAvgServerTorch, FedProtoServerTorch, FedPerServerTorch, FedLocalServerTorch, FedAvgMServerTorch, QFedAvgServerTorch, FedYogiServerTorch, FedClassAvgServerTorch, FedPredictServerTorch, FedPer_with_FedPredictServerTorch, FedClassAvg_with_FedPredictServerTorch, FedProxServerTorch, FedPAQServerTorch, FetSGDServerTorch, FedKDServerTorch, FedDistillServerTorch, FedYogiWithFedPredictServerTorch, FedClusteringServerTorch, FedAlaServerTorch, FedKDWithFedPredictServerTorch, FedSparsificationServerTorch, FedPredictDynamicServerTorch, CDAFedAvgServerTorch, FedCDMServerTorch
+from server.server_torch import FedAvgServerTorch, FedProtoServerTorch, FedPerServerTorch, FedLocalServerTorch, FedAvgMServerTorch, QFedAvgServerTorch, FedYogiServerTorch, FedClassAvgServerTorch, FedPredictServerTorch, FedPer_with_FedPredictServerTorch, FedClassAvg_with_FedPredictServerTorch, FedProxServerTorch, FedPAQServerTorch, FetSGDServerTorch, FedKDServerTorch, FedDistillServerTorch, FedYogiWithFedPredictServerTorch, FedClusteringServerTorch, FedAlaServerTorch, FedKDWithFedPredictServerTorch, FedSparsificationServerTorch, FedPredictDynamicServerTorch, CDAFedAvgServerTorch, FedCDMServerTorch, CDAFedAvgWithFedPredictDynamicServerTorch, CDAFedAvgWithFedPredictServerTorch
 
 
 __all__ = [
@@ -32,5 +32,7 @@ __all__ = [
     "FedKDWithFedPredictServerTorch",
     "FedSparsificationServerTorch",
     "CDAFedAvgServerTorch",
-    "FedCDMServerTorch"
+    "FedCDMServerTorch",
+    "CDAFedAvgWithFedPredictDynamicServerTorch",
+    "CDAFedAvgWithFedPredictServerTorch"
 ]

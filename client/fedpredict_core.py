@@ -743,20 +743,9 @@ def fedpredict_dynamic_client(filename, model, global_parameters, config={}, mod
         # Client's metrics
         nt = int(client_metrics['nt'])
         cid = int(config['cid'])
-        last_layer_parameter_per_class = config['last_layer']
 
         similarity = local_client_information['similarity']
         print("similaridade chegou: ", similarity)
-        if similarity != 1:
-            print("calc:", t)
-            print(len(last_layer_parameter_per_class))
-            # parameter_last_layer = find_near_model(last_layer_parameter_per_class, current_proportion, t)
-            # parameter_last_layer = last_layer_parameter_per_class[pattern]
-            # parameter_last_layer = last_layer_parameter_per_class[0]
-            parameter_last_layer = last_layer_parameter_per_class
-            # print([i.shape for i in parameter_last_layer])
-        else:
-            parameter_last_layer = np.array([])
         round_of_last_fit = client_metrics['round_of_last_fit']
         round_of_last_evaluate = client_metrics['round_of_last_evaluate']
         first_round = client_metrics['first_round']
@@ -773,37 +762,6 @@ def fedpredict_dynamic_client(filename, model, global_parameters, config={}, mod
         else:
             model_shape = [i.detach().cpu().numpy().shape for i in model.parameters()]
         global_parameters = decompress_global_parameters(global_parameters, model_shape, M, decompress)
-        # print("camadas original: ", len(global_parameters))
-        if len(parameter_last_layer) > 0:
-            # print("shape modelo antes: ", [i.detach().cpu().numpy().shape for i in global_parameters])
-            print("assinalou parâmetros dinâmicos")
-            last_layers = [Parameter(torch.Tensor(p.tolist())) for p in parameter_last_layer]
-            #global_parameters = last_layers
-            # for i in range(len(last_layers)):
-            #     global_parameters[-2+i] = global_parameters[-2+i]*0.9 + 0.1* last_layers[i]
-            # print("dps: ", global_parameters[-2][0])
-            # global_parameters = last_layers
-            # filename_pattern = """./{}_saved_weights/{}/{}/model.pth""".format('FedPredict_Dynamic'.lower(), 'CNN_3',
-            #                                                                 cid)
-            # if os.path.exists(filename_pattern):
-            #     model_pattern = copy.deepcopy(model)
-            #     # model_pattern.load_state_dict(torch.load(filename_pattern))
-            #     model_parameters = [i for i in model_pattern.parameters()]
-            # #     print("""cliente {}  leu arquivo do padrao {} rodada {}""".format(cid, pattern, t))
-            #     count = 0
-            #     for new_param, old_param in zip(global_parameters, model_parameters):
-            #         if new_param.shape == old_param.shape:
-            #             #if count >= len(global_parameters) -2:
-            #             old_param.data = old_param.data.clone()
-            #                 # print("indice passou: ", count)
-            #         else:
-            #             raise print("Não combinou, CNN student: ", new_param.shape, " CNN 3 proto: ", old_param.shape)
-            #         count += 1
-            #
-            #     global_parameters = model_parameters
-        # print("shape modelo: ", [i.detach().cpu().numpy().shape for i in global_parameters])
-        # print("descomprimido: ", [i.shape for i in global_parameters])
-        # global_parameters = [Parameter(torch.Tensor(i.tolist())) for i in global_parameters]
 
         if len(global_parameters) != len(M):
             # print("diferente", len(parameters), len(M))

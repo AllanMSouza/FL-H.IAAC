@@ -132,7 +132,7 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 
 		try:
 
-			if dataset_name in ['WISDM-WATCH']:
+			if dataset_name in ['WISDM-WATCH', 'WISDM-P']:
 				data = []
 				targets = []
 				for sample in traindataset:
@@ -305,6 +305,7 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 			df = pd.read_csv(self.client_information_val_filename)
 			already_detected_drift = True if True in df['drift_detected'].tolist() else False
 			if server_round in [13, 14, 15, 16, 32, 33, 34, 35, 36] and not already_detected_drift:
+			# if server_round in [3, 7]:
 			# if r <= 0.1:
 				print("testar:")
 				drift_detected = self._drift_detection(Q, server_round)

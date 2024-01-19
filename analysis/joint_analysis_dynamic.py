@@ -101,10 +101,12 @@ class JointAnalysis():
                                     elif Path(filename2).exists():
                                         df = pd.read_csv(filename2).dropna()
                                         flag = False
+
                                     if dataset == "GTSRB" and not flag and new_clients == 'train':
                                         print("nao achou: ", filename1)
-                                    if dataset in ['EMNIST', 'CIFAR10'] and strategy == "CDA-FedAvg":
+                                    if dataset in ['EMNIST', 'CIFAR10'] and "CDA-FedAvg" in strategies:
                                         continue
+
                                 except:
                                     continue
                                 if strategy == "FedPredict" and compression == "no" and dynamic_data == "synthetic":
@@ -112,6 +114,9 @@ class JointAnalysis():
                                     s = "+FP"
                                 elif strategy == "FedPredict_Dynamic" and compression == "no" and dynamic_data == "synthetic":
                                     st = "FedAvg"
+                                    s = r"+FP$_{DYN}$"
+                                elif strategy == "CDA-FedAvg_with_FedPredict_Dynamic" and compression == "no":
+                                    st = "CDA-FedAvg"
                                     s = r"+FP$_{DYN}$"
                                 elif strategy == "FedYogi_with_FedPredict" and compression == "no" and dynamic_data == "synthetic":
                                     st = "FedYogi"
@@ -161,7 +166,7 @@ class JointAnalysis():
         strategies = df_concat['Strategy'].unique().tolist()
         print("versao2: ", df_concat['Strategy'].unique().tolist())
         aux = []
-        order = [r'FedAvg+FP$_{DYN}$', 'FedAvg+FP', 'FedAvg', 'CDA-FedAvg']
+        order = [r'FedAvg+FP$_{DYN}$', r'CDA-FedAvg+FP$_{DYN}$', 'FedAvg+FP', 'FedAvg', 'CDA-FedAvg']
         for s in order:
             if s in strategies:
                 aux.append(s)
@@ -617,7 +622,7 @@ if __name__ == '__main__':
         # 'comment': 'set', 'compression': "dls_compredict", 'local_epochs': '1_local_epochs', 'dynamic_data': "no"}
                    }
 
-    strategies = ['FedAVG', 'FedPredict', 'FedPredict_Dynamic', 'CDA-FedAvg']
+    strategies = ['FedAVG', 'FedPredict', 'FedPredict_Dynamic', 'CDA-FedAvg_with_FedPredict_Dynamic', 'CDA-FedAvg']
     # 'FedPredict', 'FedYogi_with_FedPredict', 'FedKD_with_FedPredict', 'FedAVG', 'FedYogi', 'FedPer', 'FedProto', 'FedKD'
     # pocs = [0.1, 0.2, 0.3]
     fractions_fit = [0.3]

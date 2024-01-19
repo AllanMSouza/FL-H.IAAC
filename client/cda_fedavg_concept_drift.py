@@ -15,7 +15,7 @@ def pdf_beta_distribution(x, a, b, seed):
             return vals
 
         else:
-
+            print("fora : ", x, a, b)
             return 0
 
     except Exception as e:
@@ -58,7 +58,7 @@ def cda_fedavg_drift_detection(Q, lamda, delta, n_max, seed):
             m_b = np.mean(Q)
             m_a = np.mean(Q[k + 1:])
             # print("==========================")
-            print("m a: ", m_a, " m b: ", m_b, (1 - lamda) * m_b)
+            # print("m a: ", m_a, " m b: ", m_b, (1 - lamda) * m_b)
             #
             # print("m a: ", m_a, " m b: ", (1 - lamda) * m_b)
 
@@ -73,9 +73,12 @@ def cda_fedavg_drift_detection(Q, lamda, delta, n_max, seed):
                     q = Q[i]
                     p1 = pdf_beta_distribution(q, alpha_a, beta_a, seed)
                     p2 = pdf_beta_distribution(q, alpha_b, beta_b, seed)
-                    # print("p1: ", p1, " p2: ", p2)
+                    # print("p1: ", p1, " p2: ", p2, q, alpha_b, beta_b, seed)
                     # print("x: ", p1/p2)
-                    s_k = s_k + np.log(p1/p2)
+                    if p2 == 0:
+                        continue
+                    else:
+                        s_k = s_k + np.log(p1/p2)
                 # print(" s k: ", s_k)
                 s_f = np.max([s_f, s_k])
 

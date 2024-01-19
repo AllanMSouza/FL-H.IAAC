@@ -21,6 +21,8 @@ from server.common_base_server.fedsparsification_base_server import FedSparsific
 from server.common_base_server.fedpredict_dynamic_base_server import FedPredictDynamicBaseServer
 from server.common_base_server.cda_fedavg_base_server import CDAFedAvgBaseServer
 from server.common_base_server.fedcdm_base_server import FedCDMBaseServer
+from server.common_base_server.cda_fedavg_with_with_fedpredict_dynamic_base_server import CDAFedAvgBaseServerWithFedPredictDynamic
+from server.common_base_server.cda_fedavg_with_with_fedpredict_base_server import CDAFedAvgBaseServerWithFedPredict
 
 __all__ = [
     'FedAvgBaseServer',
@@ -45,5 +47,7 @@ __all__ = [
     "FedKDWithFedPredictBaseServer",
     "FedSparsificationBaseServer",
     "CDAFedAvgBaseServer",
-    "FedCDMBaseServer"
+    "FedCDMBaseServer",
+    "CDAFedAvgBaseServerWithFedPredictDynamic",
+    "CDAFedAvgBaseServerWithFedPredict"
     ]

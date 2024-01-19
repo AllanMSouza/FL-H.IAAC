@@ -29,7 +29,6 @@ class CDAFedAvgBaseServer(FedAvgBaseServer):
 				 num_rounds,
 				 args,
                  num_epochs,
-				 model,
 				 type,
 				 decay=0,
 				 perc_of_clients=0,
@@ -56,7 +55,6 @@ class CDAFedAvgBaseServer(FedAvgBaseServer):
 						 new_clients_train=new_clients_train,
 						 type=type)
 
-		self.model = model
 		self.current_weights = None
 		self.create_folder(strategy_name)
 
@@ -72,7 +70,6 @@ class CDAFedAvgBaseServer(FedAvgBaseServer):
 						  'drift_detected': ['False'], 'Q': [[]], 'acc_of_last_fit': [0], 'first_round': [-1]}).to_csv(
 				"""{}_saved_weights/{}/{}/{}_train.csv""".format(strategy_name.lower(), self.model_name, i, i),
 				index=False)
-
 			pd.DataFrame(
 						{'current_round': [-1], 'classes_distribution': ["[]"],
 						 'round_of_last_evaluate': [-1], 'drift_detected': [False], 'Q': [[]],
