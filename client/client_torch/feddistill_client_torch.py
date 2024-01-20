@@ -77,8 +77,8 @@ class FedDistillClientTorch(ClientBaseTorch):
 				return Logistic_Proto(input_shape, self.num_classes)
 			elif self.model_name == 'DNN':
 				return DNN_proto(input_shape=input_shape, num_classes=self.num_classes)
-			elif self.model_name == 'CNN':
-				if self.dataset == 'MNIST':
+			elif self.model_name == 'CNN_1':
+				if self.dataset in ['EMNIST', 'CIFAR10']:
 					input_shape = 1
 					mid_dim = 256
 				else:

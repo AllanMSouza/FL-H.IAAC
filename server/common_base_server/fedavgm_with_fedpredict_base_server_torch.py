@@ -223,34 +223,34 @@ class FedAvgMWithFedPredictBaseServerTorch(FedAvgMBaseServer):
         if server_round == 1:
             flag = True
         print("Flag: ", flag)
-        if "dls" in self.compression:
-            if flag:
-                self.similarity_between_layers_per_round_and_client[server_round], \
-                self.similarity_between_layers_per_round[server_round], self.mean_similarity_per_round[
-                    server_round], self.similarity_list_per_layer = fedpredict_layerwise_similarity(global_parameter,
-                                                                                                    clients_parameters,
-                                                                                                    clients_ids,
-                                                                                                    server_round,
-                                                                                                    self.dataset,
-                                                                                                    str(self.alpha),
-                                                                                                    self.similarity_list_per_layer)
-                self.df = max(0, abs(np.mean(self.similarity_list_per_layer[0]) - np.mean(
-                    self.similarity_list_per_layer[self.model_size - 2])))
-            else:
-                self.similarity_between_layers_per_round_and_client[server_round], \
-                self.similarity_between_layers_per_round[
-                    server_round], self.mean_similarity_per_round[
-                    server_round], self.similarity_list_per_layer = self.similarity_between_layers_per_round_and_client[
-                    server_round - 1], self.similarity_between_layers_per_round[
-                    server_round - 1], self.mean_similarity_per_round[
-                    server_round - 1], self.similarity_list_per_layer
-        else:
-            self.similarity_between_layers_per_round[server_round] = []
-            self.mean_similarity_per_round[server_round] = 0
-            self.similarity_between_layers_per_round_and_client[server_round] = []
-            self.df = 1
-
-        print("df médio: ", self.df, " rodada: ", server_round)
+        # if "dls" in self.compression:
+        #     if flag:
+        #         self.similarity_between_layers_per_round_and_client[server_round], \
+        #         self.similarity_between_layers_per_round[server_round], self.mean_similarity_per_round[
+        #             server_round], self.similarity_list_per_layer = fedpredict_layerwise_similarity(global_parameter,
+        #                                                                                             clients_parameters,
+        #                                                                                             clients_ids,
+        #                                                                                             server_round,
+        #                                                                                             self.dataset,
+        #                                                                                             str(self.alpha),
+        #                                                                                             self.similarity_list_per_layer)
+        #         self.df = max(0, abs(np.mean(self.similarity_list_per_layer[0]) - np.mean(
+        #             self.similarity_list_per_layer[self.model_size - 2])))
+        #     else:
+        #         self.similarity_between_layers_per_round_and_client[server_round], \
+        #         self.similarity_between_layers_per_round[
+        #             server_round], self.mean_similarity_per_round[
+        #             server_round], self.similarity_list_per_layer = self.similarity_between_layers_per_round_and_client[
+        #             server_round - 1], self.similarity_between_layers_per_round[
+        #             server_round - 1], self.mean_similarity_per_round[
+        #             server_round - 1], self.similarity_list_per_layer
+        # else:
+        #     self.similarity_between_layers_per_round[server_round] = []
+        #     self.mean_similarity_per_round[server_round] = 0
+        #     self.similarity_between_layers_per_round_and_client[server_round] = []
+        #     self.df = 1
+        #
+        # # print("df médio: ", self.df, " rodada: ", server_round)
 
         self.parameters_aggregated_checkpoint[server_round] = parameters_to_ndarrays(parameters_aggregated)
 
@@ -268,5 +268,5 @@ class FedAvgMWithFedPredictBaseServerTorch(FedAvgMBaseServer):
                                  similarity_between_layers_per_round=self.similarity_between_layers_per_round,
                                  mean_similarity_per_round=self.mean_similarity_per_round, server_round=server_round,
                                  num_rounds=self.num_rounds, comment=self.comment,
-                                 compression=self.compression, df=self.df,
+                                 compression=self.compression,
                                  layers_compression_range=self.layers_compression_range)
