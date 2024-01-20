@@ -117,9 +117,7 @@ def upsample(training_data, training_labels, min_samples, n_classes):
 
                     # mean = np.mean(training_data, axis=0)
                     mean = np.zeros(training_data.shape)
-                    data = []
-                    for i in range(remaining):
-                        data.append(mean)
+                    data = [mean]*remaining
                     print("p1")
                 elif len(r) == 1:
                     data = np.array(list(r[0]) * remaining)
@@ -129,9 +127,6 @@ def upsample(training_data, training_labels, min_samples, n_classes):
                     idx = np.random.choice(range(len(r)), size=remaining)
                     data = np.take(r, idx, axis=0)
                     print(data.shape)
-
-
-
 
                 print("dw", data.shape)
 
