@@ -165,7 +165,7 @@ def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_
     plt.rcParams.update(params)
 
     sns.set(style='whitegrid')
-    if tipo == 'dynamic':
+    if 'dynamic' in tipo:
         ax.grid(False)
     log = ""
     if log_scale:
@@ -176,7 +176,7 @@ def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_
 
     x = df[x_column].tolist()
     # plt.xticks(np.arange(0, max(x) + 1, 2.0))
-
+    print("titulo: ", title)
     if tipo is not None:
         palette = sns.color_palette()
         figure = sns.lineplot(x=x_column, y=y_column, data=df, hue=hue, ax=ax, palette=palette, hue_order=hue_order, style=style, style_order=style_order, markers=markers, size=size, sizes=sizes).set_title(title)
@@ -240,10 +240,21 @@ def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_
                     new_labels[i] = "nt=" + new_labels[i]
                 new_labels_2.append(new_labels[i])
         aa.legend(new_handles, new_labels_2, fontsize=8, ncols=3)
-    elif tipo == 'dynamic':
+    elif 'dynamic' in tipo:
         x_size = len(df[x_column].unique().tolist())
-        ax.vlines(x=[int(0.3*x_size), int(0.7*x_size)], ymin=0, ymax=100, colors='silver', ls='--', lw=1,
-                   label='vline_multiple - full height')
+        ax.vlines(x=[int(0.7 * x_size)], ymin=0, ymax=100, colors='silver', ls='--', lw=1,
+                  label='vline_multiple - full height')
+
+        if 'dynamic_2' in tipo:
+            if "0.1" in title:
+                a = "0.1"
+                b = "1.0"
+            else:
+                a = "1.0"
+                b = "0.1"
+            ax.text(int(0.3 * x_size), 90, r"$\alpha$=" + a, fontsize=11)
+            ax.text(int(0.8 * x_size), 90, r"$\alpha$=" + b, fontsize=11)
+            ax.set_title(title.split(";")[0])
 
     # sns.set(style='whitegrid', palette=palette)
 

@@ -8,6 +8,7 @@ from utils.compression_methods.sparsification import sparse_crs_top_k, to_dense,
 from utils.compression_methods.fedkd import fedkd_compression
 import os
 from torch.nn.parameter import Parameter
+from scipy.stats import entropy
 import scipy.stats as st
 # from torch_cka import CKA
 import pandas as pd
@@ -101,7 +102,7 @@ def fedpredict_core(t, T, nt, local_classes):
         print("fedpredict core")
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-def fedpredict_dynamic_core(t, T, nt, local_client_information):
+def fedpredict_dynamic_core(t, T, nt, local_client_information, current_proportion):
     try:
 
         # 9
@@ -110,16 +111,26 @@ def fedpredict_dynamic_core(t, T, nt, local_client_information):
         fraction_of_classes = local_client_information['fraction_of_classes']
         print("fedpredict_dynamic_core rodada: ", t, "local classes: ", similarity)
         similarity = float(np.round(similarity,1))
+
+        base = 2  # work in units of bits
+
+        max_ = np.array([i/len(current_proportion) for i in range(len(current_proportion))])  # fair coin
+
+        max_entropy = entropy(max_, base=base)
+        current_entropy = entropy(current_proportion, base=base)
+        current_entropy = current_entropy/max_entropy
+        print("valor entropia: ", current_entropy)
+
         if nt == 0:
             global_model_weight = 0
-        elif nt == t or (fraction_of_classes >= 0.98 and imbalance_level >= 30):
+        elif nt == t or (fraction_of_classes == 1 and imbalance_level <= 10):
             global_model_weight = 1
         elif similarity != 1:
             global_model_weight = 1
         else:
             update_level = 1 / nt
-            evolution_level = t / 100
-            eq1 = (-update_level - evolution_level)*similarity # v1 pior
+            evolution_level = t / int(100)
+            eq1 = (-update_level - evolution_level)*(similarity)# v1 pior
             eq2 = round(np.exp(eq1), 6)
             global_model_weight = eq2
             # global_model_weight = 0
@@ -515,7 +526,7 @@ def fedpredict_server(parameters, client_evaluate_list, fedpredict_clients_metri
         print("Tamanho parametros compredict: ", sum(i.nbytes for i in parameters_to_send))
         for i in range(1, len(parameters)):
             size_of_parameters.append(get_size(parameters[i]))
-        fedpredict_clients_metrics[str(client.cid)]['acc_bytes_rate'] = size_of_parameters
+        fedpredict_clients_metrics[str(client.pattern)]['acc_bytes_rate'] = size_of_parameters
         config['M'] = M
         config['decompress'] = decompress
         config['layers_fraction'] = layers_fraction
@@ -771,7 +782,7 @@ def fedpredict_dynamic_client(filename, model, global_parameters, config={}, mod
             # Load local parameters to 'self.model'
             # print("existe modelo local")
             model.load_state_dict(torch.load(filename))
-            model = fedpredict_dynamic_combine_models(global_parameters, model, t, T, nt, M, local_client_information)
+            model = fedpredict_dynamic_combine_models(global_parameters, model, t, T, nt, M, local_client_information, current_proportion)
         else:
             # print("usar modelo global: ", cid)
             if mode is None:
@@ -863,10 +874,10 @@ def fedpredict_combine_models(global_parameters, model, t, T, nt, M, local_class
         print("FedPredict combine models")
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-def fedpredict_dynamic_combine_models(global_parameters, model, t, T, nt, M, local_client_information):
+def fedpredict_dynamic_combine_models(global_parameters, model, t, T, nt, M, local_client_information, current_proportion):
     try:
 
-        local_model_weights, global_model_weight = fedpredict_dynamic_core(t, T, nt, local_client_information)
+        local_model_weights, global_model_weight = fedpredict_dynamic_core(t, T, nt, local_client_information, current_proportion)
         count = 0
         for new_param, old_param in zip(global_parameters, model.parameters()):
             if count in M:
@@ -876,6 +887,19 @@ def fedpredict_dynamic_combine_models(global_parameters, model, t, T, nt, M, loc
                 else:
                     print("Não combinou, CNN student: ", new_param.shape, " CNN 3 proto: ", old_param.shape)
             count += 1
+
+        # last = [M[-2], M[-1]]
+        # for new_param, old_param in zip(global_parameters, model.parameters()):
+        #     if count in M:
+        #         if new_param.shape == old_param.shape:
+        #             if count in last:
+        #                 old_param.data = (
+        #                         global_model_weight * new_param.data.clone() + local_model_weights * old_param.data.clone())
+        #             else:
+        #                 old_param.data = new_param.data.clone()
+        #         else:
+        #             print("Não combinou, CNN student: ", new_param.shape, " CNN 3 proto: ", old_param.shape)
+        #     count += 1
 
         return model
 

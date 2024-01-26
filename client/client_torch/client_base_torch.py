@@ -2,6 +2,7 @@ import flwr as fl
 import copy
 import numpy as np
 import torch
+from torch.utils.data import TensorDataset, DataLoader
 import time
 import sys
 
@@ -107,8 +108,10 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			# self.device = torch.device("cpu")
 			self.type = 'torch'
 			self.dynamic_data = args.dynamic_data
-			self.rounds_to_change_pattern = [int(0.3 * self.n_rounds), int(0.7 * self.n_rounds)]
-			self.dynamic_data_filename = {'no': None, 'synthetic': """/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/dynamic_experiments_config/dynamic_data_synthetic_config_{}_clients_{}_rounds_change_pattern_{}_total_rounds.csv""".format(n_clients, self.rounds_to_change_pattern, self.n_rounds)}[self.dynamic_data]
+			self.rounds_to_change_pattern = [int(0.7 * self.n_rounds)]
+			self.dynamic_data_filename = {'no': None, 'synthetic': """/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/dynamic_experiments_config/dynamic_data_synthetic_config_{}_clients_{}_rounds_change_pattern_{}_total_rounds.csv""".format(n_clients, self.rounds_to_change_pattern, self.n_rounds),
+										  'synthetic_global': """/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/dynamic_experiments_config/dynamic_data_synthetic_config_{}_clients_{}_rounds_change_pattern_{}_total_rounds_global_concept_drift.csv""".format(n_clients, self.rounds_to_change_pattern, self.n_rounds)}[self.dynamic_data]
+			print("nome arquivo: ", self.dynamic_data_filename)
 			if self.dynamic_data_filename is not None:
 				self.clients_pattern = pd.read_csv(self.dynamic_data_filename)
 			else:
@@ -170,16 +173,125 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				if len(row) != 1:
 					raise ValueError("""Pattern not found for client {}. The pattern may not exist or is duplicated""".format(pattern))
 				pattern = int(row[0])
-			if server_round is not None:
-				if server_round >= 7:
-					print("""load dados cliente {} padrao {} rodada {} treino {}""".format(self.cid, pattern, server_round, train))
-			trainLoader, testLoader, traindataset, testdataset = ManageDatasets(pattern, self.model_name).select_dataset(
-				dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid, batch_size)
+
+			limit_classes = False
+			alpha = self.alpha
+			alphas = np.array([0.1, 1.0])
+			if self.dynamic_data == "synthetic_global":
+				if server_round < int(self.n_rounds * 0.7):
+					limit_classes = True
+					alpha = self.alpha
+				else:
+					limit_classes = False
+
+					alpha = alphas[alphas != self.alpha][0]
+			else:
+				alpha = self.alpha
+			limit_classes = server_round
+			trainLoader, testLoader, traindataset, testdataset = ManageDatasets(self.cid, self.model_name, pattern, limit_classes).select_dataset(
+				dataset_name, n_clients, self.class_per_client, alpha, self.non_iid, batch_size)
 			self.input_shape = (3,64,64)
+
+			if server_round is not None:
+				if server_round in self.rounds_to_change_pattern:
+					past_patterns = \
+						self.clients_pattern.query(
+							"""Round < {} and Cid == {} and Pattern != {}""".format(server_round, self.cid, pattern))[
+							'Pattern'].unique().tolist()
+					print("patter: ", past_patterns)
+					# trainLoader, traindataset = self.concatenate_dataset(traindataset, past_patterns, batch_size,
+					# 														   dataset_name, n_clients, pattern, alpha)
+					# print("""alpha {} {} load dados cliente {} padrao {} rodada {} treino {}""".format(alpha, self.dynamic_data, self.cid, pattern, server_round, train))
 
 			return trainLoader, testLoader, traindataset, testdataset
 		except Exception as e:
 			print("load data")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+	def get_target_and_samples_from_dataset(self, traindataset, dataset_name):
+
+		try:
+
+			if dataset_name in ['WISDM-WATCH', 'WISDM-P']:
+				data = []
+				targets = []
+				for sample in traindataset:
+					# print("amostra: ", sample)
+					data.append(sample[0].numpy())
+					targets.append(int(sample[1]))
+				data = np.array(data)
+				print("dada: ", type(data), len(data), len(targets))
+				targets = np.array(targets)
+			else:
+				targets = np.array(traindataset.targets)
+				if dataset_name == 'GTSRB':
+					data = np.array(traindataset.samples)
+				else:
+					data = np.array(traindataset.data)
+
+			return data, targets
+
+		except Exception as e:
+			print("get target and samples from dataset")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+	def concatenate_dataset(self, current_traindataset, past_patterns, batch_size, dataset_name, n_clients, current_pattern, alpha):
+
+		try:
+
+			data_list = np.array([])
+			target_list = np.array([])
+
+			if len(past_patterns) > 0:
+				for pattern in past_patterns:
+					trainLoader, testLoader, traindataset, testdataset = ManageDatasets(self.cid,
+																						self.model_name, pattern, False).select_dataset(
+						dataset_name, n_clients, self.class_per_client, alpha, self.non_iid, batch_size)
+
+					trainLoader = None
+					testLoader = None
+					testdataset = None
+
+
+					data, targets = self.get_target_and_samples_from_dataset(traindataset, dataset_name)
+
+					if len(data_list) == 0:
+
+						data_list = data
+						target_list = targets
+
+					else:
+
+						data_list = np.concatenate((data_list, data))
+						target_list = np.concatenate((target_list, targets))
+
+			else:
+				trainLoader, testLoader, traindataset, testdataset = ManageDatasets(self.cid,
+																					self.model_name, self.cid,
+																					False).select_dataset(
+					dataset_name, n_clients, self.class_per_client, alpha, self.non_iid, batch_size)
+
+				data_list, target_list = self.get_target_and_samples_from_dataset(traindataset, dataset_name)
+
+			print("dt: ", data_list.shape)
+
+			current_traindataset = self.set_dataset(current_traindataset, dataset_name, data_list, target_list)
+
+			def seed_worker(worker_id):
+				np.random.seed(self.cid)
+				random.seed(self.cid)
+
+			g = torch.Generator()
+			g.manual_seed(self.cid)
+
+			trainLoader = DataLoader(current_traindataset, batch_size, shuffle=True, worker_init_fn=seed_worker,
+									 generator=g)
+
+			return trainLoader, current_traindataset
+
+
+		except Exception as e:
+			print("concatenate dataset")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def create_model(self):
@@ -256,6 +368,25 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				raise Exception("Wrong model name")
 		except Exception as e:
 			print("create model")
+			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
+
+	def set_dataset(self, dataset, dataset_name, x, y):
+
+		try:
+
+			if dataset_name in ['WISDM-WATCH']:
+
+				return torch.utils.data.TensorDataset(torch.from_numpy(x).to(dtype=torch.float32), torch.from_numpy(y))
+
+			else:
+
+				dataset.samples = x
+				dataset.targets = y
+
+				return dataset
+
+		except Exception as e:
+			print("set dataset")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def save_client_information_fit(self, server_round, acc_of_last_fit, predictions):
@@ -403,7 +534,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				size_list.append(tamanho)
 			# print("Tamanho total parametros fit: ", sum(size_list))
 			size_of_parameters = sum(size_list)
-			# size_of_parameters = sum(
+			#pattern size_of_parameters = sum(
 			# 	[sum(map(sys.getsizeof, trained_parameters[i])) for i in range(len(trained_parameters))])
 			avg_loss_train = train_loss / train_num
 			avg_acc_train = train_acc / train_num
@@ -418,12 +549,14 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				filename=self.train_client_filename,
 				data=data)
 
-			row = self.clients_pattern.query("""Round == {} and Cid == {}""".format(server_round, self.cid))[
-				'Pattern'].tolist()
-			if len(row) != 1:
-				raise ValueError(
-					"""Pattern not found for client {}. The pattern may not exist or is duplicated""".format(self.cid))
-			pattern = int(row[0])
+			pattern = self.cid
+			if self.dynamic_data != "no":
+				row = self.clients_pattern.query("""Round == {} and Cid == {}""".format(server_round, self.cid))[
+					'Pattern'].tolist()
+				if len(row) != 1:
+					raise ValueError(
+						"""Pattern not found for client {}. The pattern may not exist or is duplicated""".format(self.cid))
+				pattern = int(row[0])
 
 			fit_response = {
 				'cid': self.cid,
@@ -522,8 +655,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 	def evaluate(self, parameters, config):
 		try:
 			server_round = int(config['round'])
-			# if self.dynamic_data != "no":
-			self.trainloader, self.testloader, self.traindataset, self.testdataset = self.load_data(self.dataset,
+			if self.dynamic_data != "no":
+				self.trainloader, self.testloader, self.traindataset, self.testdataset = self.load_data(self.dataset,
 																								n_clients=self.n_clients,
 																								server_round=server_round,
 																									train=False)

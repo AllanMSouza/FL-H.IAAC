@@ -148,7 +148,7 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 	#
 	# 	return similarity_between_contexts, imbalance_level, fraction_of_classes
 
-	def _calculate_contexts_similarities(self):
+	def _calculate_contexts_similarities(self, server_round):
 
 		try:
 			"""
@@ -163,13 +163,14 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 			fraction_of_classes = sum([1 if i > 0 else 0 for i in current_proportion])/self.num_classes
 
 			if len(last_proportion) != len(current_proportion) or last_training == -1:
-				return 1, imbalance_level, fraction_of_classes, current_proportion
+				print("retornou 0 por erro: ", len(last_proportion), len(current_proportion), last_training, server_round)
+				return 0, imbalance_level, fraction_of_classes, current_proportion
 
 			last_proportion = np.array(last_proportion)
 			current_proportion = np.array(current_proportion)
 
 			if (last_proportion == current_proportion).all():
-				print("igual")
+				print("""proporcao igual client {} rodada {}""".format(self.cid, server_round))
 
 				cosine_similarity = 1
 
@@ -227,7 +228,7 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 			local_classes = self.classes_proportion
 
 			server_round = config['round']
-			similarity, imbalance_level, fraction_of_classes, current_proportion = self._calculate_contexts_similarities()
+			similarity, imbalance_level, fraction_of_classes, current_proportion = self._calculate_contexts_similarities(server_round)
 			self.current_proportion = np.array(current_proportion)
 			self.similarity = similarity
 			# print("similaridade: ", similarity, ' imbalance level: ', imbalance_level, ' fraction of classes:', fraction_of_classes)

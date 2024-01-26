@@ -57,7 +57,9 @@ def load_data(data_path):
 
 class ManageDatasets():
 
-    def __init__(self, cid, model_name):
+    def __init__(self, cid, model_name, pattern, limit_classes):
+        self.server_round = limit_classes
+        self.pattern = pattern
         self.cid = cid
         self.model_name = model_name
         random.seed(self.cid)
@@ -193,8 +195,15 @@ class ManageDatasets():
             # validation_dataset.data = x_test
             # validation_dataset.targets = y_test
 
-            training_loader = torch.utils.data.DataLoader(training_dataset, batch_size=batch_size,
-                                                          shuffle=True)  # Batch size of 100 i.e to work with 100 images at a time
+            def seed_worker(worker_id):
+                np.random.seed(self.cid)
+                random.seed(self.cid)
+
+            g = torch.Generator()
+            g.manual_seed(self.cid)
+
+            training_loader = DataLoader(training_dataset, batch_size, shuffle=True, worker_init_fn=seed_worker,
+                                     generator=g)  # Batch size of 100 i.e to work with 100 images at a time
 
             validation_loader = torch.utils.data.DataLoader(validation_dataset, batch_size=batch_size, shuffle=False)
 
@@ -256,8 +265,15 @@ class ManageDatasets():
                 validation_dataset.data = x_test
                 validation_dataset.targets = y_test
 
-            training_loader = torch.utils.data.DataLoader(training_dataset, batch_size=batch_size,
-                                                          shuffle=True)  # Batch size of 100 i.e to work with 100 images at a time
+            def seed_worker(worker_id):
+                np.random.seed(self.cid)
+                random.seed(self.cid)
+
+            g = torch.Generator()
+            g.manual_seed(self.cid)
+
+            training_loader = DataLoader(training_dataset, batch_size, shuffle=True, worker_init_fn=seed_worker,
+                                     generator=g)  # Batch size of 100 i.e to work with 100 images at a time
 
             validation_loader = torch.utils.data.DataLoader(validation_dataset, batch_size=batch_size, shuffle=False)
 
@@ -433,7 +449,7 @@ class ManageDatasets():
             training_dataset, validation_dataset = self.load_data_statefarm(dir_path)
             # valset = copy.deepcopy(trainset)
 
-            np.random.seed(0)
+            np.random.seed(self.cid)
 
             dataset_image = []
             dataset_label = []
@@ -553,7 +569,15 @@ class ManageDatasets():
             y_fake = torch.tensor([0] * len(X_grouped)).long()
             # validation_dataset = TensorDataset(X_grouped, y_fake)
             # create_loaders
-            trainLoader = DataLoader(training_dataset, batch_size, shuffle=True)
+            def seed_worker(worker_id):
+                np.random.seed(self.cid)
+                random.seed(self.cid)
+
+            g = torch.Generator()
+            g.manual_seed(self.cid)
+
+            trainLoader = DataLoader(training_dataset, batch_size, shuffle=True, worker_init_fn=seed_worker,
+                                     generator=g)
             testLoader = DataLoader(validation_dataset, batch_size, shuffle=False)
 
             print("validacao: ")
@@ -634,7 +658,15 @@ class ManageDatasets():
             y_fake = torch.tensor([0] * len(X_grouped)).long()
             # validation_dataset = TensorDataset(X_grouped, y_fake)
             # create_loaders
-            trainLoader = DataLoader(training_dataset, batch_size, shuffle=True)
+            def seed_worker(worker_id):
+                np.random.seed(self.cid)
+                random.seed(self.cid)
+
+            g = torch.Generator()
+            g.manual_seed(self.cid)
+
+            trainLoader = DataLoader(training_dataset, batch_size, shuffle=True, worker_init_fn=seed_worker,
+                                     generator=g)
             testLoader = DataLoader(validation_dataset, batch_size, shuffle=False)
 
             print("validacao: ")
@@ -733,7 +765,7 @@ class ManageDatasets():
             training_dataset, validation_dataset = self.load_data_gtsrb(dir_path)
             # validation_dataset = copy.deepcopy(training_dataset)
 
-            np.random.seed(0)
+            np.random.seed(self.cid)
 
             dataset_image = []
             dataset_samples = []
@@ -800,7 +832,15 @@ class ManageDatasets():
             validation_dataset.targets = list(y_test)
             # validation_dataset.imgs = list(imgs_test)
 
-            trainLoader = DataLoader(dataset=training_dataset, batch_size=32, shuffle=True)
+            def seed_worker(worker_id):
+                np.random.seed(self.cid)
+                random.seed(self.cid)
+
+            g = torch.Generator()
+            g.manual_seed(self.cid)
+
+            trainLoader = DataLoader(training_dataset, batch_size, shuffle=True, worker_init_fn=seed_worker,
+                                     generator=g)
             testLoader = DataLoader(dataset=validation_dataset, batch_size=32, shuffle=False)
 
             return trainLoader, testLoader, training_dataset, validation_dataset
@@ -843,6 +883,16 @@ class ManageDatasets():
             x = np.array([ast.literal_eval(i) for i in df['X'].tolist()], dtype=np.float32)
             y = np.array([i for i in df['Y'].to_numpy().astype(np.int32)])
             print("y ori: ", y.shape, x.shape)
+            # if self.limit_classes:
+            #     c = 4
+            #     idx_more = np.where(y > c)
+            #     np.random.seed(0)
+            #     if len(idx_more) > 10:
+            #         idx_more = np.random.choice(idx_more, int(len(idx_more) * 0.2))
+            #         idx_less = np.where(y <= c)
+            #         idx = np.concatenate((idx_more, idx_less))
+            #         x = x[idx]
+            #         y = y[idx]
 
             for i in range(len(x)):
                 row = x[i]
@@ -870,6 +920,15 @@ class ManageDatasets():
 
             x = np.array(new_x)
 
+            p = np.unique(y, return_counts=True)
+            c = p[0]
+            total = np.sum(p[1])
+            p = p[1]/total
+
+            print("""ll cliente {} round {} proporcao:{}  classes: {}""".format(self.cid,self.server_round, p, c))
+
+
+
             print("po: ", x.shape, y.shape)
 
             size = int(len(x) * 0.8)
@@ -884,16 +943,16 @@ class ManageDatasets():
             training_dataset = torch.utils.data.TensorDataset(torch.from_numpy(x_train).to(dtype=torch.float32), torch.from_numpy(y_train))
             validation_dataset = torch.utils.data.TensorDataset(torch.from_numpy(x_test).to(dtype=torch.float32), torch.from_numpy(y_test))
 
-            random.seed(0)
-            np.random.seed(0)
-            torch.manual_seed(0)
+            random.seed(self.cid)
+            np.random.seed(self.cid)
+            torch.manual_seed(self.cid)
 
             def seed_worker(worker_id):
-                np.random.seed(0)
-                random.seed(0)
+                np.random.seed(self.cid)
+                random.seed(self.cid)
 
             g = torch.Generator()
-            g.manual_seed(0)
+            g.manual_seed(self.cid)
 
             trainLoader = DataLoader(training_dataset, batch_size, shuffle=True, worker_init_fn=seed_worker, generator=g)
             testLoader = DataLoader(validation_dataset, batch_size, shuffle=False)
@@ -917,10 +976,10 @@ class ManageDatasets():
         p_test  = int(len(x_test)/n_clients)
 
 
-        random.seed(self.cid)
+        random.seed(self.pattern)
         selected_train = random.sample(range(len(x_train)), p_train)
 
-        random.seed(self.cid)
+        random.seed(self.pattern)
         selected_test  = random.sample(range(len(x_test)), p_test)
 
         x_train  = x_train[selected_train]
@@ -935,9 +994,9 @@ class ManageDatasets():
 
     def select_dataset(self, dataset_name, n_clients, class_per_client, alpha, non_iid, bath_size):
         try:
-            print("recebeu: ", self.cid, dataset_name, n_clients, class_per_client, alpha, non_iid)
-            filename_train = f"dataset_utils/data/{dataset_name}/{n_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{self.cid}/idx_train_{self.cid}.pickle"
-            filename_test = f"dataset_utils/data/{dataset_name}/{n_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{self.cid}/idx_test_{self.cid}.pickle"
+            print("recebeu: ", self.pattern, dataset_name, n_clients, class_per_client, alpha, non_iid)
+            filename_train = f"dataset_utils/data/{dataset_name}/{n_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{self.pattern}/idx_train_{self.pattern}.pickle"
+            filename_test = f"dataset_utils/data/{dataset_name}/{n_clients}_clients/classes_per_client_{class_per_client}/alpha_{alpha}/{self.pattern}/idx_test_{self.pattern}.pickle"
 
             if dataset_name == 'MNIST':
                 return self.load_MNIST(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)

@@ -410,34 +410,10 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
             client = client_tuple[0]
             client_id = str(client.cid)
             config = copy.copy(self.evaluate_config)
-            self.dynamic_data_filename = {'no': None,
-                                          'synthetic': """/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/dynamic_experiments_config/dynamic_data_synthetic_config_{}_clients_{}_rounds_change_pattern_{}_total_rounds.csv""".format(
-                                              self.num_clients, [int(0.7*self.num_rounds)], self.num_rounds)}[self.dynamic_data]
-            if self.dynamic_data_filename is not None:
-                self.clients_pattern = pd.read_csv(self.dynamic_data_filename)
-            row = self.clients_pattern.query("""Round == {} and Cid == {}""".format(server_round, client_id))[
-                'Pattern'].tolist()
-            if len(row) != 1:
-                raise ValueError(
-                    """Pattern not found for client {}. The pattern may not exist or is duplicated""".format(self.cid))
-            pattern = int(row[0])
+
+            pattern = client_id
             config['pattern'] = pattern
-            if config['round'] >= int(0.7*self.num_rounds):
-                print("""cliente {} mudou padrao {}""".format(client_id, pattern))
-                send = self.last_layer_parameters_per_class[pattern][0]
-                # send = self.client_last_layer[pattern]
-                # print("tamanho 1 enviado: ", len(send), " tamanho 2 enviado: ", len(send[0]))
-                if len(send) == 0:
-                    # send = fl.common.parameters_to_ndarrays(parameters)
-                    print("""enviou global para {}""".format(client_id))
-                else:
-                    print("""Enviou personalizado para {} padrao {}""".format(client_id, pattern))
-                # print(len(send))
-                # print(len(send[0]), type(send[0]))
-                # config['last_layer'] = self.mean_parameters(fl.common.parameters_to_ndarrays(parameters), send)
-                config['last_layer'] = send
-            else:
-                config['last_layer'] = np.array([])
+            config['last_layer'] = np.array([])
             self.evaluate_config = config
             evaluate_ins = EvaluateIns(parameters, config)
             # print("Evaluate enviar: ", client_id, [i.shape for i in parameters_to_ndarrays(parameters_to_send)])

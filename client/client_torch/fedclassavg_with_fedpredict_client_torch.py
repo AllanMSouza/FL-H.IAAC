@@ -69,7 +69,7 @@ class FedClassAvg_with_FedPredictClientTorch(FedClassAvgClientTorch):
 		self.accuracy_of_last_round_of_fit = 0
 		self.start_server = 0
 		self.filename = """./{}_saved_weights/{}/{}/model.pth""".format(strategy_name.lower(), self.model_name,
-																		self.cid)
+                                                                        self.pattern)
 
 	def set_parameters_to_model_evaluate(self, global_parameters, config={}):
 		# Using 'torch.load'

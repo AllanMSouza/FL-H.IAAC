@@ -32,7 +32,6 @@ class CDAFedAvgServerTorch(CDAFedAvgBaseServer):
                          num_rounds=num_rounds,
                          args=args,
                          num_epochs=num_epochs,
-                         model=model,
                          decay=decay,
                          perc_of_clients=perc_of_clients,
                          dataset=dataset,

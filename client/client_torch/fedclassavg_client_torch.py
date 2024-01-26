@@ -200,11 +200,13 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 			if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
 				self.set_parameters_to_model(parameters)
 
+				server_round = int(config['round'])
 				if self.dynamic_data != "no":
-					server_round = int(config['round'])
 					self.trainloader, self.testloader, self.traindataset, self.testdataset = self.load_data(
 						self.dataset,
-						n_clients=self.n_clients, server_round=server_round)
+						n_clients=self.n_clients,
+						server_round=server_round,
+						train=False)
 
 				selected = 1
 				self.model.train()
@@ -275,10 +277,11 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 			nt = int(config['nt'])
 			self.set_parameters_to_model_evaluate(parameters, config)
 			server_round = int(config['round'])
-			# loss, accuracy     = self.model.evaluate(self.x_test, self.y_test, verbose=0)
 			if self.dynamic_data != "no":
 				self.trainloader, self.testloader, self.traindataset, self.testdataset = self.load_data(self.dataset,
-																									n_clients=self.n_clients, server_round=server_round)
+																										n_clients=self.n_clients,
+																										server_round=server_round,
+																										train=False)
 			self.model.eval()
 			clone_model_fedclassavg = self.clone_model_fedclassavg
 			self.clone_model_classavg(self.model, clone_model_fedclassavg, parameters)
@@ -314,6 +317,8 @@ class FedClassAvgClientTorch(FedPerClientTorch):
 			loss = test_loss/test_num
 			accuracy = test_acc/test_num
 			size_of_config = sys.getsizeof(config)
+			print("""Acurácia teste rodada {} do cliente {}: {}""".format(server_round, self.cid, accuracy))
+
 			data = [config['round'], self.cid, size_of_parameters, size_of_config, loss, accuracy, nt]
 
 			self._write_output(filename=self.evaluate_client_filename,

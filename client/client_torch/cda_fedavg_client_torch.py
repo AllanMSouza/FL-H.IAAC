@@ -74,25 +74,7 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 
 	def load_data(self, dataset_name, n_clients, batch_size=32, server_round=None, train=None):
 		try:
-			pattern = self.cid
-			if self.clients_pattern is not None:
-				if server_round is not None:
-					# It does the concept drift
-					current_pattern = self.clients_pattern.query("""Round == {} and Cid == {}""".format(server_round, self.cid))['Pattern'].tolist()
-					if len(current_pattern) != 1:
-						raise ValueError("""Pattern not found for client {}. The pattern may not exist or is duplicated""".format(pattern))
-					pattern = current_pattern[0]
-			# print("cid: ", self.cid, " padrao: ", pattern)
-			if dataset_name in ['MNIST', 'CIFAR10', 'CIFAR100', 'EMNIST', 'GTSRB', 'State Farm']:
-				trainLoader, testLoader, traindataset, testdataset = ManageDatasets(pattern, self.model_name).select_dataset(
-					dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid, batch_size)
-				self.input_shape = (3,64,64)
-			else:
-				print("gerar")
-				trainLoader, testLoader, traindataset, testdataset = ManageDatasets(pattern, self.model_name).select_dataset(
-					dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid, batch_size)
-				self.input_shape = (32, 0)
-				# exit()
+			trainLoader, testLoader, traindataset, testdataset = super().load_data(dataset_name, n_clients, batch_size=32, server_round=None, train=None)
 
 			print("dd 1: ", self.drift_detected, server_round)
 			if self.drift_detected:
@@ -127,52 +109,6 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 		return X_scaled
-
-	def get_target_and_samples_from_dataset(self, traindataset, dataset_name):
-
-		try:
-
-			if dataset_name in ['WISDM-WATCH', 'WISDM-P']:
-				data = []
-				targets = []
-				for sample in traindataset:
-					# print("amostra: ", sample)
-					data.append(sample[0].numpy())
-					targets.append(int(sample[1]))
-				data = np.array(data)
-				print("dada: ", type(data), len(data), len(targets))
-				targets = np.array(targets)
-			else:
-				targets = np.array(traindataset.targets)
-				if dataset_name == 'GTSRB':
-					data = np.array(traindataset.samples)
-				else:
-					data = np.array(traindataset.data)
-
-			return data, targets
-
-		except Exception as e:
-			print("get target and samples from dataset")
-			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
-
-	def set_dataset(self, dataset, dataset_name, x, y):
-
-		try:
-
-			if dataset_name in ['WISDM-WATCH']:
-
-				return torch.utils.data.TensorDataset(torch.from_numpy(x).to(dtype=torch.float32), torch.from_numpy(y))
-
-			else:
-
-				dataset.samples = x
-				dataset.targets = y
-
-				return dataset
-
-		except Exception as e:
-			print("set dataset")
-			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def previous_balanced_dataset(self, current_traindataset, past_patterns, batch_size, dataset_name, n_clients, current_pattern):
 
@@ -304,7 +240,7 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 			# if server_round in [int(self.n_rounds*0.3), int(self.n_rounds*0.7)]:
 			df = pd.read_csv(self.client_information_val_filename)
 			already_detected_drift = True if True in df['drift_detected'].tolist() else False
-			if server_round in [13, 14, 15, 16, 32, 33, 34, 35, 36] and not already_detected_drift:
+			if server_round in [68, 69, 70, 71, 72, 73] and not already_detected_drift:
 			# if server_round in [3, 7]:
 			# if r <= 0.1:
 				print("testar:")

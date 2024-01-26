@@ -73,34 +73,34 @@ class JointAnalysis():
                                                                                                                         compression,
                                                                                                                         file_type)
 
-                                filename2 = """{}/{}/{}-None-{}/new_clients_{}_train_{}/{}/{}/{}/{}/alpha_{}/{}_rounds/{}/{}_comment/{}_compression/{}""".format(
-                                    os.path.abspath(os.path.join(os.getcwd(),
-                                                                 os.pardir)) + "/FL-H.IAAC/logs",
-                                    type,
-                                    strategy,
-                                    fraction_fit,
-                                    new_clients,
-                                    new_clients_train,
-                                    clients,
-                                    model,
-                                    dataset,
-                                    "classes_per_client_2",
-                                    alpha,
-                                    rounds,
-                                    local_epochs,
-                                    comment,
-                                    compression,
-                                    file_type)
+                                # filename2 = """{}/{}/{}-None-{}/new_clients_{}_train_{}/{}/{}/{}/{}/alpha_{}/{}_rounds/{}/{}_comment/{}_compression/{}""".format(
+                                #     os.path.abspath(os.path.join(os.getcwd(),
+                                #                                  os.pardir)) + "/FL-H.IAAC/logs",
+                                #     type,
+                                #     strategy,
+                                #     fraction_fit,
+                                #     new_clients,
+                                #     new_clients_train,
+                                #     clients,
+                                #     model,
+                                #     dataset,
+                                #     "classes_per_client_2",
+                                #     alpha,
+                                #     rounds,
+                                #     local_epochs,
+                                #     comment,
+                                #     compression,
+                                #     file_type)
 
                                 try:
                                     flag = False
-                                    if Path(filename1).exists():
-                                        df = pd.read_csv(filename1).dropna()
-                                        flag = True
+                                    # if Path(filename1).exists():
+                                    df = pd.read_csv(filename1).dropna()
+                                    flag = True
 
-                                    elif Path(filename2).exists():
-                                        df = pd.read_csv(filename2).dropna()
-                                        flag = False
+                                    # elif Path(filename2).exists():
+                                    #     df = pd.read_csv(filename2).dropna()
+                                    #     flag = False
 
                                     if dataset == "GTSRB" and not flag and new_clients == 'train':
                                         print("nao achou: ", filename1)
@@ -109,22 +109,22 @@ class JointAnalysis():
 
                                 except:
                                     continue
-                                if strategy == "FedPredict" and compression == "no" and dynamic_data == "synthetic":
+                                if strategy == "FedPredict" and compression == "no":
                                     st = "FedAvg"
                                     s = "+FP"
-                                elif strategy == "CDA-FedAvg_with_FedPredict" and compression == "no" and dynamic_data == "synthetic":
+                                elif strategy == "CDA-FedAvg_with_FedPredict" and compression == "no":
                                     st = "CDA-FedAvg"
                                     s = "+FP"
-                                elif strategy == "FedPredict_Dynamic" and compression == "no" and dynamic_data == "synthetic":
+                                elif strategy == "FedPredict_Dynamic" and compression == "no":
                                     st = "FedAvg"
                                     s = r"+FP$_{DYN}$"
                                 elif strategy == "CDA-FedAvg_with_FedPredict_Dynamic" and compression == "no":
                                     st = "CDA-FedAvg"
                                     s = r"+FP$_{DYN}$"
-                                elif strategy == "FedYogi_with_FedPredict" and compression == "no" and dynamic_data == "synthetic":
+                                elif strategy == "FedYogi_with_FedPredict" and compression == "no":
                                     st = "FedYogi"
                                     s = "+FP"
-                                elif strategy == "FedKD_with_FedPredict" and compression == "no" and dynamic_data == "synthetic":
+                                elif strategy == "FedKD_with_FedPredict" and compression == "no":
                                     st = "FedKD"
                                     s = "+FP"
                                 else:
@@ -132,7 +132,7 @@ class JointAnalysis():
                                     s = "Original"
 
                                 print("f1: ", filename1)
-                                print("f2: ", filename2)
+                                # print("f2: ", filename2)
                                 df['Strategy'] = np.array([st] * len(df))
                                 df['Version'] = np.array([s] * len(df))
                                 df['Experiment'] = np.array([i] * len(df))
@@ -155,7 +155,7 @@ class JointAnalysis():
         # self.joint_plot_acc_two_plots(df=df_concat, experiment=1, pocs=pocs)
         print("versao1: ", df_concat[['Strategy', 'Version']].drop_duplicates())
         self.joint_plot_acc_four_plots(df=df_concat, experiment=1, alphas=alphas)
-        # self.joint_plot_acc_four_plots(df=df_concat, experiment=2, alphas=alphas)
+        self.joint_plot_acc_four_plots(df=df_concat, experiment=2, alphas=alphas)
         # self.joint_plot_acc_four_plots(df=df_concat, experiment=3, alphas=alphas)
         # self.joint_plot_acc_four_plots(df=df_concat, experiment=4, fractions_fit=fractions_fit)
         # table
@@ -176,7 +176,7 @@ class JointAnalysis():
         strategies = aux
         print("finai: ", strategies)
         print("Experimento 1")
-        self.joint_table(df_concat, alphas, strategies, experiment=1)
+        # self.joint_table(df_concat, alphas, strategies, experiment=1)
         print("Experimento 2")
         # self.joint_table(df_concat, alphas, strategies, experiment=2)
         # self.joint_table(df_concat, fractions_fit, strategies, experiment=3)
@@ -290,7 +290,7 @@ class JointAnalysis():
         #     lambda e: self.groupb_by_table(e)).reset_index()[
         #     ['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)']]
         elif experiment == 2:
-            # df = df[df['Round (t)'] >= 70]
+            df = df[df['Round (t)'] == 35]
             pass
         df_test = df[
             ['Round (t)', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset', 'Alpha']]
@@ -445,14 +445,15 @@ class JointAnalysis():
 
         # df['Accuracy (%)'] = df['Accuracy (%)']*100
         if strategy is not None:
-            df = df.query(
-                """Experiment=={} and Dataset=='{}' and Strategy=='{}'""".format(str(experiment), str(dataset), strategy))
+            query = """Experiment=={} and Dataset=='{}' and Strategy=='{}'""".format(str(experiment), str(dataset), strategy)
+            df = df.query(query)
             df = df[df['Alpha'] == alpha]
         else:
-            df = df.query(
-                """Experiment=={} and Dataset=='{}'""".format(str(experiment), (dataset)))
+            query = """Experiment=={} and Dataset=='{}'""".format(str(experiment), (dataset))
+            df = df.query(query)
             df = df[df['Alpha'] == alpha]
 
+        print("query: ", query)
         print("filtrou: ", df, experiment, dataset, alpha, strategy)
 
         return df
@@ -464,7 +465,7 @@ class JointAnalysis():
         df['Strategy'] = np.array(["" + i + "" for i in df['Strategy'].tolist()])
 
         print("filtrado: ", df, df[hue].unique().tolist())
-        line_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, tipo='dynamic', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes, y_max=y_max, y_lim=y_lim, style_order=style_order)
+        line_plot(df=df, base_dir=base_dir, file_name=filename, x_column=x_column, y_column=y_column, title=title, hue=hue, ax=ax, tipo='dynamic_' + str(experiment), hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes, y_max=y_max, y_lim=y_lim, style_order=style_order)
 
     def joint_plot_acc_four_plots(self, df, experiment, alphas):
         print("Joint plot exeprimento: ", experiment)
@@ -473,6 +474,8 @@ class JointAnalysis():
         datast = df['Dataset'].unique().tolist()
         print("agrupou plot")
         print(df_test[df_test['Round (t)']==100])
+        print(df_test)
+        # exit()
         # figsize=(12, 9),
         sns.set(style='whitegrid')
         rows = len(alphas)
@@ -491,10 +494,11 @@ class JointAnalysis():
                 dataset = datast[j]
                 title = """{}; \u03B1={}""".format(dataset, alpha)
                 filename = ''
-                # hue_order = ['FedPredict_{dc}', "FedPredict", 'FedClassAvg', 'FedAvg']
-                hue_order = ['FedAvg', 'CDA-FedAvg']
+                # hue_order = ['CDA-FedAvg', 'FedPer']
+                hue_order = ['FedAvg', 'CDA-FedAvg', 'FedPer']
                 style = "Version"
-                style_order = [r"+FP$_{DYN}$", "+FP", "Original"]
+                # "+FP",
+                style_order = [r"+FP$_{DYN}$",  "+FP", "Original"]
                 y_max = 100
                 # markers = [',', '.'
                 markers = None
@@ -613,26 +617,28 @@ if __name__ == '__main__':
         It is done for each experiment.
     """
 
-    # experiments = {1: {'new_clients': 'new_clients_False_train_False', 'local_epochs': '1_local_epochs'},
-    #               2: {'new_clients': 'new_clients_True_train_False', 'local_epochs': '1_local_epochs'},
-    #               3: {'new_clients': 'new_clients_True_train_True', 'local_epochs': '1_local_epochs'},
-    #               4: {'new_clients': 'new_clients_True_train_True', 'local_epochs': '2_local_epochs'}}
-    experiments = {1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
-         'comment': 'set', 'compression': 'no', 'local_epochs': '1_local_epochs', 'dynamic_data': "synthetic"}
-        # ,
-        #            2: {'algorithm': 'None', 'new_client': 'True', 'new_client_train': 'False',
-        # 'class_per_client': 2,
-        # 'comment': 'set', 'compression': "dls_compredict", 'local_epochs': '1_local_epochs', 'dynamic_data': "no"}
+    # 1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
+    #     'comment': 'set', 'compression': 'no', 'local_epochs': '1_local_epochs', 'dynamic_data': "synthetic"},
+    experiments = {
+        1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
+                    'comment': 'set', 'compression': 'no', 'local_epochs': '1_local_epochs', 'dynamic_data': "synthetic"},
+                   2: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
+         'comment': 'set', 'compression': 'no', 'local_epochs': '1_local_epochs', 'dynamic_data': "synthetic_global"}
                    }
 
-    strategies = ['FedAVG', 'FedPredict', 'FedPredict_Dynamic', 'CDA-FedAvg_with_FedPredict', 'CDA-FedAvg_with_FedPredict_Dynamic', 'CDA-FedAvg']
+    # experiments = {
+    #     1: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
+    #         'comment': 'set', 'compression': 'no', 'local_epochs': '1_local_epochs', 'dynamic_data': "synthetic"}
+    # }
+
+    strategies = ['FedAVG', 'FedPredict', 'FedPredict_Dynamic', 'CDA-FedAvg_with_FedPredict', 'CDA-FedAvg_with_FedPredict_Dynamic', 'CDA-FedAvg', 'FedPer']
     # 'FedPredict', 'FedYogi_with_FedPredict', 'FedKD_with_FedPredict', 'FedAVG', 'FedYogi', 'FedPer', 'FedProto', 'FedKD'
     # pocs = [0.1, 0.2, 0.3]
     fractions_fit = [0.3]
     # datasets = ['MNIST', 'CIFAR10']
     datasets = ['EMNIST', 'WISDM-P', 'WISDM-WATCH']
     alpha = [0.1, 1.0]
-    rounds = 50
+    rounds = 100
     clients = '20'
     model = 'CNN_3'
     type_t = 'torch'
