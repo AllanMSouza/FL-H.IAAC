@@ -180,7 +180,9 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
     def create_folder(self, strategy_name):
 
         directory = """{}_saved_weights/{}/""".format(strategy_name.lower(), self.model_name)
+        print("di: ", directory)
         if Path(directory).exists():
+            print("re:")
             shutil.rmtree(directory)
         for i in range(self.num_clients):
             Path("""{}_saved_weights/{}/{}/""".format(strategy_name.lower(), self.model_name, i)).mkdir(
@@ -316,7 +318,6 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
         clients_parameters = []
         clients_num_examples_list = []
         clients_ids = []
-        classes_proportion_list = []
         last_layer_parameters = []
         patterns = []
         self.report += """\n ------- Rodada {} -------""".format(server_round)
@@ -327,18 +328,16 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
             clients_ids.append(client_id)
             parameters = fl.common.parameters_to_ndarrays(fit_res.parameters)
             num_examples = fit_res.num_examples
-            classes_proportion = list(fit_res.metrics['local_classes'])
             clients_parameters.append(parameters)
             last_layer_parameters.append(parameters)
             patterns.append(pattern)
             self.report += """\n cliente {} padrao {}""".format(client_id, pattern)
             clients_num_examples_list.append(num_examples)
-            classes_proportion_list.append(classes_proportion)
             print("""clientee {} padrao {} rodada {}""".format(client_id, pattern, server_round))
             self.client_last_layer[pattern] = parameters
 
-        self.aggregate_last_layer_parameters(last_layer_parameters, patterns, clients_num_examples_list, classes_proportion_list,
-                                             self.n_classes, server_round)
+        # self.aggregate_last_layer_parameters(last_layer_parameters, patterns, clients_num_examples_list, classes_proportion_list,
+        #                                      self.n_classes, server_round)
 
         if server_round == self.num_rounds:
 
@@ -355,9 +354,9 @@ class FedPredictDynamicBaseServer(FedAvgBaseServer):
         else:
             global_parameter = self.previous_global_parameters[server_round]
 
-        aggregated_classes_proportion = self.weigthed_classes_proportion(clients_num_examples_list, classes_proportion_list)
+        # aggregated_classes_proportion = self.weigthed_classes_proportion(clients_num_examples_list, classes_proportion_list)
 
-        print("proporcao: ", aggregated_classes_proportion)
+        # print("proporcao: ", aggregated_classes_proportion)
 
         # for i in range(len(self.client_last_layer)):
         #

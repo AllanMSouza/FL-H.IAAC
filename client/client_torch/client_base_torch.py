@@ -149,7 +149,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				self.learning_rate = 0.01
 				self.optimizer = torch.optim.SGD(
 					self.model.parameters(), lr=self.learning_rate, momentum=0.9)
-			elif self.dataset in ['ExtraSensory', 'WISDM-WATCH', 'WISDM-P']:
+			elif self.dataset in ['ExtraSensory', 'WISDM-WATCH', 'WISDM-P', 'Cologne']:
 				self.learning_rate = 0.001
 				# self.loss = nn.MSELoss()
 				self.optimizer = torch.optim.RMSprop(self.model.parameters(), lr=self.learning_rate)
@@ -164,6 +164,15 @@ class ClientBaseTorch(fl.client.NumPyClient):
 	def _create_base_directory(self, type, strategy_name, new_clients, new_clients_train, dynamic_data, n_clients, model_name, dataset, class_per_client, alpha, n_rounds, local_epochs, comment, compression, args):
 
 		return f"logs/{type}/{strategy_name}/new_clients_{new_clients}_train_{new_clients_train}_dynamic_data_{dynamic_data}/{n_clients}/{model_name}/{dataset}/classes_per_client_{class_per_client}/alpha_{alpha}/{n_rounds}_rounds/{local_epochs}_local_epochs/{comment}_comment/{str(compression)}_compression"
+
+	def shuffle(self, _points, _labels):
+		idxs = np.arange(len(_labels))
+		np.random.seed(self.cid)
+		np.random.shuffle(idxs)
+		_points = _points[idxs]
+		_labels = _labels[idxs]
+
+		return _points, _labels
 
 	def load_data(self, dataset_name, n_clients, batch_size=32, server_round=None, train=None):
 		try:
@@ -199,9 +208,9 @@ class ClientBaseTorch(fl.client.NumPyClient):
 							"""Round < {} and Cid == {} and Pattern != {}""".format(server_round, self.cid, pattern))[
 							'Pattern'].unique().tolist()
 					print("patter: ", past_patterns)
-					# trainLoader, traindataset = self.concatenate_dataset(traindataset, past_patterns, batch_size,
-					# 														   dataset_name, n_clients, pattern, alpha)
-					# print("""alpha {} {} load dados cliente {} padrao {} rodada {} treino {}""".format(alpha, self.dynamic_data, self.cid, pattern, server_round, train))
+					trainLoader, traindataset = self.concatenate_dataset(traindataset, past_patterns, batch_size,
+																			   dataset_name, n_clients, pattern, alpha)
+					print("""alpha {} {} load dados cliente {} padrao {} rodada {} treino {}""".format(alpha, self.dynamic_data, self.cid, pattern, server_round, train))
 
 			return trainLoader, testLoader, traindataset, testdataset
 		except Exception as e:
@@ -212,7 +221,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 		try:
 
-			if dataset_name in ['WISDM-WATCH', 'WISDM-P']:
+			if dataset_name in ['WISDM-WATCH', 'WISDM-P', 'Cologne']:
 				data = []
 				targets = []
 				for sample in traindataset:
@@ -273,7 +282,20 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 				data_list, target_list = self.get_target_and_samples_from_dataset(traindataset, dataset_name)
 
+				data_list, target_list = self.shuffle(data_list, target_list)
+
 			print("dt: ", data_list.shape)
+
+			current_samples, current_targets = self.get_target_and_samples_from_dataset(current_traindataset,
+																						dataset_name)
+			print("shapes: ", current_samples.shape, current_targets.shape, data_list.shape, target_list.shape)
+			print("""antes juntar unique {} cliente {}""".format(np.unique(current_targets, return_counts=True),
+																 self.cid))
+
+			current_samples, current_targets = self.shuffle(current_samples, current_targets)
+
+			data_list = np.concatenate((data_list, current_samples), axis=0)
+			target_list = np.concatenate((target_list, current_targets), axis=0)
 
 			current_traindataset = self.set_dataset(current_traindataset, dataset_name, data_list, target_list)
 
@@ -284,7 +306,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			g = torch.Generator()
 			g.manual_seed(self.cid)
 
-			trainLoader = DataLoader(current_traindataset, batch_size, shuffle=True, worker_init_fn=seed_worker,
+			trainLoader = DataLoader(current_traindataset, batch_size, shuffle=False, worker_init_fn=seed_worker,
 									 generator=g)
 
 			return trainLoader, current_traindataset
@@ -354,12 +376,13 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				# else:
 				# 	mid_dim = 400
 				model =  GRU(input_shape=10, num_classes=self.num_classes)
-			elif self.model_name == 'GRU' and self.dataset in ['WISDM-WATCH', 'WISDM-P']:
+			elif self.model_name == 'GRU' and self.dataset in ['WISDM-WATCH', 'WISDM-P', 'Cologne']:
 				# if self.dataset in ['EMNIST', 'MNIST']:
 				# 	mid_dim = 256
 				# else:
 				# 	mid_dim = 400
-				model =  GRU(input_shape=6, num_classes=self.num_classes)
+				input_shape = {'WISDM-WATCH': 6, 'WISDM-P': 6, 'Cologne': 11}
+				model =  GRU(input_shape=input_shape, num_classes=self.num_classes)
 
 			if model is not None:
 				model.to(self.device)
@@ -374,7 +397,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 		try:
 
-			if dataset_name in ['WISDM-WATCH']:
+			if dataset_name in ['WISDM-WATCH', 'WISDM-P', 'Cologne']:
 
 				return torch.utils.data.TensorDataset(torch.from_numpy(x).to(dtype=torch.float32), torch.from_numpy(y))
 
@@ -485,7 +508,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 				max_local_steps = self.local_epochs
 
-				self.classes_proportion, self.imbalance_level = self._calculate_classes_proportion()
+				# self.classes_proportion, self.imbalance_level = self._calculate_classes_proportion()
 
 				# self.device = 'cuda:0'
 				print("Cliente: ", self.cid, " rodada: ", server_round, " Quantidade de camadas: ", len([i for i in self.model.parameters()]), " device: ", self.device)
@@ -560,7 +583,6 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 			fit_response = {
 				'cid': self.cid,
-				'local_classes': self.classes_proportion,
 				'pattern': pattern
 			}
 
@@ -703,18 +725,23 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			print("evaluate")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def _calculate_classes_proportion(self):
+	def _calculate_classes_proportion(self, limit=False):
 
 		try:
 			# return [1] * self.num_classes, 0
 			correction = 3 if self.dataset == 'GTSRB' else 1
+
 			traindataset = self.traindataset
-			if self.dataset in ['WISDM-WATCH', 'WISDM-P']:
+			if self.dataset in ['WISDM-WATCH', 'WISDM-P', 'Cologne']:
 				y_train = []
 				for i, (x, y) in enumerate(self.trainloader):
 					y_train += np.array(y).astype(int).tolist()
 			else:
 				y_train = list(traindataset.targets)
+
+			if limit:
+				lentgh = min(len(self.traindataset), int(len(self.traindataset) * 0.2))
+				y_train = y_train[-lentgh:]
 			proportion = np.array([0] * self.num_classes)
 
 			unique_classes_list = pd.Series(y_train).unique().tolist()

@@ -3,7 +3,7 @@ import os
 import random
 import time
 
-from dataset_utils.utils import save_dataloaders, save_dataloaders_widsm
+from dataset_utils.utils import save_dataloaders, save_dataloaders_widsm, save_dataloaders_cologne
 
 trainloaders = []
 valloaders = []
@@ -52,6 +52,17 @@ if __name__ == '__main__':
                      float(args.alpha),
                      args.data_dir,
                      int(args.sim_id))
+    elif args.dataset == 'Cologne':
+        save_dataloaders_cologne(args.dataset, int(args.clients),
+                               int(args.num_classes),
+                               bool(args.niid),
+                               bool(args.balance), args.partition,
+                               int(args.class_per_client),
+                               int(args.batch_size),
+                               float(args.train_perc),
+                               float(args.alpha),
+                               args.data_dir,
+                               int(args.sim_id))
     else:
         save_dataloaders(args.dataset, int(args.clients),
                          int(args.num_classes),

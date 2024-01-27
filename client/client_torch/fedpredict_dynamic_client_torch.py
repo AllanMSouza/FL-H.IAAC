@@ -159,7 +159,7 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 			last_proportion = ast.literal_eval(self.client_information_file['classes_distribution'].tolist()[-1])
 			last_training = self.client_information_file['round_of_last_fit'].tolist()[-1]
 
-			current_proportion, imbalance_level = self._calculate_classes_proportion()
+			current_proportion, imbalance_level = self._calculate_classes_proportion(limit=True)
 			fraction_of_classes = sum([1 if i > 0 else 0 for i in current_proportion])/self.num_classes
 
 			if len(last_proportion) != len(current_proportion) or last_training == -1:
@@ -193,8 +193,12 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 	def read_fedpredict_client_file(self):
 
 		try:
-
-			df = pd.read_csv(self.client_information_filename)
+			if os.path.isfile(self.client_information_filename):
+				df = pd.read_csv(self.client_information_filename)
+			else:
+				df = pd.DataFrame({'current_round': [-1], 'classes_distribution': [[]], 'round_of_last_fit': [-1],
+				 'round_of_last_evaluate': [-1], 'acc_of_last_fit': [0], 'first_round': [-1],
+				 'acc_of_last_evaluate': [0]})
 
 			return df
 

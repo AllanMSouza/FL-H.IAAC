@@ -85,7 +85,7 @@ class FedPredictDynamicServerTorch(FedPredictDynamicBaseServer):
             self.learning_rate = 0.01
             self.optimizer = torch.optim.SGD(
                 self.model.parameters(), lr=self.learning_rate, momentum=0.9)
-        elif self.dataset in ['ExtraSensory', 'WISDM-WATCH', 'WISDM-P']:
+        elif self.dataset in ['ExtraSensory', 'WISDM-WATCH', 'WISDM-P', 'Cologne']:
             self.learning_rate = 0.001
             # self.loss = nn.MSELoss()
             self.optimizer = torch.optim.RMSprop(self.model.parameters(), lr=self.learning_rate)
@@ -94,7 +94,7 @@ class FedPredictDynamicServerTorch(FedPredictDynamicBaseServer):
 
         try:
 
-            if dataset_name in ['WISDM-WATCH', 'WISDM-P']:
+            if dataset_name in ['WISDM-WATCH', 'WISDM-P', 'Cologne']:
                 data = []
                 targets = []
                 for sample in traindataset:
@@ -121,7 +121,7 @@ class FedPredictDynamicServerTorch(FedPredictDynamicBaseServer):
 
         try:
 
-            if dataset_name in ['WISDM-WATCH', 'WISDM-P']:
+            if dataset_name in ['WISDM-WATCH', 'WISDM-P', 'Cologne']:
 
                 return torch.utils.data.TensorDataset(torch.from_numpy(x).to(dtype=torch.float32), torch.from_numpy(y))
 
@@ -355,7 +355,7 @@ class FedPredictDynamicServerTorch(FedPredictDynamicBaseServer):
             # return [1] * self.num_classes, 0
             correction = 3 if self.dataset == 'GTSRB' else 1
             traindataset = self.traindataset
-            if self.dataset in ['WISDM-WATCH', 'WISDM-P']:
+            if self.dataset in ['WISDM-WATCH', 'WISDM-P', 'Cologne']:
                 y_train = []
                 for i, (x, y) in enumerate(self.trainloader):
                     y_train += np.array(y).astype(int).tolist()
