@@ -112,7 +112,7 @@ def process_dataset():
     import os
 
     path = "/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/dataset_utils/data/cologne/data/" # use your path
-    all_files = os.listdir(path)[:1000]
+    all_files = os.listdir(path)[:400]
 
     li = []
 
@@ -152,7 +152,7 @@ def process_dataset():
     return df
 
 
-def normalize_data(df):
+def normalize_data(df, n_classes):
     """
     Normalize the data in the DataFrame.
 
@@ -169,37 +169,49 @@ def normalize_data(df):
         df[col] = (df[col] - df[col].min()) / (df[col].max() - df[col].min())
 
     cols = ['co2', 'co', 'fuel_consumption']
-    n_classes = 10
 
     for col in tqdm(cols):
         sorted = df[col].to_numpy()[np.argsort(df[col].tolist())]
         space = len(sorted)//n_classes
         bins = []
+        print("we ", col, space, len(sorted), n_classes)
         for j in range(0, len(sorted) - space, space):
-            bin = sorted[j+space]
-            if bin not in bins:
-                bins.append(bin)
+            bin1 = sorted[j]
+            bin2 = sorted[j+space]
+            inte = (bin1, bin2)
+            if inte == (0.0, 0.0):
+                continue
+            if inte not in bins:
+                bins.append(inte)
 
-        bins = [0] + bins
-
-        bins = [(bins[i-1], bins[i]) for i in range(1, len(bins))]
-
+        # bins = [0] + bins
+        #
+        # bins = [(bins[i-1], bins[i]) for i in range(1, len(bins))]
+        print(bins, len(bins))
         bins = pd.IntervalIndex.from_tuples(bins)
 
-        r = pd.cut(df[col], bins)
-        r = np.array([i for i in r.tolist()])
+        r = pd.cut(df[col], bins, labels=range(len(bins)), right=True).to_numpy()
+        print("r: ", r.shape)
         unique = pd.Series(r).unique().tolist()
+
         convert = {unique[i]: i for i in range(len(unique))}
-        df[col+"_label"] = df[col].map(convert)
+
+        print(convert)
+        # exit()
+        df[col+"_label"] = np.array(df[col].map(convert), dtype=np.int32)
+        print(df[col+"_label"].value_counts())
+        print(df[~df[col+"_label"].isin(convert.values())])
+        missing = df[~df[col+"_label"].isin(convert.values())].iloc[0][col+"_label"]
+        print(missing)
+        df[col+"_label"] = np.array([6 if i == missing else i for i in df[col+"_label"].tolist()])
 
     df = df.dropna()
-
     print(np.unique(df['fuel_consumption_label'].to_numpy(), return_counts=True))
 
     return df
 
 
-def get_processed_dataframe(reprocess=False, modality='watch'):
+def get_processed_dataframe(reprocess=False, modality='watch', n_classes=10):
     """
     Load or reprocess the processed WISDM dataset.
 
@@ -213,7 +225,7 @@ def get_processed_dataframe(reprocess=False, modality='watch'):
     # if os.path.exists(dir_path + f'processed_cologne.csv') and not reprocess and False:
     #     return pd.read_csv(dir_path + f'processed_cologne.csv', index_col=0)
     processed_df = process_dataset()
-    processed_df = normalize_data(processed_df)
+    processed_df = normalize_data(processed_df, n_classes)
     processed_df.to_csv(dir_path + f'processed_cologne.csv')
     return processed_df
 
@@ -234,35 +246,49 @@ def create_dataset(df, clients=None, window=200, overlap=0.2):
     # 'timestamp', 'x', 'y', 'speed', 'accel', 'noise', 'co2', 'co',
     #        'fuel_consumption', 'road_id', 'route_id', 'cid', 'co2_label',
     #        'co_label', 'fuel_consumption_label']
-    if clients is None:
-        clients = list(range(len(df['cid'].unique().tolist())))
+    # if clients is None:
+    clients = list(range(len(df['cid'].unique().tolist())))
     c_idxs = {}
     idx = 0
     X = []
     Y = []
+    label_column = 'fuel_consumption_label'
     print("ja: ", window)
-    print("co label: ", df['co_label'])
+
+    print("antes: ", np.unique(df[label_column].tolist(), return_counts=True))
+
     for client in tqdm(clients):
         c_idxs[client] = []
         data = df[df['cid'] == client].sort_values(by='timestamp')
+        # print("r: ", np.unique(data[label_column].tolist(), return_counts=True))
         data = data.dropna()
-        labels = data['co_label'].tolist()
+
+        labels = data[label_column].tolist()
         future_labels = []
-        for i in range(len(labels)-1):
-            future_labels.append(labels[i+1])
-        data = data.tail(len(data) - 1)
-        data['co_label'] = np.array(future_labels)
-        unique_labels = data['co_label'].unique()
+        future_step = window
+        for i in range(len(labels)-future_step):
+            future_labels.append(labels[i+future_step])
+        data = data.tail(len(data) - future_step)
+        if len(future_labels) == 0:
+            continue
+        print("futuro: ", len(future_labels))
+        data[label_column] = np.array(future_labels)
+        unique_labels = data[label_column].unique()
+        # print(unique_labels)
+        # ['timestamp', 'speed', 'accel', 'noise', 'co2', 'co',
+        #        'fuel_consumption', 'road_id', 'route_id', 'cid']
+
         for activity in unique_labels:
-            df_f = data[data['co_label'] == activity]
+            df_f = data[data[label_column] == activity]
             for i in range(window, len(df_f), 1):
                 if i + window > len(df_f):
                     continue
-                X.append(df_f[['timestamp', 'speed', 'accel', 'noise', 'co2', 'co',
-       'fuel_consumption', 'road_id', 'route_id', 'cid']].iloc[i:i + window].to_numpy().tolist())
+                X.append(df_f[['timestamp', 'speed', 'accel', 'noise', 'co2', 'co', 'fuel_consumption']].iloc[i:i + window].to_numpy().tolist())
                 Y.append(activity)
                 c_idxs[client].append(idx)
                 idx += 1
+        # print("r:2 ", np.unique(data[label_column].tolist(), return_counts=True))
+    # print("r3: ", np.unique(Y, return_counts=True))
 
     return (X, Y), c_idxs
 
@@ -288,7 +314,7 @@ def split_dataset(data: dict, client_mapping_train: dict, client_mapping_test: d
     return WISDMDataset(train_data), WISDMDataset(test_data), {'train': mapping_train, 'test': mapping_test}
 
 
-def load_dataset_cologne(window=10, overlap=0, reprocess=True, split=0.8):
+def load_dataset_cologne(n_classes=10, window=50, overlap=0, reprocess=True, split=0.8):
     """
     Load the WISDM dataset, either from disk or by reprocessing it based on the specified parameters.
 
@@ -307,7 +333,7 @@ def load_dataset_cologne(window=10, overlap=0, reprocess=True, split=0.8):
         return torch.load(dir_path + f'cologne.dt')
 
     if reprocess or not os.path.exists(dir_path + f'cologne.dt'):
-        processed_df = get_processed_dataframe(reprocess=reprocess)
+        processed_df = get_processed_dataframe(reprocess=reprocess, n_classes=n_classes)
         print('pro: ', processed_df)
         clients = list(range(1000))
         data, idx = create_dataset(processed_df, clients=None, window=window, overlap=overlap)

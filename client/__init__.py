@@ -1,5 +1,5 @@
 from client.client_tf import FedAvgClientTf, FedLocalClientTf, FedPerClientTf, FedProtoClientTf
-from client.client_torch import FedAvgClientTorch, FedProtoClientTorch, FedPerClientTorch, FedLocalClientTorch, FedAvgMClientTorch, QFedAvgClientTorch, FedYogiClientTorch, FedClassAvgClientTorch, FedPredictClientTorch, FedClassAvg_with_FedPredictClientTorch, FedProxClientTorch, FedPAQClientTorch, FetSGDClientTorch, FedKDClientTorch, FedDistillClientTorch, FedYogiWithFedPredictClientTorch, FedClusteringClientTorch, FedAlaClientTorch, FedKDWithFedPredictClientTorch, FedSparsificationClientTorch, FedPredictDynamicClientTorch, CDAFedAvgClientTorch, FedCDMClientTorch, CDAFedAvgWithFedPredictDynamicClientTorch, CDAFedAvgWithFedPredictClientTorch
+from client.client_torch import FedAvgClientTorch, FedProtoClientTorch, FedPerClientTorch, FedLocalClientTorch, FedAvgMClientTorch, QFedAvgClientTorch, FedYogiClientTorch, FedClassAvgClientTorch, FedPredictClientTorch, FedClassAvg_with_FedPredictClientTorch, FedProxClientTorch, FedPAQClientTorch, FetSGDClientTorch, FedKDClientTorch, FedDistillClientTorch, FedYogiWithFedPredictClientTorch, FedClusteringClientTorch, FedAlaClientTorch, FedKDWithFedPredictClientTorch, FedSparsificationClientTorch, FedPredictDynamicClientTorch, CDAFedAvgClientTorch, FedCDMClientTorch, CDAFedAvgWithFedPredictDynamicClientTorch, CDAFedAvgWithFedPredictClientTorch, FedCDMWithFedPredictDynamicClientTorch, FedCDMWithFedPredictClientTorch
 
 
 
@@ -31,5 +31,7 @@ __all__ = [
     "CDAFedAvgClientTorch",
     "FedCDMClientTorch",
     "CDAFedAvgWithFedPredictDynamicClientTorch",
-    "CDAFedAvgWithFedPredictClientTorch"
+    "CDAFedAvgWithFedPredictClientTorch",
+    "FedCDMWithFedPredictDynamicClientTorch",
+    "FedCDMWithFedPredictClientTorch"
 ]

@@ -217,7 +217,7 @@ class CDAFedAvgWithFedPredictDynamicClientTorch(CDAFedAvgClientTorch):
 			print("Set parameters to model evaluate dyn")
 			print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, self.cid), type(e).__name__, e)
 
-	def model_eval(self):
+	def model_eval(self, server_round):
 		try:
 			self.model.to(self.device)
 			self.model.eval()
@@ -247,7 +247,7 @@ class CDAFedAvgWithFedPredictDynamicClientTorch(CDAFedAvgClientTorch):
 					output = self.model(x)
 
 					print("""cliente {} rodada {} simi {}""".format(self.cid, self.server_round, self.similarity))
-					if self.similarity != 1:
+					if self.similarity != 1 and server_round > 10:
 						output = torch.multiply(output, torch.from_numpy(self.current_proportion * (1 - self.similarity)))
 					loss = self.loss(output, y)
 					test_loss += loss.item() * y.shape[0]

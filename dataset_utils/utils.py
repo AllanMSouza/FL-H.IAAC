@@ -376,19 +376,20 @@ def save_dataloaders_cologne(dataset_name="Cologne", num_clients=10, num_classes
                  class_per_client=2,
                  batch_size=10, train_size=0.8, alpha=0.1, dataset_dir="./dataset/", sim_id=0):
 
-    num_classes = 12
 
     modality = ""
-    dataset = load_dataset_cologne(reprocess=False)
+    window = 10
+    n_classes = 15
+    dataset = load_dataset_cologne(n_classes=n_classes, window=window, reprocess=False)
 
-    num_classes = 10
+
     partition_type = 'dirichlet'
     # dataset_name = 'WISDM-WATCH'
     client_num_per_round = 6
 
     partition, client_num_in_total, client_num_per_round = get_partition(partition_type,
                                                                          dataset_name,
-                                                                         num_classes,
+                                                                         n_classes,
                                                                          num_clients,
                                                                          client_num_per_round,
                                                                          alpha,
@@ -442,8 +443,8 @@ def save_dataloaders_cologne(dataset_name="Cologne", num_clients=10, num_classes
         # with open(filename_test, 'wb') as handle:
         #     pickle.dump(index_test, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-        data_train = {"X": data_train.tolist(), "Y": target_train.tolist()}
-        data_test = {"X": data_test.tolist(), "Y": target_test.tolist()}
+        data_train = {"X": data_train.tolist(), "Y": target_train.astype(int).tolist()}
+        data_test = {"X": data_test.tolist(), "Y": target_test.astype(int).tolist()}
 
         for df, filename in zip([data_train, data_test], [filename_train, filename_test]):
 

@@ -149,9 +149,12 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				self.learning_rate = 0.01
 				self.optimizer = torch.optim.SGD(
 					self.model.parameters(), lr=self.learning_rate, momentum=0.9)
-			elif self.dataset in ['ExtraSensory', 'WISDM-WATCH', 'WISDM-P', 'Cologne']:
+			elif self.dataset in ['ExtraSensory', 'WISDM-WATCH', 'WISDM-P']:
 				self.learning_rate = 0.001
 				# self.loss = nn.MSELoss()
+				self.optimizer = torch.optim.RMSprop(self.model.parameters(), lr=self.learning_rate)
+			elif self.dataset == 'Cologne':
+				self.learning_rate = 0.01
 				self.optimizer = torch.optim.RMSprop(self.model.parameters(), lr=self.learning_rate)
 			# self.device = 'cpu'
 			# self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate) if self.model_name == "Mobilenet" else torch.optim.SGD(self.model.parameters(), lr=self.learning_rate)
@@ -381,8 +384,9 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				# 	mid_dim = 256
 				# else:
 				# 	mid_dim = 400
-				input_shape = {'WISDM-WATCH': 6, 'WISDM-P': 6, 'Cologne': 11}
-				model =  GRU(input_shape=input_shape, num_classes=self.num_classes)
+				input_shape = {'WISDM-WATCH': 6, 'WISDM-P': 6, 'Cologne': 2}[self.dataset]
+				size = {'WISDM-WATCH': 200, 'WISDM-P': 200, 'Cologne': 10}[self.dataset]
+				model =  GRU(input_shape=input_shape, sequence_length=size, num_classes=self.num_classes)
 
 			if model is not None:
 				model.to(self.device)
@@ -595,7 +599,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			print("fit")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def model_eval(self):
+	def model_eval(self, server_round):
 		try:
 			self.model.to(self.device)
 			self.model.eval()
@@ -693,9 +697,9 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			size_of_config = self._get_size_of_dict(config)
 			self.server_round = server_round
 			if self.model_name in ['GRU']:
-				loss, accuracy, test_num, predictions, output, labels = self.model_eval()
+				loss, accuracy, test_num, predictions, output, labels = self.model_eval(server_round)
 			else:
-				loss, accuracy, test_num, predictions, output, labels = self.model_eval()
+				loss, accuracy, test_num, predictions, output, labels = self.model_eval(server_round)
 			data = [config['round'], self.cid, size_of_parameters, size_of_config, loss, accuracy, nt]
 			self._write_output(filename=self.evaluate_client_filename,
 							   data=data)

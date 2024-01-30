@@ -1,5 +1,5 @@
-from client.client_torch import FedAvgClientTorch
-from ..fedpredict_core import fedpredict_dynamic_client
+from client.client_torch import FedCDMClientTorch
+from ..fedpredict_core import fedpredict_client
 from torch.nn.parameter import Parameter
 import torch
 from pathlib import Path
@@ -16,7 +16,7 @@ warnings.simplefilter("ignore")
 import logging
 # logging.getLogger("torch").setLevel(logging.ERROR)
 
-class FedPredictDynamicClientTorch(FedAvgClientTorch):
+class FedCDMWithFedPredictClientTorch(FedCDMClientTorch):
 
 	def __init__(self,
 				 cid,
@@ -26,7 +26,7 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 				 epochs=1,
 				 model_name         = 'DNN',
 				 client_selection   = False,
-				 strategy_name      ='FedPredict_Dynamic',
+				 strategy_name      ='FedCDM_with_FedPredict',
 				 aggregation_method = 'None',
 				 dataset            = '',
 				 perc_of_clients    = 0,
@@ -75,6 +75,7 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 	def save_client_information_fit(self, server_round, acc_of_last_fit, predictions):
 
 		try:
+			super().save_client_information_fit(server_round, acc_of_last_fit, predictions)
 			self.classes_proportion, self.imbalance_level = self._calculate_classes_proportion()
 			df = pd.read_csv(self.client_information_filename)
 			row = df.iloc[0]
@@ -251,58 +252,11 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 				pattern = config['pattern']
 				print("""cliente {} mudou padrao {}""".format(self.cid, pattern))
 			local_data_information = {'similarity': similarity, 'imbalance_level': imbalance_level, 'fraction_of_classes': fraction_of_classes}
-			self.model = fedpredict_dynamic_client(self.filename, self.model, global_parameters, config, mode=None, local_client_information=local_data_information, current_proportion=current_proportion, pattern=pattern, cid=self.cid)
+			self.model = fedpredict_client(self.filename, self.model, global_parameters, config, mode=None)
 
 		except Exception as e:
 			print("Set parameters to model evaluate dyn")
 			print('Error on line {} client id {}'.format(sys.exc_info()[-1].tb_lineno, self.cid), type(e).__name__, e)
-
-	def model_eval(self, server_round):
-		try:
-			self.model.to(self.device)
-			self.model.eval()
-
-			test_acc = 0
-			test_loss = 0
-			test_num = 0
-
-			predictions = np.array([])
-			labels = np.array([])
-
-			with torch.no_grad():
-				for x, y in self.testloader:
-					if type(x) == type([]):
-						x[0] = x[0].to(self.device)
-					else:
-						x = x.to(self.device)
-					# if self.dataset == 'EMNIST':
-					# 	x = x.view(-1, 28 * 28)
-					if type(y) == tuple:
-						y = torch.from_numpy(np.array(y).astype(int))
-					y = torch.from_numpy(np.array(y).astype(int))
-					self.optimizer.zero_grad()
-					y = y.to(self.device)
-					y = torch.tensor(y)
-					output = self.model(x)
-
-					print("""cliente {} rodada {} simi {}""".format(self.cid, self.server_round, self.similarity))
-					if self.similarity != 1 and server_round > 10:
-						output = torch.multiply(output, torch.from_numpy(self.current_proportion * (1 - self.similarity)))
-					loss = self.loss(output, y)
-					test_loss += loss.item() * y.shape[0]
-					prediction = torch.argmax(output, dim=1)
-					predictions = np.append(predictions, prediction.cpu())
-					labels = np.append(labels, y.cpu())
-					test_acc += (torch.sum(prediction == y)).item()
-					test_num += y.shape[0]
-
-			loss = test_loss / test_num
-			accuracy = test_acc / test_num
-
-			return loss, accuracy, test_num, predictions, output, labels
-		except Exception as e:
-			print("model_eval")
-			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
 	def calculate_bytes(self, parameters):
 

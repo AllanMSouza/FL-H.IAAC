@@ -849,7 +849,7 @@ class ManageDatasets():
             print("load gtsrb")
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-    def load_wisdm(self, n_clients, filename_train, filename_test, non_iid=False, batch_size=32, alpha=0.1):
+    def load_wisdm(self, n_clients, filename_train, filename_test, non_iid=False, batch_size=32, alpha=0.1, dataset_name=None):
 
         try:
 
@@ -916,7 +916,10 @@ class ManageDatasets():
             new_x = []
             for i in range(len(x)):
                 row = x[i]
-                new_x.append(row[:, [1, 2, 3, 4, 5, 6]])
+                if dataset_name != 'Cologne':
+                    new_x.append(row[:, [1, 2, 3, 4, 5, 6]])
+                else:
+                    new_x.append(row[:, [1, 2]])
 
             x = np.array(new_x)
 
@@ -1032,7 +1035,7 @@ class ManageDatasets():
                 return self.load_UCIHAR(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
 
             elif dataset_name in ['WISDM-WATCH', 'WISDM-P', 'Cologne']:
-                return self.load_wisdm(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid)
+                return self.load_wisdm(n_clients=n_clients, filename_train=filename_train, filename_test=filename_test, non_iid=non_iid, dataset_name=dataset_name)
 
         except Exception as e:
             print("select_dataset")

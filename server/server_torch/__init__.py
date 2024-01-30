@@ -23,6 +23,8 @@ from server.server_torch.cda_fedavg_server_torch import CDAFedAvgServerTorch
 from server.server_torch.fedcdm_server_torch import FedCDMServerTorch
 from server.server_torch.cda_fedavg_with_fedpredict_dynamic_server_torch import CDAFedAvgWithFedPredictDynamicServerTorch
 from server.server_torch.cda_fedavg_with_fedpredict_server_torch import CDAFedAvgWithFedPredictServerTorch
+from server.server_torch.fedcdm_with_fedpredict_dynamic_server_torch import FedCDMWithFedPredictDynamicServerTorch
+from server.server_torch.fedcdm_with_fedpredict_server_torch import FedCDMWithFedPredictServerTorch
 
 __all__ = [
     "FedProtoServerTorch",
@@ -49,5 +51,7 @@ __all__ = [
     "CDAFedAvgServerTorch",
     "FedCDMServerTorch",
     "CDAFedAvgWithFedPredictDynamicServerTorch",
-    "CDAFedAvgWithFedPredictServerTorch"
+    "CDAFedAvgWithFedPredictServerTorch",
+    "FedCDMWithFedPredictDynamicServerTorch",
+    "FedCDMWithFedPredictServerTorch"
 ]

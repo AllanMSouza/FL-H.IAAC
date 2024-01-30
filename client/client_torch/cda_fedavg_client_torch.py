@@ -74,7 +74,17 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 
 	def load_data(self, dataset_name, n_clients, batch_size=32, server_round=None, train=None):
 		try:
-			trainLoader, testLoader, traindataset, testdataset = super().load_data(dataset_name, n_clients, batch_size=32, server_round=None, train=None)
+			trainLoader, testLoader, traindataset, testdataset = super().load_data(dataset_name, n_clients, batch_size=32, server_round=server_round, train=server_round)
+
+			pattern = self.cid
+			if server_round is not None and self.clients_pattern is not None:
+				row = self.clients_pattern.query("""Round == {} and Cid == {}""".format(server_round, self.cid))[
+					'Pattern'].tolist()
+				if len(row) != 1:
+					raise ValueError(
+						"""Pattern not found for client {}. The pattern may not exist or is duplicated""".format(
+							pattern))
+				pattern = int(row[0])
 
 			print("dd 1: ", self.drift_detected, server_round)
 			if self.drift_detected:
@@ -83,7 +93,7 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 					self.clients_pattern.query("""Round < {} and Cid == {} and Pattern != {}""".format(server_round, self.cid, pattern))[
 						'Pattern'].unique().tolist()
 				print("dd 2", past_patterns, server_round)
-				if len(past_patterns) >= 1:
+				if len(past_patterns) >= 1 and server_round not in self.rounds_to_change_pattern:
 					print("""Leu dataset maior do cliente {} na rodada {}""".format(self.cid, server_round))
 					trainLoader, traindataset = self.previous_balanced_dataset(traindataset, past_patterns, batch_size, dataset_name, n_clients, pattern)
 
@@ -114,7 +124,7 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 
 		try:
 
-			L = 1400
+			L = 3000
 			M = self.num_classes
 			samples_per_class = int(L/(M))
 
@@ -122,8 +132,8 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 
 			data_target = {i: [] for i in range(self.num_classes)}
 			for pattern in past_patterns:
-				trainLoader, testLoader, traindataset, testdataset = ManageDatasets(pattern,
-																					self.model_name).select_dataset(
+				trainLoader, testLoader, traindataset, testdataset = ManageDatasets(self.cid,
+																					self.model_name, pattern, False).select_dataset(
 					dataset_name, n_clients, self.class_per_client, self.alpha, self.non_iid, batch_size)
 
 				trainLoader = None
@@ -181,11 +191,11 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 			current_traindataset = self.set_dataset(current_traindataset, dataset_name, current_samples, current_targets)
 
 			def seed_worker(worker_id):
-				np.random.seed(0)
-				random.seed(0)
+				np.random.seed(self.cid)
+				random.seed(self.cid)
 
 			g = torch.Generator()
-			g.manual_seed(0)
+			g.manual_seed(self.cid)
 
 			trainLoader = DataLoader(current_traindataset, batch_size, shuffle=True, worker_init_fn=seed_worker,
 									 generator=g)
@@ -240,12 +250,12 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 			# if server_round in [int(self.n_rounds*0.3), int(self.n_rounds*0.7)]:
 			df = pd.read_csv(self.client_information_val_filename)
 			already_detected_drift = True if True in df['drift_detected'].tolist() else False
-			if server_round in [68, 69, 70, 71, 72, 73] and not already_detected_drift:
+			if server_round in [66, 67, 68, 69, 70, 71, 72] and not already_detected_drift:
 			# if server_round in [3, 7]:
 			# if r <= 0.1:
 				print("testar:")
-				drift_detected = self._drift_detection(Q, server_round)
-				# drift_detected = True
+				# drift_detected = self._drift_detection(Q, server_round)
+				drift_detected = True
 			else:
 				drift_detected = False
 			print("rodada: ", server_round, " drift detected: ", drift_detected, " cid: ", self.cid)
@@ -303,6 +313,7 @@ class CDAFedAvgClientTorch(FedAvgClientTorch):
 			df_val = pd.read_csv(self.client_information_val_filename)
 
 			self.drift_detected = True if True in df_val['drift_detected'].tolist() else False
+			print("detectado antes: ", self.drift_detected)
 
 			return df_train, df_val
 

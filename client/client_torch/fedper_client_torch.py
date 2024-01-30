@@ -102,6 +102,8 @@ class FedPerClientTorch(ClientBaseTorch):
 				fileObject = open(filename, "r")
 				jsonContent = fileObject.read()
 				aList = [np.array(i) for i in json.loads(jsonContent)]
+
+				print("fedper cliente: ", self.cid)
 				# Updating only the personalized layers, which were previously saved in a file
 				# for i in range(self.n_personalized_layers):
 				# 	parameters[size-self.n_personalized_layers+i] = aList[i]

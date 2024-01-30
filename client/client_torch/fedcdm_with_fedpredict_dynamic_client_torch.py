@@ -1,4 +1,4 @@
-from client.client_torch import FedAvgClientTorch
+from client.client_torch import FedCDMClientTorch
 from ..fedpredict_core import fedpredict_dynamic_client
 from torch.nn.parameter import Parameter
 import torch
@@ -16,7 +16,7 @@ warnings.simplefilter("ignore")
 import logging
 # logging.getLogger("torch").setLevel(logging.ERROR)
 
-class FedPredictDynamicClientTorch(FedAvgClientTorch):
+class FedCDMWithFedPredictDynamicClientTorch(FedCDMClientTorch):
 
 	def __init__(self,
 				 cid,
@@ -26,7 +26,7 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 				 epochs=1,
 				 model_name         = 'DNN',
 				 client_selection   = False,
-				 strategy_name      ='FedPredict_Dynamic',
+				 strategy_name      ='FedCDM_with_FedPredict_Dynamic',
 				 aggregation_method = 'None',
 				 dataset            = '',
 				 perc_of_clients    = 0,
@@ -75,6 +75,7 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 	def save_client_information_fit(self, server_round, acc_of_last_fit, predictions):
 
 		try:
+			super().save_client_information_fit(server_round, acc_of_last_fit, predictions)
 			self.classes_proportion, self.imbalance_level = self._calculate_classes_proportion()
 			df = pd.read_csv(self.client_information_filename)
 			row = df.iloc[0]

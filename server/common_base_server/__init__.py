@@ -22,6 +22,8 @@ from server.common_base_server.cda_fedavg_base_server import CDAFedAvgBaseServer
 from server.common_base_server.fedcdm_base_server import FedCDMBaseServer
 from server.common_base_server.cda_fedavg_with_with_fedpredict_dynamic_base_server import CDAFedAvgBaseServerWithFedPredictDynamic
 from server.common_base_server.cda_fedavg_with_with_fedpredict_base_server import CDAFedAvgBaseServerWithFedPredict
+from server.common_base_server.fedcdm_with_fedpredict_dynamic_base_server import FedCDMWithFedPredictDynamicBaseServer
+from server.common_base_server.fedcdm_with_fedpredict_base_server import FedCDMWithFedPredictBaseServer
 
 __all__ = [
     'FedAvgBaseServer',
@@ -47,5 +49,6 @@ __all__ = [
     "CDAFedAvgBaseServer",
     "FedCDMBaseServer",
     "CDAFedAvgBaseServerWithFedPredictDynamic",
-    "CDAFedAvgBaseServerWithFedPredict"
+    "CDAFedAvgBaseServerWithFedPredict",
+    "FedCDMWithFedPredictBaseServer"
     ]

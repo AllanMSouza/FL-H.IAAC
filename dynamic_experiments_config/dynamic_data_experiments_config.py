@@ -115,12 +115,12 @@ def local_concept_drift(n_rounds, n_clients, n_patterns):
 
 if __name__ == "__main__":
 
-    n_rounds = 10
+    n_rounds = 50
     n_clients = 20
     concept_drift = "global_concept_drift"
     n_patterns = n_clients
 
-    local_concept_drift(n_rounds, n_clients, n_clients)
+    global_concept_drift(n_rounds, n_clients, n_clients)
 
 
 

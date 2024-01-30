@@ -50,7 +50,7 @@ class JointAnalysis():
 
                             for alpha in alphas:
 
-                                if dataset in ['WISDM-WATCH', 'WISDM-P']:
+                                if dataset in ['Cologne', 'WISDM-WATCH', 'WISDM-P']:
                                     model = "GRU"
                                 else:
                                     model = original_model
@@ -112,11 +112,17 @@ class JointAnalysis():
                                 if strategy == "FedPredict" and compression == "no":
                                     st = "FedAvg"
                                     s = "+FP"
+                                elif strategy == "FedCDM_with_FedPredict" and compression == "no":
+                                    st = "FedDCM"
+                                    s = "+FP"
                                 elif strategy == "CDA-FedAvg_with_FedPredict" and compression == "no":
                                     st = "CDA-FedAvg"
                                     s = "+FP"
                                 elif strategy == "FedPredict_Dynamic" and compression == "no":
                                     st = "FedAvg"
+                                    s = r"+FP$_{DYN}$"
+                                elif strategy == "FedCDM_with_FedPredict_Dynamic" and compression == "no":
+                                    st = "CDA-FedAvg"
                                     s = r"+FP$_{DYN}$"
                                 elif strategy == "CDA-FedAvg_with_FedPredict_Dynamic" and compression == "no":
                                     st = "CDA-FedAvg"
@@ -137,7 +143,7 @@ class JointAnalysis():
                                 df['Version'] = np.array([s] * len(df))
                                 df['Experiment'] = np.array([i] * len(df))
                                 df['Fraction fit'] = np.array([fraction_fit] * len(df))
-                                df['Dataset'] = np.array([dataset] * len(df))
+                                df['Dataset'] = np.array([dataset.replace("WATCH", "W")] * len(df))
                                 df['Solution'] = np.array([compression] * len(df))
                                 df['Alpha'] = np.array([alpha] * len(df))
                                 if count == 0:
@@ -176,9 +182,9 @@ class JointAnalysis():
         strategies = aux
         print("finai: ", strategies)
         print("Experimento 1")
-        # self.joint_table(df_concat, alphas, strategies, experiment=1)
+        self.joint_table(df_concat, alphas, strategies, experiment=1)
         print("Experimento 2")
-        # self.joint_table(df_concat, alphas, strategies, experiment=2)
+        self.joint_table(df_concat, alphas, strategies, experiment=2)
         # self.joint_table(df_concat, fractions_fit, strategies, experiment=3)
         # self.joint_table(df_concat, fractions_fit, strategies, experiment=4)
 
@@ -244,6 +250,7 @@ class JointAnalysis():
         columns = df.columns.tolist()
         indexes = df.index.tolist()
 
+        # datasets = ['Cologne', 'WISDM-P', 'WISDM-WATCH']
         datasets = ['WISDM-P', 'WISDM-WATCH']
         solutions = pd.Series([i[1] for i in indexes]).unique().tolist()
         reference_solutions = {}
@@ -303,23 +310,29 @@ class JointAnalysis():
 
         columns = strategies
 
-        index = [np.array(['WISDM-P'] * len(columns) + ['WISDM-WATCH'] * len(columns)), np.array(columns * 2)]
+        # index = [np.array(['Cologne'] * len(columns) + ['WISDM-W'] * len(columns) + ['WISDM-P'] * len(columns)), np.array(columns * 3)]
+        index = [np.array( ['WISDM-W'] * len(columns) + ['WISDM-P'] * len(columns)),
+                 np.array(columns * 2)]
 
         models_dict = {}
         ci = 0.95
         print("filtro tabela")
         for model_name in model_report:
 
+            cologne_acc = {}
             mnist_acc = {}
             cifar10_acc = {}
             for column in columns:
 
                 # mnist_acc[column] = (self.filter(df_test, experiment, 'MNIST', float(column), strategy=model_name)['Accuracy (%)']*100).mean().round(6)
                 # cifar10_acc[column] = (self.filter(df_test, experiment, 'CIFAR10', float(column), strategy=model_name)['Accuracy (%)']*100).mean().round(6)
-                mnist_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'WISDM-P',
+                # cologne_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'Cologne',
+                #                                                        float(model_name), strategy=column)[
+                #     'Accuracy (%)']).tolist(), ci)
+                mnist_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'WISDM-W',
                                                                      float(model_name), strategy=column)[
                                          'Accuracy (%)']).tolist(), ci)
-                cifar10_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'WISDM-WATCH',
+                cifar10_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'WISDM-P',
                                                                        float(model_name), strategy=column)[
                                            'Accuracy (%)']).tolist(), ci)
                 # gtsrb_acc[column] = self.t_distribution(
@@ -328,6 +341,9 @@ class JointAnalysis():
 
             model_metrics = []
 
+            # for column in columns:
+            #     print("pegou: ", len(cologne_acc[column]), type(cologne_acc[column]))
+            #     model_metrics.append(cologne_acc[column])
             for column in columns:
                 print("pegou: ", len(mnist_acc[column]), type(mnist_acc[column]))
                 model_metrics.append(mnist_acc[column])
@@ -495,7 +511,7 @@ class JointAnalysis():
                 title = """{}; \u03B1={}""".format(dataset, alpha)
                 filename = ''
                 # hue_order = ['CDA-FedAvg', 'FedPer']
-                hue_order = ['FedAvg', 'CDA-FedAvg', 'FedPer']
+                hue_order = ['FedAvg', 'CDA-FedAvg', 'FedCDM', 'FedPer']
                 style = "Version"
                 # "+FP",
                 style_order = [r"+FP$_{DYN}$",  "+FP", "Original"]
@@ -631,12 +647,12 @@ if __name__ == '__main__':
     #         'comment': 'set', 'compression': 'no', 'local_epochs': '1_local_epochs', 'dynamic_data': "synthetic"}
     # }
 
-    strategies = ['FedAVG', 'FedPredict', 'FedPredict_Dynamic', 'CDA-FedAvg_with_FedPredict', 'CDA-FedAvg_with_FedPredict_Dynamic', 'CDA-FedAvg', 'FedPer']
+    strategies = ['FedAVG', 'FedPredict', 'FedPredict_Dynamic', 'CDA-FedAvg_with_FedPredict', 'CDA-FedAvg_with_FedPredict_Dynamic', 'CDA-FedAvg', 'FedPer', 'FedCDM']
     # 'FedPredict', 'FedYogi_with_FedPredict', 'FedKD_with_FedPredict', 'FedAVG', 'FedYogi', 'FedPer', 'FedProto', 'FedKD'
     # pocs = [0.1, 0.2, 0.3]
     fractions_fit = [0.3]
     # datasets = ['MNIST', 'CIFAR10']
-    datasets = ['EMNIST', 'WISDM-P', 'WISDM-WATCH']
+    datasets = ['Cologne', 'WISDM-WATCH', 'WISDM-P']
     alpha = [0.1, 1.0]
     rounds = 100
     clients = '20'

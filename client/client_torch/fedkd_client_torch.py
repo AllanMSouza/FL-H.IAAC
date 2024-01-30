@@ -420,7 +420,7 @@ class FedKDClientTorch(FedAvgClientTorch):
 			print("load_parameters_to_model_teacher")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
 
-	def model_eval(self):
+	def model_eval(self, server_round):
 		try:
 			self.model.eval()
 

@@ -138,7 +138,7 @@ class GRU(torch.nn.Module):
             self.hidden_size = hidden_size
             self.num_layers = num_layers
             self.output_size = num_classes
-            self.time_length = 200
+            self.time_length = sequence_length
 
             self.gru = nn.GRU(self.input_size, self.hidden_size, self.num_layers, batch_first=True)
 

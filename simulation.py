@@ -1,6 +1,6 @@
 import flwr as fl
-from client import FedAvgClientTf, FedPerClientTf, FedProtoClientTf, FedLocalClientTf, FedAvgClientTorch, FedProtoClientTorch, FedPerClientTorch, FedLocalClientTorch, FedAvgMClientTorch, QFedAvgClientTorch, FedYogiClientTorch, FedClassAvgClientTorch, FedPredictClientTorch, FedClassAvg_with_FedPredictClientTorch, FedProxClientTorch, FedPAQClientTorch, FetSGDClientTorch, FedKDClientTorch, FedDistillClientTorch, FedYogiWithFedPredictClientTorch, FedClusteringClientTorch, FedAlaClientTorch, FedKDWithFedPredictClientTorch, FedSparsificationClientTorch, FedPredictDynamicClientTorch, CDAFedAvgClientTorch, FedCDMClientTorch, CDAFedAvgWithFedPredictDynamicClientTorch, CDAFedAvgWithFedPredictClientTorch
-from server import FedPerServerTf, FedProtoServerTf, FedAvgServerTf, FedLocalServerTf, FedAvgServerTorch, FedProtoServerTorch, FedPerServerTorch, FedLocalServerTorch, FedAvgMServerTorch, QFedAvgServerTorch, FedYogiServerTorch, FedClassAvgServerTorch, FedPredictServerTorch, FedClassAvg_with_FedPredictServerTorch, FedProxServerTorch, FedPAQServerTorch, FetSGDServerTorch, FedKDServerTorch, FedDistillServerTorch, FedYogiWithFedPredictServerTorch, FedClusteringServerTorch, FedAlaServerTorch, FedKDWithFedPredictServerTorch, FedSparsificationServerTorch, FedPredictDynamicServerTorch, CDAFedAvgServerTorch, FedCDMServerTorch, CDAFedAvgWithFedPredictDynamicServerTorch, CDAFedAvgWithFedPredictServerTorch
+from client import FedAvgClientTf, FedPerClientTf, FedProtoClientTf, FedLocalClientTf, FedAvgClientTorch, FedProtoClientTorch, FedPerClientTorch, FedLocalClientTorch, FedAvgMClientTorch, QFedAvgClientTorch, FedYogiClientTorch, FedClassAvgClientTorch, FedPredictClientTorch, FedClassAvg_with_FedPredictClientTorch, FedProxClientTorch, FedPAQClientTorch, FetSGDClientTorch, FedKDClientTorch, FedDistillClientTorch, FedYogiWithFedPredictClientTorch, FedClusteringClientTorch, FedAlaClientTorch, FedKDWithFedPredictClientTorch, FedSparsificationClientTorch, FedPredictDynamicClientTorch, CDAFedAvgClientTorch, FedCDMClientTorch, CDAFedAvgWithFedPredictDynamicClientTorch, CDAFedAvgWithFedPredictClientTorch, FedCDMWithFedPredictDynamicClientTorch, FedCDMWithFedPredictClientTorch
+from server import FedPerServerTf, FedProtoServerTf, FedAvgServerTf, FedLocalServerTf, FedAvgServerTorch, FedProtoServerTorch, FedPerServerTorch, FedLocalServerTorch, FedAvgMServerTorch, QFedAvgServerTorch, FedYogiServerTorch, FedClassAvgServerTorch, FedPredictServerTorch, FedClassAvg_with_FedPredictServerTorch, FedProxServerTorch, FedPAQServerTorch, FetSGDServerTorch, FedKDServerTorch, FedDistillServerTorch, FedYogiWithFedPredictServerTorch, FedClusteringServerTorch, FedAlaServerTorch, FedKDWithFedPredictServerTorch, FedSparsificationServerTorch, FedPredictDynamicServerTorch, CDAFedAvgServerTorch, FedCDMServerTorch, CDAFedAvgWithFedPredictDynamicServerTorch, CDAFedAvgWithFedPredictServerTorch, FedCDMWithFedPredictDynamicServerTorch, FedCDMWithFedPredictServerTorch
 
 from optparse import OptionParser
 import tensorflow as tf
@@ -449,6 +449,40 @@ class SimulationFL():
 																 new_clients_train=self.new_clients_train)
 			elif self.strategy_name == "FedCDM":
 				return FedCDMClientTorch(cid=cid,
+										   args=self.args,
+										  n_clients=self.n_clients,
+										  n_classes=self.n_classes,
+										  model_name=self.model_name,
+										  client_selection=self.client_selection,
+										  epochs=self.epochs,
+										  strategy_name=self.strategy_name,
+										  aggregation_method=self.aggregation_method,
+										  dataset=self.dataset,
+										  perc_of_clients=self.poc,
+										  fraction_fit=self.fraction_fit,
+										  decay=self.decay,
+										  non_iid=self.non_iid,
+										  new_clients=self.new_clients,
+										  new_clients_train=self.new_clients_train)
+			elif self.strategy_name == "FedCDM_with_FedPredict_Dynamic":
+				return FedCDMWithFedPredictDynamicClientTorch(cid=cid,
+										   args=self.args,
+										  n_clients=self.n_clients,
+										  n_classes=self.n_classes,
+										  model_name=self.model_name,
+										  client_selection=self.client_selection,
+										  epochs=self.epochs,
+										  strategy_name=self.strategy_name,
+										  aggregation_method=self.aggregation_method,
+										  dataset=self.dataset,
+										  perc_of_clients=self.poc,
+										  fraction_fit=self.fraction_fit,
+										  decay=self.decay,
+										  non_iid=self.non_iid,
+										  new_clients=self.new_clients,
+										  new_clients_train=self.new_clients_train)
+			elif self.strategy_name == "FedCDM_with_FedPredict":
+				return FedCDMWithFedPredictClientTorch(cid=cid,
 										   args=self.args,
 										  n_clients=self.n_clients,
 										  n_classes=self.n_classes,
@@ -929,6 +963,38 @@ class SimulationFL():
 									  args=self.args)
 			elif self.strategy_name == "FedCDM":
 				return FedCDMServerTorch(aggregation_method=self.aggregation_method,
+										n_classes=self.n_classes,
+										fraction_fit=self.fraction_fit,
+										num_clients=self.n_clients,
+										num_rounds=self.rounds,
+										num_epochs=self.epochs,
+										model=copy.deepcopy(self.create_client(0).create_model()),
+										decay=self.decay,
+										perc_of_clients=self.poc,
+										strategy_name=self.strategy_name,
+										dataset=self.dataset,
+										model_name=self.model_name,
+										new_clients=self.new_clients,
+										new_clients_train=self.new_clients_train,
+									  args=self.args)
+			elif self.strategy_name == "FedCDM_with_FedPredict_Dynamic":
+				return FedCDMWithFedPredictDynamicServerTorch(aggregation_method=self.aggregation_method,
+										n_classes=self.n_classes,
+										fraction_fit=self.fraction_fit,
+										num_clients=self.n_clients,
+										num_rounds=self.rounds,
+										num_epochs=self.epochs,
+										model=copy.deepcopy(self.create_client(0).create_model()),
+										decay=self.decay,
+										perc_of_clients=self.poc,
+										strategy_name=self.strategy_name,
+										dataset=self.dataset,
+										model_name=self.model_name,
+										new_clients=self.new_clients,
+										new_clients_train=self.new_clients_train,
+									  args=self.args)
+			elif self.strategy_name == "FedCDM_with_FedPredict":
+				return FedCDMWithFedPredictServerTorch(aggregation_method=self.aggregation_method,
 										n_classes=self.n_classes,
 										fraction_fit=self.fraction_fit,
 										num_clients=self.n_clients,
