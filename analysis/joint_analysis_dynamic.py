@@ -113,7 +113,7 @@ class JointAnalysis():
                                     st = "FedAvg"
                                     s = "+FP"
                                 elif strategy == "FedCDM_with_FedPredict" and compression == "no":
-                                    st = "FedDCM"
+                                    st = "FedCDM"
                                     s = "+FP"
                                 elif strategy == "CDA-FedAvg_with_FedPredict" and compression == "no":
                                     st = "CDA-FedAvg"
@@ -122,7 +122,7 @@ class JointAnalysis():
                                     st = "FedAvg"
                                     s = r"+FP$_{DYN}$"
                                 elif strategy == "FedCDM_with_FedPredict_Dynamic" and compression == "no":
-                                    st = "CDA-FedAvg"
+                                    st = "FedCDM"
                                     s = r"+FP$_{DYN}$"
                                 elif strategy == "CDA-FedAvg_with_FedPredict_Dynamic" and compression == "no":
                                     st = "CDA-FedAvg"
@@ -173,9 +173,11 @@ class JointAnalysis():
         print("versao: ", df_concat[['Strategy', 'Version']].drop_duplicates())
         df_concat = self.convert(df_concat)
         strategies = df_concat['Strategy'].unique().tolist()
+        print("unicas: ", strategies)
         print("versao2: ", df_concat['Strategy'].unique().tolist())
         aux = []
-        order = [r'FedAvg+FP$_{DYN}$', r'CDA-FedAvg+FP$_{DYN}$', 'FedAvg+FP', 'CDA-FedAvg+FP', 'FedAvg', 'CDA-FedAvg']
+        # r'CDA-FedAvg+FP$_{DYN}$' 'CDA-FedAvg+FP',
+        order = [r'FedAvg+FP$_{DYN}$', 'FedAvg+FP', 'FedAvg', r'FedCDM+FP$_{DYN}$', 'FedCDM+FP', 'FedCDM', r'CDA-FedAvg+FP$_{DYN}$', 'CDA-FedAvg+FP', 'CDA-FedAvg', 'FedPer']
         for s in order:
             if s in strategies:
                 aux.append(s)
@@ -198,8 +200,12 @@ class JointAnalysis():
             strategy = strategies[i]
 
             if version == r"+FP$_{DYN}$":
+                # o = strategy
                 strategy = "" + strategy + r"+FP$_{DYN}$"
                 strategies[i] = strategy
+                # if o == 'CDA-FedAvg':
+                #     print("entr", strategy)
+                #     exit()
             elif version == "+FP":
                 strategy = "" + strategy + "+FP"
                 strategies[i] = strategy
@@ -207,6 +213,8 @@ class JointAnalysis():
                 strategy = "" + strategy + ""
                 strategies[i] = strategy
 
+        print(np.unique(strategies))
+        # exit()
         df['Strategy'] = np.array(strategies)
 
         return df
@@ -251,7 +259,7 @@ class JointAnalysis():
         indexes = df.index.tolist()
 
         # datasets = ['Cologne', 'WISDM-P', 'WISDM-WATCH']
-        datasets = ['WISDM-P', 'WISDM-WATCH']
+        datasets = ['WISDM-P', 'WISDM-W']
         solutions = pd.Series([i[1] for i in indexes]).unique().tolist()
         reference_solutions = {}
         for solution_key in solutions:
@@ -291,13 +299,13 @@ class JointAnalysis():
 
         model_report = {i: {} for i in df['Alpha'].unique().tolist()}
         if experiment == 1:
-            df = df[df['Round (t)'] == 35]
+            df = df[df['Round (t)'].isin(range(70, 81))]
         # df_test = df[['Round (t)', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset']].groupby(
         #     ['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset']).apply(
         #     lambda e: self.groupb_by_table(e)).reset_index()[
         #     ['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)']]
         elif experiment == 2:
-            df = df[df['Round (t)'] == 35]
+            df = df[df['Round (t)'].isin(range(70, 81))]
             pass
         df_test = df[
             ['Round (t)', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset', 'Alpha']]
@@ -408,7 +416,7 @@ class JointAnalysis():
 
             df_accuracy_improvements.iloc[i] = row
 
-        latex = df_accuracy_improvements.to_latex().replace("\\\nEMNIST", "\\\n\hline\nEMNIST").replace("\\\nGTSRB", "\\\n\hline\nGTSRB").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}").replace("\$", "$").replace("textuparrow", "\oitextuparrow").replace("textdownarrow", "\oitextdownarrow").replace("\&", "&").replace("&  &", "& - &").replace("\_", "_").replace("&  \\", "& - \\").replace(" - " + r"\textbf", " " + r"\textbf").replace("_{DYN}", r"$_{\text{DYN}}$")
+        latex = df_accuracy_improvements.to_latex().replace("\\\nEMNIST", "\\\n\hline\nEMNIST").replace("\\\nGTSRB", "\\\n\hline\nGTSRB").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}").replace("\$", "$").replace("textuparrow", "\oitextuparrow").replace("textdownarrow", "\oitextdownarrow").replace("\&", "&").replace("&  &", "& - &").replace("\_", "_").replace("&  \\", "& - \\").replace(" - " + r"\textbf", " " + r"\textbf").replace("_{DYN}", r"$_{\text{DYN}}$").replace("WISDM-W", r"\parbox[t]{2mm}{\multirow{10}{*}{\rotatebox[origin=c]{90}{WISDM-W}}}").replace("WISDM-P", r"\parbox[t]{2mm}{\multirow{10}{*}{\rotatebox[origin=c]{90}{WISDM-P}}}")
 
         base_dir = """analysis/output/experiment_{}/dynamic/""".format(str(experiment + 1))
         filename = """{}latex_{}.txt""".format(base_dir, str(experiment))
@@ -422,8 +430,9 @@ class JointAnalysis():
 
     def improvements(self, df, experiment):
 
+        # r"CDA-FedAvg+FP$_{DYN}$": "CDA-FedAvg", r"CDA-FedAvg+FP": "CDA-FedAvg"
         strategies = {r"FedAvg+FP$_{DYN}$": "FedAvg", "FedAvg+FP": "FedAvg", r"CDA-FedAvg+FP$_{DYN}$": "CDA-FedAvg", r"CDA-FedAvg+FP": "CDA-FedAvg"}
-        datasets = ['WISDM-P', 'WISDM-WATCH']
+        datasets = ['WISDM-P', 'WISDM-W']
         print(df)
         # exit()
         columns = df.columns.tolist()
@@ -496,7 +505,7 @@ class JointAnalysis():
         sns.set(style='whitegrid')
         rows = len(alphas)
         cols = len(datast)
-        fig, axs = plt.subplots(rows, cols,  sharex='all', sharey='all', figsize=(9, 6))
+        fig, axs = plt.subplots(rows, cols,  sharex='all', sharey='all', figsize=(6, 6))
 
         x_column = 'Round (t)'
         y_column = 'Accuracy (%)'
@@ -540,6 +549,21 @@ class JointAnalysis():
         fig.supxlabel(x_column, y=-0.02)
         fig.supylabel(y_column, x=-0.01)
 
+        if experiment == 1:
+            axs[0, 0].annotate('1', xy=(73, 80), xycoords='data', bbox=dict(boxstyle="circle", fc="w", color='black'),
+                        xytext=(87, 88),
+                        arrowprops=dict(width=1, headwidth=4, facecolor='black', color='black'))
+            axs[0, 0].annotate('2', xy=(68, 51), xycoords='data', bbox=dict(boxstyle="circle", fc="w", color='black'),
+                               xytext=(44, 48),
+                               arrowprops=dict(width=1, headwidth=4, facecolor='black', color='black'))
+        elif experiment == 2:
+            axs[0, 1].annotate('4', xy=(86, 32), xycoords='data', bbox=dict(boxstyle="circle", fc="w", color='black'),
+                               xytext=(84, 48),
+                               arrowprops=dict(width=1, headwidth=4, facecolor='black', color='black'))
+            axs[1, 0].annotate('3', xy=(68, 78), xycoords='data', bbox=dict(boxstyle="circle", fc="w", color='black'),
+                               xytext=(42, 76),
+                               arrowprops=dict(width=1, headwidth=4, facecolor='black', color='black'))
+
 
         lines_labels = [axs[0, 0].get_legend_handles_labels()]
         lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
@@ -562,7 +586,7 @@ class JointAnalysis():
         f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
         handles = [f("o", colors[i]) for i in range(len(hue_order) + 1)]
         handles += [plt.Line2D([], [], linestyle=markers[i], color="k") for i in range(len(markers))]
-        axs[1, 0].legend(handles, labels, fontsize=7)
+        axs[1, 1].legend(handles, labels, fontsize=7)
         print("base: ", base_dir, """{}joint_plot_four_plot_{}_{}_rounds_{}_clients.png""".format(base_dir, str(experiment), self.rounds, self.clients))
         fig.savefig("""{}joint_plot_four_plot_{}_{}_rounds_{}_clients.png""".format(base_dir, str(experiment), self.rounds, self.clients), bbox_inches='tight', dpi=400)
         fig.savefig("""{}joint_plot_four_plot_{}_{}_rounds_{}_clients.svg""".format(base_dir, str(experiment), self.rounds, self.clients), bbox_inches='tight', dpi=400)
@@ -647,12 +671,12 @@ if __name__ == '__main__':
     #         'comment': 'set', 'compression': 'no', 'local_epochs': '1_local_epochs', 'dynamic_data': "synthetic"}
     # }
 
-    strategies = ['FedAVG', 'FedPredict', 'FedPredict_Dynamic', 'CDA-FedAvg_with_FedPredict', 'CDA-FedAvg_with_FedPredict_Dynamic', 'CDA-FedAvg', 'FedPer', 'FedCDM']
+    strategies = ['FedAVG', 'FedPredict', 'FedPredict_Dynamic', 'CDA-FedAvg_with_FedPredict', 'CDA-FedAvg_with_FedPredict_Dynamic', 'CDA-FedAvg', 'FedPer', 'FedCDM', 'FedCDM_with_FedPredict_Dynamic', 'FedCDM_with_FedPredict']
     # 'FedPredict', 'FedYogi_with_FedPredict', 'FedKD_with_FedPredict', 'FedAVG', 'FedYogi', 'FedPer', 'FedProto', 'FedKD'
     # pocs = [0.1, 0.2, 0.3]
     fractions_fit = [0.3]
     # datasets = ['MNIST', 'CIFAR10']
-    datasets = ['Cologne', 'WISDM-WATCH', 'WISDM-P']
+    datasets = ['WISDM-WATCH', 'WISDM-P']
     alpha = [0.1, 1.0]
     rounds = 100
     clients = '20'
