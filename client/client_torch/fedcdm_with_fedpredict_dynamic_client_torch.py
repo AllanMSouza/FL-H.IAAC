@@ -6,6 +6,7 @@ from pathlib import Path
 import os
 import sys
 import pandas as pd
+from sklearn.metrics import f1_score
 import numpy as np
 import ast
 from utils.compression_methods.sparsification import calculate_bytes, sparse_bytes, sparse_matrix
@@ -266,6 +267,10 @@ class FedCDMWithFedPredictDynamicClientTorch(FedCDMClientTorch):
 			test_acc = 0
 			test_loss = 0
 			test_num = 0
+			macro_f1_score = 0
+			weigthed_f1_score = 0
+			micro_f1_score = 0
+			count = 0
 
 			predictions = np.array([])
 			labels = np.array([])
@@ -296,11 +301,19 @@ class FedCDMWithFedPredictDynamicClientTorch(FedCDMClientTorch):
 					labels = np.append(labels, y.cpu())
 					test_acc += (torch.sum(prediction == y)).item()
 					test_num += y.shape[0]
+					count += 1
+					macro_f1_score += f1_score(y, output.detach().numpy().tolist(), average='macro', zero_division=1)
+					weigthed_f1_score += f1_score(y, output.detach().numpy().tolist(), average='weighted',
+												  zero_division=1)
+					micro_f1_score += f1_score(y, output.detach().numpy().tolist(), average='micro', zero_division=1)
 
 			loss = test_loss / test_num
 			accuracy = test_acc / test_num
+			macro_f1_score = macro_f1_score / count
+			weigthed_f1_score = weigthed_f1_score / count
+			micro_f1_score = micro_f1_score / count
 
-			return loss, accuracy, test_num, predictions, output, labels
+			return loss, accuracy, macro_f1_score, weigthed_f1_score, micro_f1_score, test_num, predictions, output, labels
 		except Exception as e:
 			print("model_eval")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)

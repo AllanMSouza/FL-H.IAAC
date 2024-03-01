@@ -12,6 +12,7 @@ import csv
 import torch.nn as nn
 import warnings
 import pandas as pd
+from sklearn.metrics import f1_score
 warnings.simplefilter("ignore")
 
 # logging.getLogger("torch").setLevel(logging.ERROR)
@@ -522,17 +523,16 @@ class ClientBaseTorch(fl.client.NumPyClient):
 					train_acc = 0
 					train_loss = 0
 					train_num = 0
+					macro_f1_score = 0
+					weigthed_f1_score = 0
+					micro_f1_score = 0
 					for i, (x, y) in enumerate(self.trainloader):
 						if type(x) == type([]):
 							x[0] = x[0].to(self.device)
 						else:
 							x = x.to(self.device)
 
-						# if self.dataset == 'EMNIST':
-						# 	x = x.view(-1, 28 * 28)
 						y = np.array(y).astype(int)
-						# print("entrada: ", x.shape, y.shape, type(x[0]), type(y[0]), y[0])
-						# y = y.to(self.device)
 						train_num += y.shape[0]
 
 						self.optimizer.zero_grad()
@@ -548,18 +548,18 @@ class ClientBaseTorch(fl.client.NumPyClient):
 						self.optimizer.step()
 
 						train_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
+						macro_f1_score += f1_score(y, np.argmax(output.detach().numpy().tolist(), axis=-1), average='macro', zero_division=1)
+						weigthed_f1_score += f1_score(y, np.argmax(output.detach().numpy().tolist(), axis=-1), average='weighted', zero_division=1)
+						micro_f1_score += f1_score(y, np.argmax(output.detach().numpy().tolist(), axis=-1), average='micro', zero_division=1)
 						total_time = time.process_time() - start_time
 						# print("Duração: ", total_time)
-				# print("Completou, cliente: ", self.cid, " rodada: ", server_round)
 				trained_parameters = self.get_parameters_of_model()
 				self.save_parameters()
 
 			size_list = []
 			for i in range(len(parameters)):
 				tamanho = get_size(parameters[i])
-				# print("Client id: ", self.cid, " camada: ", i, " tamanho: ", tamanho, " shape: ", parameters[i].shape)
 				size_list.append(tamanho)
-			# print("Tamanho total parametros fit: ", sum(size_list))
 			size_of_parameters = sum(size_list)
 			#pattern size_of_parameters = sum(
 			# 	[sum(map(sys.getsizeof, trained_parameters[i])) for i in range(len(trained_parameters))])
@@ -567,8 +567,11 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			avg_acc_train = train_acc / train_num
 			total_time = time.process_time() - start_time
 			# loss, accuracy, test_num = self.model_eval()
+			macro_f1_score = macro_f1_score / train_num
+			weigthed_f1_score = weigthed_f1_score / train_num
+			micro_f1_score = micro_f1_score / train_num
 
-			data = [config['round'], self.cid, selected, total_time, size_of_parameters, avg_loss_train, avg_acc_train]
+			data = [config['round'], self.cid, selected, total_time, size_of_parameters, avg_loss_train, avg_acc_train, macro_f1_score, weigthed_f1_score, micro_f1_score]
 
 			self.save_client_information_fit(server_round, avg_acc_train, predictions)
 
@@ -607,10 +610,14 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			test_acc = 0
 			test_loss = 0
 			test_num = 0
+			macro_f1_score = []
+			weigthed_f1_score = []
+			micro_f1_score = []
 
 			predictions = np.array([])
 			outputs = np.array([])
 			labels = np.array([])
+			count = 0
 
 			with torch.no_grad():
 				for x, y in self.testloader:
@@ -635,11 +642,22 @@ class ClientBaseTorch(fl.client.NumPyClient):
 					labels = np.append(labels, y.cpu())
 					test_acc += (torch.sum(prediction == y)).item()
 					test_num += y.shape[0]
+					count += 1
+					macro_f1_score.append(f1_score(y, np.argmax(output.detach().numpy().tolist(), axis=-1), average='macro', zero_division=1))
+					weigthed_f1_score.append(f1_score(y, np.argmax(output.detach().numpy().tolist(), axis=-1), average='weighted',
+												  zero_division=1))
+					micro_f1_score.append(f1_score(y, np.argmax(output.detach().numpy().tolist(), axis=-1), average='micro', zero_division=1))
+
+
 
 			loss = test_loss / test_num
 			accuracy = test_acc / test_num
+			macro_f1_score = np.mean(macro_f1_score)
+			weigthed_f1_score = np.mean(weigthed_f1_score)
+			micro_f1_score = np.mean(micro_f1_score)
+			print("fscore do : ", self.cid, "macro : ", macro_f1_score, " weig ", weigthed_f1_score, "micro", micro_f1_score)
 
-			return loss, accuracy, test_num, predictions, outputs, labels
+			return loss, accuracy, macro_f1_score, weigthed_f1_score, micro_f1_score, test_num, predictions, outputs, labels
 		except Exception as e:
 			print("model_eval")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)
@@ -696,11 +714,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			# size_of_parameters = sum([sum(map(sys.getsizeof, parameters[i])) for i in range(len(parameters))])
 			size_of_config = self._get_size_of_dict(config)
 			self.server_round = server_round
-			if self.model_name in ['GRU']:
-				loss, accuracy, test_num, predictions, output, labels = self.model_eval(server_round)
-			else:
-				loss, accuracy, test_num, predictions, output, labels = self.model_eval(server_round)
-			data = [config['round'], self.cid, size_of_parameters, size_of_config, loss, accuracy, nt]
+			loss, accuracy, macro_f1_score, weighted_f1_score, micro_f1_score, test_num, predictions, output, labels = self.model_eval(server_round)
+			data = [config['round'], self.cid, size_of_parameters, size_of_config, loss, accuracy, macro_f1_score, weighted_f1_score, micro_f1_score, nt]
 			self._write_output(filename=self.evaluate_client_filename,
 							   data=data)
 
@@ -721,6 +736,9 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			evaluation_response = {
 				"cid": self.cid,
 				"accuracy": float(accuracy),
+				"macro f1-score": macro_f1_score,
+				"weighted f1-score": weighted_f1_score,
+				"micro f1-score": micro_f1_score,
 				"pattern": pattern
 			}
 

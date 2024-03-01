@@ -14,6 +14,7 @@ from models.torch import DNN, Logistic, CNN, MobileNet, resnet20, CNN_EMNIST, Mo
 # logging.getLogger("torch").setLevel(logging.ERROR)
 from torch.nn.parameter import Parameter
 import torch
+from sklearn.metrics import f1_score
 import numpy as np
 import random
 random.seed(0)
@@ -165,6 +166,9 @@ class FedProtoClientTorch(ClientBaseTorch):
 					train_num = 0
 					train_acc = 0
 					train_loss = 0
+					macro_f1_score = 0
+					weigthed_f1_score = 0
+					micro_f1_score = 0
 					for i, (x, y) in enumerate(self.trainloader):
 						if type(x) == type([]):
 							x[0] = x[0].to(self.device)
@@ -210,6 +214,12 @@ class FedProtoClientTorch(ClientBaseTorch):
 
 						train_loss += loss.item()
 						train_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
+						macro_f1_score += f1_score(y, output.detach().numpy().tolist(), average='macro',
+												   zero_division=1)
+						weigthed_f1_score += f1_score(y, output.detach().numpy().tolist(), average='weighted',
+													  zero_division=1)
+						micro_f1_score += f1_score(y, output.detach().numpy().tolist(), average='micro',
+												   zero_division=1)
 
 				self.save_parameters()
 
@@ -224,8 +234,11 @@ class FedProtoClientTorch(ClientBaseTorch):
 				size_of_parameters = sum(map(sys.getsizeof, parameters))
 				avg_loss_train     = train_loss/train_num
 				avg_acc_train      = train_acc/train_num
+				macro_f1_score = macro_f1_score / train_num
+				weigthed_f1_score = weigthed_f1_score / train_num
+				micro_f1_score = micro_f1_score / train_num
 
-				data = [config['round'], self.cid, selected, total_time, size_of_parameters, avg_loss_train, avg_acc_train]
+				data = [config['round'], self.cid, selected, total_time, size_of_parameters, avg_loss_train, avg_acc_train, macro_f1_score, weigthed_f1_score, micro_f1_score]
 
 				self._write_output(
 					filename=self.train_client_filename,
@@ -274,6 +287,10 @@ class FedProtoClientTorch(ClientBaseTorch):
 			test_loss = []
 			test_mse_loss = []
 			test_num = 0
+			macro_f1_score = 0
+			weigthed_f1_score = 0
+			micro_f1_score = 0
+			count = 0
 
 			with torch.no_grad():
 				for x, y in self.testloader:
@@ -321,13 +338,21 @@ class FedProtoClientTorch(ClientBaseTorch):
 					test_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
 
 					test_num += y.shape[0]
+					count += 1
+					macro_f1_score += f1_score(y, output.detach().numpy().tolist(), average='macro', zero_division=1)
+					weigthed_f1_score += f1_score(y, output.detach().numpy().tolist(), average='weighted',
+												  zero_division=1)
+					micro_f1_score += f1_score(y, output.detach().numpy().tolist(), average='micro', zero_division=1)
 
 			size_of_parameters = sum(map(sys.getsizeof, parameters))
 			# print("test loss: ", test_loss)
 			loss = np.mean(test_loss)
+			macro_f1_score = macro_f1_score / count
+			weigthed_f1_score = weigthed_f1_score / count
+			micro_f1_score = micro_f1_score / count
 			accuracy = test_acc/test_num
 			size_of_config = sys.getsizeof(config)
-			data = [config['round'], self.cid, size_of_parameters, size_of_config, loss, accuracy]
+			data = [config['round'], self.cid, size_of_parameters, size_of_config, loss, accuracy, macro_f1_score, weigthed_f1_score, micro_f1_score]
 
 			self._write_output(filename=self.evaluate_client_filename,
 							   data=data)
@@ -335,6 +360,9 @@ class FedProtoClientTorch(ClientBaseTorch):
 			evaluation_response = {
 				"cid"      : self.cid,
 				"accuracy" : float(accuracy),
+				"macro f1-score": macro_f1_score,
+				"weithed f1-score": weigthed_f1_score,
+				"micro f1-score": micro_f1_score,
 				"mse_loss" : np.mean(test_loss)
 			}
 

@@ -29,9 +29,9 @@
 
 #echo "Executing experiment 10..."
 #python3 exec_experiments.py --experiment_id=10 --type="torch" > execution_log/experiment_10.txt 2>&1
-#
-echo "Executing experiment 11..."
-python3 exec_experiments.py --experiment_id=11 --type="torch" > execution_log/experiment_11.txt 2>&1
+
+#echo "Executing experiment 11..."
+#python3 exec_experiments.py --experiment_id=11 --type="torch" > execution_log/experiment_11.txt 2>&1
 #
 #echo "Executing experiment 12..."
 #python3 exec_experiments.py --experiment_id=12 --type="torch" > execution_log/experiment_12.txt 2>&1
@@ -95,6 +95,12 @@ python3 exec_experiments.py --experiment_id=11 --type="torch" > execution_log/ex
 #
 #echo "Executing experiment 32..."
 #python3 exec_experiments.py --experiment_id=32 --type="torch" > execution_log/experiment_32.txt 2>&1
+
+echo "Executing experiment 40..."
+python3 exec_experiments.py --experiment_id=40 --type="torch" > execution_log/experiment_40.txt 2>&1
+
+echo "Executing experiment 41..."
+python3 exec_experiments.py --experiment_id=41 --type="torch" > execution_log/experiment_41.txt 2>&1
 #
 #
 #shutdown -P +1

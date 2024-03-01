@@ -164,9 +164,11 @@ def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_
     params = {'mathtext.default': 'regular'}
     plt.rcParams.update(params)
 
-    sns.set(style='whitegrid')
-    if 'dynamic' in tipo:
-        ax.grid(False)
+    # sns.set(style='whitegrid')
+    ax.grid(False)
+    if tipo is not None:
+        if 'dynamic' in tipo:
+            ax.grid(False)
     log = ""
     if log_scale:
         plt.yscale('log')
@@ -240,30 +242,32 @@ def line_plot(df, base_dir, file_name, x_column, y_column, title, hue=None, log_
                     new_labels[i] = "nt=" + new_labels[i]
                 new_labels_2.append(new_labels[i])
         aa.legend(new_handles, new_labels_2, fontsize=8, ncols=3)
-    elif 'dynamic' in tipo:
-        x_size = len(df[x_column].unique().tolist())
-        ax.vlines(x=[int(0.7 * x_size)], ymin=0, ymax=100, colors='silver', ls='--', lw=1,
-                  label='vline_multiple - full height')
+    elif tipo is not None:
+        if 'dynamic' in tipo:
+            x_size = len(df[x_column].unique().tolist())
+            ax.vlines(x=[int(0.7 * x_size)], ymin=0, ymax=100, colors='silver', ls='--', lw=1,
+                      label='vline_multiple - full height')
 
-        if 'dynamic_2' in tipo:
-            if "0.1" in title:
-                a = "0.1"
-                b = "1.0"
-            else:
-                a = "1.0"
-                b = "0.1"
-            if "WISDM-P" in title and a == "1.0":
-                frac = 0.45
-            else:
-                frac = 0.3
-            print("tt: ", title)
-            ax.text(int(frac * x_size), 90, r"$\alpha$=" + a, fontsize=11)
-            ax.text(int(0.8 * x_size), 90, r"$\alpha$=" + b, fontsize=11)
-            ax.set_title(title.split(";")[0])
+            if 'dynamic_2' in tipo:
+                if "0.1" in title:
+                    a = "0.1"
+                    b = "1.0"
+                else:
+                    a = "1.0"
+                    b = "0.1"
+                if "WISDM-P" in title and a == "1.0":
+                    frac = 0.45
+                else:
+                    frac = 0.3
+                print("tt: ", title)
+                ax.text(int(frac * x_size), 90, r"$\alpha$=" + a, fontsize=11)
+                ax.text(int(0.8 * x_size), 90, r"$\alpha$=" + b, fontsize=11)
+                ax.set_title(title.split(";")[0])
 
     # sns.set(style='whitegrid', palette=palette)
 
     if ax is None:
+        print("chh")
         figure = figure.get_figure()
         Path(base_dir + "png/").mkdir(parents=True, exist_ok=True)
         Path(base_dir + "svg/").mkdir(parents=True, exist_ok=True)

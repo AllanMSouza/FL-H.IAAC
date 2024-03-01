@@ -487,12 +487,21 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.list_of_clients    = []
 		self.list_of_accuracies = []
 		accs                    = []
+		macro_f1_scores = []
+		weighted_f1_scores = []
+		micro_f1_scores = []
 
 
 		for response in results:
 			client_id       = response[1].metrics['cid']
 			client_accuracy = float(response[1].metrics['accuracy'])
+			client_macro_f1_score = float(response[1].metrics['macro f1-score'])
+			client_weighted_f1_score = float(response[1].metrics['weighted f1-score'])
+			client_micro_f1_score = float(response[1].metrics['micro f1-score'])
 			accs.append(client_accuracy)
+			macro_f1_scores.append(client_macro_f1_score)
+			weighted_f1_scores.append(client_weighted_f1_score)
+			micro_f1_scores.append(client_micro_f1_score)
 			local_list_clients.append((client_id, client_accuracy))
 			self.fedpredict_clients_metrics[str(client_id)]['acc_of_last_evaluate'] = client_accuracy
 			self.fedpredict_clients_metrics[str(client_id)]['round_of_last_evaluate'] = server_round
@@ -515,6 +524,9 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		examples   = [r.num_examples for _, r in results]
 		# Aggregate and print custom metric
 		accuracy_aggregated = sum(accuracies) / sum(examples)
+		macro_f1_score_aggregated = np.mean(macro_f1_scores)
+		weighted_f1_score_aggregated = np.mean(weighted_f1_scores)
+		micro_f1_score_aggregated = np.mean(micro_f1_scores)
 		accuracy_std = np.std(accuracies)
 		current_accuracy    = accuracy_aggregated
 
@@ -533,7 +545,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		top1 = accs[-1]
 
 		assert self.server_filename is not None
-		data = self._get_server_data(time.process_time()-self.start_time, server_round, accuracy_aggregated, accuracy_std, top5, top1)
+		data = [time.process_time()-self.start_time, server_round, accuracy_aggregated, accuracy_std, top5, top1, macro_f1_score_aggregated, weighted_f1_score_aggregated, micro_f1_score_aggregated]
 
 		self._write_output(filename=self.server_filename,
 						   data=data
@@ -547,7 +559,10 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 					acc = self.server_nt_acc[server_round][nt]
 					if type(acc) == list:
 						acc = 0
-					data_list.append([server_round, acc, nt])
+					data_list.append([server_round, acc, macro_f1_score_aggregated, weighted_f1_score_aggregated, micro_f1_score_aggregated, nt])
+
+			print("escrever 3")
+			print("base: ", self.base)
 
 			self._write_outputs(filename=self.server_nt_acc_filename,
 							   data=data_list
@@ -559,6 +574,9 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		metrics_aggregated = {
 			"accuracy"  : accuracy_aggregated,
 			"accuracy std": accuracy_std,
+			"macro f1-score": macro_f1_score_aggregated,
+			"weighted f1-score": weighted_f1_score_aggregated,
+			"micro f1-score": micro_f1_score_aggregated,
 			"top-3"     : top5,
 			"top-1"     : top1
 		}
@@ -567,10 +585,6 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			self.end_evaluate_function()
 
 		return loss_aggregated, metrics_aggregated
-
-	def _get_server_data(self, process_time, server_round, accuracy_aggregated, accuracy_std, top5, top1):
-
-		return [process_time, server_round, accuracy_aggregated, accuracy_std, top5, top1]
 
 	def end_evaluate_function(self):
 		pass
@@ -655,8 +669,8 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.predictions_client_filename = f"{self.base}/predictions_client.csv"
 
 		server_header = self._get_server_header()
-		train_header = ["Round", "Cid", "Selected", "Total time", "Size of parameters", "Avg loss train", "Avg accuracy train"]
-		evaluate_header = ["Round", "Cid", "Size of parameters", "Size of config", "Loss", "Accuracy", "nt"]
+		train_header = ["Round", "Cid", "Selected", "Total time", "Size of parameters", "Avg loss train", "Avg accuracy train", "Macro f1-score", "Weighted f1-score", "Micro f1-score"]
+		evaluate_header = ["Round", "Cid", "Size of parameters", "Size of config", "Loss", "Accuracy", "Macro f1-score", "Weighted f1-score", "Micro f1-score", "nt"]
 		server_nt_acc_header = ["Round", "Accuracy (%)", "nt"]
 		predictions_header = ["Cid", "Round", "Prediction", "Label"]
 
@@ -675,7 +689,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 	def _get_server_header(self):
 
-		return ["Time", "Server round", "Accuracy aggregated", "Accuracy std", "Top5", "Top1"]
+		return ["Time", "Server round", "Accuracy aggregated", "Accuracy std", "Macro f1-score", "Weighted f1-score", "Micro f1-score", "Top5", "Top1"]
 
 	def _write_output(self, filename, data):
 

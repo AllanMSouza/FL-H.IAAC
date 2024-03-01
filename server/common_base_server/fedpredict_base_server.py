@@ -31,6 +31,9 @@ from flwr.common import (
 )
 
 from utils.compression_methods.parameters_svd import parameter_svd_write, inverse_parameter_svd_reading
+# sys.path.append('/home/claudio/Documentos/pycharm_projects/fedpredict/fedpredict')
+
+# from fedpredict import fedpredict_server
 
 def get_size(parameter):
 	try:
@@ -262,11 +265,17 @@ class FedPredictBaseServer(FedAvgBaseServer):
 
 	def configure_evaluate(self, server_round, parameters, client_manager):
 		client_evaluate_list = super().configure_evaluate(server_round, parameters, client_manager)
-		return fedpredict_server(parameters=parameters, client_evaluate_list=client_evaluate_list, 
+		return fedpredict_server(parameters=parameters, client_evaluate_list=client_evaluate_list,
 								 fedpredict_clients_metrics=self.fedpredict_clients_metrics, df=self.df,
-								 evaluate_config=self.evaluate_config, server_round=server_round, 
-								 num_rounds=self.num_rounds, comment=self.comment, 
+								 evaluate_config=self.evaluate_config, server_round=server_round,
+								 num_rounds=self.num_rounds, comment=self.comment,
 								 compression=self.compression, layers_compression_range=self.layers_compression_range)
+		# parameters = parameters_to_ndarrays(parameters)
+		# return fedpredict_server(parameters=parameters, client_evaluate_list=client_evaluate_list,
+		# 						 fedpredict_clients_metrics=self.fedpredict_clients_metrics, df=self.df,
+		# 						  server_round=server_round,
+		# 						 num_rounds=self.num_rounds,
+		# 						 compression_method=self.compression, model_shape=self.model_shape, fl_framework='flower')
 
 	def end_evaluate_function(self):
 		self._write_similarity()

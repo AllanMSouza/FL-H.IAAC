@@ -81,24 +81,30 @@ class NonIid:
             os.makedirs(self.base_dir + "svg/")
 
         models_directories = {self.strategy_name_list[i]:
-                              """{}/{}/{}/new_clients_{}_train_{}/{}/{}/{}/classes_per_client_{}/alpha_{}/{}_rounds/{}_local_epochs/{}_comment/{}_compression/""".
-                              format(os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/FL-H.IAAC/logs",
-                                     self.type,
-                                     self._get_strategy_config(self.strategy_name_list[i]),
-                                     self.new_clients,
-                                     self.new_clients_train,
-                                     self.n_clients,
-                                     self.model_name,
-                                     self.dataset_name,
-                                     self.class_per_client,
-                                     self.alpha,
-                                     self.rounds,
-                                     self.epochs,
-                                     self.comment,
-                                     self.compression) for i in range(len(self.strategy_name_list))}
+                              """{}/{}/{}/new_clients_{}_train_{}_dynamic_data_{}/{}/{}/{}/{}/alpha_{}/{}_rounds/{}_local_epochs/{}_comment/{}_compression/""".format(os.path.abspath(os.path.join(os.getcwd(),
+                                os.pardir)) + "/FL-H.IAAC/logs",
+                                self.type,
+                                                                         self._get_strategy_config(
+                                                                             self.strategy_name_list[
+                                                                                 i]),
+                                self.new_clients,
+                                self.new_clients_train,
+                                self.dynamic_data,
+                                self.n_clients,
+                                self.model_name,
+                                self.dataset_name,
+                                "classes_per_client_2",
+                                self.alpha,
+                                self.rounds,
+                                self.epochs,
+                                self.comment,
+                                self.compression)
+                               for i in range(len(self.strategy_name_list))}
 
         # read datasets
-        print(models_directories)
+        print("read datasets")
+        print(self.base_dir)
+        print(models_directories, self.strategy_name_list)
         for i in range(len(self.strategy_name_list)):
             strategy_name = self.strategy_name_list[i]
 
@@ -109,6 +115,7 @@ class NonIid:
                     continue
                 if 'norm' in file_name:
                     continue
+                print("le: ", models_directories[strategy_name]+file_name)
                 df = pd.read_csv(models_directories[strategy_name]+file_name)
                 df['Strategy'] = np.array([strategy_name]*len(df))
                 df['Alpha'] = np.array([self.alpha]*len(df))
@@ -216,14 +223,63 @@ class NonIid:
 
         # server analysis
         df = self.df_files_names['server']
-        df['Accuracy aggregated (%)'] = df['Accuracy aggregated'] * 100
+
+        print("datasets")
+        print(df)
+
+        df['Accuracy aggregated (%)'] = df['Accuracy aggregated'].to_numpy() * 100
+        df['Macro f1-score (%)'] = df['Macro f1-score'].to_numpy() * 100
+        df['Weighted f1-score (%)'] = df['Weighted f1-score'].to_numpy() * 100
+        df['Micro f1-score (%)'] = df['Micro f1-score'] .to_numpy() * 100
         df['Time (seconds)'] = df['Time'].to_numpy()
         x_column = 'Server round'
-        y_column = 'Accuracy aggregated (%)'
+        # y_column = 'Accuracy aggregated (%)'
+        # hue = 'Strategy'
+        # line_plot(df=df,
+        #           base_dir=self.base_dir,
+        #           file_name="server_acc_round_lineplot_" + str(int(self.experiment) - 1),
+        #           x_column=x_column,
+        #           y_column=y_column,
+        #           title=title,
+        #           hue=hue,
+        #           y_lim=True,
+        #           y_max=100)
+
+        plt.plot()
+        plt.clf()
+        y_column = 'Macro f1-score (%)'
         hue = 'Strategy'
         line_plot(df=df,
                   base_dir=self.base_dir,
-                  file_name="server_acc_round_lineplot_" + str(int(self.experiment) - 1),
+                  file_name="server_macro_f1score_round_lineplot_" + str(int(self.experiment) - 1),
+                  x_column=x_column,
+                  y_column=y_column,
+                  title=title,
+                  hue=hue,
+                  y_lim=True,
+                  y_max=100)
+
+        plt.plot()
+        plt.clf()
+        y_column = 'Weighted f1-score (%)'
+        hue = 'Strategy'
+        line_plot(df=df,
+                  base_dir=self.base_dir,
+                  file_name="server_weighted_f1score_round_lineplot_" + str(int(self.experiment) - 1),
+                  x_column=x_column,
+                  y_column=y_column,
+                  title=title,
+                  hue=hue,
+                  y_lim=True,
+                  y_max=100)
+
+        plt.plot()
+        plt.clf()
+        y_column = 'Micro f1-score (%)'
+        hue = 'Strategy'
+        line_plot(df=df,
+                  base_dir=self.base_dir,
+                  file_name="server_micro_f1score_round_lineplot_" + str(int(self.experiment) - 1),
                   x_column=x_column,
                   y_column=y_column,
                   title=title,

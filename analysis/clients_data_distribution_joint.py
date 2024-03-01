@@ -325,13 +325,13 @@ class Varying_Shared_layers:
         x_order = [0.1, 0.5, 1.0]
 
         # hue_order = ['EMNIST', 'CIFAR-10', 'GTSRB', 'WISDM-WATCH', 'WISDM-P']
-        hue_order = ['Cologne', 'WISDM-W', 'WISDM-P']
+        hue_order = ['CIFAR-10', 'EMNIST', 'GTSRB']
 
-        fig, axs = plt.subplots(2, 1, sharex='all', sharey='all', figsize=(6, 6))
+        fig, axs = plt.subplots(2, 1, sharex='all', sharey='all', figsize=(6, 5))
         bar_plot(df=df_unique_classes, base_dir=self.base_dir, ax=axs[0], x_order=x_order, file_name="""unique_classes_{}""".format(self.dataset), x_column='\u03B1', y_column='Classes (%)', title="""Clients' local classes""", tipo="classes", y_max=100, hue='Dataset', hue_order=hue_order)
         i = 0
         axs[i].get_legend().remove()
-        axs[i].legend(fontsize=10)
+
         axs[i].set_xlabel('')
         # axs[i].set_ylabel('')
         # bar_plot(df=df_unique_classes, base_dir=self.base_dir, file_name="""balance_level_{}""".format(self.dataset),
@@ -340,6 +340,7 @@ class Varying_Shared_layers:
                  x_column='\u03B1', y_column='Imbalance level (%)', title="""Dataset imbalance level""", y_max=100, hue='Dataset', tipo="balance", hue_order=hue_order)
         i = 1
         axs[i].get_legend().remove()
+        axs[i].legend(fontsize=10)
         # axs[i].legend(fontsize=7)
         # axs[i].set_xlabel('')
         # axs[i].set_ylabel('')
@@ -400,11 +401,13 @@ class Varying_Shared_layers:
                     a = self.alpha[j]
                     # df = self.df.query("""\u03B1 == {} and Dataset == '{}'""".format(a, dataset))
                     self.plot(ax, self.df, dataset, a, x_column, y_column, self.base_dir, hue, i, j, y_max=100)
-
+            ax[0].get_legend().remove()
 
             fig.suptitle("", fontsize=16)
             fig.supxlabel(x_column, y=-0.02)
             fig.supylabel(y_column, x=-0.005)
+
+
             # plt.tight_layout(pad=0.5)
 
             plt.subplots_adjust(wspace=0.07, hspace=0.14)
@@ -430,7 +433,7 @@ if __name__ == '__main__':
     aggregation_method = "None"
     fraction_fit = 0.3
     num_clients = {'GTSRB': 20, 'EMNIST': 20, 'CIFAR-10': 20, 'Cologne': 20, 'WISDM-WATCH': 20, 'WISDM-P': 20}
-    dataset = ["Cologne", "WISDM-WATCH", "WISDM-P"]
+    dataset = ["CIFAR-10", "EMNIST", "GTSRB"]
     alpha = [0.1, 0.5, 1.0]
     num_rounds = 50
 

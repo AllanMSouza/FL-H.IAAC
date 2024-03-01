@@ -1,11 +1,12 @@
 from client.client_torch import FedAvgClientTorch
-from ..fedpredict_core import fedpredict_dynamic_client
+# from ..fedpredict_core import fedpredict_dynamic_client
 from torch.nn.parameter import Parameter
 import torch
 from pathlib import Path
 import os
 import sys
 import pandas as pd
+from sklearn.metrics import f1_score
 import numpy as np
 import ast
 from utils.compression_methods.sparsification import calculate_bytes, sparse_bytes, sparse_matrix
@@ -15,6 +16,10 @@ warnings.simplefilter("ignore")
 
 import logging
 # logging.getLogger("torch").setLevel(logging.ERROR)
+
+# sys.path.append('/home/claudio/Documentos/pycharm_projects/fedpredict/fedpredict')
+
+from fedpredict import fedpredict_dynamic_client
 
 class FedPredictDynamicClientTorch(FedAvgClientTorch):
 
@@ -232,6 +237,7 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 			local_classes = self.classes_proportion
 
 			server_round = config['round']
+			nt = server_round - self.round_of_last_fit
 			similarity, imbalance_level, fraction_of_classes, current_proportion = self._calculate_contexts_similarities(server_round)
 			self.current_proportion = np.array(current_proportion)
 			self.similarity = similarity
@@ -251,7 +257,12 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 				pattern = config['pattern']
 				print("""cliente {} mudou padrao {}""".format(self.cid, pattern))
 			local_data_information = {'similarity': similarity, 'imbalance_level': imbalance_level, 'fraction_of_classes': fraction_of_classes}
-			self.model = fedpredict_dynamic_client(self.filename, self.model, global_parameters, config, mode=None, local_client_information=local_data_information, current_proportion=current_proportion, pattern=pattern, cid=self.cid)
+			self.model = fedpredict_dynamic_client(filename=self.filename, local_model=self.model,
+												   global_parameters=global_parameters, t=config['round'],
+												   T=100, nt=config['nt'], M=config['M'], decompress=config['decompress'], config=config, mode=None, local_client_information=local_data_information, current_proportion=current_proportion, dynamic=True)
+			# self.model = fedpredict_dynamic_client(self.filename, self.model, global_parameters, config, mode=None,
+			# 									   local_client_information=local_data_information,
+			# 									   current_proportion=current_proportion, pattern=pattern, cid=self.cid)
 
 		except Exception as e:
 			print("Set parameters to model evaluate dyn")
@@ -265,6 +276,10 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 			test_acc = 0
 			test_loss = 0
 			test_num = 0
+			macro_f1_score = 0
+			weigthed_f1_score = 0
+			micro_f1_score = 0
+			count = 0
 
 			predictions = np.array([])
 			labels = np.array([])
@@ -295,11 +310,19 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 					labels = np.append(labels, y.cpu())
 					test_acc += (torch.sum(prediction == y)).item()
 					test_num += y.shape[0]
+					count += 1
+					macro_f1_score += f1_score(y, output.detach().numpy().tolist(), average='macro', zero_division=1)
+					weigthed_f1_score += f1_score(y, output.detach().numpy().tolist(), average='weighted',
+												  zero_division=1)
+					micro_f1_score += f1_score(y, output.detach().numpy().tolist(), average='micro', zero_division=1)
 
 			loss = test_loss / test_num
 			accuracy = test_acc / test_num
+			macro_f1_score = macro_f1_score / count
+			weigthed_f1_score = weigthed_f1_score / count
+			micro_f1_score = micro_f1_score / count
 
-			return loss, accuracy, test_num, predictions, output, labels
+			return loss, accuracy, macro_f1_score, weigthed_f1_score, micro_f1_score, test_num, predictions, output, labels
 		except Exception as e:
 			print("model_eval")
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e)

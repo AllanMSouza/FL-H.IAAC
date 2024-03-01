@@ -1,5 +1,6 @@
 from client.client_torch import FedAvgClientTorch
-from ..fedpredict_core import fedpredict_client
+# from ..fedpredict_core import fedpredict_client
+from fedpredict.fedpredict import fedpredict_client_traditional
 from torch.nn.parameter import Parameter
 import torch
 from pathlib import Path
@@ -97,7 +98,11 @@ class FedYogiWithFedPredictClientTorch(FedYogiClientTorch):
     def set_parameters_to_model_evaluate(self, global_parameters, config={}):
             # Using 'torch.load'
             try:
-                    self.model = fedpredict_client(self.filename, self.model, global_parameters, config)
+                    # self.model = fedpredict_client(self.filename, self.model, global_parameters, config)
+                    self.model = fedpredict_client_traditional(filename=self.filename, local_model=self.model,
+                                                               global_parameters=global_parameters, t=config['round'],
+                                                               T=self.n_rounds, nt=config['nt'], M=config['M'],
+                                                               decompress=config['decompress'])
 
             except Exception as e:
                     print("Set parameters to model")

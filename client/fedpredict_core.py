@@ -526,7 +526,7 @@ def fedpredict_server(parameters, client_evaluate_list, fedpredict_clients_metri
         print("Tamanho parametros compredict: ", sum(i.nbytes for i in parameters_to_send))
         for i in range(1, len(parameters)):
             size_of_parameters.append(get_size(parameters[i]))
-        fedpredict_clients_metrics[str(client.pattern)]['acc_bytes_rate'] = size_of_parameters
+        fedpredict_clients_metrics[str(client.cid)]['acc_bytes_rate'] = size_of_parameters
         config['M'] = M
         config['decompress'] = decompress
         config['layers_fraction'] = layers_fraction
