@@ -1,0 +1,119 @@
+2023-12-14 21:52:41.822405: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2023-12-14 21:52:42.559246: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
+2023-12-14 21:52:42.559329: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
+2023-12-14 21:52:42.559340: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
+INFO flwr 2023-12-14 21:52:46,085 | app.py:146 | Starting Flower simulation, config: ServerConfig(num_rounds=10, round_timeout=None)
+2023-12-14 21:52:48,316	INFO worker.py:1529 -- Started a local Ray instance. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+INFO flwr 2023-12-14 21:52:49,688 | app.py:180 | Flower VCE: Ray initialized with resources: {'CPU': 12.0, 'accelerator_type:G': 1.0, 'node:192.168.0.13': 1.0, 'GPU': 1.0, 'object_store_memory': 7091431833.0, 'memory': 14182863668.0}
+INFO flwr 2023-12-14 21:52:49,689 | server.py:86 | Initializing global parameters
+INFO flwr 2023-12-14 21:52:49,689 | server.py:273 | Requesting initial parameters from one random client
+[2m[36m(pid=10056)[0m 2023-12-14 21:52:50.010998: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+[2m[36m(pid=10056)[0m 2023-12-14 21:52:50.533944: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
+[2m[36m(pid=10056)[0m 2023-12-14 21:52:50.534008: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
+[2m[36m(pid=10056)[0m 2023-12-14 21:52:50.534017: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
+INFO flwr 2023-12-14 21:52:52,963 | server.py:277 | Received initial parameters from one random client
+INFO flwr 2023-12-14 21:52:52,963 | server.py:88 | Evaluating initial parameters
+INFO flwr 2023-12-14 21:52:52,963 | server.py:101 | FL starting
+DEBUG flwr 2023-12-14 21:52:52,968 | server.py:218 | fit_round 1: strategy sampled 4 clients (out of 20)
+[2m[36m(pid=10061)[0m 2023-12-14 21:52:53.259953: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+[2m[36m(pid=10066)[0m 2023-12-14 21:52:53.267920: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+[2m[36m(pid=10058)[0m 2023-12-14 21:52:53.303934: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+[2m[36m(pid=10061)[0m 2023-12-14 21:52:53.987798: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
+[2m[36m(pid=10061)[0m 2023-12-14 21:52:53.987922: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
+[2m[36m(pid=10061)[0m 2023-12-14 21:52:53.987939: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
+[2m[36m(pid=10066)[0m 2023-12-14 21:52:53.997165: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
+[2m[36m(pid=10066)[0m 2023-12-14 21:52:53.997261: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
+[2m[36m(pid=10066)[0m 2023-12-14 21:52:53.997274: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
+[2m[36m(pid=10058)[0m 2023-12-14 21:52:54.025327: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
+[2m[36m(pid=10058)[0m 2023-12-14 21:52:54.025406: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
+[2m[36m(pid=10058)[0m 2023-12-14 21:52:54.025418: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
+Simulacao da estratégia:  FedPer 0.3
+device:  cuda:0
+===================================================
+Starting training of FedPer-None-0.3
+
+[2m[36m(launch_and_get_parameters pid=10056)[0m recebeu:  18 EMNIST 20 2 0.1 True
+Iniciar configure fit
+ola:  12
+começo configure fit:  12 1
+lista inicial de clientes:  []
+Rodada inicial de novos clientes:  7
+disponiveis para treino:  14
+clientes para selecionar (fit):  4  de  14
+selecionar (fit):  ['1', '9', '2', '4']
+Clientes selecionados:  4
+[2m[36m(launch_and_get_parameters pid=10056)[0m baixou 5476
+[2m[36m(launch_and_get_parameters pid=10056)[0m leu dados
+[2m[36m(launch_and_fit pid=10056)[0m recebeu:  9 EMNIST 20 2 0.1 True
+[2m[36m(launch_and_fit pid=10056)[0m baixou 5348
+[2m[36m(launch_and_fit pid=10056)[0m leu dados
+[2m[36m(launch_and_fit pid=10056)[0m Iniciar treinamento
+[2m[36m(launch_and_fit pid=10056)[0m Cliente:  9  rodada:  1  Quantidade de camadas:  12  device:  cpu
+ola
+Starting FedPer fraction_fit-0.3 simulation for EMNIST clients with CNN_3 model ... /home/claudio/Documentos/pycharm_projects/FL-H.IAAC
+=====================================
+Executando... 
+ python /home/claudio/Documentos/pycharm_projects/FL-H.IAAC/simulation.py --dataset='EMNIST' --model='CNN_3' --strategy='FedPer' --epochs=1 --round=10 --client=20 --type='torch' --non-iid=True --aggregation_method='None' --fraction_fit=0.3 --poc=0 --new_clients=True --new_clients_train=False --decay=0 --comment=set --class_per_client=2 --alpha=0.1 --compression_method=dls_compredict --classes=47 --use_gradient= --n_clusters=3 --clustering= --cluster_round=17 --cluster_metric=weights --metric_layer=-1 --cluster_method=KCenter --dynamic_data=no 
+=====================================
+Traceback (most recent call last):
+  File "/usr/lib/python3.8/subprocess.py", line 1083, in wait
+    return self._wait(timeout=timeout)
+  File "/usr/lib/python3.8/subprocess.py", line 1822, in _wait
+    (pid, sts) = self._try_wait(0)
+  File "/usr/lib/python3.8/subprocess.py", line 1780, in _try_wait
+    (pid, sts) = os.waitpid(self.pid, wait_flags)
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "exec_experiments.py", line 256, in <module>
+    main()
+  File "exec_experiments.py", line 245, in main
+    execute_experiment(experiment=opt.experiment_id, algorithm=experiment['algorithm'],
+  File "exec_experiments.py", line 210, in execute_experiment
+    subprocess.Popen(test_config, shell=True).wait()
+  File "/usr/lib/python3.8/subprocess.py", line 1096, in wait
+    self._wait(timeout=sigint_timeout)
+  File "/usr/lib/python3.8/subprocess.py", line 1816, in _wait
+    time.sleep(delay)
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/home/claudio/Documentos/virtual_environments/env/lib/python3.8/site-packages/flwr/server/server.py", line 334, in fit_clients
+    finished_fs, _ = concurrent.futures.wait(
+  File "/usr/lib/python3.8/concurrent/futures/_base.py", line 305, in wait
+    waiter.event.wait(timeout)
+  File "/usr/lib/python3.8/threading.py", line 558, in wait
+    signaled = self._cond.wait(timeout)
+  File "/usr/lib/python3.8/threading.py", line 302, in wait
+    waiter.acquire()
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/simulation.py", line 1057, in <module>
+    main()
+  File "/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/simulation.py", line 1052, in main
+    simulation.start_simulation()
+  File "/home/claudio/Documentos/pycharm_projects/FL-H.IAAC/simulation.py", line 991, in start_simulation
+    fl.simulation.start_simulation(
+  File "/home/claudio/Documentos/virtual_environments/env/lib/python3.8/site-packages/flwr/simulation/app.py", line 197, in start_simulation
+    hist = _fl(
+  File "/home/claudio/Documentos/virtual_environments/env/lib/python3.8/site-packages/flwr/server/app.py", line 217, in _fl
+    hist = server.fit(num_rounds=config.num_rounds, timeout=config.round_timeout)
+  File "/home/claudio/Documentos/virtual_environments/env/lib/python3.8/site-packages/flwr/server/server.py", line 106, in fit
+    res_fit = self.fit_round(server_round=current_round, timeout=timeout)
+  File "/home/claudio/Documentos/virtual_environments/env/lib/python3.8/site-packages/flwr/server/server.py", line 227, in fit_round
+    results, failures = fit_clients(
+  File "/home/claudio/Documentos/virtual_environments/env/lib/python3.8/site-packages/flwr/server/server.py", line 334, in fit_clients
+    finished_fs, _ = concurrent.futures.wait(
+  File "/usr/lib/python3.8/concurrent/futures/_base.py", line 644, in __exit__
+    self.shutdown(wait=True)
+  File "/usr/lib/python3.8/concurrent/futures/thread.py", line 236, in shutdown
+    t.join()
+  File "/usr/lib/python3.8/threading.py", line 1011, in join
+    self._wait_for_tstate_lock()
+  File "/usr/lib/python3.8/threading.py", line 1027, in _wait_for_tstate_lock
+    elif lock.acquire(block, timeout):
+KeyboardInterrupt

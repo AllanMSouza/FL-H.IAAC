@@ -72,6 +72,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			self.local_epochs = epochs
 			self.non_iid      = non_iid
 			self.n_rounds	  = int(args.rounds)
+			self.n_rounds_real = int(args.rounds)
 
 			self.num_classes = n_classes
 			self.class_per_client = int(args.class_per_client)
@@ -120,10 +121,11 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 			#params
 			if self.aggregation_method == 'POC':
-				self.solution_name = f"{solution_name}-{aggregation_method}-{self.perc_of_clients}"
+				self.solution_name = f"{solution_name}-{aggregation_method}-{self.fraction_fit}"
+				self.n_rounds = self.n_rounds * 2
 
-			elif self.aggregation_method == 'FedLTA':
-				self.solution_name = f"{solution_name}-{aggregation_method}-{self.decay}"
+			elif self.aggregation_method == 'DEEV':
+				self.solution_name = f"{solution_name}-{aggregation_method}-{self.fraction_fit}"
 
 			elif self.aggregation_method == 'None':
 				self.solution_name = f"{solution_name}-{aggregation_method}-{self.fraction_fit}"
@@ -487,7 +489,9 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			selected = 0
 			print("Iniciar treinamento")
 			if config['selected_clients'] != '':
-				selected_clients = [int(cid_selected) for cid_selected in config['selected_clients'].split(' ')]
+				selected_clients = [int(i) for i in config['selected_clients']]
+
+			train = config['train']
 
 			start_time = time.process_time()
 			server_round = int(config['round'])
@@ -496,7 +500,9 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				self.trainloader, self.testloader, self.traindataset, self.testdataset = self.load_data(self.dataset,
 																									n_clients=self.n_clients, server_round=server_round, train=True)
 			original_parameters = copy.deepcopy(parameters)
-			if self.cid in selected_clients or self.client_selection == False or int(config['round']) == 1:
+			print("sfo: ", self.cid, selected_clients, type(self.cid))
+			if self.cid in selected_clients:
+				print("entrou ")
 				self.set_parameters_to_model_fit(parameters)
 				# self.save_parameters_global_model(parameters)
 				self.round_of_last_fit = server_round
@@ -506,7 +512,10 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				np.random.seed(0)
 				torch.manual_seed(0)
 				self.model.to(self.device)
-				self.model.train()
+				if train:
+					self.model.train()
+				else:
+					self.model.eval()
 				random.seed(0)
 				np.random.seed(0)
 				torch.manual_seed(0)
@@ -571,13 +580,25 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			weigthed_f1_score = weigthed_f1_score / train_num
 			micro_f1_score = micro_f1_score / train_num
 
-			data = [config['round'], self.cid, selected, total_time, size_of_parameters, avg_loss_train, avg_acc_train, macro_f1_score, weigthed_f1_score, micro_f1_score]
+			if self.aggregation_method == "POC":
+				if train:
+					server_round = server_round // 2
+					data = [config['round'], self.cid, selected, total_time, size_of_parameters, avg_loss_train, avg_acc_train, macro_f1_score, weigthed_f1_score, micro_f1_score]
 
-			self.save_client_information_fit(server_round, avg_acc_train, predictions)
+					self.save_client_information_fit(server_round, avg_acc_train, predictions)
 
-			self._write_output(
-				filename=self.train_client_filename,
-				data=data)
+					self._write_output(
+						filename=self.train_client_filename,
+						data=data)
+			else:
+				data = [config['round'], self.cid, selected, total_time, size_of_parameters, avg_loss_train,
+						avg_acc_train, macro_f1_score, weigthed_f1_score, micro_f1_score]
+
+				self.save_client_information_fit(server_round, avg_acc_train, predictions)
+
+				self._write_output(
+					filename=self.train_client_filename,
+					data=data)
 
 			pattern = self.cid
 			if self.dynamic_data != "no":
@@ -590,7 +611,9 @@ class ClientBaseTorch(fl.client.NumPyClient):
 
 			fit_response = {
 				'cid': self.cid,
-				'pattern': pattern
+				'pattern': pattern,
+				'accuracy': avg_acc_train,
+				'loss': avg_loss_train
 			}
 
 			if self.use_gradient and server_round > 1:
@@ -699,6 +722,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 	def evaluate(self, parameters, config):
 		try:
 			server_round = int(config['round'])
+			train = config['train']
 			if self.dynamic_data != "no":
 				self.trainloader, self.testloader, self.traindataset, self.testdataset = self.load_data(self.dataset,
 																								n_clients=self.n_clients,
@@ -715,9 +739,18 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			size_of_config = self._get_size_of_dict(config)
 			self.server_round = server_round
 			loss, accuracy, macro_f1_score, weighted_f1_score, micro_f1_score, test_num, predictions, output, labels = self.model_eval(server_round)
-			data = [config['round'], self.cid, size_of_parameters, size_of_config, loss, accuracy, macro_f1_score, weighted_f1_score, micro_f1_score, nt]
-			self._write_output(filename=self.evaluate_client_filename,
-							   data=data)
+
+			if self.aggregation_method == "POC":
+				if train:
+					server_round = server_round // 2
+					data = [config['round'], self.cid, size_of_parameters, size_of_config, loss, accuracy, macro_f1_score, weighted_f1_score, micro_f1_score, nt]
+					self._write_output(filename=self.evaluate_client_filename,
+									   data=data)
+			else:
+				data = [config['round'], self.cid, size_of_parameters, size_of_config, loss, accuracy, macro_f1_score,
+						weighted_f1_score, micro_f1_score, nt]
+				self._write_output(filename=self.evaluate_client_filename,
+								   data=data)
 
 			if server_round == n_rounds:
 				data = [[self.cid, server_round, int(p), int(l)] for p, l in zip(predictions, labels)]
@@ -739,7 +772,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				"macro f1-score": macro_f1_score,
 				"weighted f1-score": weighted_f1_score,
 				"micro f1-score": micro_f1_score,
-				"pattern": pattern
+				"pattern": pattern,
+				"loss": loss
 			}
 
 			return loss, test_num, evaluation_response

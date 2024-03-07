@@ -96,11 +96,14 @@
 #echo "Executing experiment 32..."
 #python3 exec_experiments.py --experiment_id=32 --type="torch" > execution_log/experiment_32.txt 2>&1
 
-echo "Executing experiment 40..."
-python3 exec_experiments.py --experiment_id=40 --type="torch" > execution_log/experiment_40.txt 2>&1
-
+#echo "Executing experiment 40..."
+#python3 exec_experiments.py --experiment_id=40 --type="torch" > execution_log/experiment_40.txt 2>&1
+#
 echo "Executing experiment 41..."
 python3 exec_experiments.py --experiment_id=41 --type="torch" > execution_log/experiment_41.txt 2>&1
+
+#echo "Executing experiment 42..."
+#python3 exec_experiments.py --experiment_id=42 --type="torch" > execution_log/experiment_42.txt 2>&1
 #
 #
 #shutdown -P +1

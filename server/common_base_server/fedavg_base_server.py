@@ -46,10 +46,14 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 				 new_clients=False,
 				 new_clients_train=False):
 
+		super().__init__(fraction_fit=float(args.fraction_fit), min_available_clients=num_clients,
+						 min_fit_clients=num_clients, min_evaluate_clients=num_clients)
+
 		self.aggregation_method = aggregation_method
 		self.n_classes = int(args.n_classes)
 		self.num_clients        = int(args.n_clients)
 		self.num_rounds			= int(args.rounds)
+		self.num_rounds_real	= int(args.rounds)
 		self.epochs				= int(args.local_epochs)
 		self.comment 			= args.comment
 		self.class_per_client = int(args.class_per_client)
@@ -59,11 +63,13 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.use_gradient = args.use_gradient
 		self.dynamic_data = args.dynamic_data
 		self.list_of_clients    = []
+		self.clients_metrics_evaluate = []
 		self.list_of_accuracies = []
+		self.list_of_losses 	= []
 		self.selected_clients   = []
 		#self.clients_last_round = []
 
-		self.average_accuracy   = 0
+		self.average_accuracy_evaluate   = 0
 		self.last_accuracy      = 0
 		self.current_accuracy   = 0
 		self.server_learning_rate = 1
@@ -76,15 +82,16 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.strategy_name = strategy_name
 		self.solution_name = strategy_name
 
+		self.training_cost = fraction_fit
 		#POC
 		self.perc_of_clients  = perc_of_clients
+		self.poc_round = 0
 
-		#FedLTA
+		#DEEV
 		self.decay_factor = decay
 
 		self.new_clients = new_clients
 		self.new_clients_train = new_clients_train
-		self.num_rounds = num_rounds
 		self.accuracy_history = {}
 		self.clients_fit_rounds_history = {i: -1 for i in range(self.num_clients)}
 		self.regression_window = 5
@@ -93,20 +100,21 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 											   'acc_of_last_fit': 0, 'acc_of_last_evaluate': 0, 'nt': 0, 'acc_bytes_rate': 0, 'local_classes': 0}
 										   for i in range(0, self.num_clients + 1)}
 
+		# params
+		if self.aggregation_method == 'POC':
+			self.strategy_name = f"{strategy_name}-{aggregation_method}-{self.fraction_fit}"
+			self.num_rounds = self.num_rounds * 2
+
+		elif self.aggregation_method == 'DEEV':
+			self.strategy_name = f"{strategy_name}-{aggregation_method}-{self.fraction_fit}"
+
+		elif self.aggregation_method == 'None':
+			self.strategy_name = f"{strategy_name}-{aggregation_method}-{fraction_fit}"
+
 		# FedPredictSelection
 		self.server_nt_acc = {round: {nt: [] for nt in range(0, self.num_rounds + 1)} for round in range(self.num_rounds + 1)}
 
 		self.type = args.type
-
-		#params
-		if self.aggregation_method == 'POC':
-			self.strategy_name = f"{strategy_name}-{aggregation_method}-{self.perc_of_clients}"
-
-		elif self.aggregation_method == 'FL-H.IAAC':
-			self.strategy_name = f"{strategy_name}-{aggregation_method}-{self.decay_factor}"
-
-		elif self.aggregation_method == 'None':
-			self.strategy_name = f"{strategy_name}-{aggregation_method}-{fraction_fit}"
 
 		self.round_threshold = 0.7
 		self.clients_threshold = 0.7
@@ -122,8 +130,6 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.mean_similarity_per_round = {}
 		self.model_shape = []
 		self.decimals_per_layer = {}
-
-		super().__init__(fraction_fit=float(args.fraction_fit), min_available_clients=num_clients, min_fit_clients=num_clients, min_evaluate_clients=num_clients)
 
 		print("""===================================================\nStarting training of {}\n""".format(self.strategy_name))
 
@@ -239,36 +245,51 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 				parameters[key] = parameters_to_ndarrays(parameters[key])
 			return parameters
 
+	def poc(self, server_round):
+
+		if server_round % 2 != 0:
+			clients2select = int(float(self.num_clients) * (self.fraction_fit + 0.2))
+			train = False
+			return random.sample(self.available_clients, clients2select), train
+		else:
+			clients2select = int(float(self.num_clients) * (self.fraction_fit))
+			train = True
+			clients_sorted = self.clients_metrics_train.sort(key=lambda x: x[2], reverse=True)
+
+			return clients_sorted[:clients2select], train
+
 	def configure_fit(self, server_round, parameters, client_manager):
 		"""Configure the next round of training."""
 		print("Iniciar configure fit")
 		self.start_time = time.process_time()
 		random.seed(server_round)
 
+		self.available_clients = [str(i) for i in range(self.num_clients)]
+
 		self.previous_global_parameters.append(self.parameters_to_ndarrays(parameters))
 		print("ola: ", len(self.previous_global_parameters[-1]))
-
-		# if server_round == 2:
-		# 	for layer in self.previous_global_parameters:
-		# 		print("lat", layer)
-		# 		self.model_shape.append(layer.shape)
 
 		print("começo configure fit: ", len(self.parameters_to_ndarrays(parameters)), server_round)
 
 		random.seed(server_round)
 
 		if self.aggregation_method == 'POC':
-			clients2select        = int(float(self.num_clients) * float(self.perc_of_clients))
-			self.selected_clients = self.list_of_clients[:clients2select]
 
-		elif self.aggregation_method == 'FedLTA':
+			self.selected_clients, self.train = self.poc(server_round)
+
+		elif self.aggregation_method == 'DEEV':
+			self.train = True
 			self.selected_clients = self.select_clients_bellow_average()
+			self.training_cost = len(self.selected_clients) / self.num_clients
 
 			if self.decay_factor > 0:
 				the_chosen_ones = len(self.selected_clients) * (1 - self.decay_factor) ** int(server_round)
+				self.training_cost = (1 - self.decay_factor) ** int(server_round)
 				self.selected_clients = self.selected_clients[: math.ceil(the_chosen_ones)]
 
 		elif self.aggregation_method == 'None':
+
+			self.train = True
 
 			print("lista inicial de clientes: ", self.list_of_clients)
 			# ====================================================================================
@@ -311,9 +332,11 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 
 		self.clients_last_round = self.selected_clients
+		print("os s: ", self.selected_clients)
 		config = {
-			"selected_clients" : ' '.join(self.selected_clients),
-			"round"            : server_round
+			"selected_clients" : self.selected_clients,
+			"round"            : server_round,
+			"train": self.train
 			}
 
 		fit_ins = FitIns(parameters, config)
@@ -322,12 +345,16 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		sample_size, min_num_clients = self.num_fit_clients(
 		    client_manager.num_available()
 		)
+
+		print("sample size: ", sample_size, min_num_clients)
 		clients = client_manager.sample(
 		    num_clients=sample_size, min_num_clients=min_num_clients
 		)
+		print("l: ", len(clients))
 
 		# fit only selected clients
 		selected_clients_id = []
+
 		if len(self.selected_clients) > 0:
 			for client in clients:
 				if client.cid in self.selected_clients:
@@ -361,8 +388,12 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		weights_results = []
 		clients_parameters = []
 		clients_ids = []
+		self.clients_metrics_train = []
 		for _, fit_res in results:
 			client_id = str(fit_res.metrics['cid'])
+			loss = float(fit_res.metrics['loss'])
+			acc = float(fit_res.metrics['accuracy'])
+			self.clients_metrics_train.append([client_id, acc, loss])
 			# local_classes = float(fit_res.metrics['local_classes'])
 			# self.fedpredict_clients_metrics[client_id]['local_classes'] = local_classes
 			clients_ids.append(client_id)
@@ -429,7 +460,8 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		# Parameters and config
 		config = {
 			'round' : server_round,
-			'n_rounds': self.num_rounds
+			'n_rounds': self.num_rounds,
+			'train': self.train
 		}
 
 		if self.on_evaluate_config_fn is not None:
@@ -469,7 +501,8 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			config = {
 				'round': server_round,
 				'n_rounds': self.num_rounds,
-				'nt': self.fedpredict_clients_metrics[str(client.cid)]['nt']
+				'nt': self.fedpredict_clients_metrics[str(client.cid)]['nt'],
+				'train': self.train
 			}
 
 			client_config.append((client, fl.common.EvaluateIns(parameters, config)))
@@ -483,7 +516,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
         failures,
     ):
 
-		local_list_clients      = []
+		self.clients_metrics_evaluate      = []
 		self.list_of_clients    = []
 		self.list_of_accuracies = []
 		accs                    = []
@@ -495,6 +528,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		for response in results:
 			client_id       = response[1].metrics['cid']
 			client_accuracy = float(response[1].metrics['accuracy'])
+			loss = float(response[1].metrics['loss'])
 			client_macro_f1_score = float(response[1].metrics['macro f1-score'])
 			client_weighted_f1_score = float(response[1].metrics['weighted f1-score'])
 			client_micro_f1_score = float(response[1].metrics['micro f1-score'])
@@ -502,7 +536,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			macro_f1_scores.append(client_macro_f1_score)
 			weighted_f1_scores.append(client_weighted_f1_score)
 			micro_f1_scores.append(client_micro_f1_score)
-			local_list_clients.append((client_id, client_accuracy))
+			self.clients_metrics_evaluate.append((client_id, client_accuracy, loss))
 			self.fedpredict_clients_metrics[str(client_id)]['acc_of_last_evaluate'] = client_accuracy
 			self.fedpredict_clients_metrics[str(client_id)]['round_of_last_evaluate'] = server_round
 			if self.fedpredict_clients_metrics[str(client_id)]['round_of_last_fit'] == server_round:
@@ -510,13 +544,12 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			# FedPredictSelection
 			self.server_nt_acc[server_round][self.fedpredict_clients_metrics[str(client_id)]['nt']].append(client_accuracy)
 
-		local_list_clients.sort(key=lambda x: x[1])
-
-		self.list_of_clients    = [str(client[0]) for client in local_list_clients]
-		self.list_of_accuracies = [float(client[1]) for client in local_list_clients]
+		self.list_of_clients    = [str(client[0]) for client in self.clients_metrics_evaluate]
+		self.list_of_accuracies = [[client[0], float(client[1])] for client in self.clients_metrics_evaluate]
+		self.list_of_losses = [[client[0], float(client[2])] for client in self.clients_metrics_evaluate]
 
 		accs.sort()
-		self.average_accuracy   = np.mean(accs)
+		self.average_accuracy_evaluate   = np.mean([i[1] for i in self.list_of_accuracies])
 		self._calculate_mean_of_server_nt_acc(server_round)
 
 		# Weigh accuracy of each client by number of examples used
@@ -545,7 +578,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		top1 = accs[-1]
 
 		assert self.server_filename is not None
-		data = [time.process_time()-self.start_time, server_round, accuracy_aggregated, accuracy_std, top5, top1, macro_f1_score_aggregated, weighted_f1_score_aggregated, micro_f1_score_aggregated]
+		data = [time.process_time()-self.start_time, server_round, accuracy_aggregated, accuracy_std, top5, top1, macro_f1_score_aggregated, weighted_f1_score_aggregated, micro_f1_score_aggregated, self.training_cost]
 
 		self._write_output(filename=self.server_filename,
 						   data=data
@@ -592,10 +625,17 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 		selected_clients = []
 
-		for idx_accuracy in range(len(self.list_of_accuracies)):
+		for idx_accuracy in range(len(self.clients_metrics_evaluate)):
 
-			if self.list_of_accuracies[idx_accuracy] < self.average_accuracy:
-				selected_clients.append(self.list_of_clients[idx_accuracy])
+			client = self.clients_metrics_evaluate[idx_accuracy]
+			client_id = client[0]
+			acc = client[1]
+			if acc < self.average_accuracy_evaluate:
+				selected_clients.append(client_id)
+
+		if len(selected_clients) == 0:
+
+			return self.available_clients
 
 		return selected_clients
 
@@ -657,7 +697,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 	def _create_base_directory(self, args):
 
-		return f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}_dynamic_data_{self.dynamic_data}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(self.compression)}_compression"
+		return f"logs/{self.type}/{self.strategy_name}/new_clients_{self.new_clients}_train_{self.new_clients_train}_dynamic_data_{self.dynamic_data}/{self.num_clients}/{self.model_name}/{self.dataset}/classes_per_client_{self.class_per_client}/alpha_{self.alpha}/{self.num_rounds_real}_rounds/{self.epochs}_local_epochs/{self.comment}_comment/{str(self.compression)}_compression"
 
 	def _write_output_files_headers(self, args):
 
@@ -689,7 +729,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 	def _get_server_header(self):
 
-		return ["Time", "Server round", "Accuracy aggregated", "Accuracy std", "Macro f1-score", "Weighted f1-score", "Micro f1-score", "Top5", "Top1"]
+		return ["Time", "Server round", "Accuracy aggregated", "Accuracy std", "Macro f1-score", "Weighted f1-score", "Micro f1-score", "Top5", "Top1", "Training cost"]
 
 	def _write_output(self, filename, data):
 

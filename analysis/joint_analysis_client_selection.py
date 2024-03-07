@@ -24,7 +24,7 @@ class JointAnalysis():
         count = 0
         original_model = copy.deepcopy(model)
         version_dict = {"FedPredict": {-2: "FedPredict_{dc}"}}
-        self.client_selections = ['Random', 'POC']
+        self.client_selections = ['Random', 'POC', 'DEEV']
         for i in experiments:
             experiment = experiments[i]
             new_clients = experiment['new_client']
@@ -58,7 +58,7 @@ class JointAnalysis():
                                     model = original_model
 
                                 for client_selection in self.client_selections:
-                                    filename1 = """{}/{}/{}-{}-{}/new_clients_{}_train_{}_dynamic_data_{}/{}/{}/{}/{}/alpha_{}/{}_rounds/{}/{}_comment/{}_compression/{}""".format(os.path.abspath(os.path.join(os.getcwd(),
+                                    filename1 = """{}/{}/{}-{}-{}/new_clients_{}_train_{}_dynamic_data_{}/{}/{}/{}/{}/alpha_{}/{}_rounds/{}/{}_comment/{}_compression/""".format(os.path.abspath(os.path.join(os.getcwd(),
                                                                                                                             os.pardir)) + "/FL-H.IAAC/logs",
                                                                                                                             type,
                                                                                                                             strategy,
@@ -75,33 +75,18 @@ class JointAnalysis():
                                                                                                                             rounds,
                                                                                                                             local_epochs,
                                                                                                                             comment,
-                                                                                                                            compression,
-                                                                                                                            file_type)
+                                                                                                                            compression)
 
-                                # filename2 = """{}/{}/{}-None-{}/new_clients_{}_train_{}/{}/{}/{}/{}/alpha_{}/{}_rounds/{}/{}_comment/{}_compression/{}""".format(
-                                #     os.path.abspath(os.path.join(os.getcwd(),
-                                #                                  os.pardir)) + "/FL-H.IAAC/logs",
-                                #     type,
-                                #     strategy,
-                                #     fraction_fit,
-                                #     new_clients,
-                                #     new_clients_train,
-                                #     clients,
-                                #     model,
-                                #     dataset,
-                                #     "classes_per_client_2",
-                                #     alpha,
-                                #     rounds,
-                                #     local_epochs,
-                                #     comment,
-                                #     compression,
-                                #     file_type)
+                                    server_filename = filename1 + "server.csv"
+                                    filename1 = filename1 + file_type
 
                                     print(filename1)
                                     try:
                                         flag = False
                                         # if Path(filename1).exists():
                                         df = pd.read_csv(filename1).dropna()
+                                        if client_selection == 'DEEV':
+                                            df_server = pd.read_csv(server_filename)
                                         flag = True
 
                                         # elif Path(filename2).exists():
@@ -154,6 +139,13 @@ class JointAnalysis():
                                     df['Alpha'] = np.array([alpha] * len(df))
                                     df['Client selection'] = np.array([client_selection.replace("None", "Random")] * len(df))
                                     df['Method'] = np.array([st + s.replace("Original", "")] * len(df))
+                                    if client_selection == 'DEEV':
+                                        df_server['Round'] = df_server['Server round'].to_numpy()
+                                        df_server = df_server[['Round', 'Training cost']]
+                                        df = df.join(df_server, on='Round', how='inner', rsuffix='_2')
+                                        print(df)
+                                    else:
+                                        df['Training cost'] = df['Fraction fit'].to_numpy()
                                     if count == 0:
                                         df_concat = df
                                     else:
@@ -169,6 +161,7 @@ class JointAnalysis():
         # self.joint_plot_acc_two_plots(df=df_concat, experiment=1, pocs=pocs)
         print("versao1: ", df_concat[['Strategy', 'Version']].drop_duplicates())
         self.joint_plot_acc_four_plots(df=df_concat, experiment=40, alphas=alphas)
+        self.joint_plot_acc_four_plots_efficiency(df=df_concat, experiment=40, alphas=alphas)
         # self.joint_plot_acc_four_plots(df=df_concat, experiment=2, alphas=alphas)
         # self.joint_plot_acc_four_plots(df=df_concat, experiment=3, alphas=alphas)
         # self.joint_plot_acc_four_plots(df=df_concat, experiment=4, fractions_fit=fractions_fit)
@@ -471,8 +464,11 @@ class JointAnalysis():
         parameters = int(df['Size of parameters'].mean())
         accuracy = float(df['Accuracy (%)'].mean())
         loss = float(df['Loss'].mean())
+        if df['Client selection'].to_numpy()[0] == 'DEEV':
+            print("deev: ", df['Training cost'].to_numpy())
+        efficiency = accuracy/100/df['Training cost'].to_numpy()[0]
 
-        return pd.DataFrame({'Size of parameters (bytes)': [parameters], 'Accuracy (%)': [accuracy], 'Loss': [loss]})
+        return pd.DataFrame({'Size of parameters (bytes)': [parameters], 'Accuracy (%)': [accuracy], 'Loss': [loss], 'Efficiency': [efficiency]})
 
     def filter(self, df, experiment, dataset, client_selection, fraction_fit, alpha, strategy=None):
 
@@ -506,7 +502,7 @@ class JointAnalysis():
     def joint_plot_acc_four_plots(self, df, experiment, alphas):
         print("Joint plot exeprimento: ", experiment)
 
-        df_test = df[['Round (t)', 'Loss', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset', 'Version', 'Alpha', 'Client selection', 'Method']].groupby(['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Version', 'Alpha', 'Client selection', 'Method']).apply(lambda e: self.groupb_by_plot(e)).reset_index()[['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)', 'Loss', 'Version', 'Alpha', 'Client selection', 'Method']]
+        df_test = df[['Round (t)', 'Loss', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset', 'Version', 'Alpha', 'Client selection', 'Method', 'Training cost']].groupby(['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Version', 'Alpha', 'Client selection', 'Method']).apply(lambda e: self.groupb_by_plot(e)).reset_index()[['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)', 'Loss', 'Version', 'Alpha', 'Client selection', 'Method']]
         datast = df['Dataset'].unique().tolist()
         print("agrupou plot")
         print(df_test[df_test['Round (t)']==20])
@@ -515,9 +511,9 @@ class JointAnalysis():
         # figsize=(12, 9),
         sns.set(style='whitegrid')
         rows = len(alphas)
-        cols = len(datast) + 1
+        cols = len(datast) + 2
         fractions_fit = [0.3]
-        fig, axs = plt.subplots(rows, cols,  sharex='all', sharey='all', figsize=(6, 6))
+        fig, axs = plt.subplots(rows, cols,  sharex='all', sharey='all', figsize=(9, 6))
 
         x_column = 'Round (t)'
         y_column = 'Accuracy (%)'
@@ -563,6 +559,8 @@ class JointAnalysis():
         axs[0, 1].get_legend().remove()
         axs[1, 0].get_legend().remove()
         axs[1, 1].get_legend().remove()
+        axs[1, 2].get_legend().remove()
+        axs[0, 2].get_legend().remove()
         # axs[1, 1].legend(fontsize=5)
 
         # =========================///////////================================
@@ -624,6 +622,130 @@ class JointAnalysis():
         print("base: ", base_dir, """{}joint_plot_four_plot_{}_{}_rounds_{}_clients.png""".format(base_dir, str(experiment), self.rounds, self.clients))
         fig.savefig("""{}joint_plot_four_plot_{}_{}_rounds_{}_clients.png""".format(base_dir, str(experiment), self.rounds, self.clients), bbox_inches='tight', dpi=400)
         fig.savefig("""{}joint_plot_four_plot_{}_{}_rounds_{}_clients.svg""".format(base_dir, str(experiment), self.rounds, self.clients), bbox_inches='tight', dpi=400)
+
+    def joint_plot_acc_four_plots_efficiency(self, df, experiment, alphas):
+        print("Joint plot exeprimento: ", experiment)
+
+        df_test = df[['Round (t)', 'Loss', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset', 'Version', 'Alpha', 'Client selection', 'Method', 'Training cost']].groupby(['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Version', 'Alpha', 'Client selection', 'Method']).apply(lambda e: self.groupb_by_plot(e)).reset_index()[['Round (t)', 'Strategy', 'Experiment', 'Fraction fit', 'Dataset', 'Size of parameters (bytes)', 'Accuracy (%)', 'Loss', 'Version', 'Alpha', 'Client selection', 'Method', 'Efficiency']]
+        datast = df['Dataset'].unique().tolist()
+        print("agrupou plot")
+        print(df_test[df_test['Round (t)']==20])
+        print(df_test)
+        # exit()
+        # figsize=(12, 9),
+        sns.set(style='whitegrid')
+        rows = len(alphas)
+        cols = len(datast) + 2
+        fractions_fit = [0.3]
+        fig, axs = plt.subplots(rows, cols,  sharex='all', sharey='all', figsize=(9, 6))
+
+        x_column = 'Round (t)'
+        y_column = 'Efficiency'
+        plt.xlabel(x_column)
+        plt.ylabel(y_column)
+        base_dir = """analysis/output/experiment_{}/alphas_{}/datasets_{}/client_selection/""".format(str(experiment+1), alphas, np.unique(datast))
+        # ====================================================================
+        for i in range(rows):
+            for j in range(cols):
+                alpha = alphas[i]
+                # dataset = datast[j]
+                # dataset = 'WISDM-W'
+                dataset = 'CIFAR10'
+                client_selection = self.client_selections[j]
+                fraction_fit = self.fraction_fit[j]
+                print("cf: ", client_selection, fraction_fit)
+                title = """{}; \u03B1={}; {}""".format(dataset, alpha, client_selection)
+                filename = ''
+                hue_order = ['FedAvg+FP', 'FedAvg']
+                # hue_order = ['FedAvg', 'CDA-FedAvg', 'FedCDM', 'FedPer']
+                # hue_order = None
+                style = 'Fraction fit'
+                # "+FP",
+                # style_order = [r"+FP$_{DYN}$",  "+FP", "Original"]
+                style_order = [0.7, 0.5, 0.3]
+                y_max = 3
+                # markers = [',', '.'
+                markers = None
+                size = None
+                # sizes = (1, 1.8)
+                sizes = None
+                self.filter_and_plot(ax=axs[i,j], base_dir=base_dir, filename=filename, title=title, df=df_test,
+                                     experiment=experiment, dataset=dataset, alpha=alpha, x_column=x_column, y_column=y_column, client_selection=client_selection, fraction_fit=fraction_fit,
+                                     hue='Method', hue_order=hue_order, style=style, markers=markers, size=size, sizes=sizes, y_max=y_max, style_order=style_order)
+                # if i != 1 and j != 0:
+                #     axs[i,j].get_legend().remove()
+                #     axs[i,j].legend(fontsize=7)
+
+                axs[i,j].set_xlabel('')
+                axs[i,j].set_ylabel('')
+
+        axs[0, 0].get_legend().remove()
+        axs[0, 1].get_legend().remove()
+        axs[1, 0].get_legend().remove()
+        axs[1, 1].get_legend().remove()
+        axs[1, 2].get_legend().remove()
+        axs[0, 2].get_legend().remove()
+        # axs[1, 1].legend(fontsize=5)
+
+        # =========================///////////================================
+        fig.suptitle("", fontsize=16)
+        plt.tight_layout()
+        plt.subplots_adjust(wspace=0.07, hspace=0.14)
+        # plt.subplots_adjust(right=0.9)
+        # fig.legend(
+        #            loc="lower right")
+        # fig.legend(lines, labels)
+        # plt.tick_params(labelcolor='none', which='both', top=False, bottom=False, left=False, right=False)
+        fig.supxlabel(x_column, y=-0.02)
+        fig.supylabel(y_column, x=-0.01)
+
+        if experiment == 1:
+            axs[0, 0].annotate('1', xy=(73, 80), xycoords='data', bbox=dict(boxstyle="circle", fc="w", color='black'),
+                        xytext=(87, 88),
+                        arrowprops=dict(width=1, headwidth=4, facecolor='black', color='black'))
+            axs[0, 0].annotate('2', xy=(68, 51), xycoords='data', bbox=dict(boxstyle="circle", fc="w", color='black'),
+                               xytext=(44, 48),
+                               arrowprops=dict(width=1, headwidth=4, facecolor='black', color='black'))
+            axs[0, 1].annotate('3', xy=(68, 20), xycoords='data', bbox=dict(boxstyle="circle", fc="w", color='black'),
+                               xytext=(50, 30),
+                               arrowprops=dict(width=1, headwidth=4, facecolor='black', color='black'))
+        elif experiment == 2:
+            axs[0, 1].annotate('5', xy=(86, 32), xycoords='data', bbox=dict(boxstyle="circle", fc="w", color='black'),
+                               xytext=(84, 48),
+                               arrowprops=dict(width=1, headwidth=4, facecolor='black', color='black'))
+            axs[1, 0].annotate('4', xy=(68, 78), xycoords='data', bbox=dict(boxstyle="circle", fc="w", color='black'),
+                               xytext=(42, 76),
+                               arrowprops=dict(width=1, headwidth=4, facecolor='black', color='black'))
+
+
+        lines_labels = [axs[0, 0].get_legend_handles_labels()]
+        lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
+        print("linhas")
+        print(lines)
+        print(lines[0].get_color(), lines[0].get_ls())
+        print("rotulos")
+        print(labels)
+        # # exit()
+        colors = []
+        markers = []
+        for i in range(len(lines)):
+            color = lines[i].get_color()
+            colors.append(color)
+            ls = lines[i].get_ls()
+            if ls not in ["o"]:
+                ls = "o"
+        markers = ["", "-", "--", "dotted"]
+
+        f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
+        handles = [f("o", colors[i]) for i in range(len(hue_order) + 1)]
+        handles += [plt.Line2D([], [], linestyle=markers[i], color="k") for i in range(len(markers))]
+        print(handles)
+        print("---")
+        print(labels)
+        axs[1, 1].legend(handles, labels, fontsize=7)
+        print("base: ", base_dir, """{}joint_plot_four_plot_{}_{}_rounds_{}_clients.png""".format(base_dir, str(experiment), self.rounds, self.clients))
+        fig.savefig("""{}joint_plot_four_plot_{}_{}_rounds_{}_clients_efficiency.png""".format(base_dir, str(experiment), self.rounds, self.clients), bbox_inches='tight', dpi=400)
+        fig.savefig("""{}joint_plot_four_plot_{}_{}_rounds_{}_clients_efficiency.svg""".format(base_dir, str(experiment), self.rounds, self.clients), bbox_inches='tight', dpi=400)
 
     def idmax(self, df, n_solutions):
 
@@ -697,6 +819,8 @@ if __name__ == '__main__':
         40: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
                     'comment': 'set', 'compression': 'no', 'local_epochs': '1_local_epochs', 'dynamic_data': "no"},
         41: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
+             'comment': 'set', 'compression': 'no', 'local_epochs': '1_local_epochs', 'dynamic_data': "no"},
+        42: {'algorithm': 'DEEV', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
              'comment': 'set', 'compression': 'no', 'local_epochs': '1_local_epochs', 'dynamic_data': "no"}
     }
 

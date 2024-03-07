@@ -49,7 +49,7 @@ class NonIid:
         if self.aggregation_method == 'POC':
             strategy_config = f"{strategy_name}-{self.aggregation_method}-{self.perc_of_clients}"
 
-        elif self.aggregation_method == 'FedLTA':
+        elif self.aggregation_method == 'DEEV':
             strategy_config = f"{strategy_name}-{self.aggregation_method}-{self.decay}"
 
         elif self.aggregation_method == 'None':

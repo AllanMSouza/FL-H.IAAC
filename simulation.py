@@ -1138,7 +1138,7 @@ def main():
 	parser.add_option("-e", "--epochs",      		dest="local_epochs",       default=1,         help="Number of epochs in each round",         metavar="STR")
 	parser.add_option("-r", "--round",       		dest="rounds",             default=5,         help="Number of communication rounds",         metavar="INT")
 	parser.add_option("",   "--poc",         		dest="poc",                default=0,         help="Percentage clients to be selected",      metavar="FLOAT")
-	parser.add_option("",   "--decay",       		dest="decay",              default=0,         help="Decay factor for FL-H.IAAC",                metavar="FLOAT")
+	parser.add_option("",   "--decay",       		dest="decay",              default=0.001,         help="Decay factor for FL-H.IAAC",                metavar="FLOAT")
 	parser.add_option("",   "--non-iid",     		dest="non_iid",            default=False,     help="Non IID distribution",                   metavar="BOOLEAN")
 	parser.add_option("", "--use_gradient", dest="use_gradient", default=False, help="Whether to send gradient", metavar="BOOLEAN")
 	parser.add_option("", "--m_combining_layers", dest="m_combining_layers", default=1, help="Number of layers to combine from the last/prediction layer to the top", metavar="INT")
