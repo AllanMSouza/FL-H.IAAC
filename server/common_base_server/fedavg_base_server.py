@@ -254,20 +254,19 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		else:
 			clients2select = int(float(self.num_clients) * (self.fraction_fit))
 			train = True
-			clients_sorted = self.clients_metrics_train.sort(key=lambda x: x[2], reverse=True)
+			self.clients_metrics_train.sort(key=lambda x: x[2], reverse=True)
+			clients_sorted = [i[0] for i in self.clients_metrics_train]
+			print("ordenados: ", clients_sorted, self.clients_metrics_train)
 
 			return clients_sorted[:clients2select], train
 
 	def configure_fit(self, server_round, parameters, client_manager):
 		"""Configure the next round of training."""
-		print("Iniciar configure fit")
+		print("Iniciar configure fit", server_round)
 		self.start_time = time.process_time()
 		random.seed(server_round)
 
 		self.available_clients = [str(i) for i in range(self.num_clients)]
-
-		self.previous_global_parameters.append(self.parameters_to_ndarrays(parameters))
-		print("ola: ", len(self.previous_global_parameters[-1]))
 
 		print("começo configure fit: ", len(self.parameters_to_ndarrays(parameters)), server_round)
 
@@ -330,6 +329,11 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			else:
 				print("Quantidade inferior")
 
+		if self.aggregation_method == "POC":
+			if not self.train:
+				self.previous_global_parameters.append(self.parameters_to_ndarrays(parameters))
+		else:
+			self.previous_global_parameters.append(self.parameters_to_ndarrays(parameters))
 
 		self.clients_last_round = self.selected_clients
 		print("os s: ", self.selected_clients)
@@ -409,7 +413,14 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 					weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples))
 
 		#print(f'LEN AGGREGATED PARAMETERS: {len(weights_results)}')
-		parameters_aggregated = fl.common.ndarrays_to_parameters(self._aggregate(weights_results, server_round))
+
+		if self.aggregation_method == "POC":
+			if self.train:
+				parameters_aggregated = fl.common.ndarrays_to_parameters(self._aggregate(weights_results, server_round))
+			else:
+				parameters_aggregated = fl.common.ndarrays_to_parameters(self.previous_global_parameters[-1])
+		else:
+			parameters_aggregated = fl.common.ndarrays_to_parameters(self._aggregate(weights_results, server_round))
 		# Aggregate custom metrics if aggregation fn was provided
 		metrics_aggregated = {}
 		if server_round == 1:
@@ -578,11 +589,23 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		top1 = accs[-1]
 
 		assert self.server_filename is not None
-		data = [time.process_time()-self.start_time, server_round, accuracy_aggregated, accuracy_std, top5, top1, macro_f1_score_aggregated, weighted_f1_score_aggregated, micro_f1_score_aggregated, self.training_cost]
 
-		self._write_output(filename=self.server_filename,
-						   data=data
-						   )
+		if self.aggregation_method == "POC":
+			if self.train:
+				server_round = server_round // 2
+				data = [time.process_time()-self.start_time, server_round, accuracy_aggregated, accuracy_std, top5, top1, macro_f1_score_aggregated, weighted_f1_score_aggregated, micro_f1_score_aggregated, self.training_cost]
+
+				self._write_output(filename=self.server_filename,
+								   data=data
+								   )
+		else:
+			data = [time.process_time() - self.start_time, server_round, accuracy_aggregated, accuracy_std, top5, top1,
+					macro_f1_score_aggregated, weighted_f1_score_aggregated, micro_f1_score_aggregated,
+					self.training_cost]
+
+			self._write_output(filename=self.server_filename,
+							   data=data
+							   )
 
 		if server_round == self.num_rounds:
 			assert self.server_nt_acc_filename is not None

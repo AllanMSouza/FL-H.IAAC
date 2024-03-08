@@ -583,7 +583,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			if self.aggregation_method == "POC":
 				if train:
 					server_round = server_round // 2
-					data = [config['round'], self.cid, selected, total_time, size_of_parameters, avg_loss_train, avg_acc_train, macro_f1_score, weigthed_f1_score, micro_f1_score]
+					data = [server_round, self.cid, selected, total_time, size_of_parameters, avg_loss_train, avg_acc_train, macro_f1_score, weigthed_f1_score, micro_f1_score]
 
 					self.save_client_information_fit(server_round, avg_acc_train, predictions)
 
@@ -591,7 +591,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 						filename=self.train_client_filename,
 						data=data)
 			else:
-				data = [config['round'], self.cid, selected, total_time, size_of_parameters, avg_loss_train,
+				data = [server_round, self.cid, selected, total_time, size_of_parameters, avg_loss_train,
 						avg_acc_train, macro_f1_score, weigthed_f1_score, micro_f1_score]
 
 				self.save_client_information_fit(server_round, avg_acc_train, predictions)
@@ -743,11 +743,11 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			if self.aggregation_method == "POC":
 				if train:
 					server_round = server_round // 2
-					data = [config['round'], self.cid, size_of_parameters, size_of_config, loss, accuracy, macro_f1_score, weighted_f1_score, micro_f1_score, nt]
+					data = [server_round, self.cid, size_of_parameters, size_of_config, loss, accuracy, macro_f1_score, weighted_f1_score, micro_f1_score, nt]
 					self._write_output(filename=self.evaluate_client_filename,
 									   data=data)
 			else:
-				data = [config['round'], self.cid, size_of_parameters, size_of_config, loss, accuracy, macro_f1_score,
+				data = [server_round, self.cid, size_of_parameters, size_of_config, loss, accuracy, macro_f1_score,
 						weighted_f1_score, micro_f1_score, nt]
 				self._write_output(filename=self.evaluate_client_filename,
 								   data=data)
