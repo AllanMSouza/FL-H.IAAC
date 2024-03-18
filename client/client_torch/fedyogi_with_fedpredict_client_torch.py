@@ -1,6 +1,6 @@
 from client.client_torch import FedAvgClientTorch
 # from ..fedpredict_core import fedpredict_client
-from fedpredict.fedpredict import fedpredict_client_traditional
+from fedpredict import fedpredict_client_torch
 from torch.nn.parameter import Parameter
 import torch
 from pathlib import Path

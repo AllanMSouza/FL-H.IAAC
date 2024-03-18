@@ -19,7 +19,7 @@ import logging
 
 # sys.path.append('/home/claudio/Documentos/pycharm_projects/fedpredict/fedpredict')
 
-from fedpredict import fedpredict_dynamic_client
+from fedpredict import fedpredict_client_torch, fedpredict_client_weight_predictions_torch
 
 class FedPredictDynamicClientTorch(FedAvgClientTorch):
 
@@ -257,9 +257,20 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 				pattern = config['pattern']
 				print("""cliente {} mudou padrao {}""".format(self.cid, pattern))
 			local_data_information = {'similarity': similarity, 'imbalance_level': imbalance_level, 'fraction_of_classes': fraction_of_classes}
-			self.model = fedpredict_dynamic_client(filename=self.filename, local_model=self.model,
-												   global_parameters=global_parameters, t=config['round'],
-												   T=100, nt=config['nt'], M=config['M'], decompress=config['decompress'], config=config, mode=None, local_client_information=local_data_information, current_proportion=current_proportion, dynamic=True)
+			# self.model = fedpredict_dynamic_client(filename=self.filename, local_model=self.model,
+			# 									   global_parameters=global_parameters, t=config['round'],
+			# 									   T=100, nt=config['nt'], M=config['M'], decompress=config['decompress'], config=config, mode=None, local_client_information=local_data_information, current_proportion=current_proportion, dynamic=True)
+			print("aa:: ", type(global_parameters))
+			self.model = fedpredict_client_torch(filename=self.filename,
+												 local_model=self.model,
+												 global_model=global_parameters, t=config['round'],
+												 T=100,
+												 nt=config['nt'],
+												 M=config['M'],
+												 similarity=similarity,
+												 fraction_of_classes=fraction_of_classes,
+												 decompress=config['decompress'],
+												 dynamic=True)
 			# self.model = fedpredict_dynamic_client(self.filename, self.model, global_parameters, config, mode=None,
 			# 									   local_client_information=local_data_information,
 			# 									   current_proportion=current_proportion, pattern=pattern, cid=self.cid)
@@ -302,7 +313,7 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 
 					print("""cliente {} rodada {} simi {}""".format(self.cid, self.server_round, self.similarity))
 					if self.similarity != 1 and server_round > 10:
-						output = torch.multiply(output, torch.from_numpy(self.current_proportion * (1 - self.similarity)))
+						output = fedpredict_client_weight_predictions_torch(output=output, t=server_round, ccurrent_proportion=self.current_proportion, similarity=self.similarity)
 					loss = self.loss(output, y)
 					test_loss += loss.item() * y.shape[0]
 					prediction = torch.argmax(output, dim=1)
@@ -311,10 +322,11 @@ class FedPredictDynamicClientTorch(FedAvgClientTorch):
 					test_acc += (torch.sum(prediction == y)).item()
 					test_num += y.shape[0]
 					count += 1
-					macro_f1_score += f1_score(y, output.detach().numpy().tolist(), average='macro', zero_division=1)
-					weigthed_f1_score += f1_score(y, output.detach().numpy().tolist(), average='weighted',
+					print("ell: ", np.argmax(output.detach().numpy(), axis=-1))
+					macro_f1_score += f1_score(y, np.argmax(output.detach().numpy(), axis=-1), average='macro', zero_division=1)
+					weigthed_f1_score += f1_score(y, np.argmax(output.detach().numpy().tolist(), axis=-1), average='weighted',
 												  zero_division=1)
-					micro_f1_score += f1_score(y, output.detach().numpy().tolist(), average='micro', zero_division=1)
+					micro_f1_score += f1_score(y, np.argmax(output.detach().numpy().tolist(), axis=-1), average='micro', zero_division=1)
 
 			loss = test_loss / test_num
 			accuracy = test_acc / test_num

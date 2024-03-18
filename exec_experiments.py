@@ -53,14 +53,14 @@ ALGORITHMS = ['None', 'POC', 'DEEV']
 EPOCHS = {'1': [1], '2': [1], '3': [1], '4': [1], '5': [2], '6': [1], '7': [1], '8': [1], '9': [1], '10': [1],
           '11': [1], '12': [1], '13': [1], '14': [1], '15': [1], '16': [1], '17': [1], '18': [1], '19': [1], '20': [1],
           '21': [1], '22': [1], '23': [1], '24': [1], '25': [1], '26': [1], '27': [1], '28': [1], '29': [1], '30': [1],
-          '31': [1], '32': [1], '40': [1], '41': [1], '42': [1]}
+          '31': [1], '32': [1], '40': [1], '41': [1], '42': [1], '43': [1]}
 # CLIENTS       				= {'MNIST': 50, 'CIFAR10': 50, 'CIFAR100': 50, 'MotionSense': 50, 'UCIHAR': 50}
 CLASSES = {'MNIST': 10, 'CIFAR10': 10, 'Tiny-ImageNet': 200, 'UCI-HAR': 6, 'EMNIST': 47, 'State Farm': 10, 'GTSRB': 43, 'ExtraSensory': 9, 'WISDM-WATCH': 12, 'WISDM-P': 12, 'Cologne': 12}
 CLIENTS = {'MNIST': [8], 'CIFAR10': [20], 'EMNIST': [20], 'CIFAR100': [50], 'MotionSense': [24], 'UCI-HAR': [1],
            'Tiny-ImageNet': [2], 'State Farm': [10], 'GTSRB': [20], 'ExtraSensory': [1], 'WISDM-WATCH': [20], 'WISDM-P': [20], 'Cologne': [20]}
-ALPHA = [0.1]
+ALPHA = [0.1, 1.0]
 # ALPHA = [1]
-FRACTION_FIT = {'None': [0.7], 'POC': [0.3], 'DEEV': []}
+FRACTION_FIT = {'None': [0.3], 'POC': [0.3, 0.5, 0.7], 'DEEV': [], 'RAWCS': [0.3]}
 SPECIFIC_PARAMETERS = {'FedAVG': {'use_gradient': 'True', 'bits': 8}, 'FedKD': {'use_gradient': '', 'bits': 8},
                        'FedPAQ': {'use_gradient': 'True', 'bits': 8}, 'FedDistill': {'use_gradient': '', 'bits': 8},
                        'FedPredict': {'use_gradient': 'True', 'bits': 8}, 'FedPredict_Dynamic': {'use_gradient': 'True', 'bits': 8}, 'FedPer_with_FedPredict': {'use_gradient': 'True', 'bits': 8},
@@ -72,8 +72,8 @@ SPECIFIC_PARAMETERS = {'FedAVG': {'use_gradient': 'True', 'bits': 8}, 'FedKD': {
                        'FedCDM':  {'use_gradient': '', 'bits': 8}, 'CDA-FedAvg_with_FedPredict_Dynamic': {'use_gradient': '', 'bits': 8},
                        'CDA-FedAvg_with_FedPredict': {'use_gradient': '', 'bits': 8}, 'FedCDM_with_FedPredict_Dynamic': {'use_gradient': '', 'bits': 8},
                        'FedCDM_with_FedPredict':  {'use_gradient': '', 'bits': 8}}
-POC = {'None': [0.5], 'POC': [0.5], 'DEEV': []}
-DECAY = {'None': 0, 'POC': 0, 'DEEV': 0.001}
+POC = {'None': [], 'POC': [], 'DEEV': []}
+DECAY = {'None': 0, 'POC': 0, 'DEEV': 0.001, 'RAWCS': 0}
 NEW_CLIENTS = {'None': ['FALSE'], 'POC': ['FALSE', 'TRUE']}
 NEW_CLIENTS_TRAIN = {'FALSE': ['FALSE'], 'TRUE': ['FALSE', 'TRUE']}
 # DECAY         				= (0.001, 0.005, 0.009)
@@ -81,8 +81,8 @@ ROUNDS = 25
 # STRATEGIES 					= ('FedPredict', 'FedPer', 'FedClassAvg', 'FedAVG', 'FedClassAvg_with_FedPredict', 'FedPer_with_FedPredict', 'FedProto', 'FedYogi', 'FedLocal',)
 # STRATEGIES_FOR_ANALYSIS = ['FedKD', 'FedAVG', 'FedPAQ']
 # STRATEGIES_TO_EXECUTE = ['FedKD', 'FedAVG']
-STRATEGIES_FOR_ANALYSIS = {'40': ['FedAVG', 'FedPredict'], '41': ['FedAVG'], '42': ['FedAVG', 'FedPredict'],  '3': [], '6': ['FedPredict'], '7': ['FedPredict'], '14': ['FedSparsification'], '10': [], '11': [], '15': [], '16': ['FedAVG'], '17': ['FedPredict'], '19': ['FedPredict'], '22': ['FedPredict'], '26': ['FedPredict'], '30': ['FedPredict'], '31': ['FedPredict'], '32': ['FedPredict']}
-STRATEGIES_TO_EXECUTE = {'40': ['FedAVG', 'FedPredict'], '41': ['FedAVG'], '42': ['FedAVG', 'FedPredict'], '3': ['FedClassAvg'],  '6': ['FedPredict_Dynamic'], '7': [], '10': ['FedPredict_Dynamic'], '11': ['FedPredict_Dynamic'], '14': ['FedAVG'], '15': ['FedClassAvg'], '16': ['FedAVG'], '17': ['FedPredict'], '19': ['FedPredict'], '22': ['FedPredict'], '26': ['FedPredict'], '30': ['FedPredict'], '31': ['FedPredict'], '32': ['FedPredict']}
+STRATEGIES_FOR_ANALYSIS = {'40': ['FedAVG', 'FedPredict'], '43': ['FedPredict'], '42': ['FedAVG', 'FedPredict'],  '3': [], '6': ['FedPredict'], '7': ['FedPredict'], '14': ['FedSparsification'], '10': [], '11': [], '15': [], '16': ['FedAVG'], '17': ['FedPredict'], '19': ['FedPredict'], '22': ['FedPredict'], '26': ['FedPredict'], '30': ['FedPredict'], '31': ['FedPredict'], '32': ['FedPredict']}
+STRATEGIES_TO_EXECUTE = {'40': ['FedAVG', 'FedPredict'], '43': ['FedPredict'], '42': ['FedAVG', 'FedPredict'], '3': ['FedClassAvg'],  '6': ['FedPredict_Dynamic'], '7': [], '10': ['FedPredict_Dynamic'], '11': ['FedPredict_Dynamic'], '14': ['FedAVG'], '15': ['FedClassAvg'], '16': ['FedAVG'], '17': ['FedPredict'], '19': ['FedPredict'], '22': ['FedPredict'], '26': ['FedPredict'], '30': ['FedPredict'], '31': ['FedPredict'], '32': ['FedPredict']}
 N_CLUSTERS = [3]
 CLUSTERING = "Yes"
 CLUSTER_ROUND = [int(ROUNDS*0.5)]
@@ -163,6 +163,8 @@ EXPERIMENTS = {
     41: {'algorithm': 'POC', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
          'comment': 'set', 'compression_method': "no", 'dynamic_data': "no"},
     42: {'algorithm': 'DEEV', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
+         'comment': 'set', 'compression_method': "no", 'dynamic_data': "no"},
+    43: {'algorithm': 'RAWCS', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
          'comment': 'set', 'compression_method': "no", 'dynamic_data': "no"}
     }
 

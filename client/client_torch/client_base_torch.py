@@ -130,6 +130,9 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			elif self.aggregation_method == 'None':
 				self.solution_name = f"{solution_name}-{aggregation_method}-{self.fraction_fit}"
 
+			else:
+				self.solution_name = f"{solution_name}-{aggregation_method}-{self.fraction_fit}"
+
 			self.base = self._create_base_directory(self.type, self.solution_name, new_clients, new_clients_train, self.dynamic_data, n_clients, model_name, dataset, str(args.class_per_client), str(args.alpha), str(args.rounds), str(args.local_epochs), str(args.comment), str(args.compression_method), args)
 			self.evaluate_client_filename = f"{self.base}/evaluate_client.csv"
 			self.train_client_filename = f"{self.base}/train_client.csv"
@@ -502,7 +505,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			original_parameters = copy.deepcopy(parameters)
 			print("sfo: ", self.cid, selected_clients, type(self.cid))
 			if self.cid in selected_clients:
-				print("entrou ")
+				print("entrou ", train)
 				self.set_parameters_to_model_fit(parameters)
 				# self.save_parameters_global_model(parameters)
 				self.round_of_last_fit = server_round
@@ -512,6 +515,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				np.random.seed(0)
 				torch.manual_seed(0)
 				self.model.to(self.device)
+				self.model.train()
 				if train:
 					self.model.train()
 				else:
@@ -616,10 +620,8 @@ class ClientBaseTorch(fl.client.NumPyClient):
 				'loss': avg_loss_train
 			}
 
-			if self.use_gradient and server_round > 1:
-				trained_parameters = [original - trained for trained, original in zip(trained_parameters, original_parameters)]
-				# trained_parameters = parameters_quantization_write(trained_parameters, 8)
-				# print("quantizou: ", trained_parameters[0])
+			# if self.use_gradient and server_round > 1:
+			# 	trained_parameters = [original - trained for trained, original in zip(trained_parameters, original_parameters)]
 			return trained_parameters, train_num, fit_response
 		except Exception as e:
 			print("fit")
@@ -741,6 +743,7 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			loss, accuracy, macro_f1_score, weighted_f1_score, micro_f1_score, test_num, predictions, output, labels = self.model_eval(server_round)
 
 			if self.aggregation_method == "POC":
+				print("ee0")
 				if train:
 					server_round = server_round // 2
 					data = [server_round, self.cid, size_of_parameters, size_of_config, loss, accuracy, macro_f1_score, weighted_f1_score, micro_f1_score, nt]

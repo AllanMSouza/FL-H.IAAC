@@ -12,6 +12,7 @@ from logging import WARNING
 from flwr.common import FitIns
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
 from models.torch import DNN, Logistic, CNN, MobileNet, resnet20, CNN_EMNIST, MobileNetV2, CNN_X, CNN_5, CNN_2, CNN_3
+from server.common_base_server.client_selection.rawcs import Rawcs
 
 from flwr.common import (
     EvaluateIns,
@@ -25,6 +26,9 @@ from flwr.common import (
     ndarrays_to_parameters,
     parameters_to_ndarrays,
 )
+
+from typing import Optional, List, Tuple, Union, Dict
+from flwr.server import ClientManager
 
 class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
@@ -67,6 +71,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.list_of_accuracies = []
 		self.list_of_losses 	= []
 		self.selected_clients   = []
+		self.aggregated_parameters = None
 		#self.clients_last_round = []
 
 		self.average_accuracy_evaluate   = 0
@@ -90,6 +95,24 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		#DEEV
 		self.decay_factor = decay
 
+		#RAWCS
+		self.rawcs = Rawcs(aggregation_method,
+				 n_classes,
+				 fraction_fit,
+				 num_clients,
+				 num_rounds,
+				 args,
+				 num_epochs,
+				 type,
+				 decay=0,
+				 perc_of_clients=0,
+				 dataset='',
+				 strategy_name='',
+				 non_iid=False,
+				 model_name='',
+				 new_clients=False,
+				 new_clients_train=False)
+
 		self.new_clients = new_clients
 		self.new_clients_train = new_clients_train
 		self.accuracy_history = {}
@@ -110,6 +133,9 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 		elif self.aggregation_method == 'None':
 			self.strategy_name = f"{strategy_name}-{aggregation_method}-{fraction_fit}"
+
+		else:
+			self.strategy_name = f"{strategy_name}-{aggregation_method}-{self.fraction_fit}"
 
 		# FedPredictSelection
 		self.server_nt_acc = {round: {nt: [] for nt in range(0, self.num_rounds + 1)} for round in range(self.num_rounds + 1)}
@@ -132,6 +158,17 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		self.decimals_per_layer = {}
 
 		print("""===================================================\nStarting training of {}\n""".format(self.strategy_name))
+
+	def initialize_parameters(
+			self, client_manager: ClientManager
+	) -> Optional[Parameters]:
+
+		if self.aggregation_method == 'RAWCS':
+			return self.rawcs.initialize_parameters(client_manager)
+		else:
+			super().initialize_parameters(client_manager)
+
+
 
 	def _clients_metrics(self):
 
@@ -262,6 +299,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 	def configure_fit(self, server_round, parameters, client_manager):
 		"""Configure the next round of training."""
+
 		print("Iniciar configure fit", server_round)
 		self.start_time = time.process_time()
 		random.seed(server_round)
@@ -276,6 +314,8 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 			self.selected_clients, self.train = self.poc(server_round)
 
+			print(server_round, " trein: ", self.train)
+
 		elif self.aggregation_method == 'DEEV':
 			self.train = True
 			self.selected_clients = self.select_clients_bellow_average()
@@ -285,6 +325,13 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 				the_chosen_ones = len(self.selected_clients) * (1 - self.decay_factor) ** int(server_round)
 				self.training_cost = (1 - self.decay_factor) ** int(server_round)
 				self.selected_clients = self.selected_clients[: math.ceil(the_chosen_ones)]
+
+		elif self.aggregation_method == 'RAWCS':
+
+			self.selected_clients = self.rawcs.configure_fit(server_round, parameters, client_manager)
+			self.selected_clients = self.selected_clients[: int(len(self.selected_clients) * 0.5)]
+			self.train = True
+			# self.selected_clients = random.sample(self.available_clients, 6)
 
 		elif self.aggregation_method == 'None':
 
@@ -330,9 +377,11 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 				print("Quantidade inferior")
 
 		if self.aggregation_method == "POC":
-			if not self.train:
+			if server_round == 1:
+				self.aggregated_parameters = parameters
 				self.previous_global_parameters.append(self.parameters_to_ndarrays(parameters))
 		else:
+			self.aggregated_parameters = parameters
 			self.previous_global_parameters.append(self.parameters_to_ndarrays(parameters))
 
 		self.clients_last_round = self.selected_clients
@@ -343,7 +392,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			"train": self.train
 			}
 
-		fit_ins = FitIns(parameters, config)
+		fit_ins = FitIns(self.aggregated_parameters, config)
 
 		# Sample clients
 		sample_size, min_num_clients = self.num_fit_clients(
@@ -385,6 +434,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 
 		print("selecionar (fit): ", [client.cid for client in selected_clients_id])
 		print("Clientes selecionados: ", len(selected_clients_id))
+		self.training_cost = len(selected_clients_id) / self.num_clients
 		# Return client/config pairs
 		return [(client, fit_ins) for client in selected_clients_id]
 
@@ -404,13 +454,14 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			# print("Parametros aggregate fit: ", len(fl.common.parameters_to_ndarrays(fit_res.parameters)))
 			# print("Fit respons", fit_res.metrics)
 			clients_parameters.append(fl.common.parameters_to_ndarrays(fit_res.parameters))
-			if self.aggregation_method not in ['POC', 'FL-H.IAAC'] or int(server_round) <= 1:
-				weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples))
-
-			else:
-				if client_id in self.selected_clients:
-					print("parametro recebido cliente: ", client_id, " parametro: ", len(fl.common.parameters_to_ndarrays(fit_res.parameters)))
-					weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples))
+			# if self.aggregation_method not in ['POC', 'FL-H.IAAC'] or int(server_round) <= 1:
+			# 	weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples))
+			#
+			# else:
+			# 	print("co: ", type(client_id), type(self.selected_clients[0]))
+			# 	if client_id in self.selected_clients:
+			# 		print("parametro recebido cliente: ", client_id, " parametro: ", len(fl.common.parameters_to_ndarrays(fit_res.parameters)))
+			weights_results.append((fl.common.parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples))
 
 		#print(f'LEN AGGREGATED PARAMETERS: {len(weights_results)}')
 
@@ -418,9 +469,11 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 			if self.train:
 				parameters_aggregated = fl.common.ndarrays_to_parameters(self._aggregate(weights_results, server_round))
 			else:
-				parameters_aggregated = fl.common.ndarrays_to_parameters(self.previous_global_parameters[-1])
+				parameters_aggregated = self.aggregated_parameters
 		else:
 			parameters_aggregated = fl.common.ndarrays_to_parameters(self._aggregate(weights_results, server_round))
+
+		self.aggregated_parameters = parameters_aggregated
 		# Aggregate custom metrics if aggregation fn was provided
 		metrics_aggregated = {}
 		if server_round == 1:
@@ -437,6 +490,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		print("Iniciar configure evaluate")
 		if self.fraction_evaluate == 0.0:
 			return []
+		parameters = self.aggregated_parameters
 		# ====================================================================================
 		clients_ids = []
 		if self.new_clients:
@@ -464,7 +518,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		if self.new_clients:
 			clients2select = self.clients2select
 		else:
-			clients2select = int(len(list_of_valid_clients_for_evaluate) * self.perc_of_clients)
+			clients2select = int(len(list_of_valid_clients_for_evaluate) * self.fraction_evaluate)
 		print("clientes para selecionar (evaluate): ", clients2select, " de ", len(list_of_valid_clients_for_evaluate))
 		# selected_clients_evaluate = random.sample(list_of_valid_clients_for_evaluate, clients2select)
 		selected_clients_evaluate = list_of_valid_clients_for_evaluate
@@ -516,7 +570,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 				'train': self.train
 			}
 
-			client_config.append((client, fl.common.EvaluateIns(parameters, config)))
+			client_config.append((client, fl.common.EvaluateIns(self.aggregated_parameters, config)))
 
 		return client_config
 
@@ -675,16 +729,16 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 		# 	)
 		# ]
 
-		if self.use_gradient and server_round > 1:
-			# pseudo_gradient = updated_global_parameters
-			print("usou o gradiente")
-			last_global_model = self.previous_global_parameters[-1]
-			updated_global_parameters_layers = []
-			for global_layer, gradient_layer in zip(last_global_model, updated_global_parameters):
-				# print("gggf", gradient_layer[0])
-				# print("shapes: ", global_layer.shape, gradient_layer.shape)
-				updated_global_parameters_layers.append(global_layer - gradient_layer)
-			updated_global_parameters = updated_global_parameters_layers
+		# if self.use_gradient and server_round > 1:
+		# 	# pseudo_gradient = updated_global_parameters
+		# 	print("usou o gradiente")
+		# 	last_global_model = self.previous_global_parameters[-1]
+		# 	updated_global_parameters_layers = []
+		# 	for global_layer, gradient_layer in zip(last_global_model, updated_global_parameters):
+		# 		# print("gggf", gradient_layer[0])
+		# 		# print("shapes: ", global_layer.shape, gradient_layer.shape)
+		# 		updated_global_parameters_layers.append(global_layer - gradient_layer)
+		# 	updated_global_parameters = updated_global_parameters_layers
 
 		# updated_global_parameters = [
 		# 	x - self.server_learning_rate * y

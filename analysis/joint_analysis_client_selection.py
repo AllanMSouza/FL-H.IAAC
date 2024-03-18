@@ -24,7 +24,7 @@ class JointAnalysis():
         count = 0
         original_model = copy.deepcopy(model)
         version_dict = {"FedPredict": {-2: "FedPredict_{dc}"}}
-        self.client_selections = ['Random', 'POC', 'DEEV']
+        self.client_selections = ['Random', 'POC', 'RAWCS']
         for i in experiments:
             experiment = experiments[i]
             new_clients = experiment['new_client']
@@ -85,7 +85,7 @@ class JointAnalysis():
                                         flag = False
                                         # if Path(filename1).exists():
                                         df = pd.read_csv(filename1).dropna()
-                                        if client_selection == 'DEEV':
+                                        if client_selection in ['DEEV', 'RAWCS']:
                                             df_server = pd.read_csv(server_filename)
                                         flag = True
 
@@ -139,7 +139,7 @@ class JointAnalysis():
                                     df['Alpha'] = np.array([alpha] * len(df))
                                     df['Client selection'] = np.array([client_selection.replace("None", "Random")] * len(df))
                                     df['Method'] = np.array([st + s.replace("Original", "")] * len(df))
-                                    if client_selection == 'DEEV':
+                                    if client_selection in ['DEEV', 'RAWCS']:
                                         df_server['Round'] = df_server['Server round'].to_numpy()
                                         df_server = df_server[['Round', 'Training cost']]
                                         df = df.join(df_server, on='Round', how='inner', rsuffix='_2')
@@ -663,7 +663,7 @@ class JointAnalysis():
                 # "+FP",
                 # style_order = [r"+FP$_{DYN}$",  "+FP", "Original"]
                 style_order = [0.7, 0.5, 0.3]
-                y_max = 3
+                y_max = 4
                 # markers = [',', '.'
                 markers = None
                 size = None
@@ -820,7 +820,7 @@ if __name__ == '__main__':
                     'comment': 'set', 'compression': 'no', 'local_epochs': '1_local_epochs', 'dynamic_data': "no"},
         41: {'algorithm': 'None', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
              'comment': 'set', 'compression': 'no', 'local_epochs': '1_local_epochs', 'dynamic_data': "no"},
-        42: {'algorithm': 'DEEV', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
+        42: {'algorithm': 'RAWCS', 'new_client': 'False', 'new_client_train': 'False', 'class_per_client': 2,
              'comment': 'set', 'compression': 'no', 'local_epochs': '1_local_epochs', 'dynamic_data': "no"}
     }
 

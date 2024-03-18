@@ -1,6 +1,6 @@
 from client.client_torch import FedAvgClientTorch
 # from ..fedpredict_core import fedpredict_client
-from fedpredict import fedpredict_client_traditional
+from fedpredict import fedpredict_client_torch
 from torch.nn.parameter import Parameter
 import torch
 from pathlib import Path
@@ -97,9 +97,10 @@ class FedPredictClientTorch(FedAvgClientTorch):
 		try:
 			local_classes = self.classes_proportion
 			# self.model = fedpredict_client(self.filename, self.model, global_parameters, config, mode=None, local_classes=local_classes)
-			self.model = fedpredict_client_traditional(filename=self.filename, local_model=self.model,
-													   global_parameters=global_parameters, t=config['round'],
-													   T=100, nt=config['nt'], M=config['M'],
+			self.model = fedpredict_client_torch(filename=self.filename,
+												 local_model=self.model,
+												 global_model=global_parameters, t=config['round'],
+													   T=100, nt=config['nt'],
 													   decompress=config['decompress'])
 
 		except Exception as e:

@@ -228,10 +228,11 @@ class FedPredictBaseServer(FedAvgBaseServer):
 			# 																	self.clients_model_non_zero_indexes)
 			clients_parameters.append(fl.common.parameters_to_ndarrays(fit_res.parameters))
 
-		if self.use_gradient:
-			global_parameter = [current - previous for current, previous in zip(parameters_to_ndarrays(parameters_aggregated), self.previous_global_parameters[server_round-1])]
-		else:
-			global_parameter = self.previous_global_parameters[server_round]
+		# if self.use_gradient:
+		# 	global_parameter = [current - previous for current, previous in zip(parameters_to_ndarrays(parameters_aggregated), self.previous_global_parameters[server_round-1])]
+		# else:
+		# 	global_parameter = self.previous_global_parameters[server_round]
+		global_parameter = parameters_to_ndarrays(self.aggregated_parameters)
 
 		np.random.seed(server_round)
 		flag = bool(int(np.random.binomial(1, 0.2, 1)))
