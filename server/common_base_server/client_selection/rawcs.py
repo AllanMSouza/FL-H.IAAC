@@ -132,21 +132,35 @@ class Rawcs(fl.server.strategy.FedAvg):
         # self.results_dir = results_dir
         self.transmission_threshold = 0.2
         # self.devices_profile = devices_profile
-        self.network_profiles ="./clients_selection_configuration_files/rawcs/sim_5_num_clients_24_num_rounds_250.pkl"
+        if fraction_fit == 0.3:
+            self.link_quality_lower_lim = 0.5  # lq_min
+            self.limit_relationship_max_latency = 0  # pt_max
+            level = 'low'
+        elif fraction_fit == 0.5:
+            # self.link_quality_lower_lim = 0.3  # lq_min
+            # self.limit_relationship_max_latency = 0.3  # pt_max
+            # level = 'medium'
+            self.link_quality_lower_lim = 0.3  # lq_min
+            self.limit_relationship_max_latency = 0.3  # pt_max
+            level = 'medium'
+        elif fraction_fit == 0.7:
+            self.link_quality_lower_lim = 0.1  # lq_min
+            self.limit_relationship_max_latency = 0.5  # pt_max
+            level = 'high'
+        self.network_profiles = """./clients_selection_configuration_files/rawcs/sim_1_num_clients_{}_num_rounds_100.pkl""".format(num_clients)
+        self.devices_profile = """./clients_selection_configuration_files/rawcs/profiles_sim_{}_seed_1_level_{}_alpha_{}.json""".format(args.dataset.lower(), level, args.alpha)
+        # self.devices_profile = """./clients_selection_configuration_files/rawcs/profiles_sim_Cifar10_seed_1.json"""
         # self.sim_idx = sim_idx
         # self.input_shape = input_shape
         self.battery_weight = 0.33
         self.cpu_cost_weight = 0.33
         self.link_prob_weight = 0.33
         self.target_accuracy = 1.0
-        self.link_quality_lower_lim = 0.2
         self.time_percentile = 95
         self.comp_latency_lim = np.inf
         self.clients_info = {}
         self.clients_last_round = []
         self.max_training_latency = 0.0
-        self.limit_relationship_max_latency = 0
-        self.devices_profile = "./clients_selection_configuration_files/rawcs/clients.json"
 
     def initialize_parameters(
             self, client_manager: ClientManager

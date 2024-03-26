@@ -743,7 +743,6 @@ class ClientBaseTorch(fl.client.NumPyClient):
 			loss, accuracy, macro_f1_score, weighted_f1_score, micro_f1_score, test_num, predictions, output, labels = self.model_eval(server_round)
 
 			if self.aggregation_method == "POC":
-				print("ee0")
 				if train:
 					server_round = server_round // 2
 					data = [server_round, self.cid, size_of_parameters, size_of_config, loss, accuracy, macro_f1_score, weighted_f1_score, micro_f1_score, nt]

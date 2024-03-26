@@ -25,6 +25,7 @@ class JointAnalysis():
         original_model = copy.deepcopy(model)
         version_dict = {"FedPredict": {-2: "FedPredict_{dc}"}}
         self.client_selections = ['Random', 'POC', 'RAWCS']
+        # self.client_selections = ['Random', 'POC']
         for i in experiments:
             experiment = experiments[i]
             new_clients = experiment['new_client']
@@ -80,7 +81,7 @@ class JointAnalysis():
                                     server_filename = filename1 + "server.csv"
                                     filename1 = filename1 + file_type
 
-                                    print(filename1)
+                                    # print(filename1)
                                     try:
                                         flag = False
                                         # if Path(filename1).exists():
@@ -99,6 +100,7 @@ class JointAnalysis():
                                             continue
 
                                     except:
+                                        print("sem: ", filename1)
                                         continue
                                     if strategy == "FedPredict" and compression == "no":
                                         st = "FedAvg"
@@ -134,7 +136,7 @@ class JointAnalysis():
                                     df['Version'] = np.array([s] * len(df))
                                     df['Experiment'] = np.array([i] * len(df))
                                     df['Fraction fit'] = np.array([fraction_fit] * len(df))
-                                    df['Dataset'] = np.array([dataset.replace("WATCH", "W")] * len(df))
+                                    df['Dataset'] = np.array([dataset.replace("WATCH", "W").replace("CIFAR10", "CIFAR-10")] * len(df))
                                     df['Solution'] = np.array([compression] * len(df))
                                     df['Alpha'] = np.array([alpha] * len(df))
                                     df['Client selection'] = np.array([client_selection.replace("None", "Random")] * len(df))
@@ -154,12 +156,15 @@ class JointAnalysis():
                                     count += 1
 
         # df_concat = self.convert_shared_layers(df_concat)
+        print(df_concat)
         df_concat['Accuracy (%)'] = df_concat['Accuracy'] * 100
         df_concat['Round (t)'] = df_concat['Round']
         # plots
         # self.joint_plot_acc_two_plots(df=df_concat, experiment=1, pocs=pocs)
         # self.joint_plot_acc_two_plots(df=df_concat, experiment=1, pocs=pocs)
         print("versao1: ", df_concat[['Strategy', 'Version']].drop_duplicates())
+        print(df_concat[['Strategy', 'Fraction fit', 'Dataset', 'Version', 'Alpha', 'Client selection', 'Method']].drop_duplicates())
+        # exit()
         self.joint_plot_acc_four_plots(df=df_concat, experiment=40, alphas=alphas)
         self.joint_plot_acc_four_plots_efficiency(df=df_concat, experiment=40, alphas=alphas)
         # self.joint_plot_acc_four_plots(df=df_concat, experiment=2, alphas=alphas)
@@ -185,7 +190,7 @@ class JointAnalysis():
         strategies = aux
         print("finai: ", strategies)
         print("Experimento 1")
-        # self.joint_table(df_concat, alphas, strategies, experiment=1)
+        self.joint_table(df_concat, alphas, strategies, experiment=40, dataset='CIFAR-10')
         print("Experimento 2")
         # self.joint_table(df_concat, alphas, strategies, experiment=2)
         # self.joint_table(df_concat, fractions_fit, strategies, experiment=3)
@@ -260,7 +265,7 @@ class JointAnalysis():
         indexes = df.index.tolist()
 
         # datasets = ['Cologne', 'WISDM-P', 'WISDM-WATCH']
-        datasets = ['WISDM-P', 'WISDM-W']
+        datasets = ['Randômico', 'POC']
         solutions = pd.Series([i[1] for i in indexes]).unique().tolist()
         reference_solutions = {}
         for solution_key in solutions:
@@ -278,6 +283,7 @@ class JointAnalysis():
                 target_index = (dataset, reference_solutions[solution])
 
                 for column in columns:
+                    print((df.loc[reference_index, column][:4]), reference_index, column)
                     difference = str(round(float(df.loc[reference_index, column][:4]) - float(df.loc[target_index, column][:4]), 1))
                     difference = str(round(float(difference)*100/float(df.loc[target_index, column][:4]), 1))
                     if difference[0] != "-":
@@ -294,7 +300,7 @@ class JointAnalysis():
         return df_difference
 
 
-    def joint_table(self, df, pocs, strategies, experiment):
+    def joint_table(self, df, pocs, strategies, experiment, dataset):
 
 
 
@@ -309,7 +315,7 @@ class JointAnalysis():
             df = df[df['Round (t)'].isin(range(70, 81))]
             pass
         df_test = df[
-            ['Round (t)', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Fraction fit', 'Dataset', 'Alpha']]
+            ['Round (t)', 'Size of parameters', 'Strategy', 'Accuracy (%)', 'Experiment', 'Client selection', 'Fraction fit', 'Dataset', 'Alpha']]
 
         # df_test = df_test.query("""Round in [10, 100]""")
         print("agrupou table")
@@ -320,12 +326,14 @@ class JointAnalysis():
         columns = strategies
 
         # index = [np.array(['Cologne'] * len(columns) + ['WISDM-W'] * len(columns) + ['WISDM-P'] * len(columns)), np.array(columns * 3)]
-        index = [np.array( ['WISDM-W'] * len(columns) + ['WISDM-P'] * len(columns)),
+        index = [np.array( ['Randômico'] * len(columns) + ['POC'] * len(columns)),
                  np.array(columns * 2)]
 
         models_dict = {}
         ci = 0.95
         print("filtro tabela")
+        fraction_fit = 0.3
+        client_selection = 'Random'
         for model_name in model_report:
 
             cologne_acc = {}
@@ -338,12 +346,14 @@ class JointAnalysis():
                 # cologne_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'Cologne',
                 #                                                        float(model_name), strategy=column)[
                 #     'Accuracy (%)']).tolist(), ci)
-                mnist_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'WISDM-W',
-                                                                     float(model_name), strategy=column)[
+                mnist_acc[column] = self.t_distribution((self.filter(df=df_test, experiment=experiment, dataset=dataset,
+                                                                     client_selection='Random', fraction_fit=fraction_fit, alpha=model_name, strategy=column)[
                                          'Accuracy (%)']).tolist(), ci)
-                cifar10_acc[column] = self.t_distribution((self.filter(df_test, experiment, 'WISDM-P',
-                                                                       float(model_name), strategy=column)[
-                                           'Accuracy (%)']).tolist(), ci)
+                cifar10_acc[column] = self.t_distribution((self.filter(df=df_test, experiment=experiment, dataset=dataset,
+                                                                     client_selection='POC',
+                                                                     fraction_fit=fraction_fit, alpha=model_name,
+                                                                     strategy=column)[
+                    'Accuracy (%)']).tolist(), ci)
                 # gtsrb_acc[column] = self.t_distribution(
                 #     (self.filter(df_test, experiment, 'GTSRB', float(model_name), strategy=column)[
                 #         'Accuracy (%)']).tolist(), ci)
@@ -419,7 +429,7 @@ class JointAnalysis():
 
         latex = df_accuracy_improvements.to_latex().replace("\\\nEMNIST", "\\\n\hline\nEMNIST").replace("\\\nGTSRB", "\\\n\hline\nGTSRB").replace("\\\nCIFAR-10", "\\\n\hline\nCIFAR-10").replace("\\bottomrule", "\\hline\n\\bottomrule").replace("\\midrule", "\\hline\n\\midrule").replace("\\toprule", "\\hline\n\\toprule").replace("textbf", r"\textbf").replace("\}", "}").replace("\{", "{").replace("\\begin{tabular", "\\resizebox{\columnwidth}{!}{\\begin{tabular}").replace("\$", "$").replace("textuparrow", "\oitextuparrow").replace("textdownarrow", "\oitextdownarrow").replace("\&", "&").replace("&  &", "& - &").replace("\_", "_").replace("&  \\", "& - \\").replace(" - " + r"\textbf", " " + r"\textbf").replace("_{DYN}", r"$_{\text{DYN}}$").replace("WISDM-W", r"\parbox[t]{2mm}{\multirow{10}{*}{\rotatebox[origin=c]{90}{WISDM-W}}}").replace("WISDM-P", r"\parbox[t]{2mm}{\multirow{10}{*}{\rotatebox[origin=c]{90}{WISDM-P}}}")
 
-        base_dir = """analysis/output/experiment_{}/dynamic/""".format(str(experiment + 1))
+        base_dir = """analysis/output/experiment_{}/alphas_{}/datasets_{}/client_selection/""".format(str(experiment + 1), [0.1, 1.0], ['CIFAR-10', 'GTSRB'])
         filename = """{}latex_{}.txt""".format(base_dir, str(experiment))
         pd.DataFrame({'latex': [latex]}).to_csv(filename, header=False, index=False)
 
@@ -432,8 +442,8 @@ class JointAnalysis():
     def improvements(self, df, experiment):
 
         # r"CDA-FedAvg+FP$_{DYN}$": "CDA-FedAvg", r"CDA-FedAvg+FP": "CDA-FedAvg"
-        strategies = {r"FedAvg+FP$_{DYN}$": "FedAvg", "FedAvg+FP": "FedAvg", r"CDA-FedAvg+FP$_{DYN}$": "CDA-FedAvg", r"CDA-FedAvg+FP": "CDA-FedAvg"}
-        datasets = ['WISDM-P', 'WISDM-W']
+        strategies = {r"FedAvg+FP": "FedAvg"}
+        datasets = ['Randômico', 'POC']
         print(df)
         # exit()
         columns = df.columns.tolist()
@@ -482,6 +492,7 @@ class JointAnalysis():
             df = df.query(query)
             df = df[df['Alpha'] == alpha]
 
+        print("antesr55: ", df, client_selection)
         df = df[df['Client selection'] == client_selection]
         # df = df[df['Fraction fit'] == fraction_fit]
 
@@ -492,6 +503,7 @@ class JointAnalysis():
 
     def filter_and_plot(self, ax, base_dir, filename, title, df, experiment, dataset, alpha, x_column, y_column, client_selection, fraction_fit, hue, hue_order=None, style=None, markers=None, size=None, sizes=None, y_max=1, y_lim=True, style_order=None):
 
+        print("antes: ", df)
         df = self.filter(df, experiment, dataset, client_selection, fraction_fit, alpha)
         print("ttt: ", df)
         df['Strategy'] = np.array(["" + i + "" for i in df['Strategy'].tolist()])
@@ -511,7 +523,7 @@ class JointAnalysis():
         # figsize=(12, 9),
         sns.set(style='whitegrid')
         rows = len(alphas)
-        cols = len(datast) + 2
+        cols = len(datast) + 1
         fractions_fit = [0.3]
         fig, axs = plt.subplots(rows, cols,  sharex='all', sharey='all', figsize=(9, 6))
 
@@ -519,14 +531,14 @@ class JointAnalysis():
         y_column = 'Accuracy (%)'
         plt.xlabel(x_column)
         plt.ylabel(y_column)
-        base_dir = """analysis/output/experiment_{}/alphas_{}/datasets_{}/client_selection/""".format(str(experiment+1), alphas, np.unique(datast))
+        base_dir = """analysis/output/experiment_{}/alphas_{}/datasets_{}/client_selection/""".format(str(experiment+1), alphas, datast)
         # ====================================================================
         for i in range(rows):
             for j in range(cols):
                 alpha = alphas[i]
                 # dataset = datast[j]
-                # dataset = 'WISDM-W'
-                dataset = 'CIFAR10'
+                dataset = 'GTSRB'
+                # dataset = 'CIFAR-10'
                 client_selection = self.client_selections[j]
                 fraction_fit = self.fraction_fit[j]
                 print("cf: ", client_selection, fraction_fit)
@@ -559,12 +571,12 @@ class JointAnalysis():
         axs[0, 1].get_legend().remove()
         axs[1, 0].get_legend().remove()
         axs[1, 1].get_legend().remove()
-        axs[1, 2].get_legend().remove()
-        axs[0, 2].get_legend().remove()
+        # axs[1, 2].get_legend().remove()
+        # axs[0, 2].get_legend().remove()
         # axs[1, 1].legend(fontsize=5)
 
         # =========================///////////================================
-        fig.suptitle("", fontsize=16)
+        fig.suptitle(dataset, fontsize=16)
         plt.tight_layout()
         plt.subplots_adjust(wspace=0.07, hspace=0.14)
         # plt.subplots_adjust(right=0.9)
@@ -620,8 +632,8 @@ class JointAnalysis():
         print(labels)
         axs[1, 1].legend(handles, labels, fontsize=7)
         print("base: ", base_dir, """{}joint_plot_four_plot_{}_{}_rounds_{}_clients.png""".format(base_dir, str(experiment), self.rounds, self.clients))
-        fig.savefig("""{}joint_plot_four_plot_{}_{}_rounds_{}_clients.png""".format(base_dir, str(experiment), self.rounds, self.clients), bbox_inches='tight', dpi=400)
-        fig.savefig("""{}joint_plot_four_plot_{}_{}_rounds_{}_clients.svg""".format(base_dir, str(experiment), self.rounds, self.clients), bbox_inches='tight', dpi=400)
+        fig.savefig("""{}joint_plot_four_plot_{}_{}_rounds_{}_clients_{}.png""".format(base_dir, str(experiment), self.rounds, self.clients, dataset), bbox_inches='tight', dpi=400)
+        fig.savefig("""{}joint_plot_four_plot_{}_{}_rounds_{}_clients_{}.svg""".format(base_dir, str(experiment), self.rounds, self.clients, dataset), bbox_inches='tight', dpi=400)
 
     def joint_plot_acc_four_plots_efficiency(self, df, experiment, alphas):
         print("Joint plot exeprimento: ", experiment)
@@ -635,7 +647,7 @@ class JointAnalysis():
         # figsize=(12, 9),
         sns.set(style='whitegrid')
         rows = len(alphas)
-        cols = len(datast) + 2
+        cols = len(datast) + 1
         fractions_fit = [0.3]
         fig, axs = plt.subplots(rows, cols,  sharex='all', sharey='all', figsize=(9, 6))
 
@@ -643,18 +655,18 @@ class JointAnalysis():
         y_column = 'Efficiency'
         plt.xlabel(x_column)
         plt.ylabel(y_column)
-        base_dir = """analysis/output/experiment_{}/alphas_{}/datasets_{}/client_selection/""".format(str(experiment+1), alphas, np.unique(datast))
+        base_dir = """analysis/output/experiment_{}/alphas_{}/datasets_{}/client_selection/""".format(str(experiment+1), alphas, datast)
         # ====================================================================
         for i in range(rows):
             for j in range(cols):
                 alpha = alphas[i]
                 # dataset = datast[j]
-                # dataset = 'WISDM-W'
-                dataset = 'CIFAR10'
+                dataset = 'GTSRB'
+                # dataset = 'CIFAR-10'
                 client_selection = self.client_selections[j]
                 fraction_fit = self.fraction_fit[j]
                 print("cf: ", client_selection, fraction_fit)
-                title = """{}; \u03B1={}; {}""".format(dataset, alpha, client_selection)
+                title = """\u03B1={}; {}""".format(alpha, client_selection)
                 filename = ''
                 hue_order = ['FedAvg+FP', 'FedAvg']
                 # hue_order = ['FedAvg', 'CDA-FedAvg', 'FedCDM', 'FedPer']
@@ -683,12 +695,12 @@ class JointAnalysis():
         axs[0, 1].get_legend().remove()
         axs[1, 0].get_legend().remove()
         axs[1, 1].get_legend().remove()
-        axs[1, 2].get_legend().remove()
-        axs[0, 2].get_legend().remove()
+        # axs[1, 2].get_legend().remove()
+        # axs[0, 2].get_legend().remove()
         # axs[1, 1].legend(fontsize=5)
 
         # =========================///////////================================
-        fig.suptitle("", fontsize=16)
+        fig.suptitle(dataset, fontsize=16)
         plt.tight_layout()
         plt.subplots_adjust(wspace=0.07, hspace=0.14)
         # plt.subplots_adjust(right=0.9)
@@ -744,8 +756,8 @@ class JointAnalysis():
         print(labels)
         axs[1, 1].legend(handles, labels, fontsize=7)
         print("base: ", base_dir, """{}joint_plot_four_plot_{}_{}_rounds_{}_clients.png""".format(base_dir, str(experiment), self.rounds, self.clients))
-        fig.savefig("""{}joint_plot_four_plot_{}_{}_rounds_{}_clients_efficiency.png""".format(base_dir, str(experiment), self.rounds, self.clients), bbox_inches='tight', dpi=400)
-        fig.savefig("""{}joint_plot_four_plot_{}_{}_rounds_{}_clients_efficiency.svg""".format(base_dir, str(experiment), self.rounds, self.clients), bbox_inches='tight', dpi=400)
+        fig.savefig("""{}joint_plot_four_plot_{}_{}_rounds_{}_clients_efficiency_{}.png""".format(base_dir, str(experiment), self.rounds, self.clients, dataset), bbox_inches='tight', dpi=400)
+        fig.savefig("""{}joint_plot_four_plot_{}_{}_rounds_{}_clients_efficiency_{}.svg""".format(base_dir, str(experiment), self.rounds, self.clients, dataset), bbox_inches='tight', dpi=400)
 
     def idmax(self, df, n_solutions):
 
@@ -834,9 +846,10 @@ if __name__ == '__main__':
     # pocs = [0.1, 0.2, 0.3]
     fractions_fit = [0.3, 0.5, 0.7]
     # datasets = ['MNIST', 'CIFAR10']
-    datasets = ['CIFAR10']
+    # datasets = ['CIFAR10']
+    datasets = ['CIFAR10', 'GTSRB']
     alpha = [0.1, 1.0]
-    rounds = 25
+    rounds = 100
     clients = '20'
     model = 'CNN_1'
     type_t = 'torch'

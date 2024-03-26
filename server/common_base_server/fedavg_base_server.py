@@ -285,7 +285,7 @@ class FedAvgBaseServer(fl.server.strategy.FedAvg):
 	def poc(self, server_round):
 
 		if server_round % 2 != 0:
-			clients2select = int(float(self.num_clients) * (self.fraction_fit + 0.2))
+			clients2select = int(float(self.num_clients) * min((self.fraction_fit + 0.3), 1))
 			train = False
 			return random.sample(self.available_clients, clients2select), train
 		else:

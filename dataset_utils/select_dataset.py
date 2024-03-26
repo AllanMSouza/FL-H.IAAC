@@ -465,7 +465,7 @@ class ManageDatasets():
 
         dataset_image = []
         dataset_label = []
-        for i in range(3):
+        for i in range(1):
             dataset_image.extend(trainset.samples)
             dataset_label.extend(trainset.targets)
         dataset_image = np.array(dataset_image)

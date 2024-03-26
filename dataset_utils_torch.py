@@ -798,7 +798,7 @@ class ManageDatasets():
             x_test = []
             y_train = []
             y_test = []
-            for i in range(3):
+            for i in range(1):
                 x_train += training_dataset.samples
                 x_test += validation_dataset.samples
                 y_train += training_dataset.targets
@@ -928,7 +928,7 @@ class ManageDatasets():
             total = np.sum(p[1])
             p = p[1]/total
 
-            print("""ll cliente {} round {} proporcao:{}  classes: {}""".format(self.cid,self.server_round, p, c))
+            # print("""ll cliente {} round {} proporcao:{}  classes: {}""".format(self.cid,self.server_round, p, c))
 
 
 

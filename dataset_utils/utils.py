@@ -265,7 +265,7 @@ def save_dataloaders(dataset_name="CIFAR10", num_clients=10, num_classes=10, nii
         classes = len(pd.Series(target[index_train]).unique().tolist())
         classes_list.append(classes)
         print("Original: ", len(index_train), " Sem duplicadas: ", len(pd.Series(index_train).drop_duplicates()), " classes: ",  classes, " teste: ", len(index_test))
-        print("Suporte: ", pd.Series(target[index_train]).astype(str).value_counts())
+        print("Suporte: ", pd.Series(target[index_train]).astype(str).value_counts(), "max: ", np.array(index_train).max())
         count += len(index_train) + len(index_test)
 
         filename_train = """data/{}/{}_clients/classes_per_client_{}/alpha_{}/{}/idx_train_{}.pickle""".format(dataset_name, num_clients, class_per_client, alpha, client_id, client_id)
